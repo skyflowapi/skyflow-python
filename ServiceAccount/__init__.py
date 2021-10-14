@@ -1,2 +1,2 @@
-from .utils import generateToken
+from .utils import GenerateToken
 from .utils import ResponseToken

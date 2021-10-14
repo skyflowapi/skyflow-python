@@ -6,7 +6,7 @@ import requests
 
 ResponseToken = namedtuple('ResponseToken', ['AccessToken', 'TokenType'])
 
-def generateToken(credentialsFilePath):
+def GenerateToken(credentialsFilePath):
     credentialsFile = open(credentialsFilePath, 'r')
     credentials = json.load(credentialsFile)
 
