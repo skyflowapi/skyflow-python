@@ -1,14 +1,16 @@
 from setuptools import setup
 
+version = '1.0.0'
+
 setup(
    name='Skyflow',
-   version='1.0.0',
-   author='Skyflow Python SDK',
-   author_email='service-ops@gmail.com',
-   packages=['ServiceAccount'],
-   url='http://pypi.python.org/pypi/PackageName/',
+   version=version,
+   author='Skyflow',
+   author_email='service-ops@skyflow.com',
+   packages=['skyflow'],
+   url='https://github.com/skyflowapi/skyflow-python/',
    license='LICENSE',
-   description='An awesome package that does something',
+   description='Skyflow SDK for the Python programming language',
    long_description=open('README.md').read(),
    install_requires=[
        'PyJWT',

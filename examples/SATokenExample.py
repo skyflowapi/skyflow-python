@@ -1,4 +1,4 @@
-from ServiceAccount import generateToken
+from skyflow.ServiceAccount import generateToken
 
 filepath = ''
 accessToken, tokenType = generateToken(filepath)

@@ -7,17 +7,36 @@ import requests
 ResponseToken = namedtuple('ResponseToken', ['AccessToken', 'TokenType'])
 
 def GenerateToken(credentialsFilePath):
-    credentialsFile = open(credentialsFilePath, 'r')
-    credentials = json.load(credentialsFile)
+    try:
+        credentialsFile = open(credentialsFilePath, 'r')
+    except e:
+        raise Exception("Credentials file not found")
+
+    try:
+        credentials = json.load(credentialsFile)
+    except e:
+        raise Exception("Credentials file is not in JSON format")
 
 
     return getSAToken(credentials)
 
 def getSAToken(credentials):
-    privateKey = credentials["privateKey"]
-    clientID = credentials["clientID"]
-    keyID = credentials["keyID"]
-    tokenURI = credentials["tokenURI"]
+    try:
+        privateKey = credentials["privateKey"]
+    except:
+        raise Exception("Private key not found in credentials")
+    try:
+        clientID = credentials["clientID"]
+    except:
+        raise Exception("Client ID not found in credentials")
+    try:
+        keyID = credentials["keyID"]
+    except:
+        raise Exception("Key ID not found in credentials")
+    try:
+        tokenURI = credentials["tokenURI"]
+    except:
+        raise Exception("Token URI not found in credentials")
 
     signedToken = getSignedJWT(clientID, keyID, tokenURI, privateKey)
 
@@ -34,7 +53,10 @@ def getSignedJWT(clientID, keyID, tokenURI, privateKey):
 		"sub": clientID,
 		"exp": datetime.datetime.utcnow() + datetime.timedelta(minutes=30)
     }
-    return jwt.encode(payload=payload, key=privateKey, algorithm="RS256")
+    try:
+        return jwt.encode(payload=payload, key=privateKey, algorithm="RS256")
+    except:
+        raise Exception("Unable to get a JWT with the given credentials")
 
 
 def sendRequestWithToken(url, token):
