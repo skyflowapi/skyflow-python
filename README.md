@@ -17,7 +17,7 @@ You can install the package using the following command:
 
 
 ```bash
-pip install skyflow
+$ pip install skyflow
 ```
 
 [Example](https://github.com/skyflowapi/skyflow-python/blob/main/examples/SATokenExample.py):
