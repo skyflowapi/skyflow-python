@@ -1,13 +1,13 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
 version = '1.0.0'
 
 setup(
-   name='Skyflow',
+   name='skyflow',
    version=version,
    author='Skyflow',
    author_email='service-ops@skyflow.com',
-   packages=['skyflow'],
+   packages=find_packages(exclude=['tests', 'examples']),
    url='https://github.com/skyflowapi/skyflow-python/',
    license='LICENSE',
    description='Skyflow SDK for the Python programming language',
