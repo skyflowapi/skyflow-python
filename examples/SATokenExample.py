@@ -1,7 +1,7 @@
-from skyflow.ServiceAccount import generateToken
+from skyflow.ServiceAccount import GenerateToken
 
-filepath = ''
-accessToken, tokenType = generateToken(filepath)
+filepath = './credentials.json'
+accessToken, tokenType = GenerateToken(filepath)
 
 print("Access Token:", accessToken)
 print("Type of token:", tokenType)

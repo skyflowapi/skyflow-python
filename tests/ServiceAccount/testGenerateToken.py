@@ -58,6 +58,7 @@ class TestGenerateToken(unittest.TestCase):
 
     def testInvalidCreds(self):
         try:
-            result = GenerateToken(self.getDataPath('invalidPrivateKey'))
-        except SkyflowError as e:
-            print(e)
+             GenerateToken(self.getDataPath('invalidPrivateKey'))
+        except SkyflowError as se:
+            self.assertEqual(se.code, SkyflowErrorCodes.INVALID_INPUT.value)
+            self.assertEqual(se.message, SkyflowErrorMessages.JWT_INVALID_FORMAT.value)

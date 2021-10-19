@@ -9,7 +9,17 @@ from skyflow.Errors._skyflowErrors import *
 
 ResponseToken = namedtuple('ResponseToken', ['AccessToken', 'TokenType'])
 
-def GenerateToken(credentialsFilePath):
+def GenerateToken(credentialsFilePath: str) -> ResponseToken:
+
+    '''
+    This function is used to get the access token for skyflow Service Accounts.
+    `credentialsFilePath` is the file path in string of the credentials file that is downloaded after Service Account creation.
+
+    Response Token is a named tupe with two attributes:
+        1. AccessToken: The access token
+        2. TokenType: The type of access token (eg: Bearer)
+    '''
+
     try:
         credentialsFile = open(credentialsFilePath, 'r')
     except:
