@@ -24,10 +24,10 @@ pip install skyflow
 
 
 ```python
-from skyflow.ServiceAccount import generateToken
+from skyflow.ServiceAccount import GenerateToken
 
 filepath =  '<YOUR_CREDENTIALS_FILE_PATH>'
-accessToken, tokenType = generateToken(filepath)
+accessToken, tokenType = GenerateToken(filepath)
 
 print("Access Token:", accessToken)
 print("Type of token:", tokenType)
