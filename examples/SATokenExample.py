@@ -1,7 +1,12 @@
+import os
+from skyflow.Errors import SkyflowError
 from skyflow.ServiceAccount import GenerateToken
 
-filepath = './credentials.json'
-accessToken, tokenType = GenerateToken(filepath)
+filepath = os.getenv('CREDENTIALS_FILE_PATH')
 
-print("Access Token:", accessToken)
-print("Type of token:", tokenType)
+try:
+    accessToken, tokenType = GenerateToken(filepath)
+    print("Access Token:", accessToken)
+    print("Type of token:", tokenType)
+except SkyflowError as e:
+    print(e)
