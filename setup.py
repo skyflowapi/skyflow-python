@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-current_version = '1.0.0'
+current_version = '1.0.1'
 
 setup(
    name='skyflow',
@@ -11,10 +11,11 @@ setup(
    url='https://github.com/skyflowapi/skyflow-python/',
    license='LICENSE',
    description='Skyflow SDK for the Python programming language',
-   long_description=open('README.md').read(),
+   long_description=open('package-info.rst').read(),
    install_requires=[
        'PyJWT',
        'datetime',
-       'requests'
+       'requests',
+       'cryptography>=3.3.1'
    ],
 )
