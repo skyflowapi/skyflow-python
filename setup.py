@@ -11,7 +11,7 @@ setup(
    url='https://github.com/skyflowapi/skyflow-python/',
    license='LICENSE',
    description='Skyflow SDK for the Python programming language',
-   long_description=open('INFO.md').read(),
+   long_description=open('INFO.rst').read(),
    install_requires=[
        'PyJWT',
        'datetime',
