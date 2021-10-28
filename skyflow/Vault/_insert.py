@@ -1,11 +1,14 @@
 
 import requests
-from skyflow.Errors import SkyflowError, SkyflowErrorCodes
+from skyflow.Errors._skyflowErrors import SkyflowError, SkyflowErrorCodes, SkyflowErrorMessages
 from json.encoder import JSONEncoder
 
 
 def getInsertRequestBody(data):
-    records = data["records"]
+    try:
+        records = data["records"]
+    except KeyError:
+        raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.RECORDS_KEY_ERROR)
     requestBody = {"records": []}
     for record in records:
         requestBody["records"].append({

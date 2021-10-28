@@ -18,6 +18,9 @@ class SkyflowErrorMessages(Enum):
     MISSING_ACCESS_TOKEN = "accessToken not present in response"
     MISSING_TOKEN_TYPE = "tokenType not present in response"
 
+    # vault
+    RECORDS_KEY_ERROR = "Records key is missing from payload"
+
 
 class SkyflowError(Exception):
     def __init__(self, code, message="An Error occured") -> None:
