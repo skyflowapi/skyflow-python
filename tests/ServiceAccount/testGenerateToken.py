@@ -1,5 +1,6 @@
 import unittest
 import os
+import sys
 from skyflow.ServiceAccount import GenerateToken
 from skyflow.Errors._skyflowErrors import *
 
@@ -62,3 +63,4 @@ class TestGenerateToken(unittest.TestCase):
         except SkyflowError as se:
             self.assertEqual(se.code, SkyflowErrorCodes.INVALID_INPUT.value)
             self.assertEqual(se.message, SkyflowErrorMessages.JWT_INVALID_FORMAT.value)
+
