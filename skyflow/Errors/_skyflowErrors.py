@@ -23,6 +23,9 @@ class SkyflowErrorMessages(Enum):
     FIELDS_KEY_ERROR = "Fields key is missing from payload"
     TABLE_KEY_ERROR = "Table key is missing from payload"
     INVALID_JSON = "Given %s is invalid JSON"
+    INVALID_RECORDS_TYPE = "Records key has value of type %s, expected string"
+    INVALID_FIELDS_TYPE = "Fields key has value of type %s, expected string"
+    INVALID_TABLE_TYPE = "Table key has value of type %s, expected string"
 
 
 class SkyflowError(Exception):
