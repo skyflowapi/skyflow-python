@@ -1,20 +1,21 @@
 import json
 import requests
-from ._insert import getInsertRequestBody
-
+from ._insert import getInsertRequestBody, processResponse
+from ._config import SkyflowConfiguration
+from ._config import InsertOptions
 class Client:
-    def __init__(self, vaultID, vaultURL, tokenProvider):
-        self.vaultID = vaultID
-        self.vaultURL = vaultURL
-        self.tokenProvider = tokenProvider
+    def __init__(self, config: SkyflowConfiguration):
+        self.vaultID = config.vaultID
+        self.vaultURL = config.vaultURL
+        self.tokenProvider = config.tokenProvider
 
-    def insert(self, data):
-        requestBody = getInsertRequestBody(data)
-        jsonBody = json.dumps(requestBody)
+    def insert(self, data, options: InsertOptions):
+        jsonBody = getInsertRequestBody(data)
         requestURL = self.vaultURL + "/v1/vaults/" + self.vaultID
         token = self.tokenProvider()
         headers = {
             "Authorization": "Bearer " + token
         }
         response = requests.post(requestURL, data=jsonBody, headers=headers)
-        return response
+        processedResponse = processResponse(response, options.tokens)
+        return processedResponse

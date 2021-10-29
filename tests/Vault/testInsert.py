@@ -1,9 +1,9 @@
+import json
 import unittest
 import os
-from skyflow.Vault._insert import getInsertRequestBody
+from requests.models import Response
+from skyflow.Vault._insert import getInsertRequestBody, processResponse
 from skyflow.Errors._skyflowErrors import SkyflowError, SkyflowErrorCodes, SkyflowErrorMessages
-from skyflow.Vault._client import Client
-from skyflow.ServiceAccount import GenerateToken
 
 class TestInsert(unittest.TestCase):
 
@@ -24,7 +24,7 @@ class TestInsert(unittest.TestCase):
         return self.dataPath + file + '.json'
 
     def testGetInsertRequestBodyWithValidBody(self):
-        body = getInsertRequestBody(self.data)
+        body = json.loads(getInsertRequestBody(self.data))
         expectedOutput = {
             "tableName": "persons",
             "fields": {
@@ -44,12 +44,89 @@ class TestInsert(unittest.TestCase):
         except SkyflowError as e:
             self.assertEqual(e.code, SkyflowErrorCodes.INVALID_INPUT.value)
             self.assertEqual(e.message, SkyflowErrorMessages.RECORDS_KEY_ERROR.value)
-        
+
+    def testGetInsertRequestBodyNoFields(self):
+        invalidData = {"records": [{
+            "table": "table",
+            "fields": {
+                "card_number": "4111-1111"
+            }
+        },
+        {
+            "table": "table",
+            "invalid": {}
+        }
+        ]}
+        try:
+            getInsertRequestBody(invalidData)
+            self.fail('Should have thrown an error')
+        except SkyflowError as e:
+            self.assertEqual(e.code, SkyflowErrorCodes.INVALID_INPUT.value)
+            self.assertEqual(e.message, SkyflowErrorMessages.FIELDS_KEY_ERROR.value)
+
+
+    def testGetInsertRequestBodyNoTable(self):
+        invalidData = {"records": [{
+            "noTable": "tableshouldbehere",
+            "fields": {
+                "card_number": "4111-1111"
+            }
+        },
+        {
+            "table": "table",
+            "invalid": {}
+        }
+        ]}
+        try:
+            getInsertRequestBody(invalidData)
+            self.fail('Should have thrown an error')
+        except SkyflowError as e:
+            self.assertEqual(e.code, SkyflowErrorCodes.INVALID_INPUT.value)
+            self.assertEqual(e.message, SkyflowErrorMessages.TABLE_KEY_ERROR.value)
+
+    def testInsertInvalidJson(self):
+        invalidjson = {
+            "records": [{
+                "table": "table",
+                "fields": {
+                    "invalid": json
+                }
+            }]
+        }
+
+        try:
+            getInsertRequestBody(invalidjson)
+            self.fail('Should have thrown an error')
+        except SkyflowError as e:
+            self.assertEqual(e.code, SkyflowErrorCodes.INVALID_INPUT.value)
+            self.assertEqual(e.message, SkyflowErrorMessages.INVALID_JSON.value%('insert payload'))
+
+    def testProcessInvalidResponse(self):
+        response = Response()
+        response.status_code = 500
+        response._content = b"Invalid Request"
+        try:
+            processResponse(response, True)
+            self.fail()
+        except SkyflowError as e:
+            self.assertEqual(e.code, 500)
+            self.assertEqual(e.message, response.content.decode('utf-8'))
+
+    def testProcessInvalidResponse(self):
+        response = Response()
+        response.status_code = 200
+        response._content = b'{"key": "value"}'
+        try:
+            processedResponse = processResponse(response, True)
+            responseDict = json.loads(processedResponse)
+            self.assertDictEqual(responseDict, {'key': 'value'})
+        except SkyflowError as e:
+            self.fail
 
     # def testClientInsert(self):
     #     def tokenProvider():
-    #         token, type = GenerateToken(self.getDataPath('credentials'))
-    #         return token
+            # token, type = GenerateToken(self.getDataPath('credentials'))
+    #         return "token"
     #     client = Client('bdc271aee8584eed88253877019657b3', 'https://sb.area51.vault.skyflowapis.dev', tokenProvider)
 
     #     data = {
@@ -65,5 +142,8 @@ class TestInsert(unittest.TestCase):
     #             }
     #         ]
     #     }
-    #     print("===================>", client.insert(data).content)
+    #     try:
+    #         print(client.insert(data))
+    #     except SkyflowError as e:
+    #         print(e)
 

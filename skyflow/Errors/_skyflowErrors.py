@@ -20,6 +20,9 @@ class SkyflowErrorMessages(Enum):
 
     # vault
     RECORDS_KEY_ERROR = "Records key is missing from payload"
+    FIELDS_KEY_ERROR = "Fields key is missing from payload"
+    TABLE_KEY_ERROR = "Table key is missing from payload"
+    INVALID_JSON = "Given %s is invalid JSON"
 
 
 class SkyflowError(Exception):
