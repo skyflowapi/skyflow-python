@@ -1,7 +1,8 @@
 import requests
 from ._insert import getInsertRequestBody, processResponse
 from ._config import SkyflowConfiguration
-from ._config import InsertOptions
+from ._config import InsertOptions, GatewayConfig
+from ._gateway import createRequest
 class Client:
     def __init__(self, config: SkyflowConfiguration):
         self.vaultID = config.vaultID
@@ -18,3 +19,8 @@ class Client:
         response = requests.post(requestURL, data=jsonBody, headers=headers)
         processedResponse = processResponse(response)
         return processedResponse
+
+    def invokeGateway(self, config: GatewayConfig):
+        request = createRequest(config)
+        response = request()
+        return response

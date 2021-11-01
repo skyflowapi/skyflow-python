@@ -65,7 +65,7 @@ def processResponse(response: requests.Response):
     strcontent = response.content.decode('utf-8')
     try:
         response.raise_for_status()
-        return strcontent
+        return json.loads(strcontent)
     except HTTPError:
         raise SkyflowError(statusCode, strcontent)
 

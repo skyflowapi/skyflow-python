@@ -1,6 +1,6 @@
 import unittest
 
-from skyflow.Vault._config import InsertOptions, SkyflowConfiguration
+from skyflow.Vault._config import *
 
 class TestConfig(unittest.TestCase):
     def testInsertOptions(self):
@@ -15,3 +15,13 @@ class TestConfig(unittest.TestCase):
         self.assertEqual(myconfig.vaultID, "vaultID")
         self.assertEqual(myconfig.vaultURL, "https://vaults.skyflow.com")
         self.assertEqual(myconfig.tokenProvider(), "token")
+
+    def testGatewayConfigDefaults(self):
+        gatewayConfig = GatewayConfig('https://skyflow.com', methodName=RequestMethod.GET)
+        self.assertEqual(gatewayConfig.gatewayURL, 'https://skyflow.com')
+        self.assertEqual(gatewayConfig.methodName, RequestMethod.GET)
+        self.assertDictEqual(gatewayConfig.pathParams, {})
+        self.assertDictEqual(gatewayConfig.queryParams, {})
+        self.assertDictEqual(gatewayConfig.requestHeader, {})
+        self.assertDictEqual(gatewayConfig.requestBody, {})
+        self.assertDictEqual(gatewayConfig.responseBody, {})

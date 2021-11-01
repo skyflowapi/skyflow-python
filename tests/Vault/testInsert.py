@@ -157,8 +157,7 @@ class TestInsert(unittest.TestCase):
         response.status_code = 200
         response._content = b'{"key": "value"}'
         try:
-            processedResponse = processResponse(response)
-            responseDict = json.loads(processedResponse)
+            responseDict = processResponse(response)
             self.assertDictEqual(responseDict, {'key': 'value'})
         except SkyflowError as e:
             self.fail()

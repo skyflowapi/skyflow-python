@@ -27,6 +27,12 @@ class SkyflowErrorMessages(Enum):
     INVALID_FIELDS_TYPE = "Fields key has value of type %s, expected string"
     INVALID_TABLE_TYPE = "Table key has value of type %s, expected string"
 
+    INVALID_REQUEST_BODY = "Given request body is not valid JSON"
+    INVALID_HEADERS = "Given Request Headers is not valid JSON"
+    INVALID_PATH_PARAM_TYPE = "Path params (key, value) must be of type 'str' given type - (%s, %s)"
+
+
+
 
 class SkyflowError(Exception):
     def __init__(self, code, message="An Error occured") -> None:
