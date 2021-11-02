@@ -2,6 +2,10 @@ import requests
 from ._insert import getInsertRequestBody, processResponse
 from ._config import SkyflowConfiguration
 from ._config import InsertOptions
+from ._detokenize import sendDetokenizeRequests, createDetokenizeResponseBody
+import asyncio
+from skyflow.Errors._skyflowErrors import SkyflowError, SkyflowErrorCodes, SkyflowErrorMessages   
+
 class Client:
     def __init__(self, config: SkyflowConfiguration):
         self.vaultID = config.vaultID
@@ -18,3 +22,16 @@ class Client:
         response = requests.post(requestURL, data=jsonBody, headers=headers)
         processedResponse = processResponse(response)
         return processedResponse
+
+    def detokenize(self, data):
+        token = self.tokenProvider()
+        url = self.vaultURL + "/v1/vaults/" + self.vaultID + "/detokenize"
+        responses = asyncio.run(sendDetokenizeRequests(data, url, token))
+        result, partial = createDetokenizeResponseBody(responses)
+        if partial:
+            raise SkyflowError(SkyflowErrorCodes.PARTIAL_SUCCESS ,SkyflowErrorMessages.PARTIAL_SUCCESS, result)
+        else:
+            return result
+        
+
+
