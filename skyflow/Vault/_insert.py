@@ -74,13 +74,13 @@ def convertResponse(request: dict, response: dict, tokens: bool):
     records = request['records']
     recordsSize = len(records)
     result = []
-    print(tokens, '==========', response)
     for id, _ in enumerate(request):
+        table = records[id]['table']
         skyflow_id = responseArray[0]['records'][id]['skyflow_id']
         if tokens:
             fieldsDict = responseArray[recordsSize + id]['fields']
             fieldsDict['skyflow_id'] = skyflow_id
-            result.append({'fields': fieldsDict})
+            result.append({'table': table, 'fields': fieldsDict})
         else:
-            result.append({'skyflow_id': skyflow_id})
+            result.append({'table': table, 'skyflow_id': skyflow_id})
     return {'records': result}

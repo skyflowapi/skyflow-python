@@ -147,4 +147,5 @@ class testGateway(unittest.TestCase):
             self.assertIsNotNone(resp['processingTimeinMs'])
             self.assertIsNotNone(resp['receivedTimestamp'])
         except SkyflowError as e:
+            print(e)
             self.fail()

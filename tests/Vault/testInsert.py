@@ -228,7 +228,6 @@ class TestInsert(unittest.TestCase):
         }
         try:
             response = client.insert(data, options=options)
-            print(response)
             self.assertEqual(len(response['records']), 1)
         except SkyflowError as e:
             self.fail()
