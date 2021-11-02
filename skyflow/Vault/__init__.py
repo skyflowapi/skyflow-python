@@ -1,2 +1,2 @@
 from ._client import Client
-from ._config import SkyflowConfiguration, InsertOptions
+from ._config import * 

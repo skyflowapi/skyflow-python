@@ -20,7 +20,7 @@ class RequestMethod(Enum):
 class GatewayConfig:
     def __init__(self, gatewayURL: str, methodName: RequestMethod, 
     pathParams: dict={}, queryParams: dict={}, requestHeader: dict={}, requestBody: dict={}, responseBody: dict={}):
-        self.gatewayURL = gatewayURL
+        self.gatewayURL = gatewayURL.rstrip("/")
         self.methodName = methodName
         self.pathParams = pathParams
         self.queryParams = queryParams

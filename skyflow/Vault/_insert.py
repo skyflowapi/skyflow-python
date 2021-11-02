@@ -69,3 +69,18 @@ def processResponse(response: requests.Response):
     except HTTPError:
         raise SkyflowError(statusCode, strcontent)
 
+def convertResponse(request: dict, response: dict, tokens: bool):
+    responseArray = response['responses']
+    records = request['records']
+    recordsSize = len(records)
+    result = []
+    print(tokens, '==========', response)
+    for id, _ in enumerate(request):
+        skyflow_id = responseArray[0]['records'][id]['skyflow_id']
+        if tokens:
+            fieldsDict = responseArray[recordsSize + id]['fields']
+            fieldsDict['skyflow_id'] = skyflow_id
+            result.append({'fields': fieldsDict})
+        else:
+            result.append({'skyflow_id': skyflow_id})
+    return {'records': result}
