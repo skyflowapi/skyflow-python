@@ -28,6 +28,15 @@ class SkyflowErrorMessages(Enum):
     INVALID_RECORDS_TYPE = "Records key has value of type %s, expected list"
     INVALID_FIELDS_TYPE = "Fields key has value of type %s, expected string"
     INVALID_TABLE_TYPE = "Table key has value of type %s, expected string"
+
+    INVALID_REQUEST_BODY = "Given request body is not valid"
+    INVALID_HEADERS = "Given Request Headers is not valid"
+    INVALID_PATH_PARAMS = "Given path params are not valid"
+    INVALID_QUERY_PARAMS = "Given query params are not valid"
+    INVALID_PATH_PARAM_TYPE = "Path params (key, value) must be of type 'str' given type - (%s, %s)"
+    INVALID_QUERY_PARAM_TYPE = "Query params (key, value) must be of type 'str' given type - (%s, %s)"
+
+
     INVALID_TOKEN_TYPE = "Token key has value of type %s, expected string"
     PARTIAL_SUCCESS = "Partial success has occurred"
 

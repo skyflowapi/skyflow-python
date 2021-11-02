@@ -65,7 +65,22 @@ def processResponse(response: requests.Response):
     strcontent = response.content.decode('utf-8')
     try:
         response.raise_for_status()
-        return strcontent
+        return json.loads(strcontent)
     except HTTPError:
         raise SkyflowError(statusCode, strcontent)
 
+def convertResponse(request: dict, response: dict, tokens: bool):
+    responseArray = response['responses']
+    records = request['records']
+    recordsSize = len(records)
+    result = []
+    for id, _ in enumerate(request):
+        table = records[id]['table']
+        skyflow_id = responseArray[0]['records'][id]['skyflow_id']
+        if tokens:
+            fieldsDict = responseArray[recordsSize + id]['fields']
+            fieldsDict['skyflow_id'] = skyflow_id
+            result.append({'table': table, 'fields': fieldsDict})
+        else:
+            result.append({'table': table, 'skyflow_id': skyflow_id})
+    return {'records': result}
