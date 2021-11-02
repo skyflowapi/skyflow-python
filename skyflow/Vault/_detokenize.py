@@ -41,7 +41,6 @@ async def sendDetokenizeRequests(data, url, token):
             task = asyncio.ensure_future(post(url, record, headers, session))
             tasks.append(task)
         await asyncio.gather(*tasks)
-        await asyncio.sleep(1)
         await session.close()
     return tasks
 
@@ -58,8 +57,7 @@ def createDetokenizeResponseBody(responses):
     for response in responses:
         partial = False
         r = response.result()
-        jsonString = r[0].decode('utf8').replace("'",'"')
-        jsonRes = json.loads(jsonString)
+        jsonRes = json.loads(r[0].decode('utf-8'))
         status = r[1]
 
         if status == 200:
