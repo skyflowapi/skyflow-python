@@ -3,6 +3,7 @@ from enum import Enum
 class SkyflowErrorCodes(Enum):
     INVALID_INPUT = 400
     SERVER_ERROR = 500
+    PARTIAL_SUCCESS = 200
 
 class SkyflowErrorMessages(Enum):
     FILE_NOT_FOUND = "File at %s not found"
@@ -22,14 +23,16 @@ class SkyflowErrorMessages(Enum):
     RECORDS_KEY_ERROR = "Records key is missing from payload"
     FIELDS_KEY_ERROR = "Fields key is missing from payload"
     TABLE_KEY_ERROR = "Table key is missing from payload"
+    TOKEN_KEY_ERROR = "Token key is missing from payload"
     INVALID_JSON = "Given %s is invalid JSON"
-    INVALID_RECORDS_TYPE = "Records key has value of type %s, expected string"
+    INVALID_RECORDS_TYPE = "Records key has value of type %s, expected array"
     INVALID_FIELDS_TYPE = "Fields key has value of type %s, expected string"
     INVALID_TABLE_TYPE = "Table key has value of type %s, expected string"
-
+    INVALID_TOKEN_TYPE = "Token key has value of type %s, expected string"
+    PARTIAL_SUCCESS = "Partial success has occurred"
 
 class SkyflowError(Exception):
-    def __init__(self, code, message="An Error occured") -> None:
+    def __init__(self, code, message="An Error occured", data={}) -> None:
         if type(code) is SkyflowErrorCodes:
             self.code = code.value
         else:
@@ -38,5 +41,6 @@ class SkyflowError(Exception):
             self.message = message.value
         else:
             self.message = message
+        self.data = data
         super().__init__(self.message)
 
