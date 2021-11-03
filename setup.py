@@ -16,6 +16,7 @@ setup(
        'PyJWT',
        'datetime',
        'requests',
+       'aiohttp',
        'cryptography>=3.3.1'
    ],
 )
