@@ -10,6 +10,13 @@ from skyflow.Errors._skyflowErrors import SkyflowError, SkyflowErrorCodes, Skyfl
 
 class Client:
     def __init__(self, config: SkyflowConfiguration):
+        if config.vaultID == None:
+            raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.INIT_FAILED.value%('Vault ID'))
+        if config.vaultURL == None:
+            raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.INIT_FAILED.value%('Vault URL'))
+        if config.tokenProvider == None:
+            raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.INIT_FAILED.value%('Token Provider'))
+
         self.vaultID = config.vaultID
         self.vaultURL = config.vaultURL.rstrip('/')
         self.tokenProvider = config.tokenProvider

@@ -46,6 +46,8 @@ class SkyflowErrorMessages(Enum):
     INVALID_TOKEN_TYPE = "Token key has value of type %s, expected string"
     PARTIAL_SUCCESS = "Partial success has occurred"
 
+    INIT_FAILED = "Client initialization failed - Required argument for %s is None"
+
 class SkyflowError(Exception):
     def __init__(self, code, message="An Error occured", data={}) -> None:
         if type(code) is SkyflowErrorCodes:
