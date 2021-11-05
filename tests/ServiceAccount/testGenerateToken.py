@@ -69,7 +69,7 @@ class TestGenerateToken(unittest.TestCase):
         credentials_path = env_values['CREDENTIALS_FILE_PATH']
         try:
             token, type = GenerateToken(credentials_path)
-            self.assertIsNone(token)
+            self.assertIsNotNone(token)
             self.assertEqual(type, 'Bearer')
         except SkyflowError:
             self.fail('Should have successfully returned the token')
