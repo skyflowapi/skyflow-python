@@ -7,18 +7,17 @@ from skyflow.Vault import Client, SkyflowConfiguration, RequestMethod, GatewayCo
 This sample is for generating CVV using Skyflow Gateway with a third party integration such as VISA
 '''
 
-CREDENTIALS_PATH = os.getenv('CREDENTIALS_FILE_PATH')
 
 def tokenProvider():
-    token, _ = GenerateToken(CREDENTIALS_PATH)
+    token, _ = GenerateToken('YOUR_CREDENTIALS_FILE_PATH')
     return token
 
 try:
-    config = SkyflowConfiguration('<VAULT_ID>', '<VAULT_URL>', tokenProvider)
-    gatewayConfig = GatewayConfig('<GATEWAY_URL>', RequestMethod.POST,
+    config = SkyflowConfiguration('<YOUR_VAULT_ID>', '<YOUR_VAULT_URL>', tokenProvider)
+    gatewayConfig = GatewayConfig('<YOUR_GATEWAY_URL>', RequestMethod.POST,
     requestHeader={
                 'Content-Type': 'application/json',
-                'Authorization': '<GATEWAY_BASIC_AUTH>'
+                'Authorization': '<YOUR_GATEWAY_BASIC_AUTH>'
     },
     requestBody= # For third party integration
     {

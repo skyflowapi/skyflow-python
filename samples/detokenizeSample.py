@@ -6,11 +6,11 @@ from skyflow.Vault import Client, SkyflowConfiguration
 CREDENTIALS_PATH = os.getenv('CREDENTIALS_FILE_PATH')
 
 def tokenProvider():
-    token, _ = GenerateToken(CREDENTIALS_PATH)
+    token, _ = GenerateToken('<YOUR_CREDENTIALS_FILE_PATH>')
     return token
 
 try:
-    config = SkyflowConfiguration('<VAULT_ID>', '<VAULT_URL>', tokenProvider)
+    config = SkyflowConfiguration('<YOUR_VAULT_ID>', '<YOUR_VAULT_URL>', tokenProvider)
     client = Client(config)
 
     data = {"records": [{"<FIELD_NAME>": '<TOKEN>'}]}
