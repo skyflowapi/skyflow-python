@@ -1,3 +1,4 @@
+import types
 import requests
 from ._insert import getInsertRequestBody, processResponse, convertResponse
 from ._config import SkyflowConfiguration
@@ -10,12 +11,13 @@ from skyflow.Errors._skyflowErrors import SkyflowError, SkyflowErrorCodes, Skyfl
 
 class Client:
     def __init__(self, config: SkyflowConfiguration):
-        if config.vaultID == None:
-            raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.INIT_FAILED.value%('Vault ID'))
-        if config.vaultURL == None:
-            raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.INIT_FAILED.value%('Vault URL'))
-        if config.tokenProvider == None:
-            raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.INIT_FAILED.value%('Token Provider'))
+        if not isinstance(config.vaultID, str):
+            raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.VAULT_ID_INVALID_TYPE.value%(str(type(config.vaultID))))
+        if not isinstance(config.vaultURL, str):
+            raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.VAULT_URL_INVALID_TYPE.value%(str(type(config.vaultURL))))
+
+        if not isinstance(config.tokenProvider, types.FunctionType):
+            raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.TOKEN_PROVIDER_ERROR.value%(str(type(config.tokenProvider))))
 
         self.vaultID = config.vaultID
         self.vaultURL = config.vaultURL.rstrip('/')

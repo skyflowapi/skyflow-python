@@ -46,7 +46,9 @@ class SkyflowErrorMessages(Enum):
     INVALID_TOKEN_TYPE = "Token key has value of type %s, expected string"
     PARTIAL_SUCCESS = "Partial success has occurred"
 
-    INIT_FAILED = "Client initialization failed - Required argument for %s is None"
+    VAULT_ID_INVALID_TYPE = "exepcted Vault ID to be str, got %s"
+    VAULT_URL_INVALID_TYPE = "exepcted Vault URL to be str, got %s"
+    TOKEN_PROVIDER_ERROR = "exepcted Token Provider to be function, got %s"
 
 class SkyflowError(Exception):
     def __init__(self, code, message="An Error occured", data={}) -> None:
