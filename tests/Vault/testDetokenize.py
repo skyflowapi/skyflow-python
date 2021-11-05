@@ -5,6 +5,7 @@ from skyflow.Errors._skyflowErrors import SkyflowError, SkyflowErrorCodes, Skyfl
 from skyflow.Vault._client import Client, SkyflowConfiguration
 from skyflow.ServiceAccount import GenerateToken
 from dotenv import dotenv_values
+import warnings
 
 class TestDetokenize(unittest.TestCase):
 
@@ -22,6 +23,7 @@ class TestDetokenize(unittest.TestCase):
 
         config = SkyflowConfiguration(self.envValues["VAULT_ID"], self.envValues["VAULT_URL"], tokenProvider)
         self.client = Client(config)
+        warnings.filterwarnings(action="ignore", message="unclosed", category=ResourceWarning)
         return super().setUp()
 
 
@@ -75,24 +77,24 @@ class TestDetokenize(unittest.TestCase):
             self.assertEqual(e.message, SkyflowErrorMessages.INVALID_TOKEN_TYPE.value%(list))
 
     def testDetokenizeSuccess(self):
-        invalidData = {"records": [{"token": self.envValues["DETOKENIZE_TEST_TOKEN"]}]}
+        data = {"records": [{"token": self.envValues["DETOKENIZE_TEST_TOKEN"]}]}
         try:
-            response = self.client.detokenize(invalidData)
-            self.assertEqual(response["success"][0]["token"], self.envValues["DETOKENIZE_TEST_TOKEN"])
-            self.assertEqual(response["success"][0]["value"], self.envValues["DETOKENIZE_TEST_VALUE"])
+            response = self.client.detokenize(data)
+            self.assertEqual(response["records"][0]["token"], self.envValues["DETOKENIZE_TEST_TOKEN"])
+            self.assertEqual(response["records"][0]["value"], self.envValues["DETOKENIZE_TEST_VALUE"])
         except SkyflowError as e:
             self.fail('Should not throw an error')
         
     def testDetokenizePartialSuccess(self):
-        invalidData = {"records": [{"token": self.envValues["DETOKENIZE_TEST_TOKEN"]}, {"token": "invalid-token"}]}
+        data = {"records": [{"token": self.envValues["DETOKENIZE_TEST_TOKEN"]}, {"token": "invalid-token"}]}
         try:
-            self.client.detokenize(invalidData)
+            self.client.detokenize(data)
             self.fail('Should have thrown an error')
         except SkyflowError as e:
             self.assertEqual(e.code, SkyflowErrorCodes.PARTIAL_SUCCESS.value)
             self.assertEqual(e.message, SkyflowErrorMessages.PARTIAL_SUCCESS.value)
-            self.assertEqual(e.data["success"][0]["token"], self.envValues["DETOKENIZE_TEST_TOKEN"])
-            self.assertEqual(e.data["success"][0]["value"], self.envValues["DETOKENIZE_TEST_VALUE"])
+            self.assertEqual(e.data["records"][0]["token"], self.envValues["DETOKENIZE_TEST_TOKEN"])
+            self.assertEqual(e.data["records"][0]["value"], self.envValues["DETOKENIZE_TEST_VALUE"])
             self.assertEqual(e.data["errors"][0]["error"]["code"], 404)
             self.assertEqual(e.data["errors"][0]["error"]["description"], "Token not found for invalid-token")
 
