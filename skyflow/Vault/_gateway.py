@@ -52,9 +52,13 @@ def verifyParams(queryParams, pathParams):
     for param, value in pathParams.items():
         if not(isinstance(param, str) and isinstance(value, str)):
             raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.INVALID_PATH_PARAM_TYPE.value%(str(type(param)), str(type(value))))
-    
-    for param, value in queryParams.items():
-        if not(isinstance(param, str) and isinstance(value, str)):
-            raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.INVALID_QUERY_PARAM_TYPE.value%(str(type(param)), str(type(value))))
 
+    for param, value in queryParams.items():
+        if not isinstance(param, str):
+            raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.INVALID_QUERY_PARAM_TYPE.value%(str(type(param)), str(type(value))))
+    
+    try:
+        json.dumps(queryParams)
+    except TypeError:
+        raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.INVALID_QUERY_PARAMS)
 

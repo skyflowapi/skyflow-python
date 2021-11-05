@@ -91,13 +91,13 @@ class testGateway(unittest.TestCase):
             self.assertEqual(e.code, SkyflowErrorCodes.INVALID_INPUT.value)
             self.assertEqual(e.message, SkyflowErrorMessages.INVALID_PATH_PARAM_TYPE.value%(str(type('department')), str(type(['str']))))
     def testVerifyParamsQueryParamsNotDict(self):
-        queryParams = {'name': 'john', 'department': ['test'], 'action': 1}
+        queryParams = {'name': 'john', 2: [json], 'action': 1}
         try:
             verifyParams(queryParams, {})
             self.fail()
         except SkyflowError as e:
             self.assertEqual(e.code, SkyflowErrorCodes.INVALID_INPUT.value)
-            self.assertEqual(e.message, SkyflowErrorMessages.INVALID_QUERY_PARAM_TYPE.value%(str(type('name')), str(type(['str']))))
+            self.assertEqual(e.message, SkyflowErrorMessages.INVALID_QUERY_PARAM_TYPE.value%(str(type(2)), str(type(['str']))))
     
     def testVerifyParamsInvalidPathParams(self):
         pathParams = 'string'

@@ -24,4 +24,3 @@ class TestConfig(unittest.TestCase):
         self.assertDictEqual(gatewayConfig.queryParams, {})
         self.assertDictEqual(gatewayConfig.requestHeader, {})
         self.assertDictEqual(gatewayConfig.requestBody, {})
-        self.assertDictEqual(gatewayConfig.responseBody, {})
