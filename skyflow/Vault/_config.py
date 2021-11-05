@@ -17,6 +17,7 @@ class RequestMethod(Enum):
     PUT = 'PUT'
     PATCH = 'PATCH'
     DELETE = 'DELETE'
+
 class GatewayConfig:
     def __init__(self, gatewayURL: str, methodName: RequestMethod, 
     pathParams: dict={}, queryParams: dict={}, requestHeader: dict={}, requestBody: dict={}):
@@ -26,3 +27,9 @@ class GatewayConfig:
         self.queryParams = queryParams
         self.requestHeader = requestHeader
         self.requestBody = requestBody
+
+class Redaction(Enum):
+    PLAIN_TEXT = "PLAIN_TEXT"
+    MASKED = "MASKED"
+    REDACTED = "REDACTED"
+    DEFAULT = "DEFAULT"

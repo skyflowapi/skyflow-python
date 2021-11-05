@@ -51,7 +51,7 @@ async def post(url, data, headers, session):
 
 def createDetokenizeResponseBody(responses):
     result = {
-        "success" : [],
+        "records" : [],
         "errors" : []
     }
     for response in responses:
@@ -64,7 +64,7 @@ def createDetokenizeResponseBody(responses):
             temp = {}
             temp["token"] = jsonRes["records"][0]["token"]
             temp["value"] = jsonRes["records"][0]["value"]
-            result["success"].append(temp)
+            result["records"].append(temp)
         else:
             temp = {"error": {}}
             temp["error"]["code"] = jsonRes["error"]["http_code"]

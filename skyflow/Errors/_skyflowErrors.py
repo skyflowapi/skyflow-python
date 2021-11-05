@@ -24,10 +24,16 @@ class SkyflowErrorMessages(Enum):
     FIELDS_KEY_ERROR = "Fields key is missing from payload"
     TABLE_KEY_ERROR = "Table key is missing from payload"
     TOKEN_KEY_ERROR = "Token key is missing from payload"
+    IDS_KEY_ERROR = "Ids key is missing from payload"
+    REDACTION_KEY_ERROR = "Redaction key is missing from payload"
+
     INVALID_JSON = "Given %s is invalid JSON"
     INVALID_RECORDS_TYPE = "Records key has value of type %s, expected list"
     INVALID_FIELDS_TYPE = "Fields key has value of type %s, expected string"
     INVALID_TABLE_TYPE = "Table key has value of type %s, expected string"
+    INVALID_IDS_TYPE = "Ids key has value of type %s, expected list"
+    INVALID_ID_TYPE = "Id key has value of type %s, expected string"
+    INVALID_REDACTION_TYPE = "Redaction key has value of type %s, expected Skyflow.Redaction"
 
     INVALID_REQUEST_BODY = "Given request body is not valid"
     INVALID_HEADERS = "Given Request Headers is not valid"

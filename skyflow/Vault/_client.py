@@ -4,6 +4,7 @@ from ._config import SkyflowConfiguration
 from ._config import InsertOptions, GatewayConfig
 from ._gateway import createRequest
 from ._detokenize import sendDetokenizeRequests, createDetokenizeResponseBody
+from ._getById import sendGetByIdRequests, createGetByIdResponseBody
 import asyncio
 from skyflow.Errors._skyflowErrors import SkyflowError, SkyflowErrorCodes, SkyflowErrorMessages   
 
@@ -38,6 +39,16 @@ class Client:
         url = self.vaultURL + "/v1/vaults/" + self.vaultID + "/detokenize"
         responses = asyncio.run(sendDetokenizeRequests(data, url, token))
         result, partial = createDetokenizeResponseBody(responses)
+        if partial:
+            raise SkyflowError(SkyflowErrorCodes.PARTIAL_SUCCESS ,SkyflowErrorMessages.PARTIAL_SUCCESS, result)
+        else:
+            return result
+    
+    def getById(self, data):
+        token = self.tokenProvider()
+        url = self.vaultURL + "/v1/vaults/" + self.vaultID
+        responses = asyncio.run(sendGetByIdRequests(data, url, token))
+        result, partial = createGetByIdResponseBody(responses)
         if partial:
             raise SkyflowError(SkyflowErrorCodes.PARTIAL_SUCCESS ,SkyflowErrorMessages.PARTIAL_SUCCESS, result)
         else:
