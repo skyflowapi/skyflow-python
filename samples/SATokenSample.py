@@ -3,7 +3,7 @@ from skyflow.ServiceAccount import GenerateToken
 
 
 try:
-    accessToken, tokenType = GenerateToken('YOUR_CREDENTIALS_FILE_PATH')
+    accessToken, tokenType = GenerateToken('<YOUR_CREDENTIALS_FILE_PATH>')
     print("Access Token:", accessToken)
     print("Type of token:", tokenType)
 except SkyflowError as e:

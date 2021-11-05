@@ -8,7 +8,7 @@ This sample is for generating CVV using Skyflow Gateway with a third party integ
 
 
 def tokenProvider():
-    token, _ = GenerateToken('YOUR_CREDENTIALS_FILE_PATH')
+    token, _ = GenerateToken('<YOUR_CREDENTIALS_FILE_PATH>')
     return token
 
 try:

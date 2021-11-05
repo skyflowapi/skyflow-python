@@ -4,7 +4,7 @@ from skyflow.Vault import Client, SkyflowConfiguration, Redaction
 
 
 def tokenProvider():
-    token, _ = GenerateToken('YOUR_CREDENTIALS_FILE_PATH')
+    token, _ = GenerateToken('<YOUR_CREDENTIALS_FILE_PATH>')
     return token
 
 try:
