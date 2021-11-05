@@ -1,4 +1,3 @@
-import os
 from skyflow.Errors import SkyflowError
 from skyflow.ServiceAccount import GenerateToken
 from skyflow.Vault import Client, SkyflowConfiguration, RequestMethod, GatewayConfig
