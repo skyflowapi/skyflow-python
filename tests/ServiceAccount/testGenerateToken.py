@@ -1,6 +1,6 @@
 import unittest
 import os
-import sys
+from dotenv import dotenv_values
 from skyflow.ServiceAccount import GenerateToken
 from skyflow.Errors._skyflowErrors import *
 
@@ -63,4 +63,14 @@ class TestGenerateToken(unittest.TestCase):
         except SkyflowError as se:
             self.assertEqual(se.code, SkyflowErrorCodes.INVALID_INPUT.value)
             self.assertEqual(se.message, SkyflowErrorMessages.JWT_INVALID_FORMAT.value)
+
+    def testGenerateTokenSuccess(self):
+        env_values = dotenv_values('.env')
+        credentials_path = env_values['CREDENTIALS_FILE_PATH']
+        try:
+            token, type = GenerateToken(credentials_path)
+            self.assertIsNotNone(token)
+            self.assertEqual(type, 'Bearer')
+        except SkyflowError:
+            self.fail('Should have successfully returned the token')
 
