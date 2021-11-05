@@ -164,11 +164,11 @@ class TestInsert(unittest.TestCase):
             self.fail()
 
     def testClientInit(self):
-        config = SkyflowConfiguration('bdc271aee8584eed88253877019657b3', 'https://sb.area51.vault.skyflowapis.dev', lambda: 'test')
+        config = SkyflowConfiguration('vaultid', 'https://skyflow.com', lambda: 'test')
         client = Client(config)
-        self.assertEqual(client.vaultURL, config.vaultURL)
-        self.assertEqual(client.vaultID, config.vaultID)
-        self.assertEqual(client.tokenProvider, config.tokenProvider)
+        self.assertEqual(client.vaultURL, 'https://skyflow.com')
+        self.assertEqual(client.vaultID, 'vaultid')
+        self.assertEqual(client.tokenProvider(), 'test')
 
     def testClientInsert(self):
         env_values = dotenv_values('.env')
