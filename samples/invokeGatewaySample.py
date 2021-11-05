@@ -8,22 +8,17 @@ This sample is for generating CVV using Skyflow Gateway with a third party integ
 '''
 
 CREDENTIALS_PATH = os.getenv('CREDENTIALS_FILE_PATH')
-VAULT_ID = os.getenv('VAULT_ID')
-VAULT_URL = os.getenv('VAULT_URL')
-
-GATEWAY_URL = os.getenv('GATEWAY_URL') # example: www.your-gateway-integration.com/{cardID}/
-GATEWAY_BASIC_AUTH = os.getenv('GATEWAY_BASIC_AUTH')
 
 def tokenProvider():
     token, _ = GenerateToken(CREDENTIALS_PATH)
     return token
 
 try:
-    config = SkyflowConfiguration(VAULT_ID, VAULT_URL, tokenProvider)
-    gatewayConfig = GatewayConfig(GATEWAY_URL, RequestMethod.POST,
+    config = SkyflowConfiguration('<VAULT_ID>', '<VAULT_URL>', tokenProvider)
+    gatewayConfig = GatewayConfig('<GATEWAY_URL>', RequestMethod.POST,
     requestHeader={
                 'Content-Type': 'application/json',
-                'Authorization': GATEWAY_BASIC_AUTH
+                'Authorization': '<GATEWAY_BASIC_AUTH>'
     },
     requestBody= # For third party integration
     {

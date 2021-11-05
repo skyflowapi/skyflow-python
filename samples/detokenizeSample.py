@@ -4,15 +4,13 @@ from skyflow.ServiceAccount import GenerateToken
 from skyflow.Vault import Client, SkyflowConfiguration
 
 CREDENTIALS_PATH = os.getenv('CREDENTIALS_FILE_PATH')
-VAULT_ID = os.getenv('VAULT_ID')
-VAULT_URL = os.getenv('VAULT_URL')
 
 def tokenProvider():
     token, _ = GenerateToken(CREDENTIALS_PATH)
     return token
 
 try:
-    config = SkyflowConfiguration(VAULT_ID, VAULT_URL, tokenProvider)
+    config = SkyflowConfiguration('<VAULT_ID>', '<VAULT_URL>', tokenProvider)
     client = Client(config)
 
     data = {"records": [{"<FIELD_NAME>": '<TOKEN>'}]}
