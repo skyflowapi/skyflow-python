@@ -12,6 +12,6 @@ jobs:
         python-version: '3.7'
     - run: |
         python -m pip install --upgrade pip
-        pip install requests pyjwt datetime aiohttp cryptography
+        pip install requests pyjwt datetime aiohttp cryptography dotenv
         python -m unittest discover
 
