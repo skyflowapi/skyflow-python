@@ -19,7 +19,7 @@ $ pip install skyflow
   * [Insert](#insert)
   * [Detokenize](#detokenize)
   * [GetById](#get-by-id)
-  * [InvokeGateway](#invoke-gateway)
+  * [InvokeConnection](#invoke-connection)
 
 ### Service Account Token Generation
 
@@ -39,7 +39,7 @@ print("Type of token:", tokenType)
 ```
 
 ### Vault APIs
-The [Vault](https://github.com/skyflowapi/skyflow-python/tree/main/Vault) python module is used to perform operations on the vault such as inserting records, detokenizing tokens, retrieving tokens for a skyflow_id and to invoke gateway.
+The [Vault](https://github.com/skyflowapi/skyflow-python/tree/main/Vault) python module is used to perform operations on the vault such as inserting records, detokenizing tokens, retrieving tokens for a skyflow_id and to invoke a connection.
 
 To use this module, the skyflow client must first be initialized as follows.
 
@@ -232,19 +232,19 @@ Sample response:
 }
 ```
 
-#### Invoke Gateway
-Using Skyflow gateway, end-user applications can integrate checkout/card issuance flow with their apps/systems. To invoke gateway, use the invokeGateway(config: Skyflow.GatewayConfig) method of the Skyflow client.
+#### Invoke Connection
+Using Skyflow Connection, end-user applications can integrate checkout/card issuance flow with their apps/systems. To invoke connection, use the invokeConnection(config: Skyflow.ConnectionConfig) method of the Skyflow client.
 
 ```python
-gatewayConfig = GatewayConfig(
-  gatewayURL: String, # gateway url received when creating a skyflow gateway integration
+connectionConfig = ConnectionConfig(
+  connectionURL: String, # connection url received when creating a skyflow connection integration
   methodName: Skyflow.RequestMethod,
   pathParams: [String: Any],	# optional
   queryParams: [String: Any],	# optional
   requestHeader: [String: String], # optional
   requestBody: [String: Any],	# optional
 )
-client.invokeGateway(gatewayConfig)
+client.invokeConnection(connectionConfig)
 ```
 
 `methodName` supports the following methods:
@@ -254,11 +254,11 @@ client.invokeGateway(gatewayConfig)
 - PATCH
 - DELETE
 
-**pathParams, queryParams, requestHeader, requestBody** are the JSON objects represented as dictionaries that will be sent through the gateway integration url.
+**pathParams, queryParams, requestHeader, requestBody** are the JSON objects represented as dictionaries that will be sent through the connection integration url.
 
-An example of invokeGateway:
+An example of invokeConnection:
 ```python
-from skyflow.Vault import GatewayConfig, Configuration, RequestMethod
+from skyflow.Vault import ConnectionConfig, Configuration, RequestMethod
 
 def tokenProvider():
     token, _ = GenerateToken('<YOUR_CREDENTIALS_FILE_PATH>')
@@ -266,10 +266,10 @@ def tokenProvider():
 
 try:
     config = Configuration('<YOUR_VAULT_ID>', '<YOUR_VAULT_URL>', tokenProvider)
-    gatewayConfig = GatewayConfig('<YOUR_GATEWAY_URL>', RequestMethod.POST,
+    connectionConfig = ConnectionConfig('<YOUR_CONNECTION_URL>', RequestMethod.POST,
     requestHeader={
                 'Content-Type': 'application/json',
-                'Authorization': '<YOUR_GATEWAY_BASIC_AUTH>'
+                'Authorization': '<YOUR_CONNECTION_BASIC_AUTH>'
     },
     requestBody= # For third party integration
     {
@@ -281,7 +281,7 @@ try:
     pathParams={'cardID': '<CARD_VALUE>'}) # param as in the example
     client = Client(config)
 
-    response = client.invokeGateway(gatewayConfig)
+    response = client.invokeConnection(connectionConfig)
     print('Response:', response)
 except SkyflowError as e:
     print('Error Occured:', e)
