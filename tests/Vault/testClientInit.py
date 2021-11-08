@@ -6,7 +6,7 @@ from skyflow.Errors._skyflowErrors import *
 
 class TestConfig(unittest.TestCase):
     def testClientInitInvalidVaultID(self):
-        config = SkyflowConfiguration(None, 'VAULT URL', lambda: 'token')
+        config = Configuration(None, 'VAULT URL', lambda: 'token')
 
         try:
             client = Client(config)
@@ -17,7 +17,7 @@ class TestConfig(unittest.TestCase):
 
     
     def testClientInitInvalidVaultURL(self):
-        config = SkyflowConfiguration('VAULT ID', 22, lambda: 'token')
+        config = Configuration('VAULT ID', 22, lambda: 'token')
 
         try:
             client = Client(config)
@@ -28,7 +28,7 @@ class TestConfig(unittest.TestCase):
 
     
     def testClientInitInvalidTokenProvider(self):
-        config = SkyflowConfiguration('VAULT ID', 'VAULT URL', 'token')
+        config = Configuration('VAULT ID', 'VAULT URL', 'token')
 
         try:
             client = Client(config)

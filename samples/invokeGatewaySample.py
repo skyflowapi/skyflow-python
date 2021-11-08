@@ -1,6 +1,6 @@
 from skyflow.Errors import SkyflowError
 from skyflow.ServiceAccount import GenerateToken
-from skyflow.Vault import Client, SkyflowConfiguration, RequestMethod, GatewayConfig
+from skyflow.Vault import Client, Configuration, RequestMethod, GatewayConfig
 
 '''
 This sample is for generating CVV using Skyflow Gateway with a third party integration such as VISA
@@ -12,7 +12,7 @@ def tokenProvider():
     return token
 
 try:
-    config = SkyflowConfiguration('<YOUR_VAULT_ID>', '<YOUR_VAULT_URL>', tokenProvider)
+    config = Configuration('<YOUR_VAULT_ID>', '<YOUR_VAULT_URL>', tokenProvider)
     gatewayConfig = GatewayConfig('<YOUR_GATEWAY_URL>', RequestMethod.POST,
     requestHeader={
                 'Content-Type': 'application/json',

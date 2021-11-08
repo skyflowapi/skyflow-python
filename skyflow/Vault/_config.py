@@ -1,7 +1,7 @@
 from enum import Enum
 
 
-class SkyflowConfiguration:
+class Configuration:
     def __init__(self, vaultID: str, vaultURL: str, tokenProvider):
         self.vaultID = vaultID
         self.vaultURL = vaultURL
@@ -28,7 +28,7 @@ class GatewayConfig:
         self.requestHeader = requestHeader
         self.requestBody = requestBody
 
-class Redaction(Enum):
+class RedactionType(Enum):
     PLAIN_TEXT = "PLAIN_TEXT"
     MASKED = "MASKED"
     REDACTED = "REDACTED"

@@ -7,7 +7,7 @@ from skyflow.Vault._insert import getInsertRequestBody, processResponse
 from skyflow.Errors._skyflowErrors import SkyflowError, SkyflowErrorCodes, SkyflowErrorMessages
 from skyflow.ServiceAccount import GenerateToken
 from skyflow.Vault._client import Client
-from skyflow.Vault._config import SkyflowConfiguration, InsertOptions
+from skyflow.Vault._config import Configuration, InsertOptions
 
 class TestInsert(unittest.TestCase):
 
@@ -164,7 +164,7 @@ class TestInsert(unittest.TestCase):
             self.fail()
 
     def testClientInit(self):
-        config = SkyflowConfiguration('vaultid', 'https://skyflow.com', lambda: 'test')
+        config = Configuration('vaultid', 'https://skyflow.com', lambda: 'test')
         client = Client(config)
         self.assertEqual(client.vaultURL, 'https://skyflow.com')
         self.assertEqual(client.vaultID, 'vaultid')
@@ -177,7 +177,7 @@ class TestInsert(unittest.TestCase):
             token, _ = GenerateToken(env_values['CREDENTIALS_FILE_PATH'])
             return token
 
-        config = SkyflowConfiguration(env_values['VAULT_ID'], env_values['VAULT_URL'], tokenProvider)
+        config = Configuration(env_values['VAULT_ID'], env_values['VAULT_URL'], tokenProvider)
         client = Client(config)
 
         options = InsertOptions(False)
@@ -208,7 +208,7 @@ class TestInsert(unittest.TestCase):
             token, _ = GenerateToken(env_values['CREDENTIALS_FILE_PATH'])
             return token
 
-        config = SkyflowConfiguration(env_values['VAULT_ID'], env_values['VAULT_URL'], tokenProvider)
+        config = Configuration(env_values['VAULT_ID'], env_values['VAULT_URL'], tokenProvider)
         client = Client(config)
 
         options = InsertOptions(True)

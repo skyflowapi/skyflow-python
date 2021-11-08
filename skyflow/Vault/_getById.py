@@ -2,7 +2,7 @@ from skyflow.Errors._skyflowErrors import SkyflowError, SkyflowErrorCodes, Skyfl
 import asyncio
 from aiohttp import ClientSession
 import json
-from ._config import Redaction
+from ._config import RedactionType
 
 def getGetByIdRequestBody(data):
     try:
@@ -27,7 +27,7 @@ def getGetByIdRequestBody(data):
         redaction = data["redaction"]
     except KeyError:
         raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.REDACTION_KEY_ERROR)
-    if not isinstance(redaction, Redaction):
+    if not isinstance(redaction, RedactionType):
         redactionType = str(type(redaction))
         raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.INVALID_REDACTION_TYPE.value%(redactionType))
     return ids, table, redaction.value

@@ -11,7 +11,7 @@ class TestConfig(unittest.TestCase):
         self.assertEqual(noTokensOption.tokens, False)
 
     def testSkyflowConfig(self):
-        myconfig = SkyflowConfiguration("vaultID", "https://vaults.skyflow.com", lambda: "token")
+        myconfig = Configuration("vaultID", "https://vaults.skyflow.com", lambda: "token")
         self.assertEqual(myconfig.vaultID, "vaultID")
         self.assertEqual(myconfig.vaultURL, "https://vaults.skyflow.com")
         self.assertEqual(myconfig.tokenProvider(), "token")

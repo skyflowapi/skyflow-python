@@ -2,7 +2,7 @@ import unittest
 import os
 from skyflow.Vault._detokenize import getDetokenizeRequestBody
 from skyflow.Errors._skyflowErrors import SkyflowError, SkyflowErrorCodes, SkyflowErrorMessages
-from skyflow.Vault._client import Client, SkyflowConfiguration
+from skyflow.Vault._client import Client, Configuration
 from skyflow.ServiceAccount import GenerateToken
 from dotenv import dotenv_values
 import warnings
@@ -21,7 +21,7 @@ class TestDetokenize(unittest.TestCase):
             token, type = GenerateToken(self.envValues["CREDENTIALS_FILE_PATH"])
             return token
 
-        config = SkyflowConfiguration(self.envValues["VAULT_ID"], self.envValues["VAULT_URL"], tokenProvider)
+        config = Configuration(self.envValues["VAULT_ID"], self.envValues["VAULT_URL"], tokenProvider)
         self.client = Client(config)
         warnings.filterwarnings(action="ignore", message="unclosed", category=ResourceWarning)
         return super().setUp()
