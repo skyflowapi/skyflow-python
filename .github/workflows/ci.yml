@@ -36,6 +36,6 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install requests pyjwt datetime aiohttp cryptography python-dotenv coverage
-        python3 -m coverage run --source skyflow -m unittest discover
+        coverage run --source skyflow -m unittest discover
     - name: coverage
       run: coverage report
