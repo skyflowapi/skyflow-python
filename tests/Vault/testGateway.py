@@ -124,7 +124,7 @@ class testGateway(unittest.TestCase):
             token, _ = GenerateToken(env_values['CREDENTIALS_FILE_PATH'])
             return token
 
-        config = SkyflowConfiguration(env_values['VAULT_ID'], env_values['VAULT_URL'], tokenProvider)
+        config = Configuration(env_values['VAULT_ID'], env_values['VAULT_URL'], tokenProvider)
         gatewayConfig = GatewayConfig(gatewayUrl, RequestMethod.POST,
         requestHeader={
                     'Content-Type': 'application/json',

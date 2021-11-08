@@ -1,7 +1,7 @@
 import unittest
 import os
 from skyflow.Errors._skyflowErrors import SkyflowError, SkyflowErrorCodes, SkyflowErrorMessages
-from skyflow.Vault import Client, SkyflowConfiguration, Redaction
+from skyflow.Vault import Client, Configuration, RedactionType
 from skyflow.ServiceAccount import GenerateToken
 from dotenv import dotenv_values
 import warnings
@@ -15,7 +15,7 @@ class TestGetById(unittest.TestCase):
             token, type = GenerateToken(self.envValues["CREDENTIALS_FILE_PATH"])
             return token
 
-        config = SkyflowConfiguration(self.envValues["VAULT_ID"], self.envValues["VAULT_URL"], tokenProvider)
+        config = Configuration(self.envValues["VAULT_ID"], self.envValues["VAULT_URL"], tokenProvider)
         self.client = Client(config)
         warnings.filterwarnings(action="ignore", message="unclosed", category=ResourceWarning)
         return super().setUp()
@@ -109,7 +109,7 @@ class TestGetById(unittest.TestCase):
             {
                 "ids": [self.envValues["SKYFLOW_ID1"], self.envValues["SKYFLOW_ID2"], self.envValues["SKYFLOW_ID3"]],
                 "table": "persons",
-                "redaction": Redaction.PLAIN_TEXT
+                "redaction": RedactionType.PLAIN_TEXT
             }
         ]}
         try:
@@ -128,12 +128,12 @@ class TestGetById(unittest.TestCase):
             {
                 "ids": [self.envValues["SKYFLOW_ID1"], self.envValues["SKYFLOW_ID2"], self.envValues["SKYFLOW_ID3"]],
                 "table": "persons",
-                "redaction": Redaction.PLAIN_TEXT
+                "redaction": RedactionType.PLAIN_TEXT
             },
             {
             "ids": [self.envValues["SKYFLOW_ID3"]],
             "table": "persons",
-            "redaction": Redaction.PLAIN_TEXT
+            "redaction": RedactionType.PLAIN_TEXT
         }]}
         try:
             self.client.getById(data)

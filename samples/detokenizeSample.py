@@ -1,6 +1,6 @@
 from skyflow.Errors import SkyflowError
 from skyflow.ServiceAccount import GenerateToken
-from skyflow.Vault import Client, SkyflowConfiguration
+from skyflow.Vault import Client, Configuration
 
 
 def tokenProvider():
@@ -8,7 +8,7 @@ def tokenProvider():
     return token
 
 try:
-    config = SkyflowConfiguration('<YOUR_VAULT_ID>', '<YOUR_VAULT_URL>', tokenProvider)
+    config = Configuration('<YOUR_VAULT_ID>', '<YOUR_VAULT_URL>', tokenProvider)
     client = Client(config)
 
     data = {"records": [{"<FIELD_NAME>": '<TOKEN>'}]}
