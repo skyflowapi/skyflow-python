@@ -25,7 +25,7 @@ jobs:
         echo VAULT_URL=${{secrets.VAULT_URL}} >> .env
         echo DETOKENIZE_TEST_TOKEN=${{secrets.DETOKENIZE_TEST_TOKEN}} >> .env
         echo DETOKENIZE_TEST_VALUE=${{secrets.DETOKENIZE_TEST_VALUE}} >> .env
-        echo CREDENTIALS_FILE_PATH=./credentials.json
+        echo CREDENTIALS_FILE_PATH=./credentials.json >> .env
         echo CVV_GEN_CONNECTION_URL=${{secrets.CVV_GEN_CONNECTION_URL}} >> .env
         echo VISA_CONNECTION_BASIC_AUTH=${{secrets.VISA_CONNECTION_BASIC_AUTH}} >> .env
         echo SKYFLOW_ID1=${{secrets.SKYFLOW_ID1}} >> .env
