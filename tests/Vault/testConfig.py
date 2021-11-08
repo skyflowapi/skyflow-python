@@ -17,10 +17,10 @@ class TestConfig(unittest.TestCase):
         self.assertEqual(myconfig.tokenProvider(), "token")
 
     def testConnectionConfigDefaults(self):
-        ConnectionConfig = ConnectionConfig('https://skyflow.com', methodName=RequestMethod.GET)
-        self.assertEqual(ConnectionConfig.connectionURL, 'https://skyflow.com')
-        self.assertEqual(ConnectionConfig.methodName, RequestMethod.GET)
-        self.assertDictEqual(ConnectionConfig.pathParams, {})
-        self.assertDictEqual(ConnectionConfig.queryParams, {})
-        self.assertDictEqual(ConnectionConfig.requestHeader, {})
-        self.assertDictEqual(ConnectionConfig.requestBody, {})
+        config = ConnectionConfig('https://skyflow.com', methodName=RequestMethod.GET)
+        self.assertEqual(config.connectionURL, 'https://skyflow.com')
+        self.assertEqual(config.methodName, RequestMethod.GET)
+        self.assertDictEqual(config.pathParams, {})
+        self.assertDictEqual(config.queryParams, {})
+        self.assertDictEqual(config.requestHeader, {})
+        self.assertDictEqual(config.requestBody, {})
