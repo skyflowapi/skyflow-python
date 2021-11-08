@@ -1,15 +1,14 @@
 import unittest
-
 from skyflow.ServiceAccount._token import GenerateToken
-from skyflow.Vault._gateway import *
+from skyflow.Vault.connection import *
 from skyflow.Vault._client import *
 from skyflow.Vault._config import *
 from skyflow.Errors._skyflowErrors import *
 from dotenv import dotenv_values
 
-class testGateway(unittest.TestCase):
+class testInvokeConnection(unittest.TestCase):
     def testCreateRequestDefault(self):
-        config = GatewayConfig('https://skyflow.com/', RequestMethod.GET)
+        config = ConnectionConfig('https://skyflow.com/', RequestMethod.GET)
         try:
             req = createRequest(config)
             body, url, method = req.body, req.url, req.method
@@ -21,7 +20,7 @@ class testGateway(unittest.TestCase):
 
     def testCreateRequestInvalidJSONBody(self):
         invalidJsonBody = {'somekey': unittest}
-        config = GatewayConfig('https://skyflow.com/', RequestMethod.GET, requestBody=invalidJsonBody)
+        config = ConnectionConfig('https://skyflow.com/', RequestMethod.GET, requestBody=invalidJsonBody)
         try:
             createRequest(config)
             self.fail()
@@ -31,7 +30,7 @@ class testGateway(unittest.TestCase):
 
     def testCreateRequestInvalidBodyType(self):
         nonDictBody = 'body'
-        config = GatewayConfig('https://skyflow.com/', RequestMethod.GET, requestBody=nonDictBody)
+        config = ConnectionConfig('https://skyflow.com/', RequestMethod.GET, requestBody=nonDictBody)
         try:
             createRequest(config)
             self.fail()
@@ -41,7 +40,7 @@ class testGateway(unittest.TestCase):
 
     def testCreateRequestBodyInvalidHeadersJson(self):
         invalidJsonHeaders = {'somekey': unittest}
-        config = GatewayConfig('https://skyflow.com/', RequestMethod.GET, requestHeader=invalidJsonHeaders)
+        config = ConnectionConfig('https://skyflow.com/', RequestMethod.GET, requestHeader=invalidJsonHeaders)
         try:
             createRequest(config)
             self.fail()
@@ -52,7 +51,7 @@ class testGateway(unittest.TestCase):
     
     def testCreateRequestBodyHeadersNotDict(self):
         invalidJsonHeaders = 'invalidheaderstype'
-        config = GatewayConfig('https://skyflow.com/', RequestMethod.GET, requestHeader=invalidJsonHeaders)
+        config = ConnectionConfig('https://skyflow.com/', RequestMethod.GET, requestHeader=invalidJsonHeaders)
         try:
             createRequest(config)
             self.fail()
@@ -62,7 +61,7 @@ class testGateway(unittest.TestCase):
 
     def testCreateRequestInvalidURL(self):
         invalidUrl = 'https::///skyflow.com'
-        config = GatewayConfig(invalidUrl, RequestMethod.GET)
+        config = ConnectionConfig(invalidUrl, RequestMethod.GET)
         try:
             createRequest(config)
             self.fail()
@@ -116,19 +115,19 @@ class testGateway(unittest.TestCase):
             self.assertEqual(e.code, SkyflowErrorCodes.INVALID_INPUT.value)
             self.assertEqual(e.message, SkyflowErrorMessages.INVALID_QUERY_PARAMS.value)
 
-    def testInvokeGatewayCvvGenSuccess(self):
+    def testinvokeConnectionCvvGenSuccess(self):
         env_values = dotenv_values('.env')
-        gatewayUrl = env_values['CVV_GEN_GATEWAY_URL']
+        connectionURL = env_values['CVV_GEN_CONNECTION_URL']
 
         def tokenProvider():
             token, _ = GenerateToken(env_values['CREDENTIALS_FILE_PATH'])
             return token
 
         config = Configuration(env_values['VAULT_ID'], env_values['VAULT_URL'], tokenProvider)
-        gatewayConfig = GatewayConfig(gatewayUrl, RequestMethod.POST,
+        connectionConfig = ConnectionConfig(connectionURL, RequestMethod.POST,
         requestHeader={
                     'Content-Type': 'application/json',
-                    'Authorization': env_values['VISA_GATEWAY_BASIC_AUTH']
+                    'Authorization': env_values['VISA_CONNECTION_BASIC_AUTH']
         },
         requestBody=
         {
@@ -142,7 +141,7 @@ class testGateway(unittest.TestCase):
 
 
         try:
-            resp = client.invokeGateway(gatewayConfig)
+            resp = client.invokeConnection(connectionConfig)
             self.assertIsNotNone(resp['resource']['cvv2'])
             self.assertIsNotNone(resp['processingTimeinMs'])
             self.assertIsNotNone(resp['receivedTimestamp'])
