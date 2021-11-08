@@ -1,11 +1,11 @@
 from requests.sessions import PreparedRequest
-from ._config import GatewayConfig
+from ._config import ConnectionConfig
 from skyflow.Errors._skyflowErrors import *
 import requests
 import json
 
-def createRequest(config: GatewayConfig) -> PreparedRequest:
-    url = parsePathParams(config.gatewayURL.rstrip('/'), config.pathParams)
+def createRequest(config: ConnectionConfig) -> PreparedRequest:
+    url = parsePathParams(config.connectionURL.rstrip('/'), config.pathParams)
 
     try:
         if isinstance(config.requestHeader, dict):
@@ -34,7 +34,7 @@ def createRequest(config: GatewayConfig) -> PreparedRequest:
         params=config.queryParams
     ).prepare()
     except requests.exceptions.InvalidURL:
-        raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.INVALID_URL.value%(config.gatewayURL))
+        raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.INVALID_URL.value%(config.connectionURL))
 
 def parsePathParams(url, pathParams):
     result = url

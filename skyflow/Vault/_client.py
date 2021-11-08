@@ -2,8 +2,8 @@ import types
 import requests
 from ._insert import getInsertRequestBody, processResponse, convertResponse
 from ._config import Configuration
-from ._config import InsertOptions, GatewayConfig
-from ._gateway import createRequest
+from ._config import InsertOptions, ConnectionConfig
+from .connection import createRequest
 from ._detokenize import sendDetokenizeRequests, createDetokenizeResponseBody
 from ._getById import sendGetByIdRequests, createGetByIdResponseBody
 import asyncio
@@ -34,7 +34,7 @@ class Client:
         processedResponse = processResponse(response)
         return convertResponse(records, processedResponse, options.tokens)
 
-    def invokeGateway(self, config: GatewayConfig):
+    def invokeConnection(self, config: ConnectionConfig):
         session = requests.Session()
         token = self.tokenProvider()
         request = createRequest(config)

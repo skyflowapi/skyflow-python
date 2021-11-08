@@ -18,10 +18,10 @@ class RequestMethod(Enum):
     PATCH = 'PATCH'
     DELETE = 'DELETE'
 
-class GatewayConfig:
-    def __init__(self, gatewayURL: str, methodName: RequestMethod, 
+class ConnectionConfig:
+    def __init__(self, connectionURL: str, methodName: RequestMethod, 
     pathParams: dict={}, queryParams: dict={}, requestHeader: dict={}, requestBody: dict={}):
-        self.gatewayURL = gatewayURL.rstrip("/")
+        self.connectionURL = connectionURL.rstrip("/")
         self.methodName = methodName
         self.pathParams = pathParams
         self.queryParams = queryParams
