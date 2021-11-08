@@ -3,7 +3,7 @@ import requests
 from ._insert import getInsertRequestBody, processResponse, convertResponse
 from ._config import Configuration
 from ._config import InsertOptions, ConnectionConfig
-from .connection import createRequest
+from ._connection import createRequest
 from ._detokenize import sendDetokenizeRequests, createDetokenizeResponseBody
 from ._getById import sendGetByIdRequests, createGetByIdResponseBody
 import asyncio

@@ -10,8 +10,30 @@ jobs:
     - uses: actions/setup-python@v2
       with:
         python-version: '3.7'
-    - run: |
+
+    - name: create-json
+      id: create-json
+      uses: jsdaniell/create-json@1.1.2
+      with:
+        name: "credentials.json"
+        json: ${{ secrets.CREDENTIALS_FILE_STR }}
+
+    - name: 'Setup .env'
+      run: |
+        touch .env
+        echo VAULT_ID=${{secrets.VAULT_ID}} >> .env
+        echo VAULT_URL=${{secrets.VAULT_URL}} >> .env
+        echo DETOKENIZE_TEST_TOKEN=${{secrets.DETOKENIZE_TEST_TOKEN}} >> .env
+        echo DETOKENIZE_TEST_VALUE=${{secrets.DETOKENIZE_TEST_VALUE}} >> .env
+        echo CREDENTIALS_FILE_PATH=./credentials.json
+        echo CVV_GEN_CONNECTION_URL=${{secrets.CVV_GEN_CONNECTION_URL}} >> .env
+        echo VISA_CONNECTION_BASIC_AUTH=${{secrets.VISA_CONNECTION_BASIC_AUTH}} >> .env
+        echo SKYFLOW_ID1=${{secrets.SKYFLOW_ID1}} >> .env
+        echo SKYFLOW_ID2=${{secrets.SKYFLOW_ID2}} >> .env
+        echo SKYFLOW_ID3=${{secrets.SKYFLOW_ID3}} >> .env
+
+    - name: 'Run Tests'
+      run: |
         python -m pip install --upgrade pip
         pip install requests pyjwt datetime aiohttp cryptography python-dotenv
         python -m unittest discover
-

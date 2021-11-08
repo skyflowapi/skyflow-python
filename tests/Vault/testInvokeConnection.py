@@ -1,6 +1,6 @@
 import unittest
 from skyflow.ServiceAccount._token import GenerateToken
-from skyflow.Vault.connection import *
+from skyflow.Vault._connection import *
 from skyflow.Vault._client import *
 from skyflow.Vault._config import *
 from skyflow.Errors._skyflowErrors import *
