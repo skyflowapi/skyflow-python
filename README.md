@@ -232,6 +232,48 @@ Sample response:
 }
 ```
 
+##### Partial Success
+While using detokenize and getByID methods, there is a possibility that some of the tokens might be invalid. In such cases, the data from response consists of both errors and detokenized records.
+
+In the SDK, this will lead to a SkyflowError and you can retrieve the data from the Exception object as shown below:
+
+``` python
+records = [
+    {
+        'token': '45012507-f72b-4f5c-9bf9-86b133bae719'
+    },
+    {
+        'token': 'invalid-token'
+    }
+]
+try:
+    client.detokenize(records)
+except SkyflowError as e:
+    if e.data:
+        print(e.data) # The API response
+```
+
+###### Sample Response:
+```python
+{
+    "records": [
+    {
+      "token": "131e70dc-6f76-4319-bdd3-96281e051051",
+      "value": "1990-01-01"
+    }
+  ],
+  "errors": [
+    {
+       "id": "invalid-token",
+       "error": {
+         "code": 404,
+         "description": "Tokens not found for invalid-token"
+       }
+   }
+  ]
+}
+```
+
 #### Invoke Connection
 Using Skyflow Connection, end-user applications can integrate checkout/card issuance flow with their apps/systems. To invoke connection, use the invokeConnection(config: Skyflow.ConnectionConfig) method of the Skyflow client.
 
