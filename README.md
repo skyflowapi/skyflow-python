@@ -139,10 +139,12 @@ An example of a detokenize call:
 ```python
 try:
     client.detokenize(
-        {"records": [
-            {"token": "45012507-f72b-4f5c-9bf9-86b133bae719"},
-            {'token': 'invalid-token'}
-        ]}
+        {
+            "records": [
+                {"token": "45012507-f72b-4f5c-9bf9-86b133bae719"},
+                {'token': 'invalid-token'}
+            ]
+        }
     )
 except SkyflowError as e:
     if e.data:
@@ -202,7 +204,7 @@ from skyflow.Vault import RedactionType
 
 skyflowIDs = [
     "f8d8a622-b557-4c6b-a12c-c5ebe0b0bfd9",
-    "da26de53-95d5-4bdb-99db-8d8c66a35ff9",
+    "da26de53-95d5-4bdb-99db-8d8c66a35ff9"
 ]
 record = {"ids": skyflowIDs, "table": "cards", "redaction": RedactionType.PLAIN_TEXT}
 
@@ -257,7 +259,7 @@ Sample response:
 }
 ```
 
-`Note`: While using detokenize and getByID methods, there is a possibility that some or all of the tokens might be invalid. In such cases, the data from response consists of both errors and detokenized records. In the SDK, this will lead to a SkyflowError and you can retrieve the data from the Exception object as shown below:
+`Note:` While using detokenize and getByID methods, there is a possibility that some or all of the tokens might be invalid. In such cases, the data from response consists of both errors and detokenized records. In the SDK, this will lead to a SkyflowError and you can retrieve the data from the Exception object as shown below:
 
 #### Invoke Connection
 Using Skyflow Connection, end-user applications can integrate checkout/card issuance flow with their apps/systems. To invoke connection, use the invokeConnection(config: Skyflow.ConnectionConfig) method of the Skyflow client.
