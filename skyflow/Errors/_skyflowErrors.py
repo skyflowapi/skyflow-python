@@ -3,7 +3,7 @@ from enum import Enum
 class SkyflowErrorCodes(Enum):
     INVALID_INPUT = 400
     SERVER_ERROR = 500
-    PARTIAL_SUCCESS = 200
+    PARTIAL_SUCCESS = 500
 
 class SkyflowErrorMessages(Enum):
     FILE_NOT_FOUND = "File at %s not found"
@@ -44,7 +44,7 @@ class SkyflowErrorMessages(Enum):
 
 
     INVALID_TOKEN_TYPE = "Token key has value of type %s, expected string"
-    PARTIAL_SUCCESS = "Partial success has occurred"
+    PARTIAL_SUCCESS = "Server returned errors, check SkyflowError.data for more"
 
     VAULT_ID_INVALID_TYPE = "Expected Vault ID to be str, got %s"
     VAULT_URL_INVALID_TYPE = "Expected Vault URL to be str, got %s"
