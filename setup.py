@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-current_version = '1.0.1'
+current_version = '1.1.0'
 
 setup(
    name='skyflow',
@@ -17,6 +17,7 @@ setup(
        'datetime',
        'requests',
        'aiohttp',
+       'asyncio',
        'cryptography>=3.3.1'
    ],
 )

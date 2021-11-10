@@ -3,8 +3,6 @@
 Skyflow
 =======
 
-Project Description
--------------------
 This is the Python SDK for the `Skyflow API <https://skyflow.com/>`_.
 
 Getting Started
