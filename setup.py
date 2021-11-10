@@ -1,5 +1,8 @@
 from setuptools import setup, find_packages
+import sys
 
+if sys.version_info < (3, 7):
+    raise RuntimeError("skyflow requires Python 3.7+")
 current_version = '1.1.0'
 
 setup(
@@ -20,4 +23,5 @@ setup(
        'asyncio',
        'cryptography>=3.3.1'
    ],
+   python_requires=">=3.7"
 )
