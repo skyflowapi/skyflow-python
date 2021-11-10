@@ -165,7 +165,7 @@ Sample response:
   ],
   "errors": [
     {
-       "id": "invalid-token",
+       "token": "invalid-token",
        "error": {
          "code": 404,
          "description": "Tokens not found for invalid-token"
