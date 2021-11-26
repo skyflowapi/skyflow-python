@@ -13,7 +13,7 @@ def tokenProvider():
 
 try:
     config = Configuration('<YOUR_VAULT_ID>', '<YOUR_VAULT_URL>', tokenProvider)
-    ConnectionConfig = ConnectionConfig('<YOUR_CONNECTION_URL>', RequestMethod.POST,
+    connectionConfig = ConnectionConfig('<YOUR_CONNECTION_URL>', RequestMethod.POST,
     requestHeader={
                 'Content-Type': 'application/json',
                 'Authorization': '<YOUR_CONNECTION_BASIC_AUTH>'
@@ -28,8 +28,8 @@ try:
     pathParams={'cardID': '<CARD_VALUE>'}) # param as in the example
     client = Client(config)
 
-    response = client.invokeConnection(ConnectionConfig)
+    response = client.invokeConnection(connectionConfig)
     print('Response:', response)
 except SkyflowError as e:
-    print('Error Occured:', e)
+    print('Error Occurred:', e)
 

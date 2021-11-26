@@ -15,5 +15,5 @@ try:
     response = client.detokenize(data)
     print('Response:', response)
 except SkyflowError as e:
-    print('Error Occured:', e)
+    print('Error Occurred:', e)
 
