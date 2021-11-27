@@ -26,5 +26,5 @@ try:
     response = client.insert(data, options=options)
     print('Response:', response)
 except SkyflowError as e:
-    print('Error Occured:', e)
+    print('Error Occurred:', e)
 
