@@ -64,7 +64,7 @@ To insert data into the vault from the integrated application, use the insert(re
 
 ```python
 from skyflow.Vault import InsertOptions
-from skyflow.Error import SkyflowError
+from skyflow.Errors import SkyflowError
 
 #Initialize Client
 try:
