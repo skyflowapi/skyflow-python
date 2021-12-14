@@ -70,7 +70,7 @@ def getSignedJWT(clientID, keyID, tokenURI, privateKey):
 		"key": keyID,
 		"aud": tokenURI,
 		"sub": clientID,
-		"exp": datetime.datetime.utcnow() + datetime.timedelta(minutes=30)
+		"exp": datetime.datetime.utcnow() + datetime.timedelta(minutes=60)
     }
     try:
         return jwt.encode(payload=payload, key=privateKey, algorithm="RS256")
