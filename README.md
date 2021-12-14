@@ -83,7 +83,7 @@ try:
     response = client.insert(data, options=options)
     print('Response:', response)
 except SkyflowError as e:
-    print('Error Occured:', e)
+    print('Error Occurred:', e)
 ```
 
 An example of an insert call is given below:
@@ -128,7 +128,7 @@ For retrieving using tokens, use the detokenize(records: dict) method. The recor
 {
   "records":[
     {
-      "token": "string"     #token for the record to be fetched
+      "token": str     #token for the record to be fetched
     }
   ]
 }
@@ -183,7 +183,7 @@ For retrieving using SkyflowID's, use the getById(records: dict) method. The rec
 {
     "records": [
         {
-            "ids": list<str>,  # List of SkyflowID's of the records to be fetched
+            "ids": [str],  # List of SkyflowID's of the records to be fetched
             "table": str,  # name of table holding the above skyflow_id's
             "redaction": Skyflow.RedactionType,  # redaction to be applied to retrieved data
         }
@@ -266,12 +266,12 @@ Using Skyflow Connection, end-user applications can integrate checkout/card issu
 
 ```python
 connectionConfig = ConnectionConfig(
-  connectionURL: String, # connection url received when creating a skyflow connection integration
+  connectionURL: str, # connection url received when creating a skyflow connection integration
   methodName: Skyflow.RequestMethod,
-  pathParams: [String: Any],	# optional
-  queryParams: [String: Any],	# optional
-  requestHeader: [String: String], # optional
-  requestBody: [String: Any],	# optional
+  pathParams: dict,	# optional
+  queryParams: dict,	# optional
+  requestHeader: dict, # optional
+  requestBody: dict,	# optional
 )
 client.invokeConnection(connectionConfig)
 ```
@@ -313,7 +313,7 @@ try:
     response = client.invokeConnection(connectionConfig)
     print('Response:', response)
 except SkyflowError as e:
-    print('Error Occured:', e)
+    print('Error Occurred:', e)
 ```
 
 Sample response:
