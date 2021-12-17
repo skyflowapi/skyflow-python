@@ -9,7 +9,7 @@ from skyflow.Errors._skyflowErrors import *
 
 ResponseToken = namedtuple('ResponseToken', ['AccessToken', 'TokenType'])
 
-def GenerateToken(credentialsFilePath: str) -> ResponseToken:
+def GenerateBearerToken(credentialsFilePath: str) -> ResponseToken:
 
     '''
     This function is used to get the access token for skyflow Service Accounts.
