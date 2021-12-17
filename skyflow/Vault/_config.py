@@ -5,14 +5,13 @@ from warnings import warn
 
 class Configuration:
     def __init__(self, vaultID: str, vaultURL: str, tokenProvider: FunctionType):
-        warn('This constructor has been deprecated, please use Configuration(tokenProvider, vaultID="", vaultURL="")', DeprecationWarning)
         self.vaultID = vaultID
         self.vaultURL = vaultURL
         self.tokenProvider = tokenProvider
-        
-    def __init__(self, tokenProvider: FunctionType, vaultID: str="", vaultURL: str=""):
-        self.vaultID = vaultID
-        self.vaultURL = vaultURL
+
+    def __init__(self, tokenProvider: FunctionType):
+        self.vaultID = ""
+        self.vaultURL = ""
         self.tokenProvider = tokenProvider
 
 class InsertOptions:

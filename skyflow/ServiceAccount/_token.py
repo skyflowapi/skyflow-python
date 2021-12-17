@@ -3,11 +3,18 @@ import json
 import jwt
 import datetime
 import requests
-from requests import status_codes
+from warnings import warn
 
 from skyflow.Errors._skyflowErrors import *
 
 ResponseToken = namedtuple('ResponseToken', ['AccessToken', 'TokenType'])
+
+def GenerateToken(credentialsFilePath: str) -> ResponseToken:
+    '''
+    This function has been deprecated and replaced with GenerateBearerToken(credentialsFilePath: str)
+    '''
+    warn('This function has been deprecated and replaced with GenerateBearerToken(credentialsFilePath: str)', DeprecationWarning)
+    GenerateBearerToken(credentialsFilePath)
 
 def GenerateBearerToken(credentialsFilePath: str) -> ResponseToken:
 
