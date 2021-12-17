@@ -50,6 +50,9 @@ class SkyflowErrorMessages(Enum):
     VAULT_URL_INVALID_TYPE = "Expected Vault URL to be str, got %s"
     TOKEN_PROVIDER_ERROR = "Expected Token Provider to be function, got %s"
 
+    EMPTY_VAULT_ID = "Vault ID must not be empty"
+    EMPTY_VAULT_URL = "Vault URL must not be empty"
+
 class SkyflowError(Exception):
     def __init__(self, code, message="An Error occured", data={}) -> None:
         if type(code) is SkyflowErrorCodes:

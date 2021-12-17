@@ -1,17 +1,21 @@
 from enum import Enum
 from types import FunctionType
+from typing import OrderedDict
 
 
 class Configuration:
-    def __init__(self, tokenProvider: FunctionType):
-        self.vaultID = ""
-        self.vaultURL = ""
-        self.tokenProvider = tokenProvider
 
-    def __init__(self, vaultID: str, vaultURL: str, tokenProvider: FunctionType):
-        self.vaultID = vaultID
-        self.vaultURL = vaultURL
-        self.tokenProvider = tokenProvider
+    def __init__(self, vaultID: str=None, vaultURL: str=None, tokenProvider: FunctionType=None):
+        if tokenProvider == None and vaultURL == None and isinstance(vaultID, FunctionType):
+            self.tokenProvider = vaultID
+        elif tokenProvider == None and vaultID == None and isinstance(vaultURL, FunctionType):
+            self.tokenProvider = vaultURL
+        else:
+            if tokenProvider is None:
+                raise TypeError('tokenProvider must be given')
+            self.vaultID = vaultID or ""
+            self.vaultURL = vaultURL or ""
+            self.tokenProvider = tokenProvider
 
 class InsertOptions:
     def __init__(self, tokens: bool=True):

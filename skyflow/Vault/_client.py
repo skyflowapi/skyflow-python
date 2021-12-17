@@ -24,6 +24,7 @@ class Client:
         self.tokenProvider = config.tokenProvider
 
     def insert(self, records: dict, options: InsertOptions = InsertOptions()):
+        self._checkConfig()
         jsonBody = getInsertRequestBody(records, options.tokens)
         requestURL = self.vaultURL + "/v1/vaults/" + self.vaultID
         token = self.tokenProvider()
@@ -35,6 +36,7 @@ class Client:
         return convertResponse(records, processedResponse, options.tokens)
 
     def invokeConnection(self, config: ConnectionConfig):
+        self._checkConfig()
         session = requests.Session()
         token = self.tokenProvider()
         request = createRequest(config)
@@ -44,6 +46,7 @@ class Client:
         return processResponse(response)
 
     def detokenize(self, records):
+        self._checkConfig()
         token = self.tokenProvider()
         url = self.vaultURL + "/v1/vaults/" + self.vaultID + "/detokenize"
         responses = asyncio.run(sendDetokenizeRequests(records, url, token))
@@ -54,6 +57,7 @@ class Client:
             return result
     
     def getById(self, records):
+        self._checkConfig()
         token = self.tokenProvider()
         url = self.vaultURL + "/v1/vaults/" + self.vaultID
         responses = asyncio.run(sendGetByIdRequests(records, url, token))
@@ -63,5 +67,10 @@ class Client:
         else:
             return result
         
+    def _checkConfig(self):
+        if not len(self.vaultID) > 0:
+            raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.EMPTY_VAULT_ID)
+        if not len(self.vaultURL) > 0:
+            raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.EMPTY_VAULT_URL)
 
 
