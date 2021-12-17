@@ -1,5 +1,5 @@
 from skyflow.Errors import SkyflowError
-from skyflow.ServiceAccount import GenerateToken
+from skyflow.ServiceAccount import GenerateBearerToken
 from skyflow.Vault import Client, Configuration, RequestMethod, ConnectionConfig
 
 '''
@@ -8,7 +8,7 @@ This sample is for generating CVV using Skyflow Connection with a third party in
 
 
 def tokenProvider():
-    token, _ = GenerateToken('<YOUR_CREDENTIALS_FILE_PATH>')
+    token, _ = GenerateBearerToken('<YOUR_CREDENTIALS_FILE_PATH>')
     return token
 
 try:

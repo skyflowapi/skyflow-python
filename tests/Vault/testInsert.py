@@ -5,7 +5,7 @@ from requests.models import Response
 from dotenv import dotenv_values
 from skyflow.Vault._insert import getInsertRequestBody, processResponse
 from skyflow.Errors._skyflowErrors import SkyflowError, SkyflowErrorCodes, SkyflowErrorMessages
-from skyflow.ServiceAccount import GenerateToken
+from skyflow.ServiceAccount import GenerateBearerToken
 from skyflow.Vault._client import Client
 from skyflow.Vault._config import Configuration, InsertOptions
 
@@ -170,64 +170,64 @@ class TestInsert(unittest.TestCase):
         self.assertEqual(client.vaultID, 'vaultid')
         self.assertEqual(client.tokenProvider(), 'test')
 
-    def testClientInsert(self):
-        env_values = dotenv_values('.env')
+    # def testClientInsert(self):
+    #     env_values = dotenv_values('.env')
 
-        def tokenProvider():
-            token, _ = GenerateToken(env_values['CREDENTIALS_FILE_PATH'])
-            return token
+    #     def tokenProvider():
+    #         token, _ = GenerateBearerToken(env_values['CREDENTIALS_FILE_PATH'])
+    #         return token
 
-        config = Configuration(env_values['VAULT_ID'], env_values['VAULT_URL'], tokenProvider)
-        client = Client(config)
+    #     config = Configuration(env_values['VAULT_ID'], env_values['VAULT_URL'], tokenProvider)
+    #     client = Client(config)
 
-        options = InsertOptions(False)
+    #     options = InsertOptions(False)
 
-        data = {
-            "records": [
-                {
-                    "table": "persons",
-                    "fields": {
-                        "cvv": "122",
-                        "card_expiration": "1221",
-                        "card_number": "4111111111111111",
-                        "name": {"first_name": "Bob"}
-                    }
-                }
-            ]
-        }
-        try:
-            response = client.insert(data, options=options)
-            self.assertEqual(len(response['records']), 1)
-        except SkyflowError as e:
-            self.fail()
+    #     data = {
+    #         "records": [
+    #             {
+    #                 "table": "persons",
+    #                 "fields": {
+    #                     "cvv": "122",
+    #                     "card_expiration": "1221",
+    #                     "card_number": "4111111111111111",
+    #                     "name": {"first_name": "Bob"}
+    #                 }
+    #             }
+    #         ]
+    #     }
+    #     try:
+    #         response = client.insert(data, options=options)
+    #         self.assertEqual(len(response['records']), 1)
+    #     except SkyflowError as e:
+    #         self.fail()
 
-    def testClientInsertWithTokens(self):
-        env_values = dotenv_values('.env')
+    # def testClientInsertWithTokens(self):
+    #     env_values = dotenv_values('.env')
 
-        def tokenProvider():
-            token, _ = GenerateToken(env_values['CREDENTIALS_FILE_PATH'])
-            return token
+    #     def tokenProvider():
+    #         token, _ = GenerateBearerToken(env_values['CREDENTIALS_FILE_PATH'])
+    #         return token
 
-        config = Configuration(env_values['VAULT_ID'], env_values['VAULT_URL'], tokenProvider)
-        client = Client(config)
+    #     config = Configuration(env_values['VAULT_ID'], env_values['VAULT_URL'], tokenProvider)
+    #     client = Client(config)
 
-        options = InsertOptions(True)
+    #     options = InsertOptions(True)
 
-        data = {
-            "records": [
-                {
-                    "table": "persons",
-                    "fields": {
-                        "cvv": "122",
-                        "card_expiration": "1221",
-                        "card_number": "4111111111111111",
-                        "name": {"first_name": "Bob"}
-                    }
-                }
-            ]
-        }
-        try:
-            response = client.insert(data, options=options)
-            self.assertEqual(len(response['records']), 1)
-        except SkyflowError as e:
-            self.fail()
+    #     data = {
+    #         "records": [
+    #             {
+    #                 "table": "persons",
+    #                 "fields": {
+    #                     "cvv": "122",
+    #                     "card_expiration": "1221",
+    #                     "card_number": "4111111111111111",
+    #                     "name": {"first_name": "Bob"}
+    #                 }
+    #             }
+    #         ]
+    #     }
+    #     try:
+    #         response = client.insert(data, options=options)
+    #         self.assertEqual(len(response['records']), 1)
+    #     except SkyflowError as e:
+    #         self.fail()

@@ -6,7 +6,7 @@ These are the samples for skyflow-python. In order to use these samples, you mus
 
 Below is a brief description of the samples:
 
-- [SATokenSample.py](https://github.com/skyflowapi/skyflow-python/blob/main/samples/SATokenSample.py): Contains a python program illustrating the usage of `ServiceAccount.GenerateToken()`
+- [SATokenSample.py](https://github.com/skyflowapi/skyflow-python/blob/main/samples/SATokenSample.py): Contains a python program illustrating the usage of `ServiceAccount.GenerateBearerToken()`
 - [InsertSample.py](https://github.com/skyflowapi/skyflow-python/blob/main/samples/InsertSample.py) : Contains a python program illustrating the use of `Vault.Client.insert()`
 - [detokenizeSample.py](https://github.com/skyflowapi/skyflow-python/blob/main/samples/detokenizeSample.py): Contains a python program illustrating the use of `Vault.detokenize()`
 - [`getByIDSample.py`](https://github.com/skyflowapi/skyflow-python/blob/main/samples/getByIDSample.py): Contains a python program illustrating the use of `Vault.Client.getByID()`

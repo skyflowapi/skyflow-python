@@ -29,10 +29,10 @@ The [Service Account](https://github.com/skyflowapi/skyflow-python/tree/main/Ser
 
 
 ```python
-from skyflow.ServiceAccount import GenerateToken
+from skyflow.ServiceAccount import GenerateBearerToken
 
 filepath =  '<YOUR_CREDENTIALS_FILE_PATH>'
-accessToken, tokenType = GenerateToken(filepath)
+accessToken, tokenType = GenerateBearerToken(filepath)
 
 print("Access Token:", accessToken)
 print("Type of token:", tokenType)
@@ -45,11 +45,11 @@ To use this module, the skyflow client must first be initialized as follows.
 
 ```python
 from skyflow.Vault import Client, Configuration
-from skyflow.ServiceAccount import GenerateToken
+from skyflow.ServiceAccount import GenerateBearerToken
 
 #User defined function to provide access token to the vault apis
 def tokenProvider():    
-    token, _ = GenerateToken('<YOUR_CREDENTIALS_FILE_PATH>')
+    token, _ = GenerateBearerToken('<YOUR_CREDENTIALS_FILE_PATH>')
     return token
 
 #Initializing a Skyflow Client instance with a SkyflowConfiguration object
@@ -290,7 +290,7 @@ An example of invokeConnection:
 from skyflow.Vault import ConnectionConfig, Configuration, RequestMethod
 
 def tokenProvider():
-    token, _ = GenerateToken('<YOUR_CREDENTIALS_FILE_PATH>')
+    token, _ = GenerateBearerToken('<YOUR_CREDENTIALS_FILE_PATH>')
     return token
 
 try:

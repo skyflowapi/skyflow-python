@@ -1,17 +1,16 @@
 from enum import Enum
 from types import FunctionType
-from warnings import warn
 
 
 class Configuration:
-    def __init__(self, vaultID: str, vaultURL: str, tokenProvider: FunctionType):
-        self.vaultID = vaultID
-        self.vaultURL = vaultURL
-        self.tokenProvider = tokenProvider
-
     def __init__(self, tokenProvider: FunctionType):
         self.vaultID = ""
         self.vaultURL = ""
+        self.tokenProvider = tokenProvider
+
+    def __init__(self, vaultID: str, vaultURL: str, tokenProvider: FunctionType):
+        self.vaultID = vaultID
+        self.vaultURL = vaultURL
         self.tokenProvider = tokenProvider
 
 class InsertOptions:
