@@ -6,6 +6,10 @@ from typing import OrderedDict
 class Configuration:
 
     def __init__(self, vaultID: str=None, vaultURL: str=None, tokenProvider: FunctionType=None):
+        
+        self.vaultID = ''
+        self.vaultURL = ''
+          
         if tokenProvider == None and vaultURL == None and isinstance(vaultID, FunctionType):
             self.tokenProvider = vaultID
         elif tokenProvider == None and vaultID == None and isinstance(vaultURL, FunctionType):

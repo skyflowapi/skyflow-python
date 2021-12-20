@@ -8,6 +8,7 @@ class SkyflowErrorCodes(Enum):
 class SkyflowErrorMessages(Enum):
     FILE_NOT_FOUND = "File at %s not found"
     FILE_INVALID_JSON = "File at %s is not in JSON format"
+    INVALID_CREDENTIALS = "Given credentials are not valid"
     INVALID_URL = "Given url '%s' is invalid"
 
     MISSING_PRIVATE_KEY = "Unable to read Private key"

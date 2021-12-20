@@ -5,6 +5,8 @@ import datetime
 import requests
 from warnings import warn
 
+from requests.models import Response
+
 from skyflow.Errors._skyflowErrors import *
 
 ResponseToken = namedtuple('ResponseToken', ['AccessToken', 'TokenType'])
@@ -14,7 +16,7 @@ def GenerateToken(credentialsFilePath: str) -> ResponseToken:
     This function has been deprecated and replaced with GenerateBearerToken(credentialsFilePath: str)
     '''
     warn('This function has been deprecated and replaced with GenerateBearerToken(credentialsFilePath: str)', DeprecationWarning)
-    GenerateToken(credentialsFilePath)
+    GenerateBearerToken(credentialsFilePath)
 
 def GenerateBearerToken(credentialsFilePath: str) -> ResponseToken:
 
@@ -41,6 +43,13 @@ def GenerateBearerToken(credentialsFilePath: str) -> ResponseToken:
 
 
     return getSAToken(credentials)
+
+def GenerateBearerTokenFromCreds(credentials: str) -> ResponseToken:
+    try:
+        jsonCredentials = json.load(credentials)
+    except Exception as e:
+        raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.INVALID_CREDENTIALS)
+    return getSAToken(jsonCredentials)
 
 def getSAToken(credentials):
     try:

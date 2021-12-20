@@ -7,10 +7,13 @@ from ._connection import createRequest
 from ._detokenize import sendDetokenizeRequests, createDetokenizeResponseBody
 from ._getById import sendGetByIdRequests, createGetByIdResponseBody
 import asyncio
-from skyflow.Errors._skyflowErrors import SkyflowError, SkyflowErrorCodes, SkyflowErrorMessages   
-
+from skyflow.Errors._skyflowErrors import SkyflowError, SkyflowErrorCodes, SkyflowErrorMessages
+from skyflow._utils import log_info, InfoMessages, InterfaceNames
 class Client:
     def __init__(self, config: Configuration):
+        
+        log_info(InfoMessages.INITIALIZE_CLIENT)
+
         if not isinstance(config.vaultID, str):
             raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.VAULT_ID_INVALID_TYPE.value%(str(type(config.vaultID))))
         if not isinstance(config.vaultURL, str):
@@ -22,8 +25,10 @@ class Client:
         self.vaultID = config.vaultID
         self.vaultURL = config.vaultURL.rstrip('/')
         self.tokenProvider = config.tokenProvider
+        log_info(InfoMessages.CLIENT_INITIALIZED.value, interface=InterfaceNames.CLIENT.value)
 
     def insert(self, records: dict, options: InsertOptions = InsertOptions()):
+        log_info(InfoMessages.INSERT_TRIGGERED.value)
         self._checkConfig()
         jsonBody = getInsertRequestBody(records, options.tokens)
         requestURL = self.vaultURL + "/v1/vaults/" + self.vaultID
