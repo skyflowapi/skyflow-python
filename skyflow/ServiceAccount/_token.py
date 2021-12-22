@@ -4,6 +4,7 @@ import jwt
 import datetime
 import requests
 from warnings import warn
+from skyflow._utils import log_info, InterfaceName, InfoMessages
 
 from requests.models import Response
 
@@ -29,6 +30,10 @@ def GenerateBearerToken(credentialsFilePath: str) -> ResponseToken:
         2. TokenType: The type of access token (eg: Bearer)
     '''
 
+    interface = InterfaceName.GENERATE_BEARER_TOKEN.value
+
+    log_info(InfoMessages.GENERATE_BEARER_TOKEN_TRIGGERED.value, interface)
+
     try:
         credentialsFile = open(credentialsFilePath, 'r')
     except:
@@ -41,15 +46,35 @@ def GenerateBearerToken(credentialsFilePath: str) -> ResponseToken:
     finally:
         credentialsFile.close()
 
+    result = getSAToken(credentials)
 
-    return getSAToken(credentials)
+    log_info(InfoMessages.GENERATE_BEARER_TOKEN_SUCCESS.value, interface)
+    return result
 
 def GenerateBearerTokenFromCreds(credentials: str) -> ResponseToken:
+
+    '''
+    This function is used to get the access token for skyflow Service Accounts.
+    `credentials` arg takes the content of the credentials file that is downloaded after Service Account creation.
+
+    Response Token is a named tupe with two attributes:
+        1. AccessToken: The access token
+        2. TokenType: The type of access token (eg: Bearer)
+    '''
+
+    interface = InterfaceName.GENERATE_BEARER_TOKEN.value
+
+    log_info(InfoMessages.GENERATE_BEARER_TOKEN_TRIGGERED.value, interface)
     try:
         jsonCredentials = json.load(credentials)
     except Exception as e:
-        raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.INVALID_CREDENTIALS)
-    return getSAToken(jsonCredentials)
+        raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.INVALID_CREDENTIALS, interface=interface)
+    result = getSAToken(jsonCredentials)
+
+    log_info(InfoMessages.GENERATE_BEARER_TOKEN_SUCCESS.value, interface=interface)
+    return result
+
+    
 
 def getSAToken(credentials):
     try:

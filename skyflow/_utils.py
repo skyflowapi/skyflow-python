@@ -5,23 +5,23 @@ skyflowLog = logging.getLogger('skyflow')
 
 skyflowLog.setLevel(logging.ERROR)
 
-def log_info(message: str, interface: str, args: list=[]):
-    formattedMessage = 'INFO: [Skyflow] {} {}'.format(interface.upper(), message.format(args))
-    skyflowLog.log(formattedMessage)
+def log_info(message: str, interface: str):
+    formattedMessage = '{} {}'.format(interface, message)
+    skyflowLog.info(formattedMessage)
 
 
 def log_debug(message: str, interface: str):
-    formattedMessage = 'DEBUG: [Skyflow] {} {}'.format(interface.upper(), message.format(args))
+    formattedMessage = '{} {}'.format(interface, message)
     skyflowLog.debug(formattedMessage)
 
 
 def log_warn(message: str, interface: str):
-    formattedMessage = 'WARN: [Skyflow] {} {}'.format(interface.upper(), message.format(args))
+    formattedMessage = '{} {}'.format(interface, message)
     skyflowLog.warn(formattedMessage)
 
 
 def log_error(message: str, interface: str):
-    formattedMessage = 'ERROR: [Skyflow] {} {}'.format(interface.upper(), message.format(args))
+    formattedMessage = '{} {}'.format(interface, message)
     skyflowLog.error(formattedMessage)
 
 
@@ -40,11 +40,13 @@ class InfoMessages(Enum):
     DETOKENIZE_TRIGGERED = "Detokenize method triggered."
     GET_BY_ID_TRIGGERED = "Get by ID triggered."
     INVOKE_CONNECTION_TRIGGERED = "Invoke connection triggered."
+    GENERATE_BEARER_TOKEN_TRIGGERED = "Generate bearer token triggered"
+    GENERATE_BEARER_TOKEN_SUCCESS = "Generate bearer token returned successfully"
 
-class InterfaceNames(Enum):
-    CLIENT = "CLIENT"
-    INSERT = "CLIENT.INSERT"
-    DETOKENIZE = "CLIENT.DETOKENIZE"
-    GETBYID = "CLIENT.GETBYID"
-    INVOKECONNECTION = "CLIENT.INVOKECONNECTION"
-    GENERATEBEARERTOKEN = "SERVICEACCOUNT.GENERATEBEARERTOKEN"
+class InterfaceName(Enum):
+    CLIENT = "client"
+    INSERT = "client.insert"
+    DETOKENIZE = "client.detokenize"
+    GET_BY_ID = "client.getById"
+    INVOKE_CONNECTION = "client.invokeConnection"
+    GENERATE_BEARER_TOKEN = "ServiceAccount.GenerateBearerToken"

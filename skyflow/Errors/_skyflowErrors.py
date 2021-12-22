@@ -1,4 +1,5 @@
 from enum import Enum
+from skyflow._utils import log_error
 
 class SkyflowErrorCodes(Enum):
     INVALID_INPUT = 400
@@ -55,7 +56,7 @@ class SkyflowErrorMessages(Enum):
     EMPTY_VAULT_URL = "Vault URL must not be empty"
 
 class SkyflowError(Exception):
-    def __init__(self, code, message="An Error occured", data={}) -> None:
+    def __init__(self, code, message="An Error occured", data={}, interface: str=None) -> None:
         if type(code) is SkyflowErrorCodes:
             self.code = code.value
         else:
@@ -64,6 +65,7 @@ class SkyflowError(Exception):
             self.message = message.value
         else:
             self.message = message
+        log_error(self.message, interface)
         self.data = data
         super().__init__(self.message)
 

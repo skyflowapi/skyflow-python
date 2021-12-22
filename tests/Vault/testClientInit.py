@@ -5,15 +5,17 @@ from skyflow.Vault._client import Client
 from skyflow.Errors._skyflowErrors import *
 
 class TestConfig(unittest.TestCase):
-    def testClientInitInvalidVaultID(self):
-        config = Configuration(None, 'VAULT URL', lambda: 'token')
 
-        try:
-            client = Client(config)
-            self.fail('Should fail due to invalid VAULT ID')
-        except SkyflowError as e:
-            self.assertEqual(SkyflowErrorCodes.INVALID_INPUT.value, e.code)
-            self.assertEqual(SkyflowErrorMessages.VAULT_ID_INVALID_TYPE.value%(type(None)), e.message)
+    # Invalid test
+    # def testClientInitInvalidVaultID(self):
+    #     config = Configuration(None, 'VAULT URL', lambda: 'token')
+
+    #     try:
+    #         client = Client(config)
+    #         self.fail('Should fail due to invalid VAULT ID')
+    #     except SkyflowError as e:
+    #         self.assertEqual(SkyflowErrorCodes.INVALID_INPUT.value, e.code)
+    #         self.assertEqual(SkyflowErrorMessages.VAULT_ID_INVALID_TYPE.value%(type(None)), e.message)
 
     
     def testClientInitInvalidVaultURL(self):

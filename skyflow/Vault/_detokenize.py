@@ -2,15 +2,18 @@ from skyflow.Errors._skyflowErrors import SkyflowError, SkyflowErrorCodes, Skyfl
 import asyncio
 from aiohttp import ClientSession
 import json
+from skyflow._utils import InterfaceName
+
+interface = InterfaceName.DETOKENIZE.value
 
 def getDetokenizeRequestBody(data):
     try:
         token = data["token"]
     except KeyError:
-        raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.TOKEN_KEY_ERROR)
+        raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.TOKEN_KEY_ERROR, interface=interface)
     if not isinstance(token, str):
         tokenType = str(type(token))
-        raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.INVALID_TOKEN_TYPE.value%(tokenType))
+        raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.INVALID_TOKEN_TYPE.value%(tokenType), interface=interface)
     requestBody = {"detokenizationParameters": []}
     requestBody["detokenizationParameters"].append({
         "token": token})
@@ -23,10 +26,10 @@ async def sendDetokenizeRequests(data, url, token):
     try:
         records = data["records"]
     except KeyError:
-        raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.RECORDS_KEY_ERROR)
+        raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.RECORDS_KEY_ERROR, interface=interface)
     if not isinstance(records, list):
         recordsType = str(type(records))
-        raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.INVALID_RECORDS_TYPE.value%(recordsType))
+        raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.INVALID_RECORDS_TYPE.value%(recordsType), interface=interface)
         
     validatedRecords = []
     for record in records:

@@ -3,17 +3,19 @@ import json
 import requests
 from requests.models import HTTPError
 from skyflow.Errors._skyflowErrors import SkyflowError, SkyflowErrorCodes, SkyflowErrorMessages
+from skyflow._utils import InterfaceName
 
+interface = InterfaceName.INSERT.value
 
 def getInsertRequestBody(data, tokens: bool):
     try:
         records = data["records"]
     except KeyError:
-        raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.RECORDS_KEY_ERROR)
+        raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.RECORDS_KEY_ERROR, interface=interface)
 
     if not isinstance(records, list):
         recordsType = str(type(records))
-        raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.INVALID_RECORDS_TYPE.value%(recordsType))
+        raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.INVALID_RECORDS_TYPE.value%(recordsType), interface=interface)
         
     requestPayload = []
     insertTokenPayload = []
@@ -35,7 +37,7 @@ def getInsertRequestBody(data, tokens: bool):
     try:
         jsonBody = json.dumps(requestBody)
     except Exception as e:
-        raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT ,SkyflowErrorMessages.INVALID_JSON.value%('insert payload'))
+        raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT ,SkyflowErrorMessages.INVALID_JSON.value%('insert payload'), interface=interface)
 
     return jsonBody
 
@@ -43,31 +45,31 @@ def getTableAndFields(record):
     try:
         table = record["table"]
     except KeyError:
-        raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.TABLE_KEY_ERROR)
+        raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.TABLE_KEY_ERROR, interface=interface)
     
     if not isinstance(table, str):
         tableType = str(type(table))
-        raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.INVALID_TABLE_TYPE.value%(tableType))
+        raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.INVALID_TABLE_TYPE.value%(tableType), interface=interface)
 
     try:
         fields = record["fields"]
     except KeyError:
-        raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.FIELDS_KEY_ERROR)
+        raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.FIELDS_KEY_ERROR, interface=interface)
 
     if not isinstance(fields, dict):
         fieldsType = str(type(table))
-        raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.INVALID_FIELDS_TYPE.value%(fieldsType))
+        raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.INVALID_FIELDS_TYPE.value%(fieldsType), interface=interface)
 
     return (table, fields)
 
-def processResponse(response: requests.Response):
+def processResponse(response: requests.Response, interface=interface):
     statusCode = response.status_code
     strcontent = response.content.decode('utf-8')
     try:
         response.raise_for_status()
         return json.loads(strcontent)
     except HTTPError:
-        raise SkyflowError(statusCode, strcontent)
+        raise SkyflowError(statusCode, strcontent, interface=interface)
 
 def convertResponse(request: dict, response: dict, tokens: bool):
     responseArray = response['responses']
