@@ -14,7 +14,7 @@ $ pip install skyflow
 
 ## Table of Contents
 
-* [Service Account Token Generation](#service-account-token-generation)  
+* [Service Account Bearer Token Generation](#service-account-bearer-token-generation)  
 * [Vault APIs](#vault-apis)
   * [Insert](#insert)
   * [Detokenize](#detokenize)
@@ -22,9 +22,11 @@ $ pip install skyflow
   * [InvokeConnection](#invoke-connection)
 * [Logging](#logging)
 
-### Service Account Token Generation
+### Service Account Bearer Token Generation
 
 The [Service Account](https://github.com/skyflowapi/skyflow-python/tree/main/ServiceAccount) python module is used to generate service account tokens from service account credentials file which is downloaded upon creation of service account. The token generated from this module is valid for 60 minutes and can be used to make API calls to vault services as well as management API(s) based on the permissions of the service account.
+
+The `GenerateBearerToken(filepath)` function takes the credentials file path for token generation, alternatively, you can also send the entire credentials as string, by using `GenerateBearerTokenFromCreds(credentials)` 
 
 [Example](https://github.com/skyflowapi/skyflow-python/blob/main/examples/SATokenExample.py):
 
@@ -33,11 +35,12 @@ The [Service Account](https://github.com/skyflowapi/skyflow-python/tree/main/Ser
 from skyflow.ServiceAccount import GenerateBearerToken
 
 filepath =  '<YOUR_CREDENTIALS_FILE_PATH>'
-accessToken, tokenType = GenerateBearerToken(filepath)
+accessToken, tokenType = GenerateBearerToken(filepath) # or GenerateBearerTokenFromCreds(credentials)
 
 print("Access Token:", accessToken)
 print("Type of token:", tokenType)
 ```
+
 
 ### Vault APIs
 The [Vault](https://github.com/skyflowapi/skyflow-python/tree/main/Vault) python module is used to perform operations on the vault such as inserting records, detokenizing tokens, retrieving tokens for a skyflow_id and to invoke a connection.
@@ -328,7 +331,7 @@ Sample response:
 }
 ```
 
-## Logging
+### Logging
 
 The skyflow python SDK provides useful logging using python's inbuilt `logging` library. By default the logging level of the SDK is set to `logging.ERROR`. This can be changed by using `setLogLevel(logLevel)` as shown below:
 
