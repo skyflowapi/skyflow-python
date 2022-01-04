@@ -333,12 +333,23 @@ Sample response:
 
 ### Logging
 
-The skyflow python SDK provides useful logging using python's inbuilt `logging` library. By default the logging level of the SDK is set to `logging.ERROR`. This can be changed by using `setLogLevel(logLevel)` as shown below:
+The skyflow python SDK provides useful logging using python's inbuilt `logging` library. By default the logging level of the SDK is set to `LogLevel.ERROR`. This can be changed by using `setLogLevel(logLevel)` as shown below:
 
 ```python
 import logging
-from skyflow import setLogLevel
+from skyflow import setLogLevel, LogLevel
 
 logging.basicConfig() # You can set the basic config here
-setLogLevel(logging.INFO) # sets the skyflow SDK log level to INFO
+setLogLevel(LogLevel.INFO) # sets the skyflow SDK log level to INFO
 ```
+
+Current the following 5 log levels are supported:
+
+- `INFO`
+- `DEBUG`
+- `WARN`
+- `ERROR`
+- `OFF`
+
+
+`LogLevel.OFF` can be used to turn off all logging from the Skyflow SDK.

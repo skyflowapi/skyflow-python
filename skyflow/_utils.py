@@ -5,8 +5,18 @@ skyflowLog = logging.getLogger('skyflow')
 
 skyflowLog.setLevel(logging.ERROR)
 
-def setLogLevel(logLevel: int):
-    skyflowLog.setLevel(logLevel)
+class LogLevel(Enum):
+    DEBUG=logging.DEBUG
+    INFO=logging.INFO
+    WARN=logging.WARN
+    ERROR=logging.ERROR
+    OFF=logging.CRITICAL
+
+def setLogLevel(logLevel: LogLevel):
+    '''
+    Sets the Log Level for the Skyflow python SDK
+    '''
+    skyflowLog.setLevel(logLevel.value)
 
 def log_info(message: str, interface: str):
     formattedMessage = '{} {}'.format(interface, message)

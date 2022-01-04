@@ -1,1 +1,1 @@
-from ._utils import setLogLevel
+from ._utils import setLogLevel, LogLevel
