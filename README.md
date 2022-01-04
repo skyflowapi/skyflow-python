@@ -14,29 +14,33 @@ $ pip install skyflow
 
 ## Table of Contents
 
-* [Service Account Token Generation](#service-account-token-generation)  
+* [Service Account Bearer Token Generation](#service-account-bearer-token-generation)  
 * [Vault APIs](#vault-apis)
   * [Insert](#insert)
   * [Detokenize](#detokenize)
   * [GetById](#get-by-id)
   * [InvokeConnection](#invoke-connection)
+* [Logging](#logging)
 
-### Service Account Token Generation
+### Service Account Bearer Token Generation
 
 The [Service Account](https://github.com/skyflowapi/skyflow-python/tree/main/ServiceAccount) python module is used to generate service account tokens from service account credentials file which is downloaded upon creation of service account. The token generated from this module is valid for 60 minutes and can be used to make API calls to vault services as well as management API(s) based on the permissions of the service account.
+
+The `GenerateBearerToken(filepath)` function takes the credentials file path for token generation, alternatively, you can also send the entire credentials as string, by using `GenerateBearerTokenFromCreds(credentials)` 
 
 [Example](https://github.com/skyflowapi/skyflow-python/blob/main/examples/SATokenExample.py):
 
 
 ```python
-from skyflow.ServiceAccount import GenerateToken
+from skyflow.ServiceAccount import GenerateBearerToken
 
 filepath =  '<YOUR_CREDENTIALS_FILE_PATH>'
-accessToken, tokenType = GenerateToken(filepath)
+accessToken, tokenType = GenerateBearerToken(filepath) # or GenerateBearerTokenFromCreds(credentials)
 
 print("Access Token:", accessToken)
 print("Type of token:", tokenType)
 ```
+
 
 ### Vault APIs
 The [Vault](https://github.com/skyflowapi/skyflow-python/tree/main/Vault) python module is used to perform operations on the vault such as inserting records, detokenizing tokens, retrieving tokens for a skyflow_id and to invoke a connection.
@@ -45,11 +49,11 @@ To use this module, the skyflow client must first be initialized as follows.
 
 ```python
 from skyflow.Vault import Client, Configuration
-from skyflow.ServiceAccount import GenerateToken
+from skyflow.ServiceAccount import GenerateBearerToken
 
 #User defined function to provide access token to the vault apis
 def tokenProvider():    
-    token, _ = GenerateToken('<YOUR_CREDENTIALS_FILE_PATH>')
+    token, _ = GenerateBearerToken('<YOUR_CREDENTIALS_FILE_PATH>')
     return token
 
 #Initializing a Skyflow Client instance with a SkyflowConfiguration object
@@ -290,7 +294,7 @@ An example of invokeConnection:
 from skyflow.Vault import ConnectionConfig, Configuration, RequestMethod
 
 def tokenProvider():
-    token, _ = GenerateToken('<YOUR_CREDENTIALS_FILE_PATH>')
+    token, _ = GenerateBearerToken('<YOUR_CREDENTIALS_FILE_PATH>')
     return token
 
 try:
@@ -326,3 +330,40 @@ Sample response:
     }
 }
 ```
+
+### Logging
+
+The skyflow python SDK provides useful logging using python's inbuilt `logging` library. By default the logging level of the SDK is set to `LogLevel.ERROR`. This can be changed by using `setLogLevel(logLevel)` as shown below:
+
+```python
+import logging
+from skyflow import setLogLevel, LogLevel
+
+logging.basicConfig() # You can set the basic config here
+setLogLevel(LogLevel.INFO) # sets the skyflow SDK log level to INFO
+```
+
+Current the following 5 log levels are supported:
+
+- `DEBUG`:
+
+   When `LogLevel.DEBUG` is passed, all level of logs will be printed(DEBUG, INFO, WARN, ERROR)
+   
+- `INFO`: 
+
+   When `LogLevel.INFO` is passed, INFO logs for every event that has occurred during the SDK flow execution will be printed along with WARN and ERROR logs
+   
+- `WARN`: 
+
+   When `LogLevel.WARN` is passed, WARN and ERROR logs will be printed
+   
+- `ERROR`:
+
+   When `LogLevel.ERROR` is passed, only ERROR logs will be printed.
+   
+- `OFF`: 
+
+   `LogLevel.OFF` can be used to turn off all logging from the Skyflow SDK.
+   
+
+`Note`: The ranking of logging levels is as follows :  `DEBUG` < `INFO` < `WARN` < `ERROR` < `OFF`

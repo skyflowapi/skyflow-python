@@ -2,7 +2,7 @@ import unittest
 import os
 from skyflow.Errors._skyflowErrors import SkyflowError, SkyflowErrorCodes, SkyflowErrorMessages
 from skyflow.Vault import Client, Configuration, RedactionType
-from skyflow.ServiceAccount import GenerateToken
+from skyflow.ServiceAccount import GenerateBearerToken
 from dotenv import dotenv_values
 import warnings
 
@@ -12,7 +12,7 @@ class TestGetById(unittest.TestCase):
         self.envValues = dotenv_values(".env")
         self.dataPath = os.path.join(os.getcwd(), 'tests/Vault/data/')
         def tokenProvider():
-            token, type = GenerateToken(self.envValues["CREDENTIALS_FILE_PATH"])
+            token, type = GenerateBearerToken(self.envValues["CREDENTIALS_FILE_PATH"])
             return token
 
         config = Configuration(self.envValues["VAULT_ID"], self.envValues["VAULT_URL"], tokenProvider)

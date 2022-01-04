@@ -1,5 +1,5 @@
 import unittest
-from skyflow.ServiceAccount._token import GenerateToken
+from skyflow.ServiceAccount._token import GenerateBearerToken
 from skyflow.Vault._connection import *
 from skyflow.Vault._client import *
 from skyflow.Vault._config import *
@@ -120,7 +120,7 @@ class testInvokeConnection(unittest.TestCase):
         connectionURL = env_values['CVV_GEN_CONNECTION_URL']
 
         def tokenProvider():
-            token, _ = GenerateToken(env_values['CREDENTIALS_FILE_PATH'])
+            token, _ = GenerateBearerToken(env_values['CREDENTIALS_FILE_PATH'])
             return token
 
         config = Configuration(env_values['VAULT_ID'], env_values['VAULT_URL'], tokenProvider)
