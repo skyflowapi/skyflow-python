@@ -366,6 +366,4 @@ Current the following 5 log levels are supported:
    `LogLevel.OFF` can be used to turn off all logging from the Skyflow SDK.
    
 
-`Note`:
-  - The ranking of logging levels is as follows :  `DEBUG` < `INFO` < `WARN` < `ERROR`
-  - The default the logLevel for Skyflow SDK is `LogLevel.ERROR`.
+`Note`: The ranking of logging levels is as follows :  `DEBUG` < `INFO` < `WARN` < `ERROR`
