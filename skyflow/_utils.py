@@ -3,7 +3,10 @@ from enum import Enum
 
 skyflowLog = logging.getLogger('skyflow')
 
-skyflowLog.setLevel(logging.ERROR)
+skyflowLog.setLevel(logging.INFO)
+
+def setLogLevel(logLevel: int):
+    skyflowLog.setLevel(logLevel)
 
 def log_info(message: str, interface: str):
     formattedMessage = '{} {}'.format(interface, message)
