@@ -13,8 +13,6 @@ All notable changes to this project will be documented in this file.
 - Renamed and deprecated `GenerateToken` in favor of `GenerateBearerToken`
 - Make `vaultID` and `vaultURL` optional in `Client` constructor
 
-### Fixed
-- `GenerateBearerToken` returns a token of 60min validity, instead of 30min
 
 ## [1.1.0] - 2021-11-10
 
