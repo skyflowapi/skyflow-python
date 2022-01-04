@@ -351,15 +351,15 @@ Current the following 5 log levels are supported:
    
 - `INFO`: 
 
-   When `Skyflow.LogLevel.INFO` is passed, INFO logs for every event that has occurred during the SDK flow execution will be printed along with WARN and ERROR logs
+   When `LogLevel.INFO` is passed, INFO logs for every event that has occurred during the SDK flow execution will be printed along with WARN and ERROR logs
    
 - `WARN`: 
 
-   When `Skyflow.LogLevel.WARN` is passed, WARN and ERROR logs will be printed
+   When `LogLevel.WARN` is passed, WARN and ERROR logs will be printed
    
 - `ERROR`:
 
-   When `Skyflow.LogLevel.ERROR` is passed, only ERROR logs will be printed.
+   When `LogLevel.ERROR` is passed, only ERROR logs will be printed.
    
 - `OFF`: 
 
