@@ -345,11 +345,26 @@ setLogLevel(LogLevel.INFO) # sets the skyflow SDK log level to INFO
 
 Current the following 5 log levels are supported:
 
-- `DEBUG`: When `LogLevel.DEBUG` is passed, all level of logs will be printed(DEBUG, INFO, WARN, ERROR)
-- `INFO`: When `Skyflow.LogLevel.INFO` is passed, INFO logs for every event that has occurred during the SDK flow execution will be printed along with WARN and ERROR logs
-- `WARN`: When `Skyflow.LogLevel.WARN` is passed, WARN and ERROR logs will be printed
-- `ERROR`:When `Skyflow.LogLevel.ERROR` is passed, only ERROR logs will be printed.
-- `OFF`: `LogLevel.OFF` can be used to turn off all logging from the Skyflow SDK.
+- `DEBUG`:
+
+   When `LogLevel.DEBUG` is passed, all level of logs will be printed(DEBUG, INFO, WARN, ERROR)
+   
+- `INFO`: 
+
+   When `Skyflow.LogLevel.INFO` is passed, INFO logs for every event that has occurred during the SDK flow execution will be printed along with WARN and ERROR logs
+   
+- `WARN`: 
+
+   When `Skyflow.LogLevel.WARN` is passed, WARN and ERROR logs will be printed
+   
+- `ERROR`:
+
+   When `Skyflow.LogLevel.ERROR` is passed, only ERROR logs will be printed.
+   
+- `OFF`: 
+
+   `LogLevel.OFF` can be used to turn off all logging from the Skyflow SDK.
+   
 
 `Note`:
   - The ranking of logging levels is as follows :  `DEBUG` < `INFO` < `WARN` < `ERROR`
