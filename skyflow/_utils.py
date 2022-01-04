@@ -3,7 +3,7 @@ from enum import Enum
 
 skyflowLog = logging.getLogger('skyflow')
 
-skyflowLog.setLevel(logging.INFO)
+skyflowLog.setLevel(logging.ERROR)
 
 def setLogLevel(logLevel: int):
     skyflowLog.setLevel(logLevel)

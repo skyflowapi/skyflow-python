@@ -20,6 +20,7 @@ $ pip install skyflow
   * [Detokenize](#detokenize)
   * [GetById](#get-by-id)
   * [InvokeConnection](#invoke-connection)
+* [Logging](#logging)
 
 ### Service Account Token Generation
 
@@ -325,4 +326,16 @@ Sample response:
         "cvv2": "558"
     }
 }
+```
+
+## Logging
+
+The skyflow python SDK provides useful logging using python's inbuilt `logging` library. By default the logging level of the SDK is set to `logging.ERROR`. This can be changed by using `setLogLevel(logLevel)` as shown below:
+
+```python
+import logging
+from skyflow import setLogLevel
+
+logging.basicConfig() # You can set the basic config here
+setLogLevel(logging.INFO) # sets the skyflow SDK log level to INFO
 ```
