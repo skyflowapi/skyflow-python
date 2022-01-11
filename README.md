@@ -26,16 +26,16 @@ $ pip install skyflow
 
 The [Service Account](https://github.com/skyflowapi/skyflow-python/tree/main/ServiceAccount) python module is used to generate service account tokens from service account credentials file which is downloaded upon creation of service account. The token generated from this module is valid for 60 minutes and can be used to make API calls to vault services as well as management API(s) based on the permissions of the service account.
 
-The `GenerateBearerToken(filepath)` function takes the credentials file path for token generation, alternatively, you can also send the entire credentials as string, by using `GenerateBearerTokenFromCreds(credentials)` 
+The `generateBearerToken(filepath)` function takes the credentials file path for token generation, alternatively, you can also send the entire credentials as string, by using `generateBearerTokenFromCreds(credentials)` 
 
 [Example](https://github.com/skyflowapi/skyflow-python/blob/main/examples/SATokenExample.py):
 
 
 ```python
-from skyflow.ServiceAccount import GenerateBearerToken
+from skyflow.ServiceAccount import generateBearerToken
 
 filepath =  '<YOUR_CREDENTIALS_FILE_PATH>'
-accessToken, tokenType = GenerateBearerToken(filepath) # or GenerateBearerTokenFromCreds(credentials)
+accessToken, tokenType = generateBearerToken(filepath) # or generateBearerTokenFromCreds(credentials)
 
 print("Access Token:", accessToken)
 print("Type of token:", tokenType)
@@ -49,11 +49,11 @@ To use this module, the skyflow client must first be initialized as follows.
 
 ```python
 from skyflow.Vault import Client, Configuration
-from skyflow.ServiceAccount import GenerateBearerToken
+from skyflow.ServiceAccount import generateBearerToken
 
 #User defined function to provide access token to the vault apis
 def tokenProvider():    
-    token, _ = GenerateBearerToken('<YOUR_CREDENTIALS_FILE_PATH>')
+    token, _ = generateBearerToken('<YOUR_CREDENTIALS_FILE_PATH>')
     return token
 
 #Initializing a Skyflow Client instance with a SkyflowConfiguration object
@@ -294,7 +294,7 @@ An example of invokeConnection:
 from skyflow.Vault import ConnectionConfig, Configuration, RequestMethod
 
 def tokenProvider():
-    token, _ = GenerateBearerToken('<YOUR_CREDENTIALS_FILE_PATH>')
+    token, _ = generateBearerToken('<YOUR_CREDENTIALS_FILE_PATH>')
     return token
 
 try:

@@ -5,7 +5,7 @@ from requests.models import Response
 from dotenv import dotenv_values
 from skyflow.Vault._insert import getInsertRequestBody, processResponse
 from skyflow.Errors._skyflowErrors import SkyflowError, SkyflowErrorCodes, SkyflowErrorMessages
-from skyflow.ServiceAccount import GenerateBearerToken
+from skyflow.ServiceAccount import generateBearerToken
 from skyflow.Vault._client import Client
 from skyflow.Vault._config import Configuration, InsertOptions
 
@@ -174,7 +174,7 @@ class TestInsert(unittest.TestCase):
     #     env_values = dotenv_values('.env')
 
     #     def tokenProvider():
-    #         token, _ = GenerateBearerToken(env_values['CREDENTIALS_FILE_PATH'])
+    #         token, _ = generateBearerToken(env_values['CREDENTIALS_FILE_PATH'])
     #         return token
 
     #     config = Configuration(env_values['VAULT_ID'], env_values['VAULT_URL'], tokenProvider)
@@ -205,7 +205,7 @@ class TestInsert(unittest.TestCase):
     #     env_values = dotenv_values('.env')
 
     #     def tokenProvider():
-    #         token, _ = GenerateBearerToken(env_values['CREDENTIALS_FILE_PATH'])
+    #         token, _ = generateBearerToken(env_values['CREDENTIALS_FILE_PATH'])
     #         return token
 
     #     config = Configuration(env_values['VAULT_ID'], env_values['VAULT_URL'], tokenProvider)

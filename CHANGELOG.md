@@ -7,10 +7,10 @@ All notable changes to this project will be documented in this file.
 ### Added
 - Logging functionality
 - `setLogLevel` function for setting the package-level LogLevel
-- `GenerateBearerTokenFromCreds` function which takes credentials as string
+- `generateBearerTokenFromCreds` function which takes credentials as string
 
 ### Changed
-- Renamed and deprecated `GenerateToken` in favor of `GenerateBearerToken`
+- Renamed and deprecated `GenerateToken` in favor of `generateBearerToken`
 - Make `vaultID` and `vaultURL` optional in `Client` constructor
 
 

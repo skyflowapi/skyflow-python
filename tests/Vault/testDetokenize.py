@@ -3,7 +3,7 @@ import os
 from skyflow.Vault._detokenize import getDetokenizeRequestBody
 from skyflow.Errors._skyflowErrors import SkyflowError, SkyflowErrorCodes, SkyflowErrorMessages
 from skyflow.Vault._client import Client, Configuration
-from skyflow.ServiceAccount import GenerateBearerToken
+from skyflow.ServiceAccount import generateBearerToken
 from dotenv import dotenv_values
 import warnings
 
@@ -18,7 +18,7 @@ class TestDetokenize(unittest.TestCase):
         }
         self.data = {"records": [self.tokenField]}
         def tokenProvider():
-            token, type = GenerateBearerToken(self.envValues["CREDENTIALS_FILE_PATH"])
+            token, type = generateBearerToken(self.envValues["CREDENTIALS_FILE_PATH"])
             return token
 
         config = Configuration(self.envValues["VAULT_ID"], self.envValues["VAULT_URL"], tokenProvider)
