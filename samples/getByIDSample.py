@@ -1,10 +1,10 @@
 from skyflow.Errors import SkyflowError
-from skyflow.ServiceAccount import GenerateBearerToken
+from skyflow.ServiceAccount import generateBearerToken
 from skyflow.Vault import Client, Configuration, RedactionType
 
 
 def tokenProvider():
-    token, _ = GenerateBearerToken('<YOUR_CREDENTIALS_FILE_PATH>')
+    token, _ = generateBearerToken('<YOUR_CREDENTIALS_FILE_PATH>')
     return token
 
 try:

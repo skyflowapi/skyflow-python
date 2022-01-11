@@ -14,12 +14,12 @@ ResponseToken = namedtuple('ResponseToken', ['AccessToken', 'TokenType'])
 
 def GenerateToken(credentialsFilePath: str) -> ResponseToken:
     '''
-    This function has been deprecated and replaced with GenerateBearerToken(credentialsFilePath: str)
+    This function has been deprecated and replaced with generateBearerToken(credentialsFilePath: str)
     '''
-    warn('This function has been deprecated and replaced with GenerateBearerToken(credentialsFilePath: str)', DeprecationWarning)
-    GenerateBearerToken(credentialsFilePath)
+    warn('This function has been deprecated and replaced with generateBearerToken(credentialsFilePath: str)', DeprecationWarning)
+    generateBearerToken(credentialsFilePath)
 
-def GenerateBearerToken(credentialsFilePath: str) -> ResponseToken:
+def generateBearerToken(credentialsFilePath: str) -> ResponseToken:
 
     '''
     This function is used to get the access token for skyflow Service Accounts.
@@ -51,7 +51,7 @@ def GenerateBearerToken(credentialsFilePath: str) -> ResponseToken:
     log_info(InfoMessages.GENERATE_BEARER_TOKEN_SUCCESS.value, interface)
     return result
 
-def GenerateBearerTokenFromCreds(credentials: str) -> ResponseToken:
+def generateBearerTokenFromCreds(credentials: str) -> ResponseToken:
 
     '''
     This function is used to get the access token for skyflow Service Accounts.

@@ -62,4 +62,4 @@ class InterfaceName(Enum):
     DETOKENIZE = "client.detokenize"
     GET_BY_ID = "client.getById"
     INVOKE_CONNECTION = "client.invokeConnection"
-    GENERATE_BEARER_TOKEN = "ServiceAccount.GenerateBearerToken"
+    GENERATE_BEARER_TOKEN = "ServiceAccount.generateBearerToken"

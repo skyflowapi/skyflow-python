@@ -1,9 +1,9 @@
 from skyflow.Errors import SkyflowError
-from skyflow.ServiceAccount import GenerateBearerToken
+from skyflow.ServiceAccount import generateBearerToken
 
 
 try:
-    accessToken, tokenType = GenerateBearerToken('<YOUR_CREDENTIALS_FILE_PATH>')
+    accessToken, tokenType = generateBearerToken('<YOUR_CREDENTIALS_FILE_PATH>')
     print("Access Token:", accessToken)
     print("Type of token:", tokenType)
 except SkyflowError as e:
