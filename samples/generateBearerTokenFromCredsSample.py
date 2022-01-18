@@ -12,7 +12,14 @@ from skyflow.ServiceAccount import generateBearerTokenFromCreds
 
 
 try:
-    credentials = {} # Your credentials as a dict e.g. {"clientID": "your_client_ID", tokenURI: 'www.your-token-URI.com', ...}
+    # As an example
+    credentials = {
+        "clientID": "<YOUR_clientID>",
+        "clientName": "<YOUR_clientName>", 
+        "keyID": "<YOUR_keyID>", 
+        "tokenURI": '<YOUR_tokenURI>', 
+        "privateKey": "<YOUR_PEM_privateKey>"
+    }
     jsonString = json.dumps(credentials)
     accessToken, tokenType = generateBearerTokenFromCreds(credentials=jsonString)
     print("Access Token:", accessToken)
