@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.1] - 2022-01-18
+
+### Fixed
+- `generateBearerTokenFromCreds` raising error "invalid credentials" on correct credentials
+
 ## [1.2.0] - 2022-01-04
 
 ### Added
