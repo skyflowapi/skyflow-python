@@ -148,3 +148,5 @@ class testInvokeConnection(unittest.TestCase):
         except SkyflowError as e:
             print(e)
             # self.fail()
+
+testInvokeConnection().testinvokeConnectionCvvGenSuccess()

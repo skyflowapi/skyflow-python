@@ -59,7 +59,9 @@ class Client:
         session = requests.Session()
         token = self.tokenProvider()
         request = createRequest(config)
-        request.headers['X-Skyflow-Authorization'] = token
+
+        if not 'X-Skyflow-Authorization' in request.headers.keys():
+            request.headers['X-Skyflow-Authorization'] = token
 
         response = session.send(request)
         session.close()
