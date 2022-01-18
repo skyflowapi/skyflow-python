@@ -66,7 +66,7 @@ def generateBearerTokenFromCreds(credentials: str) -> ResponseToken:
 
     log_info(InfoMessages.GENERATE_BEARER_TOKEN_TRIGGERED.value, interface)
     try:
-        jsonCredentials = json.load(credentials)
+        jsonCredentials = json.loads(credentials)
     except Exception as e:
         raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.INVALID_CREDENTIALS, interface=interface)
     result = getSAToken(jsonCredentials)

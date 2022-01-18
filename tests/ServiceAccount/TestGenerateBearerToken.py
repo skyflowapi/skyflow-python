@@ -1,10 +1,11 @@
 import unittest
 import os
 from dotenv import dotenv_values
-from skyflow.ServiceAccount import generateBearerToken
+from skyflow.ServiceAccount import generateBearerToken, generateBearerTokenFromCreds
 from skyflow.Errors._skyflowErrors import *
+import json
 
-class TestgenerateBearerToken(unittest.TestCase):
+class TestGenerateBearerToken(unittest.TestCase):
 
     def setUp(self) -> None:
         self.dataPath = os.path.join(os.getcwd(), 'tests/ServiceAccount/data/')
@@ -73,4 +74,22 @@ class TestgenerateBearerToken(unittest.TestCase):
             self.assertEqual(type, 'Bearer')
         except SkyflowError:
             self.fail('Should have successfully returned the token')
+
+    def testGenerateBearerTokenFromCredsInvalid(self):
+        credentialsString = json.dumps(open(self.getDataPath('invalidPrivateKey'), 'r').read())
+        try:
+             generateBearerTokenFromCreds(credentialsString)
+        except SkyflowError as se:
+            self.assertEqual(se.code, SkyflowErrorCodes.INVALID_INPUT.value)
+            self.assertEqual(se.message, SkyflowErrorMessages.JWT_INVALID_FORMAT.value)
+
+    def testGenerateBearerTokenFromCredsSuccess(self):
+        env_values = dotenv_values('.env')
+        credentials_path = env_values['CREDENTIALS_FILE_PATH']
+        credentialsString = json.dumps(open(credentials_path, 'r').read())
+        try:
+             generateBearerTokenFromCreds(credentialsString)
+        except SkyflowError as se:
+            self.assertEqual(se.code, SkyflowErrorCodes.INVALID_INPUT.value)
+            self.assertEqual(se.message, SkyflowErrorMessages.JWT_INVALID_FORMAT.value)
 
