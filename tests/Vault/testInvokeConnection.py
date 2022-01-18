@@ -115,38 +115,37 @@ class testInvokeConnection(unittest.TestCase):
             self.assertEqual(e.code, SkyflowErrorCodes.INVALID_INPUT.value)
             self.assertEqual(e.message, SkyflowErrorMessages.INVALID_QUERY_PARAMS.value)
 
-    def testinvokeConnectionCvvGenSuccess(self):
-        env_values = dotenv_values('.env')
-        connectionURL = env_values['CVV_GEN_CONNECTION_URL']
+    # def testinvokeConnectionCvvGenSuccess(self):
+    #     env_values = dotenv_values('.env')
+    #     connectionURL = env_values['CVV_GEN_CONNECTION_URL']
 
-        def tokenProvider():
-            token, _ = generateBearerToken(env_values['CREDENTIALS_FILE_PATH'])
-            return token
+    #     def tokenProvider():
+    #         token, _ = generateBearerToken(env_values['CREDENTIALS_FILE_PATH'])
+    #         return token
 
-        config = Configuration(env_values['VAULT_ID'], env_values['VAULT_URL'], tokenProvider)
-        connectionConfig = ConnectionConfig(connectionURL, RequestMethod.POST,
-        requestHeader={
-                    'Content-Type': 'application/json',
-                    'Authorization': env_values['VISA_CONNECTION_BASIC_AUTH']
-        },
-        requestBody=
-        {
-            "expirationDate": {
-                "mm": "12",
-                "yy": "22"
-            }
-        },
-        pathParams={'cardID': env_values['DETOKENIZE_TEST_TOKEN']})
-        client = Client(config)
+    #     config = Configuration(env_values['VAULT_ID'], env_values['VAULT_URL'], tokenProvider)
+    #     connectionConfig = ConnectionConfig(connectionURL, RequestMethod.POST,
+    #     requestHeader={
+    #                 'Content-Type': 'application/json',
+    #                 'Authorization': env_values['VISA_CONNECTION_BASIC_AUTH']
+    #     },
+    #     requestBody=
+    #     {
+    #         "expirationDate": {
+    #             "mm": "12",
+    #             "yy": "22"
+    #         }
+    #     },
+    #     pathParams={'cardID': env_values['DETOKENIZE_TEST_TOKEN']})
+    #     client = Client(config)
 
 
-        try:
-            resp = client.invokeConnection(connectionConfig)
-            self.assertIsNotNone(resp['resource']['cvv2'])
-            self.assertIsNotNone(resp['processingTimeinMs'])
-            self.assertIsNotNone(resp['receivedTimestamp'])
-        except SkyflowError as e:
-            print(e)
+    #     try:
+    #         resp = client.invokeConnection(connectionConfig)
+    #         self.assertIsNotNone(resp['resource']['cvv2'])
+    #         self.assertIsNotNone(resp['processingTimeinMs'])
+    #         self.assertIsNotNone(resp['receivedTimestamp'])
+    #     except SkyflowError as e:
+    #         print(e)
             # self.fail()
 
-testInvokeConnection().testinvokeConnectionCvvGenSuccess()
