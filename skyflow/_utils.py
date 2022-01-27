@@ -63,3 +63,4 @@ class InterfaceName(Enum):
     GET_BY_ID = "client.getById"
     INVOKE_CONNECTION = "client.invokeConnection"
     GENERATE_BEARER_TOKEN = "ServiceAccount.generateBearerToken"
+    
