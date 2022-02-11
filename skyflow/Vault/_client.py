@@ -63,6 +63,9 @@ class Client:
         if not 'X-Skyflow-Authorization' in request.headers.keys():
             request.headers['X-Skyflow-Authorization'] = token
 
+        if not 'Content-Type' in request.headers.keys():
+            request.headers['Content-Type'] = 'application/json'
+
         response = session.send(request)
         session.close()
         return processResponse(response, interface=interface)
