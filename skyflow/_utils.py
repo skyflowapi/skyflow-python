@@ -2,7 +2,6 @@ import logging
 from enum import Enum
 
 skyflowLog = logging.getLogger('skyflow')
-
 skyflowLog.setLevel(logging.ERROR)
 
 class LogLevel(Enum):

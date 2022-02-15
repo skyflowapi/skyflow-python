@@ -6,13 +6,12 @@ from skyflow.Errors._skyflowErrors import *
 class TestTokenProviderWrapper(unittest.TestCase):
 
     def testInvalidStoredToken(self):
-        newerToken = ''
         def tokenProvider():
             newerToken = generateBearerToken('credentials.json')
             return newerToken
 
         try:
-            newToken = tokenProviderWrapper('invalid', tokenProvider, "Test")
+            tokenProviderWrapper('invalid', tokenProvider, "Test")
             self.fail('Should have thrown invalid jwt error')
         except SkyflowError as e:
             self.assertEqual(e.code, SkyflowErrorCodes.INVALID_INPUT.value)

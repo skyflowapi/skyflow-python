@@ -149,4 +149,4 @@ class testInvokeConnection(unittest.TestCase):
             print(e)
             # self.fail()
 
-testInvokeConnection().testinvokeConnectionCvvGenSuccess()
+# testInvokeConnection().testinvokeConnectionCvvGenSuccess()
