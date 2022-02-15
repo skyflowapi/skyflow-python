@@ -1,5 +1,7 @@
 import unittest
 
+from django import conf
+
 from skyflow.Vault._config import *
 
 class TestConfig(unittest.TestCase):
@@ -24,3 +26,15 @@ class TestConfig(unittest.TestCase):
         self.assertDictEqual(config.queryParams, {})
         self.assertDictEqual(config.requestHeader, {})
         self.assertDictEqual(config.requestBody, {})
+        
+    def testConfigArgs(self):
+        configOnlyTokenProvider = Configuration(lambda: "token")
+        self.assertIsNotNone(configOnlyTokenProvider.tokenProvider)
+        self.assertEqual(configOnlyTokenProvider.vaultID, '')
+        self.assertEqual(configOnlyTokenProvider.vaultURL, '')
+        
+        try:
+            Configuration()
+        except TypeError as e:
+            self.assertEqual(e.args[0], "tokenProvider must be given")
+

@@ -92,4 +92,27 @@ class TestGenerateBearerToken(unittest.TestCase):
         except SkyflowError as se:
             self.assertEqual(se.code, SkyflowErrorCodes.INVALID_INPUT.value)
             self.assertEqual(se.message, SkyflowErrorMessages.JWT_INVALID_FORMAT.value)
+            
+
+    def testNonExistentFileArg(self):
+        try:
+            generateBearerToken('non-existent-file.json')
+            self.fail()
+        except SkyflowError as e:
+            self.assertEqual(e.code, SkyflowErrorCodes.INVALID_INPUT)
+            self.assertEqual(e.message, SkyflowErrorMessages.FILE_NOT_FOUND.value)
+
+    def testInvalidJSONInCreds(self):
+        try:
+            generateBearerToken(self.getDataPath('invalid-json'))
+            self.fail()
+        except SkyflowError as e:
+            self.assertEqual(e.code, SkyflowErrorCodes.INVALID_INPUT)
+            self.assertEqual(e.message, SkyflowErrorMessages.INVALID_JSON.value)
+        try:
+            generateBearerTokenFromCreds(self.getDataPath('invalid-json'))
+            self.fail()
+        except SkyflowError as e:
+            self.assertEqual(e.code, SkyflowErrorCodes.INVALID_INPUT)
+            self.assertEqual(e.message, SkyflowErrorMessages.INVALID_JSON.value)
 
