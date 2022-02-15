@@ -1,7 +1,5 @@
 import unittest
 
-from django import conf
-
 from skyflow.Vault._config import *
 
 class TestConfig(unittest.TestCase):
