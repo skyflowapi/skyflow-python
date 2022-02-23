@@ -1,6 +1,4 @@
 import json
-import time
-import jwt
 import jwt
 import datetime
 import requests
@@ -12,7 +10,6 @@ from skyflow._utils import log_info, InterfaceName, InfoMessages
 from skyflow.Errors._skyflowErrors import *
 
 ResponseToken = namedtuple('ResponseToken', ['AccessToken', 'TokenType'])
-storedToken = ''
 
 def GenerateToken(credentialsFilePath: str) -> ResponseToken:
     '''
@@ -36,9 +33,6 @@ def generateBearerToken(credentialsFilePath: str) -> ResponseToken:
 
     log_info(InfoMessages.GENERATE_BEARER_TOKEN_TRIGGERED.value, interface)
 
-    if isTokenValid(storedToken, interface):
-        return storedToken
-
     try:
         credentialsFile = open(credentialsFilePath, 'r')
     except:
@@ -46,7 +40,7 @@ def generateBearerToken(credentialsFilePath: str) -> ResponseToken:
 
     try:
         credentials = json.load(credentialsFile)
-    except Exception as e:
+    except Exception:
         raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.FILE_INVALID_JSON.value % (credentialsFilePath))
     finally:
         credentialsFile.close()
@@ -142,6 +136,9 @@ def sendRequestWithToken(url, token):
     try:
         response.raise_for_status()
     except requests.exceptions.HTTPError as error:
+        message = error.strerror
+        if 'x-request-id' in response.headers:
+            message += ' - request id: ' + response.headers['x-request-id']
         raise SkyflowError(statusCode, error.strerror)
 
     return response
@@ -158,20 +155,3 @@ def getResponseToken(token):
         raise SkyflowError(SkyflowErrorCodes.SERVER_ERROR, SkyflowErrorMessages.MISSING_TOKEN_TYPE)
 
     return ResponseToken(AccessToken=accessToken, TokenType=tokenType)
-
-def isTokenValid(storedToken: str, interface: str):
-    '''
-    Check if stored token is not expired, if not return a new token
-    '''
-    
-    if len(storedToken) == 0:
-        return False
-
-    try:
-        decoded = jwt.decode(storedToken, options={"verify_signature": False})
-        if time.time() < decoded['exp'] + 300:
-            return True 
-    except jwt.ExpiredSignatureError:
-        return False 
-    except Exception:
-        raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.JWT_DECODE_ERROR, interface=interface)

@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.3.0] - 2021-02-23
+
+### Added
+- Request ID in error logs and error responses for API Errors
+- Add caching to access token used in vault APIs and `GenerateBearerToken`
+
 ## [1.2.1] - 2022-01-18
 
 ### Fixed

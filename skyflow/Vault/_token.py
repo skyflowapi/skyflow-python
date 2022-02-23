@@ -12,7 +12,7 @@ def tokenProviderWrapper(storedToken: str, newTokenProvider, interface: str):
 
     try:
         decoded = jwt.decode(storedToken, options={"verify_signature": False})
-        if time.time() < decoded['exp'] + 300:
+        if time.time() + 300 < decoded['exp']:
             return storedToken
     except jwt.ExpiredSignatureError:
         return newTokenProvider()
