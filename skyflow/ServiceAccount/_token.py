@@ -1,16 +1,18 @@
-from collections import namedtuple
 import json
+import time
+import jwt
 import jwt
 import datetime
 import requests
 from warnings import warn
+from collections import namedtuple
 from skyflow._utils import log_info, InterfaceName, InfoMessages
 
-from requests.models import Response
 
 from skyflow.Errors._skyflowErrors import *
 
 ResponseToken = namedtuple('ResponseToken', ['AccessToken', 'TokenType'])
+storedToken = ''
 
 def GenerateToken(credentialsFilePath: str) -> ResponseToken:
     '''
@@ -33,6 +35,9 @@ def generateBearerToken(credentialsFilePath: str) -> ResponseToken:
     interface = InterfaceName.GENERATE_BEARER_TOKEN.value
 
     log_info(InfoMessages.GENERATE_BEARER_TOKEN_TRIGGERED.value, interface)
+
+    if isTokenValid(storedToken, interface):
+        return storedToken
 
     try:
         credentialsFile = open(credentialsFilePath, 'r')
@@ -153,3 +158,20 @@ def getResponseToken(token):
         raise SkyflowError(SkyflowErrorCodes.SERVER_ERROR, SkyflowErrorMessages.MISSING_TOKEN_TYPE)
 
     return ResponseToken(AccessToken=accessToken, TokenType=tokenType)
+
+def isTokenValid(storedToken: str, interface: str):
+    '''
+    Check if stored token is not expired, if not return a new token
+    '''
+    
+    if len(storedToken) == 0:
+        return False
+
+    try:
+        decoded = jwt.decode(storedToken, options={"verify_signature": False})
+        if time.time() < decoded['exp'] + 300:
+            return True 
+    except jwt.ExpiredSignatureError:
+        return False 
+    except Exception:
+        raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.JWT_DECODE_ERROR, interface=interface)
