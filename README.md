@@ -35,19 +35,20 @@ The `generateBearerToken(filepath)` function takes the credentials file path for
 from skyflow.Errors import SkyflowError
 from skyflow.ServiceAccount import generateBearerToken, isValid
 
-# cached token for reuse
-accessToken = ''
-def getAccessToken():
-    if isValid(accessToken):
-        return accessToken
-    accessToken, tokenType = generateBearerToken('<YOUR_CREDENTIALS_FILE_PATH>')
+# cache token for reuse
+bearerToken = ''
+def tokenProvider():
+    if not isValid(bearerToken):
+        bearerToken, _ = generateBearerToken('<YOUR_CREDENTIALS_FILE_PATH>')
+    return bearerToken
 
 try:
-    accessToken, tokenType = getAccessToken()
+    accessToken, tokenType = tokenProvider()
     print("Access Token:", accessToken)
     print("Type of token:", tokenType)
 except SkyflowError as e:
     print(e)
+
 ```
 
 
@@ -61,14 +62,14 @@ from skyflow.Vault import Client, Configuration
 from skyflow.ServiceAccount import generateBearerToken, isValid
 
 # cache for reuse
-accessToken = ''
+bearerToken = ''
 
 # User defined function to provide access token to the vault apis
 def tokenProvider():    
-    if isValid(accessToken):
-        return accessToken
-    accessToken, _ = generateBearerToken('<YOUR_CREDENTIALS_FILE_PATH>')
-    return accessToken 
+    if isValid(bearerToken):
+        return bearerToken
+    bearerToken, _ = generateBearerToken('<YOUR_CREDENTIALS_FILE_PATH>')
+    return bearerToken 
 
 #Initializing a Skyflow Client instance with a SkyflowConfiguration object
 config = Configuration('<YOUR_VAULT_ID>', '<YOUR_VAULT_URL>', tokenProvider)
@@ -307,12 +308,12 @@ An example of invokeConnection:
 ```python
 from skyflow.Vault import ConnectionConfig, Configuration, RequestMethod
 
-accessToken = '' 
+bearerToken = '' 
 def tokenProvider():
-    if isValid(accessToken):
-        return accessToken
-    token, _ = generateBearerToken('<YOUR_CREDENTIALS_FILE_PATH>')
-    return token
+    if isValid(bearerToken):
+        return bearerToken
+    bearerToken, _ = generateBearerToken('<YOUR_CREDENTIALS_FILE_PATH>')
+    return bearerToken
 
 try:
     config = Configuration('<YOUR_VAULT_ID>', '<YOUR_VAULT_URL>', tokenProvider)

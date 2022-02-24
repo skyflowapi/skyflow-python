@@ -4,12 +4,11 @@ from skyflow.Vault import Client, Configuration, RedactionType
 
 
 # cache token for reuse
-accessToken = ''
+bearerToken = ''
 def tokenProvider():
-    if isValid(accessToken):
-        return accessToken
-    accessToken, _ = generateBearerToken('<YOUR_CREDENTIALS_FILE_PATH>')
-    return accessToken
+    if not isValid(bearerToken):
+        bearerToken, _ = generateBearerToken('<YOUR_CREDENTIALS_FILE_PATH>')
+    return bearerToken
 
 try:
     config = Configuration('<YOUR_VAULT_ID>', '<YOUR_VAULT_URL>', tokenProvider)

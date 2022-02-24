@@ -11,10 +11,8 @@ from skyflow.ServiceAccount import generateBearerTokenFromCreds, isValid
 '''
 
 # cache token for reuse
-accessToken = ''
-def getAccessToken():
-    if isValid(accessToken):
-        return accessToken
+bearerToken = ''
+def tokenProvider():
 
     # As an example
     credentials = {
@@ -25,10 +23,13 @@ def getAccessToken():
         "privateKey": "<YOUR_PEM_privateKey>"
     }
     jsonString = json.dumps(credentials)
-    return generateBearerTokenFromCreds(credentials=jsonString)
+    if not isValid(bearerToken):
+        bearerToken, tokenType = generateBearerTokenFromCreds(credentials=jsonString)
+
+    return bearerToken
 
 try:
-    accessToken, tokenType = getAccessToken()
+    accessToken, tokenType = tokenProvider()
     print("Access Token:", accessToken)
     print("Type of token:", tokenType)
 except SkyflowError as e:
