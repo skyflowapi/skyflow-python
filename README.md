@@ -37,10 +37,11 @@ from skyflow.ServiceAccount import generateBearerToken, isValid
 
 # cache token for reuse
 bearerToken = ''
+tokenType = ''
 def tokenProvider():
     if not isValid(bearerToken):
-        bearerToken, _ = generateBearerToken('<YOUR_CREDENTIALS_FILE_PATH>')
-    return bearerToken
+        bearerToken, tokenType = generateBearerToken('<YOUR_CREDENTIALS_FILE_PATH>')
+    return bearerToken, tokenType
 
 try:
     accessToken, tokenType = tokenProvider()

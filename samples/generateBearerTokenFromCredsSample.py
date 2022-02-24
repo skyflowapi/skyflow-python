@@ -12,6 +12,7 @@ from skyflow.ServiceAccount import generateBearerTokenFromCreds, isValid
 
 # cache token for reuse
 bearerToken = ''
+tokenType = ''
 def tokenProvider():
 
     # As an example
