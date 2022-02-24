@@ -1,7 +1,7 @@
 from skyflow.Errors import SkyflowError
 from skyflow.ServiceAccount import generateBearerToken, isValid
 
-# cached token for reuse
+# cache token for reuse
 accessToken = ''
 def getAccessToken():
     if isValid(accessToken):

@@ -6,7 +6,7 @@ from skyflow.Vault import Client, Configuration, RequestMethod, ConnectionConfig
 This sample is for generating CVV using Skyflow Connection with a third party integration such as VISA
 '''
 
-# cached token for reuse
+# cache token for reuse
 accessToken = ''
 def tokenProvider():
     if isValid(accessToken):

@@ -3,7 +3,7 @@ from skyflow.ServiceAccount import generateBearerToken, isValid
 from skyflow.Vault import Client, Configuration, RedactionType
 
 
-# cached token for reuse
+# cache token for reuse
 accessToken = ''
 def tokenProvider():
     if isValid(accessToken):

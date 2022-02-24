@@ -10,7 +10,7 @@ from skyflow.ServiceAccount import generateBearerTokenFromCreds, isValid
     - Use generateBearerTokenFromCreds(jsonString) to get the Bearer Token
 '''
 
-# cached token for reuse
+# cache token for reuse
 accessToken = ''
 def getAccessToken():
     if isValid(accessToken):
