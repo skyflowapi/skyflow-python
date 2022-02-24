@@ -2,11 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
-## [1.3.0] - 2021-02-23
+## [1.3.0] - 2021-02-24
 
 ### Added
 - Request ID in error logs and error responses for API Errors
-- Add caching to access token used in vault APIs and `GenerateBearerToken`
+- Caching to accessToken token 
+- `isValid` method for validating Service Account bearer token
 
 ## [1.2.1] - 2022-01-18
 
