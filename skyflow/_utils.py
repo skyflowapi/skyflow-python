@@ -56,6 +56,7 @@ class InfoMessages(Enum):
     GENERATE_BEARER_TOKEN_SUCCESS = "Generate bearer token returned successfully"
     IS_TOKEN_VALID_TRIGGERED = "isTokenValid() triggered"
     EMPTY_ACCESS_TOKEN = "Give access token is empty"
+    INVALID_TOKEN = "Given token is invalid"
 
 class InterfaceName(Enum):
     CLIENT = "client"
