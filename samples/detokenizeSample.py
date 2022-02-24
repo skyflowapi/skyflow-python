@@ -1,11 +1,14 @@
 from skyflow.Errors import SkyflowError
-from skyflow.ServiceAccount import generateBearerToken
+from skyflow.ServiceAccount import generateBearerToken, isValid
 from skyflow.Vault import Client, Configuration
 
-
+# cached token for reuse
+accessToken = ''
 def tokenProvider():
-    token, _ = generateBearerToken('<YOUR_CREDENTIALS_FILE_PATH>')
-    return token
+    if isValid(accessToken):
+        return accessToken
+    accessToken, _ = generateBearerToken('<YOUR_CREDENTIALS_FILE_PATH>')
+    return accessToken
 
 try:
     config = Configuration('<YOUR_VAULT_ID>', '<YOUR_VAULT_URL>', tokenProvider)

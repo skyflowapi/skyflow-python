@@ -1,7 +1,7 @@
 import json
 
 from skyflow.Errors import SkyflowError
-from skyflow.ServiceAccount import generateBearerTokenFromCreds
+from skyflow.ServiceAccount import generateBearerTokenFromCreds, isValid
 
 '''
     This sample demonstrates the usage of generateBearerTokenFromCreds
@@ -10,8 +10,12 @@ from skyflow.ServiceAccount import generateBearerTokenFromCreds
     - Use generateBearerTokenFromCreds(jsonString) to get the Bearer Token
 '''
 
+# cached token for reuse
+accessToken = ''
+def getAccessToken():
+    if isValid(accessToken):
+        return accessToken
 
-try:
     # As an example
     credentials = {
         "clientID": "<YOUR_clientID>",
@@ -21,7 +25,10 @@ try:
         "privateKey": "<YOUR_PEM_privateKey>"
     }
     jsonString = json.dumps(credentials)
-    accessToken, tokenType = generateBearerTokenFromCreds(credentials=jsonString)
+    return generateBearerTokenFromCreds(credentials=jsonString)
+
+try:
+    accessToken, tokenType = getAccessToken()
     print("Access Token:", accessToken)
     print("Type of token:", tokenType)
 except SkyflowError as e:

@@ -32,13 +32,22 @@ The `generateBearerToken(filepath)` function takes the credentials file path for
 
 
 ```python
-from skyflow.ServiceAccount import generateBearerToken
+from skyflow.Errors import SkyflowError
+from skyflow.ServiceAccount import generateBearerToken, isValid
 
-filepath =  '<YOUR_CREDENTIALS_FILE_PATH>'
-accessToken, tokenType = generateBearerToken(filepath) # or generateBearerTokenFromCreds(credentials)
+# cached token for reuse
+accessToken = ''
+def getAccessToken():
+    if isValid(accessToken):
+        return accessToken
+    accessToken, tokenType = generateBearerToken('<YOUR_CREDENTIALS_FILE_PATH>')
 
-print("Access Token:", accessToken)
-print("Type of token:", tokenType)
+try:
+    accessToken, tokenType = getAccessToken()
+    print("Access Token:", accessToken)
+    print("Type of token:", tokenType)
+except SkyflowError as e:
+    print(e)
 ```
 
 
@@ -49,12 +58,17 @@ To use this module, the skyflow client must first be initialized as follows.
 
 ```python
 from skyflow.Vault import Client, Configuration
-from skyflow.ServiceAccount import generateBearerToken
+from skyflow.ServiceAccount import generateBearerToken, isValid
 
-#User defined function to provide access token to the vault apis
+# cache for reuse
+accessToken = ''
+
+# User defined function to provide access token to the vault apis
 def tokenProvider():    
-    token, _ = generateBearerToken('<YOUR_CREDENTIALS_FILE_PATH>')
-    return token
+    if isValid(accessToken):
+        return accessToken
+    accessToken, _ = generateBearerToken('<YOUR_CREDENTIALS_FILE_PATH>')
+    return accessToken 
 
 #Initializing a Skyflow Client instance with a SkyflowConfiguration object
 config = Configuration('<YOUR_VAULT_ID>', '<YOUR_VAULT_URL>', tokenProvider)
@@ -293,7 +307,10 @@ An example of invokeConnection:
 ```python
 from skyflow.Vault import ConnectionConfig, Configuration, RequestMethod
 
+accessToken = '' 
 def tokenProvider():
+    if isValid(accessToken):
+        return accessToken
     token, _ = generateBearerToken('<YOUR_CREDENTIALS_FILE_PATH>')
     return token
 
