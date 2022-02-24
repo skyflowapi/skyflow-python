@@ -96,5 +96,5 @@ class TestDetokenize(unittest.TestCase):
             self.assertEqual(e.data["records"][0]["token"], self.envValues["DETOKENIZE_TEST_TOKEN"])
             self.assertEqual(e.data["records"][0]["value"], self.envValues["DETOKENIZE_TEST_VALUE"])
             self.assertEqual(e.data["errors"][0]["error"]["code"], 404)
-            self.assertEqual(e.data["errors"][0]["error"]["description"], "Token not found for invalid-token")
+            self.assertTrue(e.data["errors"][0]["error"]["description"].find("Token not found for invalid-token") != -1)
 

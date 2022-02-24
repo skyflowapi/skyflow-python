@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.3.0] - 2021-02-24
+
+### Added
+- Request ID in error logs and error responses for API Errors
+- Caching to accessToken token 
+- `isValid` method for validating Service Account bearer token
+
 ## [1.2.1] - 2022-01-18
 
 ### Fixed

@@ -148,5 +148,5 @@ class TestGetById(unittest.TestCase):
             self.assertIsNotNone(e.data["records"][1]["fields"])
             self.assertEqual(e.data["records"][1]["table"], "persons")
             self.assertEqual(e.data["errors"][0]["error"]["code"], 404)
-            self.assertEqual(e.data["errors"][0]["error"]["description"], "No Records Found")
+            self.assertTrue(e.data["errors"][0]["error"]["description"].find("No Records Found") != -1)
 

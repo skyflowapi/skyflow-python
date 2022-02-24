@@ -83,7 +83,7 @@ class TestGenerateBearerToken(unittest.TestCase):
             self.assertEqual(se.code, SkyflowErrorCodes.INVALID_INPUT.value)
             self.assertEqual(se.message, SkyflowErrorMessages.JWT_INVALID_FORMAT.value)
 
-    def testGenerateBearerTokenFromCredsSuccess(self):
+    def testGenerateBearerTokenFromCredsFail(self):
         env_values = dotenv_values('.env')
         credentials_path = env_values['CREDENTIALS_FILE_PATH']
         credentialsString = json.dumps(open(credentials_path, 'r').read())
@@ -92,4 +92,37 @@ class TestGenerateBearerToken(unittest.TestCase):
         except SkyflowError as se:
             self.assertEqual(se.code, SkyflowErrorCodes.INVALID_INPUT.value)
             self.assertEqual(se.message, SkyflowErrorMessages.JWT_INVALID_FORMAT.value)
+        
+    def testGenerateBearerTokenFromCredsSuccess(self):
+        env_values = dotenv_values('.env')
+        credentials_path = env_values['CREDENTIALS_FILE_PATH']
+        credentialsString = json.dumps(json.loads(open(credentials_path, 'r').read()))
+        try:
+            token, type = generateBearerTokenFromCreds(credentialsString)
+            self.assertIsNotNone(token)
+            self.assertEqual(type, "Bearer")
+        except SkyflowError as se:
+           self.fail()
+
+    def testNonExistentFileArg(self):
+        try:
+            generateBearerToken('non-existent-file.json')
+            self.fail()
+        except SkyflowError as e:
+            self.assertEqual(e.code, SkyflowErrorCodes.INVALID_INPUT)
+            self.assertEqual(e.message, SkyflowErrorMessages.FILE_NOT_FOUND.value)
+
+    def testInvalidJSONInCreds(self):
+        try:
+            generateBearerToken(self.getDataPath('invalid-json'))
+            self.fail()
+        except SkyflowError as e:
+            self.assertEqual(e.code, SkyflowErrorCodes.INVALID_INPUT)
+            self.assertEqual(e.message, SkyflowErrorMessages.INVALID_JSON.value)
+        try:
+            generateBearerTokenFromCreds(self.getDataPath('invalid-json'))
+            self.fail()
+        except SkyflowError as e:
+            self.assertEqual(e.code, SkyflowErrorCodes.INVALID_INPUT)
+            self.assertEqual(e.message, SkyflowErrorMessages.INVALID_JSON.value)
 

@@ -2,7 +2,6 @@ import logging
 from enum import Enum
 
 skyflowLog = logging.getLogger('skyflow')
-
 skyflowLog.setLevel(logging.ERROR)
 
 class LogLevel(Enum):
@@ -55,6 +54,8 @@ class InfoMessages(Enum):
     INVOKE_CONNECTION_TRIGGERED = "Invoke connection triggered."
     GENERATE_BEARER_TOKEN_TRIGGERED = "Generate bearer token triggered"
     GENERATE_BEARER_TOKEN_SUCCESS = "Generate bearer token returned successfully"
+    IS_TOKEN_VALID_TRIGGERED = "isTokenValid() triggered"
+    EMPTY_ACCESS_TOKEN = "Give access token is empty"
 
 class InterfaceName(Enum):
     CLIENT = "client"
@@ -63,3 +64,4 @@ class InterfaceName(Enum):
     GET_BY_ID = "client.getById"
     INVOKE_CONNECTION = "client.invokeConnection"
     GENERATE_BEARER_TOKEN = "ServiceAccount.generateBearerToken"
+    IS_TOKEN_VALID = "ServiceAccount.isTokenValid"

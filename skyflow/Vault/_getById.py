@@ -64,7 +64,10 @@ async def sendGetByIdRequests(data, url, token):
 
 async def get(url, headers, params, session, table):
     async with session.get(url + "/" + table, headers=headers, params=params, ssl=False) as response:
-        return (await response.read(), response.status, table)
+        try:
+            return (await response.read(), response.status, table, response.headers['x-request-id'])
+        except KeyError:
+            return (await response.read(), response.status, table)
 
 def createGetByIdResponseBody(responses):
     result = {
@@ -88,6 +91,9 @@ def createGetByIdResponseBody(responses):
             temp = {"error": {}}
             temp["error"]["code"] = jsonRes["error"]["http_code"]
             temp["error"]["description"] = jsonRes["error"]["message"]
+            if len(r) >= 3 and r[3] != None:
+                temp["error"]["description"] += ' - Request ID: ' + str(r[3])
+            result["errors"].append(temp)
             result["errors"].append(temp)
             partial = True
     return result, partial

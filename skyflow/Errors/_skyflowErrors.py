@@ -20,6 +20,7 @@ class SkyflowErrorMessages(Enum):
     JWT_INVALID_FORMAT = "Private key is not in correct format"
     MISSING_ACCESS_TOKEN = "accessToken not present in response"
     MISSING_TOKEN_TYPE = "tokenType not present in response"
+    JWT_DECODE_ERROR = "Invalid access token"
 
     # vault
     RECORDS_KEY_ERROR = "Records key is missing from payload"

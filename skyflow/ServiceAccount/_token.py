@@ -1,12 +1,11 @@
-from collections import namedtuple
 import json
 import jwt
 import datetime
 import requests
 from warnings import warn
+from collections import namedtuple
 from skyflow._utils import log_info, InterfaceName, InfoMessages
 
-from requests.models import Response
 
 from skyflow.Errors._skyflowErrors import *
 
@@ -17,7 +16,7 @@ def GenerateToken(credentialsFilePath: str) -> ResponseToken:
     This function has been deprecated and replaced with generateBearerToken(credentialsFilePath: str)
     '''
     warn('This function has been deprecated and replaced with generateBearerToken(credentialsFilePath: str)', DeprecationWarning)
-    generateBearerToken(credentialsFilePath)
+    return generateBearerToken(credentialsFilePath)
 
 def generateBearerToken(credentialsFilePath: str) -> ResponseToken:
 
@@ -41,7 +40,7 @@ def generateBearerToken(credentialsFilePath: str) -> ResponseToken:
 
     try:
         credentials = json.load(credentialsFile)
-    except Exception as e:
+    except Exception:
         raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.FILE_INVALID_JSON.value % (credentialsFilePath))
     finally:
         credentialsFile.close()
@@ -137,6 +136,9 @@ def sendRequestWithToken(url, token):
     try:
         response.raise_for_status()
     except requests.exceptions.HTTPError as error:
+        message = error.strerror
+        if 'x-request-id' in response.headers:
+            message += ' - request id: ' + response.headers['x-request-id']
         raise SkyflowError(statusCode, error.strerror)
 
     return response

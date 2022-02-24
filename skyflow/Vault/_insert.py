@@ -69,6 +69,10 @@ def processResponse(response: requests.Response, interface=interface):
         response.raise_for_status()
         return json.loads(strcontent)
     except HTTPError:
+        try:
+            strcontent += ' - Request ID: ' + str(response.headers['x-request-id'])
+        except KeyError:
+            pass
         raise SkyflowError(statusCode, strcontent, interface=interface)
 
 def convertResponse(request: dict, response: dict, tokens: bool):
