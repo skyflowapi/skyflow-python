@@ -9,7 +9,7 @@ def isValid(token: str):
     if the token has expiry time before 5min of current time, call returns False
     '''
     interface = InterfaceName.IS_TOKEN_VALID.value
-    log_info(InfoMessages.IS_TOKEN_VALID_TRIGGERED, interface)
+    log_info(InfoMessages.IS_TOKEN_VALID_TRIGGERED.value, interface)
     
     if len(token) == 0:
         log_info(InfoMessages.EMPTY_ACCESS_TOKEN, interface)
@@ -22,5 +22,5 @@ def isValid(token: str):
     except jwt.ExpiredSignatureError:
         return False 
     except Exception as e:
-        log_error(e.message, interface)
+        log_error(InfoMessages.INVALID_TOKEN.value, interface)
         return False
