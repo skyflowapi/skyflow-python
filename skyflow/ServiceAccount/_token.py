@@ -16,7 +16,7 @@ def GenerateToken(credentialsFilePath: str) -> ResponseToken:
     This function has been deprecated and replaced with generateBearerToken(credentialsFilePath: str)
     '''
     warn('This function has been deprecated and replaced with generateBearerToken(credentialsFilePath: str)', DeprecationWarning)
-    generateBearerToken(credentialsFilePath)
+    return generateBearerToken(credentialsFilePath)
 
 def generateBearerToken(credentialsFilePath: str) -> ResponseToken:
 

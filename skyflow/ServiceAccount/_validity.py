@@ -9,7 +9,7 @@ def isValid(token: str):
     if the token has expiry time before 5min of current time, call returns False
     '''
     interface = InterfaceName.IS_TOKEN_VALID.value
-    log_info(InfoMessages.IS_TOKEN_VALID_TRIGGERED)
+    log_info(InfoMessages.IS_TOKEN_VALID_TRIGGERED, interface)
     
     if len(token) == 0:
         log_info(InfoMessages.EMPTY_ACCESS_TOKEN, interface)
