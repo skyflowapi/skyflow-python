@@ -61,7 +61,7 @@ class SkyflowErrorMessages(Enum):
 
 
 class SkyflowError(Exception):
-    def __init__(self, code, message="An Error occured", data={}, interface: str = None) -> None:
+    def __init__(self, code, message="An Error occured", data={}, interface: str = 'Unknown') -> None:
         if type(code) is SkyflowErrorCodes:
             self.code = code.value
         else:

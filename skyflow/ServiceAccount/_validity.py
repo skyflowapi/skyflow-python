@@ -32,7 +32,7 @@ def isValid(token: str):
     '''
     Check if stored token is not expired, if not return a new token
     if the token has expiry time before 5min of current time, call returns False
-    Warning: This function has been deprecated and replaced with isExpired(token: str):
+    Warning: This function has been deprecated and replaced with isExpired(token: str)
     '''
     warn(
         'This function has been deprecated and replaced with isExpired(token: str)',

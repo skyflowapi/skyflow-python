@@ -11,6 +11,7 @@ from skyflow._utils import log_info, InterfaceName, InfoMessages
 from skyflow.Errors._skyflowErrors import *
 
 ResponseToken = namedtuple('ResponseToken', ['AccessToken', 'TokenType'])
+interface = InterfaceName.GENERATE_BEARER_TOKEN
 
 
 def GenerateToken(credentialsFilePath: str) -> ResponseToken:
@@ -31,27 +32,27 @@ def generateBearerToken(credentialsFilePath: str) -> ResponseToken:
         2. TokenType: The type of access token (eg: Bearer)
     '''
 
-    interface = InterfaceName.GENERATE_BEARER_TOKEN.value
-
-    log_info(InfoMessages.GENERATE_BEARER_TOKEN_TRIGGERED.value, interface)
+    log_info(InfoMessages.GENERATE_BEARER_TOKEN_TRIGGERED.value,
+             interface=interface)
 
     try:
         credentialsFile = open(credentialsFilePath, 'r')
     except:
         raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT,
-                           SkyflowErrorMessages.FILE_NOT_FOUND.value % (credentialsFilePath))
+                           SkyflowErrorMessages.FILE_NOT_FOUND.value % (credentialsFilePath), interface=interface)
 
     try:
         credentials = json.load(credentialsFile)
     except Exception:
         raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT,
-                           SkyflowErrorMessages.FILE_INVALID_JSON.value % (credentialsFilePath))
+                           SkyflowErrorMessages.FILE_INVALID_JSON.value % (credentialsFilePath), interface=interface)
     finally:
         credentialsFile.close()
 
     result = getSAToken(credentials)
 
-    log_info(InfoMessages.GENERATE_BEARER_TOKEN_SUCCESS.value, interface)
+    log_info(InfoMessages.GENERATE_BEARER_TOKEN_SUCCESS.value,
+             interface=interface)
     return result
 
 
@@ -65,9 +66,8 @@ def generateBearerTokenFromCreds(credentials: str) -> ResponseToken:
         2. TokenType: The type of access token (eg: Bearer)
     '''
 
-    interface = InterfaceName.GENERATE_BEARER_TOKEN.value
-
-    log_info(InfoMessages.GENERATE_BEARER_TOKEN_TRIGGERED.value, interface)
+    log_info(InfoMessages.GENERATE_BEARER_TOKEN_TRIGGERED.value,
+             interface=interface)
     try:
         jsonCredentials = json.loads(credentials)
     except Exception as e:
@@ -85,22 +85,22 @@ def getSAToken(credentials):
         privateKey = credentials["privateKey"]
     except:
         raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT,
-                           SkyflowErrorMessages.MISSING_PRIVATE_KEY)
+                           SkyflowErrorMessages.MISSING_PRIVATE_KEY, interface=interface)
     try:
         clientID = credentials["clientID"]
     except:
         raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT,
-                           SkyflowErrorMessages.MISSING_CLIENT_ID)
+                           SkyflowErrorMessages.MISSING_CLIENT_ID, interface=interface)
     try:
         keyID = credentials["keyID"]
     except:
         raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT,
-                           SkyflowErrorMessages.MISSING_KEY_ID)
+                           SkyflowErrorMessages.MISSING_KEY_ID, interface=interface)
     try:
         tokenURI = credentials["tokenURI"]
     except:
         raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT,
-                           SkyflowErrorMessages.MISSING_TOKEN_URI)
+                           SkyflowErrorMessages.MISSING_TOKEN_URI, interface=interface)
 
     signedToken = getSignedJWT(clientID, keyID, tokenURI, privateKey)
 
@@ -110,7 +110,7 @@ def getSAToken(credentials):
         token = json.loads(response.content)
     except json.decoder.JSONDecodeError as e:
         raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT,
-                           "Unable to parse the response")
+                           "Unable to parse the response", interface=interface)
     return getResponseToken(token)
 
 
@@ -126,7 +126,7 @@ def getSignedJWT(clientID, keyID, tokenURI, privateKey):
         return jwt.encode(payload=payload, key=privateKey, algorithm="RS256")
     except Exception as e:
         raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT,
-                           SkyflowErrorMessages.JWT_INVALID_FORMAT)
+                           SkyflowErrorMessages.JWT_INVALID_FORMAT, interface=interface)
 
 
 def sendRequestWithToken(url, token):
@@ -142,7 +142,7 @@ def sendRequestWithToken(url, token):
         statusCode = response.status_code
     except requests.exceptions.InvalidURL:
         raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT,
-                           SkyflowErrorMessages.INVALID_URL.value % (url))
+                           SkyflowErrorMessages.INVALID_URL.value % (url), interface=interface)
 
     try:
         response.raise_for_status()
@@ -155,7 +155,7 @@ def sendRequestWithToken(url, token):
                 message = errorResponse['error']['message']
         if 'x-request-id' in response.headers:
             message += ' - request id: ' + response.headers['x-request-id']
-        raise SkyflowError(statusCode, message)
+        raise SkyflowError(statusCode, message, interface=interface)
 
     return response
 
@@ -165,12 +165,12 @@ def getResponseToken(token):
         accessToken = token["accessToken"]
     except:
         raise SkyflowError(SkyflowErrorCodes.SERVER_ERROR,
-                           SkyflowErrorMessages.MISSING_ACCESS_TOKEN)
+                           SkyflowErrorMessages.MISSING_ACCESS_TOKEN, interface=interface)
 
     try:
         tokenType = token["tokenType"]
     except:
         raise SkyflowError(SkyflowErrorCodes.SERVER_ERROR,
-                           SkyflowErrorMessages.MISSING_TOKEN_TYPE)
+                           SkyflowErrorMessages.MISSING_TOKEN_TYPE, interface=interface)
 
     return ResponseToken(AccessToken=accessToken, TokenType=tokenType)
