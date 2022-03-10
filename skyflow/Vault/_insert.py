@@ -7,25 +7,28 @@ from skyflow._utils import InterfaceName
 
 interface = InterfaceName.INSERT.value
 
+
 def getInsertRequestBody(data, tokens: bool):
     try:
         records = data["records"]
     except KeyError:
-        raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.RECORDS_KEY_ERROR, interface=interface)
+        raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT,
+                           SkyflowErrorMessages.RECORDS_KEY_ERROR, interface=interface)
 
     if not isinstance(records, list):
         recordsType = str(type(records))
-        raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.INVALID_RECORDS_TYPE.value%(recordsType), interface=interface)
-        
+        raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.INVALID_RECORDS_TYPE.value % (
+            recordsType), interface=interface)
+
     requestPayload = []
     insertTokenPayload = []
     for index, record in enumerate(records):
         tableName, fields = getTableAndFields(record)
         requestPayload.append({
-                "tableName": tableName,
-                "fields": fields,
-                "method": "POST",
-                "quorum": True})
+            "tableName": tableName,
+            "fields": fields,
+            "method": "POST",
+            "quorum": True})
         if tokens:
             insertTokenPayload.append({
                 "method": "GET",
@@ -37,43 +40,55 @@ def getInsertRequestBody(data, tokens: bool):
     try:
         jsonBody = json.dumps(requestBody)
     except Exception as e:
-        raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT ,SkyflowErrorMessages.INVALID_JSON.value%('insert payload'), interface=interface)
+        raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.INVALID_JSON.value % (
+            'insert payload'), interface=interface)
 
     return jsonBody
+
 
 def getTableAndFields(record):
     try:
         table = record["table"]
     except KeyError:
-        raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.TABLE_KEY_ERROR, interface=interface)
-    
+        raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT,
+                           SkyflowErrorMessages.TABLE_KEY_ERROR, interface=interface)
+
     if not isinstance(table, str):
         tableType = str(type(table))
-        raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.INVALID_TABLE_TYPE.value%(tableType), interface=interface)
+        raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.INVALID_TABLE_TYPE.value % (
+            tableType), interface=interface)
 
     try:
         fields = record["fields"]
     except KeyError:
-        raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.FIELDS_KEY_ERROR, interface=interface)
+        raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT,
+                           SkyflowErrorMessages.FIELDS_KEY_ERROR, interface=interface)
 
     if not isinstance(fields, dict):
         fieldsType = str(type(table))
-        raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.INVALID_FIELDS_TYPE.value%(fieldsType), interface=interface)
+        raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.INVALID_FIELDS_TYPE.value % (
+            fieldsType), interface=interface)
 
     return (table, fields)
 
+
 def processResponse(response: requests.Response, interface=interface):
     statusCode = response.status_code
-    strcontent = response.content.decode('utf-8')
+    content = response.content.decode('utf-8')
     try:
         response.raise_for_status()
-        return json.loads(strcontent)
+        return json.loads(content)
     except HTTPError:
-        try:
-            strcontent += ' - Request ID: ' + str(response.headers['x-request-id'])
-        except KeyError:
-            pass
-        raise SkyflowError(statusCode, strcontent, interface=interface)
+        message = SkyflowErrorMessages.API_ERROR.value % statusCode
+        if response != None and response.content != None:
+            errorResponse = json.loads(
+                response.content.decode('utf-8'))
+            if 'error' in errorResponse and type(errorResponse['error']) == type({}) and 'message' in errorResponse['error']:
+                message = errorResponse['error']['message']
+        if 'x-request-id' in response.headers:
+            message += ' - request id: ' + response.headers['x-request-id']
+        raise SkyflowError(statusCode, message, interface=interface)
+
 
 def convertResponse(request: dict, response: dict, tokens: bool):
     responseArray = response['responses']
