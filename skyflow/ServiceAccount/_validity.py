@@ -11,10 +11,10 @@ def isExpired(token: str):
     if the token has expiry time before 5min of current time, call returns False
     '''
     interface = InterfaceName.IS_EXPIRED.value
-    log_info(InfoMessages.IS_EXPIRED_TRIGGERED.value, interface)
+    log_info(InfoMessages.IS_EXPIRED_TRIGGERED.value, interface=interface)
 
     if len(token) == 0:
-        log_info(InfoMessages.EMPTY_ACCESS_TOKEN, interface)
+        log_info(InfoMessages.EMPTY_ACCESS_TOKEN, interface=interface)
         return False
 
     try:
@@ -24,7 +24,7 @@ def isExpired(token: str):
     except jwt.ExpiredSignatureError:
         return False
     except Exception as e:
-        log_error(InfoMessages.INVALID_TOKEN.value, interface)
+        log_error(InfoMessages.INVALID_TOKEN.value, interface=interface)
         return False
 
 
@@ -38,10 +38,10 @@ def isValid(token: str):
         'This function has been deprecated and replaced with isExpired(token: str)',
         DeprecationWarning)
     interface = InterfaceName.IS_TOKEN_VALID.value
-    log_info(InfoMessages.IS_TOKEN_VALID_TRIGGERED.value, interface)
+    log_info(InfoMessages.IS_TOKEN_VALID_TRIGGERED.value, interface=interface)
 
     if len(token) == 0:
-        log_info(InfoMessages.EMPTY_ACCESS_TOKEN, interface)
+        log_info(InfoMessages.EMPTY_ACCESS_TOKEN, interface=interface)
         return False
 
     try:
@@ -51,5 +51,5 @@ def isValid(token: str):
     except jwt.ExpiredSignatureError:
         return False
     except Exception as e:
-        log_error(InfoMessages.INVALID_TOKEN.value, interface)
+        log_error(InfoMessages.INVALID_TOKEN.value, interface=interface)
         return False
