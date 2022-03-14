@@ -43,6 +43,7 @@ class SkyflowErrorMessages(Enum):
     INVALID_REDACTION_TYPE = "Redaction key has value of type %s, expected Skyflow.Redaction"
 
     INVALID_REQUEST_BODY = "Given request body is not valid"
+    INVALID_RESPONSE_BODY = "Given response body is not valid"
     INVALID_HEADERS = "Given Request Headers is not valid"
     INVALID_PATH_PARAMS = "Given path params are not valid"
     INVALID_QUERY_PARAMS = "Given query params are not valid"
@@ -58,6 +59,7 @@ class SkyflowErrorMessages(Enum):
 
     EMPTY_VAULT_ID = "Vault ID must not be empty"
     EMPTY_VAULT_URL = "Vault URL must not be empty"
+    RESPONSE_NOT_JSON = "Response %s is not valid JSON"
 
 
 class SkyflowError(Exception):

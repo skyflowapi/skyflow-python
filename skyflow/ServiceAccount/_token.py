@@ -105,12 +105,13 @@ def getSAToken(credentials):
     signedToken = getSignedJWT(clientID, keyID, tokenURI, privateKey)
 
     response = sendRequestWithToken(tokenURI, signedToken)
+    content = response.content.decode('utf-8')
 
     try:
-        token = json.loads(response.content)
+        token = json.loads(content)
     except json.decoder.JSONDecodeError as e:
         raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT,
-                           "Unable to parse the response", interface=interface)
+                           SkyflowErrorMessages.RESPONSE_NOT_JSON % content, interface=interface)
     return getResponseToken(token)
 
 
@@ -149,10 +150,14 @@ def sendRequestWithToken(url, token):
     except requests.exceptions.HTTPError as error:
         message = SkyflowErrorMessages.API_ERROR.value % statusCode
         if error.response != None and error.response.content != None:
-            errorResponse = json.loads(
-                error.response.content.decode('utf-8'))
-            if 'error' in errorResponse and type(errorResponse['error']) == type({}) and 'message' in errorResponse['error']:
-                message = errorResponse['error']['message']
+            try:
+                errorResponse = json.loads(
+                    error.response.content.decode('utf-8'))
+                if 'error' in errorResponse and type(errorResponse['error']) == type({}) and 'message' in errorResponse['error']:
+                    message = errorResponse['error']['message']
+            except:
+                message = SkyflowErrorMessages.RESPONSE_NOT_JSON.value % error.response.content.decode(
+                    'utf-8')
         if 'x-request-id' in response.headers:
             message += ' - request id: ' + response.headers['x-request-id']
         raise SkyflowError(statusCode, message, interface=interface)

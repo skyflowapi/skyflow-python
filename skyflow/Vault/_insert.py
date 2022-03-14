@@ -77,14 +77,20 @@ def processResponse(response: requests.Response, interface=interface):
     content = response.content.decode('utf-8')
     try:
         response.raise_for_status()
-        return json.loads(content)
+        try:
+            return json.loads(content)
+        except:
+            raise SkyflowError(
+                statusCode, SkyflowErrorMessages.RESPONSE_NOT_JSON.value % content, interface=interface)
     except HTTPError:
         message = SkyflowErrorMessages.API_ERROR.value % statusCode
         if response != None and response.content != None:
-            errorResponse = json.loads(
-                response.content.decode('utf-8'))
-            if 'error' in errorResponse and type(errorResponse['error']) == type({}) and 'message' in errorResponse['error']:
-                message = errorResponse['error']['message']
+            try:
+                errorResponse = json.loads(content)
+                if 'error' in errorResponse and type(errorResponse['error']) == type({}) and 'message' in errorResponse['error']:
+                    message = errorResponse['error']['message']
+            except:
+                message = SkyflowErrorMessages.RESPONSE_NOT_JSON % content
         if 'x-request-id' in response.headers:
             message += ' - request id: ' + response.headers['x-request-id']
         raise SkyflowError(statusCode, message, interface=interface)
