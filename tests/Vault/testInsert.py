@@ -9,12 +9,13 @@ from skyflow.ServiceAccount import generateBearerToken
 from skyflow.Vault._client import Client
 from skyflow.Vault._config import Configuration, InsertOptions
 
+
 class TestInsert(unittest.TestCase):
 
     def setUp(self) -> None:
         self.dataPath = os.path.join(os.getcwd(), 'tests/Vault/data/')
         field = {
-            "table": "persons",
+            "table": "pii_fields",
             "fields": {
                 "cardNumber": "4111-1111-1111-1111",
                 "cvv": "234"
@@ -23,14 +24,13 @@ class TestInsert(unittest.TestCase):
         self.data = {"records": [field]}
         return super().setUp()
 
-
     def getDataPath(self, file):
         return self.dataPath + file + '.json'
 
     def testGetInsertRequestBodyWithValidBody(self):
         body = json.loads(getInsertRequestBody(self.data, True))
         expectedOutput = {
-            "tableName": "persons",
+            "tableName": "pii_fields",
             "fields": {
                 "cardNumber": "4111-1111-1111-1111",
                 "cvv": "234"
@@ -47,7 +47,8 @@ class TestInsert(unittest.TestCase):
             self.fail('Should have thrown an error')
         except SkyflowError as e:
             self.assertEqual(e.code, SkyflowErrorCodes.INVALID_INPUT.value)
-            self.assertEqual(e.message, SkyflowErrorMessages.RECORDS_KEY_ERROR.value)
+            self.assertEqual(
+                e.message, SkyflowErrorMessages.RECORDS_KEY_ERROR.value)
 
     def testGetInsertRequestBodyRecordsInvalidType(self):
         invalidData = {"records": 'records'}
@@ -56,7 +57,8 @@ class TestInsert(unittest.TestCase):
             self.fail('Should have thrown an error')
         except SkyflowError as e:
             self.assertEqual(e.code, SkyflowErrorCodes.INVALID_INPUT.value)
-            self.assertEqual(e.message, SkyflowErrorMessages.INVALID_RECORDS_TYPE.value % (str(type('str'))))
+            self.assertEqual(
+                e.message, SkyflowErrorMessages.INVALID_RECORDS_TYPE.value % (str(type('str'))))
 
     def testGetInsertRequestBodyNoFields(self):
         invalidData = {"records": [{
@@ -65,7 +67,7 @@ class TestInsert(unittest.TestCase):
                 "card_number": "4111-1111"
             }
         },
-        {
+            {
             "table": "table",
             "invalid": {}
         }
@@ -75,7 +77,8 @@ class TestInsert(unittest.TestCase):
             self.fail('Should have thrown an error')
         except SkyflowError as e:
             self.assertEqual(e.code, SkyflowErrorCodes.INVALID_INPUT.value)
-            self.assertEqual(e.message, SkyflowErrorMessages.FIELDS_KEY_ERROR.value)
+            self.assertEqual(
+                e.message, SkyflowErrorMessages.FIELDS_KEY_ERROR.value)
 
     def testGetInsertRequestBodyInvalidFieldsType(self):
         invalidData = {"records": [{
@@ -88,8 +91,8 @@ class TestInsert(unittest.TestCase):
             self.fail('Should have thrown an error')
         except SkyflowError as e:
             self.assertEqual(e.code, SkyflowErrorCodes.INVALID_INPUT.value)
-            self.assertEqual(e.message, SkyflowErrorMessages.INVALID_FIELDS_TYPE.value % (str(type('str'))))
-
+            self.assertEqual(
+                e.message, SkyflowErrorMessages.INVALID_FIELDS_TYPE.value % (str(type('str'))))
 
     def testGetInsertRequestBodyNoTable(self):
         invalidData = {"records": [{
@@ -98,7 +101,7 @@ class TestInsert(unittest.TestCase):
                 "card_number": "4111-1111"
             }
         },
-        {
+            {
             "table": "table",
             "invalid": {}
         }
@@ -108,7 +111,8 @@ class TestInsert(unittest.TestCase):
             self.fail('Should have thrown an error')
         except SkyflowError as e:
             self.assertEqual(e.code, SkyflowErrorCodes.INVALID_INPUT.value)
-            self.assertEqual(e.message, SkyflowErrorMessages.TABLE_KEY_ERROR.value)
+            self.assertEqual(
+                e.message, SkyflowErrorMessages.TABLE_KEY_ERROR.value)
 
     def testGetInsertRequestBodyInvalidTableType(self):
         invalidData = {"records": [{
@@ -123,7 +127,8 @@ class TestInsert(unittest.TestCase):
             self.fail('Should have thrown an error')
         except SkyflowError as e:
             self.assertEqual(e.code, SkyflowErrorCodes.INVALID_INPUT.value)
-            self.assertEqual(e.message, SkyflowErrorMessages.INVALID_TABLE_TYPE.value % (str(type({'a': 'b'}))))
+            self.assertEqual(e.message, SkyflowErrorMessages.INVALID_TABLE_TYPE.value % (
+                str(type({'a': 'b'}))))
 
     def testInsertInvalidJson(self):
         invalidjson = {
@@ -140,7 +145,8 @@ class TestInsert(unittest.TestCase):
             self.fail('Should have thrown an error')
         except SkyflowError as e:
             self.assertEqual(e.code, SkyflowErrorCodes.INVALID_INPUT.value)
-            self.assertEqual(e.message, SkyflowErrorMessages.INVALID_JSON.value%('insert payload'))
+            self.assertEqual(
+                e.message, SkyflowErrorMessages.INVALID_JSON.value % ('insert payload'))
 
     def testProcessInvalidResponse(self):
         response = Response()
@@ -151,7 +157,8 @@ class TestInsert(unittest.TestCase):
             self.fail()
         except SkyflowError as e:
             self.assertEqual(e.code, 500)
-            self.assertEqual(e.message, response.content.decode('utf-8'))
+            self.assertEqual(e.message, SkyflowErrorMessages.RESPONSE_NOT_JSON.value %
+                             response.content.decode('utf-8'))
 
     def testProcessValidResponse(self):
         response = Response()
@@ -164,7 +171,8 @@ class TestInsert(unittest.TestCase):
             self.fail()
 
     def testClientInit(self):
-        config = Configuration('vaultid', 'https://skyflow.com', lambda: 'test')
+        config = Configuration(
+            'vaultid', 'https://skyflow.com', lambda: 'test')
         client = Client(config)
         self.assertEqual(client.vaultURL, 'https://skyflow.com')
         self.assertEqual(client.vaultID, 'vaultid')
@@ -177,7 +185,8 @@ class TestInsert(unittest.TestCase):
             token, _ = generateBearerToken(env_values['CREDENTIALS_FILE_PATH'])
             return token
 
-        config = Configuration(env_values['VAULT_ID'], env_values['VAULT_URL'], tokenProvider)
+        config = Configuration(
+            env_values['VAULT_ID'], env_values['VAULT_URL'], tokenProvider)
         client = Client(config)
 
         options = InsertOptions(False)
@@ -185,12 +194,13 @@ class TestInsert(unittest.TestCase):
         data = {
             "records": [
                 {
-                    "table": "persons",
+                    "table": "pii_fields",
                     "fields": {
-                        "cvv": "122",
-                        "card_expiration": "1221",
-                        "card_number": "4111111111111111",
-                        "name": {"first_name": "Bob"}
+                        "primary_card": {
+                            "expiry_date": "1221",
+                            "card_number": "4111111111111111",
+                        },
+                        "first_name": "Bob"
                     }
                 }
             ]
@@ -208,7 +218,8 @@ class TestInsert(unittest.TestCase):
             token, _ = generateBearerToken(env_values['CREDENTIALS_FILE_PATH'])
             return token
 
-        config = Configuration(env_values['VAULT_ID'], env_values['VAULT_URL'], tokenProvider)
+        config = Configuration(
+            env_values['VAULT_ID'], env_values['VAULT_URL'], tokenProvider)
         client = Client(config)
 
         options = InsertOptions(True)
@@ -216,12 +227,13 @@ class TestInsert(unittest.TestCase):
         data = {
             "records": [
                 {
-                    "table": "persons",
+                    "table": "pii_fields",
                     "fields": {
-                        "cvv": "122",
-                        "card_expiration": "1221",
-                        "card_number": "4111111111111111",
-                        "name": {"first_name": "Bob"}
+                        "primary_card": {
+                            "expiry_date": "1221",
+                            "card_number": "4111111111111111",
+                        },
+                        "first_name": "Bob"
                     }
                 }
             ]
@@ -230,4 +242,4 @@ class TestInsert(unittest.TestCase):
             response = client.insert(data, options=options)
             self.assertEqual(len(response['records']), 1)
         except SkyflowError as e:
-            self.fail()
+            self.fail('should have inserted without error')

@@ -90,7 +90,7 @@ def processResponse(response: requests.Response, interface=interface):
                 if 'error' in errorResponse and type(errorResponse['error']) == type({}) and 'message' in errorResponse['error']:
                     message = errorResponse['error']['message']
             except:
-                message = SkyflowErrorMessages.RESPONSE_NOT_JSON % content
+                message = SkyflowErrorMessages.RESPONSE_NOT_JSON.value % content
         if 'x-request-id' in response.headers:
             message += ' - request id: ' + response.headers['x-request-id']
         raise SkyflowError(statusCode, message, interface=interface)

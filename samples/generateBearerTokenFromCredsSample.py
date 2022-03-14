@@ -1,7 +1,7 @@
 import json
 
 from skyflow.Errors import SkyflowError
-from skyflow.ServiceAccount import generateBearerTokenFromCreds, isValid
+from skyflow.ServiceAccount import generateBearerTokenFromCreds, isExpired
 
 '''
     This sample demonstrates the usage of generateBearerTokenFromCreds
@@ -13,21 +13,25 @@ from skyflow.ServiceAccount import generateBearerTokenFromCreds, isValid
 # cache token for reuse
 bearerToken = ''
 tokenType = ''
+
+
 def tokenProvider():
 
     # As an example
     credentials = {
         "clientID": "<YOUR_clientID>",
-        "clientName": "<YOUR_clientName>", 
-        "keyID": "<YOUR_keyID>", 
-        "tokenURI": '<YOUR_tokenURI>', 
+        "clientName": "<YOUR_clientName>",
+        "keyID": "<YOUR_keyID>",
+        "tokenURI": '<YOUR_tokenURI>',
         "privateKey": "<YOUR_PEM_privateKey>"
     }
     jsonString = json.dumps(credentials)
-    if not isValid(bearerToken):
-        bearerToken, tokenType = generateBearerTokenFromCreds(credentials=jsonString)
+    if not isExpired(bearerToken):
+        bearerToken, tokenType = generateBearerTokenFromCreds(
+            credentials=jsonString)
 
     return bearerToken
+
 
 try:
     accessToken, tokenType = tokenProvider()

@@ -1,5 +1,5 @@
 from skyflow.Errors import SkyflowError
-from skyflow.ServiceAccount import generateBearerToken, isValid
+from skyflow.ServiceAccount import generateBearerToken, isExpired
 from skyflow.Vault import Client, Configuration, RequestMethod, ConnectionConfig
 
 '''
@@ -11,7 +11,7 @@ bearerToken = ''
 
 
 def tokenProvider():
-    if not isValid(bearerToken):
+    if not isExpired(bearerToken):
         bearerToken, _ = generateBearerToken('<YOUR_CREDENTIALS_FILE_PATH>')
     return bearerToken
 

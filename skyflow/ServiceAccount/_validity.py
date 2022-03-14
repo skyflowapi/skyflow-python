@@ -27,6 +27,8 @@ def isExpired(token: str):
         log_error(InfoMessages.INVALID_TOKEN.value, interface=interface)
         return False
 
+    return False
+
 
 def isValid(token: str):
     '''
@@ -53,3 +55,5 @@ def isValid(token: str):
     except Exception as e:
         log_error(InfoMessages.INVALID_TOKEN.value, interface=interface)
         return False
+
+    return False

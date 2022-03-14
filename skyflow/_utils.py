@@ -25,14 +25,9 @@ def log_info(message: str, interface: str):
     skyflowLog.info(formattedMessage)
 
 
-def log_debug(message: str, interface: str):
-    formattedMessage = '{} {}'.format(interface, message)
-    skyflowLog.debug(formattedMessage)
-
-
-def log_warn(message: str, interface: str):
-    formattedMessage = '{} {}'.format(interface, message)
-    skyflowLog.warn(formattedMessage)
+# def log_debug(message: str, interface: str):
+#     formattedMessage = '{} {}'.format(interface, message)
+#     skyflowLog.debug(formattedMessage)
 
 
 def log_error(message: str, interface: str):
