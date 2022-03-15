@@ -6,6 +6,7 @@ from skyflow.Vault._config import *
 from skyflow.Errors._skyflowErrors import *
 from dotenv import dotenv_values
 
+
 class testInvokeConnection(unittest.TestCase):
     def testCreateRequestDefault(self):
         config = ConnectionConfig('https://skyflow.com/', RequestMethod.GET)
@@ -20,44 +21,51 @@ class testInvokeConnection(unittest.TestCase):
 
     def testCreateRequestInvalidJSONBody(self):
         invalidJsonBody = {'somekey': unittest}
-        config = ConnectionConfig('https://skyflow.com/', RequestMethod.GET, requestBody=invalidJsonBody)
+        config = ConnectionConfig(
+            'https://skyflow.com/', RequestMethod.GET, requestBody=invalidJsonBody)
         try:
             createRequest(config)
             self.fail()
         except SkyflowError as e:
             self.assertEqual(e.code, SkyflowErrorCodes.INVALID_INPUT.value)
-            self.assertEqual(e.message, SkyflowErrorMessages.INVALID_REQUEST_BODY.value)
+            self.assertEqual(
+                e.message, SkyflowErrorMessages.INVALID_REQUEST_BODY.value)
 
     def testCreateRequestInvalidBodyType(self):
         nonDictBody = 'body'
-        config = ConnectionConfig('https://skyflow.com/', RequestMethod.GET, requestBody=nonDictBody)
+        config = ConnectionConfig(
+            'https://skyflow.com/', RequestMethod.GET, requestBody=nonDictBody)
         try:
             createRequest(config)
             self.fail()
         except SkyflowError as e:
             self.assertEqual(e.code, SkyflowErrorCodes.INVALID_INPUT.value)
-            self.assertEqual(e.message, SkyflowErrorMessages.INVALID_REQUEST_BODY.value)
+            self.assertEqual(
+                e.message, SkyflowErrorMessages.INVALID_REQUEST_BODY.value)
 
     def testCreateRequestBodyInvalidHeadersJson(self):
         invalidJsonHeaders = {'somekey': unittest}
-        config = ConnectionConfig('https://skyflow.com/', RequestMethod.GET, requestHeader=invalidJsonHeaders)
+        config = ConnectionConfig(
+            'https://skyflow.com/', RequestMethod.GET, requestHeader=invalidJsonHeaders)
         try:
             createRequest(config)
             self.fail()
         except SkyflowError as e:
             self.assertEqual(e.code, SkyflowErrorCodes.INVALID_INPUT.value)
-            self.assertEqual(e.message, SkyflowErrorMessages.INVALID_HEADERS.value)
+            self.assertEqual(
+                e.message, SkyflowErrorMessages.INVALID_HEADERS.value)
 
-    
     def testCreateRequestBodyHeadersNotDict(self):
         invalidJsonHeaders = 'invalidheaderstype'
-        config = ConnectionConfig('https://skyflow.com/', RequestMethod.GET, requestHeader=invalidJsonHeaders)
+        config = ConnectionConfig(
+            'https://skyflow.com/', RequestMethod.GET, requestHeader=invalidJsonHeaders)
         try:
             createRequest(config)
             self.fail()
         except SkyflowError as e:
             self.assertEqual(e.code, SkyflowErrorCodes.INVALID_INPUT.value)
-            self.assertEqual(e.message, SkyflowErrorMessages.INVALID_HEADERS.value)
+            self.assertEqual(
+                e.message, SkyflowErrorMessages.INVALID_HEADERS.value)
 
     def testCreateRequestInvalidURL(self):
         invalidUrl = 'https::///skyflow.com'
@@ -67,13 +75,13 @@ class testInvokeConnection(unittest.TestCase):
             self.fail()
         except SkyflowError as e:
             self.assertEqual(e.code, SkyflowErrorCodes.INVALID_INPUT.value)
-            self.assertEqual(e.message, SkyflowErrorMessages.INVALID_URL.value%(invalidUrl))
-
+            self.assertEqual(
+                e.message, SkyflowErrorMessages.INVALID_URL.value % (invalidUrl))
 
     def testPathParams(self):
         try:
-            url = parsePathParams(url='https://skyflow.com/{name}/{department}/content/{action}', 
-            pathParams={'name': 'john', 'department': 'test', 'action': 'download'})
+            url = parsePathParams(url='https://skyflow.com/{name}/{department}/content/{action}',
+                                  pathParams={'name': 'john', 'department': 'test', 'action': 'download'})
 
             expectedURL = 'https://skyflow.com/john/test/content/download'
 
@@ -88,7 +96,9 @@ class testInvokeConnection(unittest.TestCase):
             self.fail()
         except SkyflowError as e:
             self.assertEqual(e.code, SkyflowErrorCodes.INVALID_INPUT.value)
-            self.assertEqual(e.message, SkyflowErrorMessages.INVALID_PATH_PARAM_TYPE.value%(str(type('department')), str(type(['str']))))
+            self.assertEqual(e.message, SkyflowErrorMessages.INVALID_PATH_PARAM_TYPE.value % (
+                str(type('department')), str(type(['str']))))
+
     def testVerifyParamsQueryParamsNotDict(self):
         queryParams = {'name': 'john', 2: [json], 'action': 1}
         try:
@@ -96,8 +106,9 @@ class testInvokeConnection(unittest.TestCase):
             self.fail()
         except SkyflowError as e:
             self.assertEqual(e.code, SkyflowErrorCodes.INVALID_INPUT.value)
-            self.assertEqual(e.message, SkyflowErrorMessages.INVALID_QUERY_PARAM_TYPE.value%(str(type(2)), str(type(['str']))))
-    
+            self.assertEqual(e.message, SkyflowErrorMessages.INVALID_QUERY_PARAM_TYPE.value % (
+                str(type(2)), str(type(['str']))))
+
     def testVerifyParamsInvalidPathParams(self):
         pathParams = 'string'
         try:
@@ -105,7 +116,9 @@ class testInvokeConnection(unittest.TestCase):
             self.fail()
         except SkyflowError as e:
             self.assertEqual(e.code, SkyflowErrorCodes.INVALID_INPUT.value)
-            self.assertEqual(e.message, SkyflowErrorMessages.INVALID_PATH_PARAMS.value)
+            self.assertEqual(
+                e.message, SkyflowErrorMessages.INVALID_PATH_PARAMS.value)
+
     def testVerifyParamsInvalidQueryParams(self):
         queryParams = 'string'
         try:
@@ -113,7 +126,8 @@ class testInvokeConnection(unittest.TestCase):
             self.fail()
         except SkyflowError as e:
             self.assertEqual(e.code, SkyflowErrorCodes.INVALID_INPUT.value)
-            self.assertEqual(e.message, SkyflowErrorMessages.INVALID_QUERY_PARAMS.value)
+            self.assertEqual(
+                e.message, SkyflowErrorMessages.INVALID_QUERY_PARAMS.value)
 
     # def testinvokeConnectionCvvGenSuccess(self):
     #     env_values = dotenv_values('.env')
@@ -139,7 +153,6 @@ class testInvokeConnection(unittest.TestCase):
     #     pathParams={'cardID': env_values['DETOKENIZE_TEST_TOKEN']})
     #     client = Client(config)
 
-
     #     try:
     #         resp = client.invokeConnection(connectionConfig)
     #         self.assertIsNotNone(resp['resource']['cvv2'])
@@ -148,5 +161,3 @@ class testInvokeConnection(unittest.TestCase):
     #     except SkyflowError as e:
     #         print(e)
             # self.fail()
-
-

@@ -1,12 +1,16 @@
 from enum import Enum
 from skyflow._utils import log_error
 
+
 class SkyflowErrorCodes(Enum):
     INVALID_INPUT = 400
     SERVER_ERROR = 500
     PARTIAL_SUCCESS = 500
 
+
 class SkyflowErrorMessages(Enum):
+    API_ERROR = "Server returned status code %s"
+
     FILE_NOT_FOUND = "File at %s not found"
     FILE_INVALID_JSON = "File at %s is not in JSON format"
     INVALID_CREDENTIALS = "Given credentials are not valid"
@@ -39,12 +43,12 @@ class SkyflowErrorMessages(Enum):
     INVALID_REDACTION_TYPE = "Redaction key has value of type %s, expected Skyflow.Redaction"
 
     INVALID_REQUEST_BODY = "Given request body is not valid"
+    INVALID_RESPONSE_BODY = "Given response body is not valid"
     INVALID_HEADERS = "Given Request Headers is not valid"
     INVALID_PATH_PARAMS = "Given path params are not valid"
     INVALID_QUERY_PARAMS = "Given query params are not valid"
     INVALID_PATH_PARAM_TYPE = "Path params (key, value) must be of type 'str' given type - (%s, %s)"
     INVALID_QUERY_PARAM_TYPE = "Query params (key, value) must be of type 'str' given type - (%s, %s)"
-
 
     INVALID_TOKEN_TYPE = "Token key has value of type %s, expected string"
     PARTIAL_SUCCESS = "Server returned errors, check SkyflowError.data for more"
@@ -55,9 +59,11 @@ class SkyflowErrorMessages(Enum):
 
     EMPTY_VAULT_ID = "Vault ID must not be empty"
     EMPTY_VAULT_URL = "Vault URL must not be empty"
+    RESPONSE_NOT_JSON = "Response %s is not valid JSON"
+
 
 class SkyflowError(Exception):
-    def __init__(self, code, message="An Error occured", data={}, interface: str=None) -> None:
+    def __init__(self, code, message="An Error occured", data={}, interface: str = 'Unknown') -> None:
         if type(code) is SkyflowErrorCodes:
             self.code = code.value
         else:
@@ -69,4 +75,3 @@ class SkyflowError(Exception):
         log_error(self.message, interface)
         self.data = data
         super().__init__(self.message)
-

@@ -1,13 +1,17 @@
 from skyflow.Errors import SkyflowError
-from skyflow.ServiceAccount import generateBearerToken, isValid
+from skyflow.ServiceAccount import generateBearerToken, isExpired
 
 # cache token for reuse
 bearerToken = ''
 tokenType = ''
+
+
 def tokenProvider():
-    if not isValid(bearerToken):
-        bearerToken, tokenType = generateBearerToken('<YOUR_CREDENTIALS_FILE_PATH>')
+    if isExpired(bearerToken):
+        bearerToken, tokenType = generateBearerToken(
+            '<YOUR_CREDENTIALS_FILE_PATH>')
     return bearerToken, tokenType
+
 
 try:
     accessToken, tokenType = tokenProvider()

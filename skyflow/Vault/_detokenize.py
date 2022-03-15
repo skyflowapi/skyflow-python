@@ -6,31 +6,37 @@ from skyflow._utils import InterfaceName
 
 interface = InterfaceName.DETOKENIZE.value
 
+
 def getDetokenizeRequestBody(data):
     try:
         token = data["token"]
     except KeyError:
-        raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.TOKEN_KEY_ERROR, interface=interface)
+        raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT,
+                           SkyflowErrorMessages.TOKEN_KEY_ERROR, interface=interface)
     if not isinstance(token, str):
         tokenType = str(type(token))
-        raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.INVALID_TOKEN_TYPE.value%(tokenType), interface=interface)
+        raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.INVALID_TOKEN_TYPE.value % (
+            tokenType), interface=interface)
     requestBody = {"detokenizationParameters": []}
     requestBody["detokenizationParameters"].append({
         "token": token})
     return requestBody
 
+
 async def sendDetokenizeRequests(data, url, token):
-    
+
     tasks = []
 
     try:
         records = data["records"]
     except KeyError:
-        raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.RECORDS_KEY_ERROR, interface=interface)
+        raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT,
+                           SkyflowErrorMessages.RECORDS_KEY_ERROR, interface=interface)
     if not isinstance(records, list):
         recordsType = str(type(records))
-        raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.INVALID_RECORDS_TYPE.value%(recordsType), interface=interface)
-        
+        raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.INVALID_RECORDS_TYPE.value % (
+            recordsType), interface=interface)
+
     validatedRecords = []
     for record in records:
         requestBody = getDetokenizeRequestBody(record)
@@ -53,18 +59,23 @@ async def post(url, data, headers, session):
         try:
             return (await response.read(), response.status, response.headers['x-request-id'])
         except KeyError:
-            return (await response.read(), response.status) 
+            return (await response.read(), response.status)
+
 
 def createDetokenizeResponseBody(responses):
     result = {
-        "records" : [],
-        "errors" : []
+        "records": [],
+        "errors": []
     }
     for response in responses:
         partial = False
         r = response.result()
-        jsonRes = json.loads(r[0].decode('utf-8'))
         status = r[1]
+        try:
+            jsonRes = json.loads(r[0].decode('utf-8'))
+        except:
+            raise SkyflowError(status,
+                               SkyflowErrorMessages.RESPONSE_NOT_JSON.value % r[0].decode('utf-8'), interface=interface)
 
         if status == 200:
             temp = {}
