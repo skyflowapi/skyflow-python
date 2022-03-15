@@ -243,3 +243,27 @@ class TestInsert(unittest.TestCase):
             self.assertEqual(len(response['records']), 1)
         except SkyflowError as e:
             self.fail('should have inserted without error')
+
+    def testProcessResponseInvalidJson(self):
+        invalid_response = Response()
+        invalid_response.status_code = 200
+        invalid_response._content = b'invalid-json'
+        try:
+            processResponse(invalid_response)
+            self.fail('not failing on invalid json')
+        except SkyflowError as se:
+            self.assertEqual(se.code, 200)
+            self.assertEqual(
+                se.message, SkyflowErrorMessages.RESPONSE_NOT_JSON.value % 'invalid-json')
+
+    def testProcessResponseFail(self):
+        invalid_response = Response()
+        invalid_response.status_code = 404
+        invalid_response._content = b"error"
+        try:
+            processResponse(invalid_response)
+            self.fail('Not failing on invalid error json')
+        except SkyflowError as se:
+            self.assertEqual(se.code, 404)
+            self.assertEqual(
+                se.message, SkyflowErrorMessages.RESPONSE_NOT_JSON.value % 'error')

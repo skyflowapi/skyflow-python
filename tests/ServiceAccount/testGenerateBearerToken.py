@@ -4,7 +4,7 @@ from dotenv import dotenv_values
 from skyflow.ServiceAccount import generateBearerToken, generateBearerTokenFromCreds, GenerateToken
 from skyflow.Errors._skyflowErrors import *
 import json
-from skyflow.ServiceAccount._token import getSignedJWT
+from skyflow.ServiceAccount._token import getSignedJWT, getResponseToken, sendRequestWithToken
 
 
 class TestGenerateBearerToken(unittest.TestCase):
@@ -97,7 +97,8 @@ class TestGenerateBearerToken(unittest.TestCase):
     def testGenerateBearerTokenFromCredsFail(self):
         env_values = dotenv_values('.env')
         credentials_path = env_values['CREDENTIALS_FILE_PATH']
-        credentialsString = json.dumps(open(credentials_path, 'r').read())
+        creds_file = open(credentials_path, 'r')
+        credentialsString = json.dumps(creds_file.read())
         try:
             generateBearerTokenFromCreds(credentialsString)
         except SkyflowError as se:
@@ -154,9 +155,37 @@ class TestGenerateBearerToken(unittest.TestCase):
 
     def testGetSignedJWTInvalidValue(self):
         try:
-            getSignedJWT('clientID', 'keyId', 'privateKey', 'www.tokenURI.com')
+            getSignedJWT('{}clientID', 'keyId',
+                         'privateKey', 'ww.tokenURI.com')
             self.fail('invalid jwt signed')
         except SkyflowError as se:
-            self.assertEqual(se.code, SkyflowErrorCodes.INVALID_INPUT)
+            self.assertEqual(se.code, SkyflowErrorCodes.INVALID_INPUT.value)
             self.assertEqual(
                 se.message, SkyflowErrorMessages.JWT_INVALID_FORMAT.value)
+
+    def testGetResponseTokenNoType(self):
+        try:
+            getResponseToken({'accessToken': 'only access token'})
+            self.fail('Should throw')
+        except SkyflowError as se:
+            self.assertEqual(se.code, SkyflowErrorCodes.SERVER_ERROR.value)
+            self.assertEqual(
+                se.message, SkyflowErrorMessages.MISSING_TOKEN_TYPE.value)
+
+    def testGetResponseTokenNoType(self):
+        try:
+            getResponseToken({'tokenType': 'only token type'})
+            self.fail('Should throw')
+        except SkyflowError as se:
+            self.assertEqual(se.code, SkyflowErrorCodes.SERVER_ERROR.value)
+            self.assertEqual(
+                se.message, SkyflowErrorMessages.MISSING_ACCESS_TOKEN.value)
+
+    def testSendRequestInvalidUrl(self):
+        try:
+            sendRequestWithToken('invalidurl', 'invalid-token')
+            self.fail('Not throwing on invalid url')
+        except SkyflowError as se:
+            self.assertEqual(se.code, SkyflowErrorCodes.INVALID_INPUT.value)
+            self.assertEqual(
+                se.message, SkyflowErrorMessages.INVALID_URL.value % 'invalidurl')

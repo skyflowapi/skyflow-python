@@ -1,7 +1,6 @@
 import json
 import jwt
 import datetime
-from numpy import meshgrid
 import requests
 from warnings import warn
 from collections import namedtuple
@@ -142,6 +141,9 @@ def sendRequestWithToken(url, token):
         response = requests.post(url=url, json=payload, headers=headers)
         statusCode = response.status_code
     except requests.exceptions.InvalidURL:
+        raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT,
+                           SkyflowErrorMessages.INVALID_URL.value % (url), interface=interface)
+    except requests.exceptions.MissingSchema:
         raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT,
                            SkyflowErrorMessages.INVALID_URL.value % (url), interface=interface)
 
