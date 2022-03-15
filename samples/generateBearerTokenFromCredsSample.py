@@ -26,7 +26,7 @@ def tokenProvider():
         "privateKey": "<YOUR_PEM_privateKey>"
     }
     jsonString = json.dumps(credentials)
-    if not isExpired(bearerToken):
+    if isExpired(bearerToken):
         bearerToken, tokenType = generateBearerTokenFromCreds(
             credentials=jsonString)
 

@@ -40,7 +40,7 @@ from skyflow.ServiceAccount import generateBearerToken, isExpired
 bearerToken = ''
 tokenType = ''
 def tokenProvider():
-    if not isExpired(bearerToken):
+    if isExpired(bearerToken):
         bearerToken, tokenType = generateBearerToken('<YOUR_CREDENTIALS_FILE_PATH>')
     return bearerToken, tokenType
 

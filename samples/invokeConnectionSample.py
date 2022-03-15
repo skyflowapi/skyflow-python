@@ -11,7 +11,7 @@ bearerToken = ''
 
 
 def tokenProvider():
-    if not isExpired(bearerToken):
+    if isExpired(bearerToken):
         bearerToken, _ = generateBearerToken('<YOUR_CREDENTIALS_FILE_PATH>')
     return bearerToken
 
