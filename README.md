@@ -4,26 +4,6 @@
 
 This Python SDK is designed to help developers easily implement Skyflow into their python backend.
 
-[![CI](https://img.shields.io/static/v1?label=CI&message=passing&color=green?style=plastic&logo=github)](https://github.com/skyflowapi/skyflow-python/actions)
-[![GitHub release](https://img.shields.io/github/v/release/skyflowapi/skyflow-python.svg)](https://github.com/skyflowapi/skyflow-python/releases)
-[![License](https://img.shields.io/github/license/skyflowapi/skyflow-python)](https://github.com/skyflowapi/skyflow-python/blob/main/LICENSE)
-
-## Usage
-
-## Table of Contents
-
-- [Features](#features)
-- [Installation](#installation)
-  - [Requirements](#requirements)
-  - [Configuration](#configuration)
-- [Service Account Bearer Token Generation](#service-account-bearer-token-generation)
-- [Vault APIs](#vault-apis)
-  - [Insert](#insert)
-  - [Detokenize](#detokenize)
-  - [GetById](#get-by-id)
-  - [InvokeConnection](#invoke-connection)
-- [Logging](#logging)
-
 ## Features
 
 Authentication with a Skyflow Service Account and generation of a bearer token
@@ -32,13 +12,26 @@ Vault API operations to insert, retrieve and tokenize sensitive data
 
 Invoking connections to call downstream third party APIs without directly handling sensitive data
 
-## Installation
+## Table of Contents
 
-### Requirements
+- [Installation](#installation)
+  - [Requirements](#requirements)
+  - [Configuration][#configuration]
+- [Service Account Bearer Token Generation](#service-account-bearer-token-generation)
+- [Vault APIs](#vault-apis)
+  - [Insert](#insert)
+  - [Detokenize](#detokenize)
+  - [GetById](#get-by-id)
+  - [InvokeConnection](#invoke-connection)
+- [Logging](#logging)
+
+### Installation
+
+#### Requirements
 
 - Python 3.7.0 and above
 
-### Configuration
+#### Configuration
 
 The package can be installed using pip:
 
@@ -46,7 +39,7 @@ The package can be installed using pip:
 pip install skyflow
 ```
 
-## Service Account Bearer Token Generation
+### Service Account Bearer Token Generation
 
 The [Service Account](https://github.com/skyflowapi/skyflow-python/tree/main/skyflow/service_account) python module is used to generate service account tokens from service account credentials file which is downloaded upon creation of service account. The token generated from this module is valid for 60 minutes and can be used to make API calls to vault services as well as management API(s) based on the permissions of the service account.
 
@@ -321,7 +314,7 @@ config = ConnectionConfig(
   requestHeader: dict, # optional
   requestBody: dict,	# optional
 )
-client.invoke_connection(connectionConfig)
+client.invokeConnection(config)
 ```
 
 `methodName` supports the following methods:
