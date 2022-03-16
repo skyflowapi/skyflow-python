@@ -2,20 +2,21 @@
 
 ---
 
-skyflow-python is the Skyflow SDK for the Python programming language.
+This Python SDK is designed to help developers easily implement Skyflow into their python backend.
 
-## Usage
+## Features
 
----
+Authentication with a Skyflow Service Account and generation of a bearer token
 
-You can install the package using the following command:
+Vault API operations to insert, retrieve and tokenize sensitive data
 
-```bash
-$ pip install skyflow
-```
+Invoking connections to call downstream third party APIs without directly handling sensitive data
 
 ## Table of Contents
 
+- [Installation](#installation)
+  - [Requirements](#requirements)
+  - [Configuration][#configuration]
 - [Service Account Bearer Token Generation](#service-account-bearer-token-generation)
 - [Vault APIs](#vault-apis)
   - [Insert](#insert)
@@ -23,6 +24,20 @@ $ pip install skyflow
   - [GetById](#get-by-id)
   - [InvokeConnection](#invoke-connection)
 - [Logging](#logging)
+
+### Installation
+
+#### Requirements
+
+- Python 3.7.0 and above
+
+#### Configuration
+
+The package can be installed using pip:
+
+```bash
+pip install skyflow
+```
 
 ### Service Account Bearer Token Generation
 
@@ -82,7 +97,7 @@ All Vault APIs must be invoked using a client instance.
 
 #### Insert
 
-To insert data into the vault from the integrated application, use the insert(records: dict, options: InsertOptions) method of the Skyflow client. The records parameter takes an array of records to be inserted into the vault. The options parameter takes a Skyflow.InsertOptions object. See below:
+To insert data into the vault use the insert(records: dict, options: InsertOptions) method. The records parameter is a dictionary that must have a `records` key which has an array of records to be inserted into the vault as it's value. The options parameter takes a Skyflow.InsertOptions object, as shown below:
 
 ```python
 from skyflow.Vault import InsertOptions
@@ -145,7 +160,7 @@ Sample response :
 
 #### Detokenize
 
-For retrieving using tokens, use the detokenize(records: dict) method. The records parameter takes a dictionary that contains records to be fetched as shown below.
+In order to retrieve data from your vault using tokens that you have previously generated for that data, you can use the detokenize(records: dict) method. The records parameter takes a dictionary that contains the `records` key that takes an array of records to be fetched from the vault as shown below.
 
 ```python
 {
@@ -200,7 +215,7 @@ Sample response:
 
 #### Get By Id
 
-For retrieving using SkyflowID's, use the getById(records: dict) method. The records parameter takes a Dictionary that contains records to be fetched as shown below:
+In order to retrieve data from your vault using SkyflowIDs, use the getById(records: dict) method. The records parameter takes a dictionary that should contain an array of SkyflowIDs to be fetched, as shown below:
 
 ```python
 {
@@ -288,10 +303,10 @@ Sample response:
 
 #### Invoke Connection
 
-Using Skyflow Connection, end-user applications can integrate checkout/card issuance flow with their apps/systems. To invoke connection, use the invokeConnection(config: Skyflow.ConnectionConfig) method of the Skyflow client.
+Using the InvokeConnection method, you can integrate their server-side application with third party APIs and services without directly handling sensitive data. Prior to invoking the InvokeConnection method, you must have created a connection and have a connectionURL already generated. Once you have the connectionURL, you can invoke a connection by using the invokeConnection(config: ConnectionConfig) method. The ConnectionConfig parameter must include a connectionURL and methodName. The other fields are optional
 
 ```python
-connectionConfig = ConnectionConfig(
+config = ConnectionConfig(
   connectionURL: str, # connection url received when creating a skyflow connection integration
   methodName: Skyflow.RequestMethod,
   pathParams: dict,	# optional
@@ -299,7 +314,7 @@ connectionConfig = ConnectionConfig(
   requestHeader: dict, # optional
   requestBody: dict,	# optional
 )
-client.invokeConnection(connectionConfig)
+client.invokeConnection(config)
 ```
 
 `methodName` supports the following methods:
