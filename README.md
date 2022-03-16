@@ -7,7 +7,7 @@ This Python SDK is designed to help developers easily implement Skyflow into the
 
 
 ## Table of Contents
-
+- [Features](#features)
 - [Installation](#installation)
   - [Requirements](#requirements)
   - [Configuration](#configuration)
