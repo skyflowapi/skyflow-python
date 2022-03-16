@@ -4,19 +4,13 @@
 
 This Python SDK is designed to help developers easily implement Skyflow into their python backend.
 
-## Features
 
-Authentication with a Skyflow Service Account and generation of a bearer token
-
-Vault API operations to insert, retrieve and tokenize sensitive data
-
-Invoking connections to call downstream third party APIs without directly handling sensitive data
 
 ## Table of Contents
 
 - [Installation](#installation)
   - [Requirements](#requirements)
-  - [Configuration][#configuration]
+  - [Configuration](#configuration)
 - [Service Account Bearer Token Generation](#service-account-bearer-token-generation)
 - [Vault APIs](#vault-apis)
   - [Insert](#insert)
@@ -25,13 +19,21 @@ Invoking connections to call downstream third party APIs without directly handli
   - [InvokeConnection](#invoke-connection)
 - [Logging](#logging)
 
-### Installation
+## Features
 
-#### Requirements
+Authentication with a Skyflow Service Account and generation of a bearer token
+
+Vault API operations to insert, retrieve and tokenize sensitive data
+
+Invoking connections to call downstream third party APIs without directly handling sensitive data
+
+## Installation
+
+### Requirements
 
 - Python 3.7.0 and above
 
-#### Configuration
+### Configuration
 
 The package can be installed using pip:
 
@@ -39,7 +41,7 @@ The package can be installed using pip:
 pip install skyflow
 ```
 
-### Service Account Bearer Token Generation
+## Service Account Bearer Token Generation
 
 The [Service Account](https://github.com/skyflowapi/skyflow-python/tree/main/skyflow/service_account) python module is used to generate service account tokens from service account credentials file which is downloaded upon creation of service account. The token generated from this module is valid for 60 minutes and can be used to make API calls to vault services as well as management API(s) based on the permissions of the service account.
 
