@@ -2,15 +2,16 @@ import logging
 from enum import Enum
 
 skyflowLog = logging.getLogger('skyflow')
-
 skyflowLog.setLevel(logging.ERROR)
 
+
 class LogLevel(Enum):
-    DEBUG=logging.DEBUG
-    INFO=logging.INFO
-    WARN=logging.WARN
-    ERROR=logging.ERROR
-    OFF=logging.CRITICAL
+    DEBUG = logging.DEBUG
+    INFO = logging.INFO
+    WARN = logging.WARN
+    ERROR = logging.ERROR
+    OFF = logging.CRITICAL
+
 
 def setLogLevel(logLevel: LogLevel):
     '''
@@ -18,19 +19,15 @@ def setLogLevel(logLevel: LogLevel):
     '''
     skyflowLog.setLevel(logLevel.value)
 
+
 def log_info(message: str, interface: str):
     formattedMessage = '{} {}'.format(interface, message)
     skyflowLog.info(formattedMessage)
 
 
-def log_debug(message: str, interface: str):
-    formattedMessage = '{} {}'.format(interface, message)
-    skyflowLog.debug(formattedMessage)
-
-
-def log_warn(message: str, interface: str):
-    formattedMessage = '{} {}'.format(interface, message)
-    skyflowLog.warn(formattedMessage)
+# def log_debug(message: str, interface: str):
+#     formattedMessage = '{} {}'.format(interface, message)
+#     skyflowLog.debug(formattedMessage)
 
 
 def log_error(message: str, interface: str):
@@ -55,6 +52,11 @@ class InfoMessages(Enum):
     INVOKE_CONNECTION_TRIGGERED = "Invoke connection triggered."
     GENERATE_BEARER_TOKEN_TRIGGERED = "Generate bearer token triggered"
     GENERATE_BEARER_TOKEN_SUCCESS = "Generate bearer token returned successfully"
+    IS_TOKEN_VALID_TRIGGERED = "isTokenValid() triggered"
+    IS_EXPIRED_TRIGGERED = "isExpired() triggered"
+    EMPTY_ACCESS_TOKEN = "Give access token is empty"
+    INVALID_TOKEN = "Given token is invalid"
+
 
 class InterfaceName(Enum):
     CLIENT = "client"
@@ -63,4 +65,9 @@ class InterfaceName(Enum):
     GET_BY_ID = "client.getById"
     INVOKE_CONNECTION = "client.invokeConnection"
     GENERATE_BEARER_TOKEN = "ServiceAccount.generateBearerToken"
+
     
+
+    IS_TOKEN_VALID = "ServiceAccount.isTokenValid"
+    IS_EXPIRED = "ServiceAccount.isExpired"
+

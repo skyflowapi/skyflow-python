@@ -9,6 +9,7 @@ from ._getById import sendGetByIdRequests, createGetByIdResponseBody
 import asyncio
 from skyflow.Errors._skyflowErrors import SkyflowError, SkyflowErrorCodes, SkyflowErrorMessages
 from skyflow._utils import log_info, InfoMessages, InterfaceName
+from ._token import tokenProviderWrapper
 class Client:
     def __init__(self, config: Configuration):
         
@@ -28,6 +29,7 @@ class Client:
         self.vaultID = config.vaultID
         self.vaultURL = config.vaultURL.rstrip('/')
         self.tokenProvider = config.tokenProvider
+        self.storedToken = ''
         log_info(InfoMessages.CLIENT_INITIALIZED.value, interface=interface)
 
     def insert(self, records: dict, options: InsertOptions = InsertOptions()):
@@ -38,9 +40,9 @@ class Client:
 
         jsonBody = getInsertRequestBody(records, options.tokens)
         requestURL = self.vaultURL + "/v1/vaults/" + self.vaultID
-        token = self.tokenProvider()
+        self.storedToken = tokenProviderWrapper(self.storedToken, self.tokenProvider, interface)
         headers = {
-            "Authorization": "Bearer " + token
+            "Authorization": "Bearer " + self.storedToken
         }
 
         response = requests.post(requestURL, data=jsonBody, headers=headers)
@@ -57,11 +59,14 @@ class Client:
 
         self._checkConfig(interface)
         session = requests.Session()
-        token = self.tokenProvider()
+        self.storedToken = tokenProviderWrapper(self.storedToken, self.tokenProvider, interface)
         request = createRequest(config)
 
         if not 'X-Skyflow-Authorization' in request.headers.keys():
-            request.headers['X-Skyflow-Authorization'] = token
+            request.headers['X-Skyflow-Authorization'] = self.storedToken
+
+        if not 'Content-Type' in request.headers.keys():
+            request.headers['Content-Type'] = 'application/json'
 
         response = session.send(request)
         session.close()
@@ -72,9 +77,9 @@ class Client:
         log_info(InfoMessages.DETOKENIZE_TRIGGERED.value, interface)
 
         self._checkConfig(interface)
-        token = self.tokenProvider()
+        self.storedToken = tokenProviderWrapper(self.storedToken, self.tokenProvider, interface)
         url = self.vaultURL + "/v1/vaults/" + self.vaultID + "/detokenize"
-        responses = asyncio.run(sendDetokenizeRequests(records, url, token))
+        responses = asyncio.run(sendDetokenizeRequests(records, url, self.storedToken))
         result, partial = createDetokenizeResponseBody(responses)
         if partial:
             raise SkyflowError(SkyflowErrorCodes.PARTIAL_SUCCESS ,SkyflowErrorMessages.PARTIAL_SUCCESS, result, interface=interface)
@@ -87,9 +92,9 @@ class Client:
         log_info(InfoMessages.GET_BY_ID_TRIGGERED.value, interface)
 
         self._checkConfig(interface)
-        token = self.tokenProvider()
+        self.storedToken = tokenProviderWrapper(self.storedToken, self.tokenProvider, interface)
         url = self.vaultURL + "/v1/vaults/" + self.vaultID
-        responses = asyncio.run(sendGetByIdRequests(records, url, token))
+        responses = asyncio.run(sendGetByIdRequests(records, url, self.storedToken))
         result, partial = createGetByIdResponseBody(responses)
         if partial:
             raise SkyflowError(SkyflowErrorCodes.PARTIAL_SUCCESS ,SkyflowErrorMessages.PARTIAL_SUCCESS, result, interface=interface)

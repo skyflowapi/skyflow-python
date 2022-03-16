@@ -1,12 +1,14 @@
-
 # Description
+
 ---
+
 skyflow-python is the Skyflow SDK for the Python programming language.
 
 ## Usage
----
-You can install the package using the following command:
 
+---
+
+You can install the package using the following command:
 
 ```bash
 $ pip install skyflow
@@ -14,56 +16,72 @@ $ pip install skyflow
 
 ## Table of Contents
 
-* [Service Account Bearer Token Generation](#service-account-bearer-token-generation)  
-* [Vault APIs](#vault-apis)
-  * [Insert](#insert)
-  * [Detokenize](#detokenize)
-  * [GetById](#get-by-id)
-  * [InvokeConnection](#invoke-connection)
-* [Logging](#logging)
+- [Service Account Bearer Token Generation](#service-account-bearer-token-generation)
+- [Vault APIs](#vault-apis)
+  - [Insert](#insert)
+  - [Detokenize](#detokenize)
+  - [GetById](#get-by-id)
+  - [InvokeConnection](#invoke-connection)
+- [Logging](#logging)
 
 ### Service Account Bearer Token Generation
 
-The [Service Account](https://github.com/skyflowapi/skyflow-python/tree/main/ServiceAccount) python module is used to generate service account tokens from service account credentials file which is downloaded upon creation of service account. The token generated from this module is valid for 60 minutes and can be used to make API calls to vault services as well as management API(s) based on the permissions of the service account.
+The [Service Account](https://github.com/skyflowapi/skyflow-python/tree/main/skyflow/ServiceAccount) python module is used to generate service account tokens from service account credentials file which is downloaded upon creation of service account. The token generated from this module is valid for 60 minutes and can be used to make API calls to vault services as well as management API(s) based on the permissions of the service account.
 
-The `generateBearerToken(filepath)` function takes the credentials file path for token generation, alternatively, you can also send the entire credentials as string, by using `generateBearerTokenFromCreds(credentials)` 
+The `generateBearerToken(filepath)` function takes the credentials file path for token generation, alternatively, you can also send the entire credentials as string, by using `generateBearerTokenFromCreds(credentials)`
 
-[Example](https://github.com/skyflowapi/skyflow-python/blob/main/examples/SATokenExample.py):
-
+[Example](https://github.com/skyflowapi/skyflow-python/blob/main/samples/SATokenSample.py):
 
 ```python
-from skyflow.ServiceAccount import generateBearerToken
+from skyflow.Errors import SkyflowError
+from skyflow.ServiceAccount import generateBearerToken, isExpired
 
-filepath =  '<YOUR_CREDENTIALS_FILE_PATH>'
-accessToken, tokenType = generateBearerToken(filepath) # or generateBearerTokenFromCreds(credentials)
+# cache token for reuse
+bearerToken = ''
+tokenType = ''
+def tokenProvider():
+    if isExpired(bearerToken):
+        bearerToken, tokenType = generateBearerToken('<YOUR_CREDENTIALS_FILE_PATH>')
+    return bearerToken, tokenType
 
-print("Access Token:", accessToken)
-print("Type of token:", tokenType)
+try:
+    accessToken, tokenType = tokenProvider()
+    print("Access Token:", accessToken)
+    print("Type of token:", tokenType)
+except SkyflowError as e:
+    print(e)
+
 ```
 
-
 ### Vault APIs
-The [Vault](https://github.com/skyflowapi/skyflow-python/tree/main/Vault) python module is used to perform operations on the vault such as inserting records, detokenizing tokens, retrieving tokens for a skyflow_id and to invoke a connection.
+
+The [Vault](https://github.com/skyflowapi/skyflow-python/tree/main/skyflow/Vault) python module is used to perform operations on the vault such as inserting records, detokenizing tokens, retrieving tokens for a skyflow_id and to invoke a connection.
 
 To use this module, the skyflow client must first be initialized as follows.
 
 ```python
 from skyflow.Vault import Client, Configuration
-from skyflow.ServiceAccount import generateBearerToken
+from skyflow.ServiceAccount import generateBearerToken, isExpired
 
-#User defined function to provide access token to the vault apis
-def tokenProvider():    
-    token, _ = generateBearerToken('<YOUR_CREDENTIALS_FILE_PATH>')
-    return token
+# cache for reuse
+bearerToken = ''
+
+# User defined function to provide access token to the vault apis
+def tokenProvider():
+    if isExpired(bearerToken):
+        return bearerToken
+    bearerToken, _ = generateBearerToken('<YOUR_CREDENTIALS_FILE_PATH>')
+    return bearerToken
 
 #Initializing a Skyflow Client instance with a SkyflowConfiguration object
 config = Configuration('<YOUR_VAULT_ID>', '<YOUR_VAULT_URL>', tokenProvider)
-client = Client(config) 
+client = Client(config)
 ```
 
 All Vault APIs must be invoked using a client instance.
 
 #### Insert
+
 To insert data into the vault from the integrated application, use the insert(records: dict, options: InsertOptions) method of the Skyflow client. The records parameter takes an array of records to be inserted into the vault. The options parameter takes a Skyflow.InsertOptions object. See below:
 
 ```python
@@ -110,6 +128,7 @@ client.insert(
 ```
 
 Sample response :
+
 ```python
 {
     "records": [
@@ -195,11 +214,12 @@ For retrieving using SkyflowID's, use the getById(records: dict) method. The rec
 }
 ```
 
-There are 4 accepted values in Skyflow.RedactionTypes:  
+There are 4 accepted values in Skyflow.RedactionTypes:
+
 - `PLAIN_TEXT`
 - `MASKED`
 - `REDACTED`
-- `DEFAULT` 
+- `DEFAULT`
 
 An example of getById call:
 
@@ -227,6 +247,7 @@ except SkyflowError as e:
 ```
 
 Sample response:
+
 ```python
 {
   "records": [
@@ -266,6 +287,7 @@ Sample response:
 `Note:` While using detokenize and getByID methods, there is a possibility that some or all of the tokens might be invalid. In such cases, the data from response consists of both errors and detokenized records. In the SDK, this will raise a SkyflowError Exception and you can retrieve the data from this Exception object as shown above.
 
 #### Invoke Connection
+
 Using Skyflow Connection, end-user applications can integrate checkout/card issuance flow with their apps/systems. To invoke connection, use the invokeConnection(config: Skyflow.ConnectionConfig) method of the Skyflow client.
 
 ```python
@@ -281,6 +303,7 @@ client.invokeConnection(connectionConfig)
 ```
 
 `methodName` supports the following methods:
+
 - GET
 - POST
 - PUT
@@ -290,12 +313,16 @@ client.invokeConnection(connectionConfig)
 **pathParams, queryParams, requestHeader, requestBody** are the JSON objects represented as dictionaries that will be sent through the connection integration url.
 
 An example of invokeConnection:
+
 ```python
 from skyflow.Vault import ConnectionConfig, Configuration, RequestMethod
 
+bearerToken = ''
 def tokenProvider():
-    token, _ = generateBearerToken('<YOUR_CREDENTIALS_FILE_PATH>')
-    return token
+    if isExpired(bearerToken):
+        return bearerToken
+    bearerToken, _ = generateBearerToken('<YOUR_CREDENTIALS_FILE_PATH>')
+    return bearerToken
 
 try:
     config = Configuration('<YOUR_VAULT_ID>', '<YOUR_VAULT_URL>', tokenProvider)
@@ -321,6 +348,7 @@ except SkyflowError as e:
 ```
 
 Sample response:
+
 ```python
 {
     "receivedTimestamp": "2021-11-05 13:43:12.534",
@@ -347,23 +375,22 @@ Current the following 5 log levels are supported:
 
 - `DEBUG`:
 
-   When `LogLevel.DEBUG` is passed, all level of logs will be printed(DEBUG, INFO, WARN, ERROR)
-   
-- `INFO`: 
+  When `LogLevel.DEBUG` is passed, all level of logs will be printed(DEBUG, INFO, WARN, ERROR)
 
-   When `LogLevel.INFO` is passed, INFO logs for every event that has occurred during the SDK flow execution will be printed along with WARN and ERROR logs
-   
-- `WARN`: 
+- `INFO`:
 
-   When `LogLevel.WARN` is passed, WARN and ERROR logs will be printed
-   
+  When `LogLevel.INFO` is passed, INFO logs for every event that has occurred during the SDK flow execution will be printed along with WARN and ERROR logs
+
+- `WARN`:
+
+  When `LogLevel.WARN` is passed, WARN and ERROR logs will be printed
+
 - `ERROR`:
 
-   When `LogLevel.ERROR` is passed, only ERROR logs will be printed.
-   
-- `OFF`: 
+  When `LogLevel.ERROR` is passed, only ERROR logs will be printed.
 
-   `LogLevel.OFF` can be used to turn off all logging from the Skyflow SDK.
-   
+- `OFF`:
 
-`Note`: The ranking of logging levels is as follows :  `DEBUG` < `INFO` < `WARN` < `ERROR` < `OFF`
+  `LogLevel.OFF` can be used to turn off all logging from the Skyflow SDK.
+
+`Note`: The ranking of logging levels is as follows : `DEBUG` < `INFO` < `WARN` < `ERROR` < `OFF`
