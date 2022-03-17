@@ -4,6 +4,10 @@
 
 skyflow-python is the Skyflow SDK for the Python programming language.
 
+[![CI](https://img.shields.io/static/v1?label=CI&message=passing&color=green?style=plastic&logo=github)](https://github.com/skyflowapi/skyflow-python/actions)
+[![GitHub release](https://img.shields.io/github/v/release/skyflowapi/skyflow-python.svg)](https://github.com/skyflowapi/skyflow-python/releases)
+[![License](https://img.shields.io/github/license/skyflowapi/skyflow-python)](https://github.com/skyflowapi/skyflow-python/blob/main/LICENSE)
+
 ## Usage
 
 ---
