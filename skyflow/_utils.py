@@ -13,7 +13,7 @@ class LogLevel(Enum):
     OFF = logging.CRITICAL
 
 
-def setLogLevel(logLevel: LogLevel):
+def set_log_level(logLevel: LogLevel):
     '''
     Sets the Log Level for the Skyflow python SDK
     '''
@@ -53,7 +53,7 @@ class InfoMessages(Enum):
     GENERATE_BEARER_TOKEN_TRIGGERED = "Generate bearer token triggered"
     GENERATE_BEARER_TOKEN_SUCCESS = "Generate bearer token returned successfully"
     IS_TOKEN_VALID_TRIGGERED = "isTokenValid() triggered"
-    IS_EXPIRED_TRIGGERED = "isExpired() triggered"
+    IS_EXPIRED_TRIGGERED = "is_expired() triggered"
     EMPTY_ACCESS_TOKEN = "Give access token is empty"
     INVALID_TOKEN = "Given token is invalid"
 
@@ -62,12 +62,12 @@ class InterfaceName(Enum):
     CLIENT = "client"
     INSERT = "client.insert"
     DETOKENIZE = "client.detokenize"
-    GET_BY_ID = "client.getById"
-    INVOKE_CONNECTION = "client.invokeConnection"
-    GENERATE_BEARER_TOKEN = "ServiceAccount.generateBearerToken"
+    GET_BY_ID = "client.get_by_id"
+    INVOKE_CONNECTION = "client.invoke_connection"
+    GENERATE_BEARER_TOKEN = "service_account.generate_bearer_token"
 
     
 
-    IS_TOKEN_VALID = "ServiceAccount.isTokenValid"
-    IS_EXPIRED = "ServiceAccount.isExpired"
+    IS_TOKEN_VALID = "service_account.isTokenValid"
+    IS_EXPIRED = "service_account.is_expired"
 

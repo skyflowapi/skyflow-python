@@ -1,6 +1,6 @@
-from skyflow.Errors import SkyflowError
-from skyflow.ServiceAccount import generateBearerToken, isExpired
-from skyflow.Vault import Client, Configuration, RequestMethod, ConnectionConfig
+from skyflow.errors import SkyflowError
+from skyflow.service_account import generate_bearer_token, is_expired
+from skyflow.vault import Client, Configuration, RequestMethod, ConnectionConfig
 
 '''
 This sample is for generating CVV using Skyflow Connection with a third party integration such as VISA
@@ -11,8 +11,9 @@ bearerToken = ''
 
 
 def tokenProvider():
-    if isExpired(bearerToken):
-        bearerToken, _ = generateBearerToken('<YOUR_CREDENTIALS_FILE_PATH>')
+    global bearerToken
+    if is_expired(bearerToken):
+        bearerToken, _ = generate_bearer_token('<YOUR_CREDENTIALS_FILE_PATH>')
     return bearerToken
 
 
@@ -34,7 +35,7 @@ try:
                                         pathParams={'cardID': '<CARD_VALUE>'})  # param as in the example
     client = Client(config)
 
-    response = client.invokeConnection(connectionConfig)
+    response = client.invoke_connection(connectionConfig)
     print('Response:', response)
 except SkyflowError as e:
     print('Error Occurred:', e)

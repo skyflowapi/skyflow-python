@@ -1,7 +1,6 @@
-from tkinter import W
 from requests.sessions import PreparedRequest
 from ._config import ConnectionConfig
-from skyflow.Errors._skyflowErrors import *
+from skyflow.errors._skyflowerrors import *
 import requests
 import json
 from skyflow._utils import InterfaceName

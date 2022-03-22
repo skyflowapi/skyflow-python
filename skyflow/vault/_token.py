@@ -1,6 +1,6 @@
 import jwt
 import time
-from skyflow.Errors._skyflowErrors import *
+from skyflow.errors._skyflowerrors import *
 
 def tokenProviderWrapper(storedToken: str, newTokenProvider, interface: str):
     '''
@@ -11,7 +11,7 @@ def tokenProviderWrapper(storedToken: str, newTokenProvider, interface: str):
         return newTokenProvider()
 
     try:
-        decoded = jwt.decode(storedToken, options={"verify_signature": False})
+        decoded = jwt.decode(storedToken, options={"verify_signature": False,"verify_aud": False})
         if time.time() + 300 < decoded['exp']:
             return storedToken
     except jwt.ExpiredSignatureError:
