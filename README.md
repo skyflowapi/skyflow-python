@@ -217,7 +217,7 @@ Sample response:
 
 ### Get By Id
 
-For retrieving using SkyflowID's, use the get_by_id(records: dict) method. The records parameter takes a Dictionary that contains records to be fetched as shown below:
+In order to retrieve data from your vault using SkyflowIDs, use the get_by_id(records: dict) method. The records parameter takes a dictionary that should contain an array of SkyflowIDs to be fetched, as shown below:
 
 ```python
 {
@@ -305,7 +305,7 @@ Sample response:
 
 ### Invoke Connection
 
-Using Skyflow Connection, end-user applications can integrate checkout/card issuance flow with their apps/systems. To invoke connection, use the invoke_connection(config: Skyflow.ConnectionConfig) method of the Skyflow client.
+Using the InvokeConnection method, you can integrate their server-side application with third party APIs and services without directly handling sensitive data. Prior to invoking the InvokeConnection method, you must have created a connection and have a connectionURL already generated. Once you have the connectionURL, you can invoke a connection by using the invoke_connection(config: ConnectionConfig) method. The ConnectionConfig parameter must include a connectionURL and methodName. The other fields are optional
 
 ```python
 config = ConnectionConfig(
