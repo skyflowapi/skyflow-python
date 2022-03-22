@@ -7,7 +7,7 @@ from skyflow.vault import Client, Configuration, RedactionType
 bearerToken = ''
 
 
-def tokenProvider():
+def token_provider():
     global bearerToken
     if is_expired(bearerToken):
         bearerToken, _ = generate_bearer_token('<YOUR_CREDENTIALS_FILE_PATH>')
@@ -16,7 +16,7 @@ def tokenProvider():
 
 try:
     config = Configuration(
-        '<YOUR_VAULT_ID>', '<YOUR_VAULT_URL>', tokenProvider)
+        '<YOUR_VAULT_ID>', '<YOUR_VAULT_URL>', token_provider)
     client = Client(config)
 
     data = {"records": [
