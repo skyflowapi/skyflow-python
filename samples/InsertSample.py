@@ -5,7 +5,7 @@ from skyflow.vault import Client, InsertOptions, Configuration
 # cache token for reuse
 bearerToken = ''
 
-def tokenProvider():
+def token_provider():
     global bearerToken
     if is_expired(bearerToken):
         bearerToken, _ = generate_bearer_token('<YOUR_CREDENTIALS_FILE_PATH>')
@@ -14,7 +14,7 @@ def tokenProvider():
 
 try:
     config = Configuration(
-        '', '', tokenProvider)
+        '', '', token_provider)
     client = Client(config)
 
     options = InsertOptions(True)

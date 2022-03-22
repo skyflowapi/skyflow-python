@@ -6,7 +6,7 @@ bearerToken = ''
 tokenType = ''
 
 
-def tokenProvider():
+def token_provider():
     if is_expired(bearerToken):
         bearerToken, tokenType = generate_bearer_token(
             '<YOUR_CREDENTIALS_FILE_PATH>')
@@ -14,7 +14,7 @@ def tokenProvider():
 
 
 try:
-    accessToken, tokenType = tokenProvider()
+    accessToken, tokenType = token_provider()
     print("Access Token:", accessToken)
     print("Type of token:", tokenType)
 except SkyflowError as e:

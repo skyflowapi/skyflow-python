@@ -30,7 +30,7 @@ $ pip install skyflow
 
 ### Service Account Bearer Token Generation
 
-The [Service Account](https://github.com/skyflowapi/skyflow-python/tree/main/skyflow/ServiceAccount) python module is used to generate service account tokens from service account credentials file which is downloaded upon creation of service account. The token generated from this module is valid for 60 minutes and can be used to make API calls to vault services as well as management API(s) based on the permissions of the service account.
+The [Service Account](https://github.com/skyflowapi/skyflow-python/tree/main/skyflow/service_account) python module is used to generate service account tokens from service account credentials file which is downloaded upon creation of service account. The token generated from this module is valid for 60 minutes and can be used to make API calls to vault services as well as management API(s) based on the permissions of the service account.
 
 The `generate_bearer_token(filepath)` function takes the credentials file path for token generation, alternatively, you can also send the entire credentials as string, by using `generate_bearer_token_from_creds(credentials)`
 
@@ -43,13 +43,13 @@ from skyflow.service_account import generate_bearer_token, is_expired
 # cache token for reuse
 bearerToken = ''
 tokenType = ''
-def tokenProvider():
+def token_provider():
     if is_expired(bearerToken):
         bearerToken, tokenType = generate_bearer_token('<YOUR_CREDENTIALS_FILE_PATH>')
     return bearerToken, tokenType
 
 try:
-    accessToken, tokenType = tokenProvider()
+    accessToken, tokenType = token_provider()
     print("Access Token:", accessToken)
     print("Type of token:", tokenType)
 except SkyflowError as e:
@@ -59,7 +59,7 @@ except SkyflowError as e:
 
 ### Vault APIs
 
-The [Vault](https://github.com/skyflowapi/skyflow-python/tree/main/skyflow/Vault) python module is used to perform operations on the vault such as inserting records, detokenizing tokens, retrieving tokens for a skyflow_id and to invoke a connection.
+The [Vault](https://github.com/skyflowapi/skyflow-python/tree/main/skyflow/vault) python module is used to perform operations on the vault such as inserting records, detokenizing tokens, retrieving tokens for a skyflow_id and to invoke a connection.
 
 To use this module, the skyflow client must first be initialized as follows.
 
@@ -71,14 +71,14 @@ from skyflow.service_account import generate_bearer_token, is_expired
 bearerToken = ''
 
 # User defined function to provide access token to the vault apis
-def tokenProvider():
+def token_provider():
     if is_expired(bearerToken):
         return bearerToken
     bearerToken, _ = generate_bearer_token('<YOUR_CREDENTIALS_FILE_PATH>')
     return bearerToken
 
 #Initializing a Skyflow Client instance with a SkyflowConfiguration object
-config = Configuration('<YOUR_VAULT_ID>', '<YOUR_VAULT_URL>', tokenProvider)
+config = Configuration('<YOUR_VAULT_ID>', '<YOUR_VAULT_URL>', token_provider)
 client = Client(config)
 ```
 
@@ -288,7 +288,7 @@ Sample response:
 }
 ```
 
-`Note:` While using detokenize and getByID methods, there is a possibility that some or all of the tokens might be invalid. In such cases, the data from response consists of both errors and detokenized records. In the SDK, this will raise a SkyflowError Exception and you can retrieve the data from this Exception object as shown above.
+`Note:` While using detokenize and get_by_id methods, there is a possibility that some or all of the tokens might be invalid. In such cases, the data from response consists of both errors and detokenized records. In the SDK, this will raise a SkyflowError Exception and you can retrieve the data from this Exception object as shown above.
 
 #### Invoke Connection
 
@@ -322,14 +322,14 @@ An example of invoke_connection:
 from skyflow.vault import ConnectionConfig, Configuration, RequestMethod
 
 bearerToken = ''
-def tokenProvider():
+def token_provider():
     if is_expired(bearerToken):
         return bearerToken
     bearerToken, _ = generate_bearer_token('<YOUR_CREDENTIALS_FILE_PATH>')
     return bearerToken
 
 try:
-    config = Configuration('<YOUR_VAULT_ID>', '<YOUR_VAULT_URL>', tokenProvider)
+    config = Configuration('<YOUR_VAULT_ID>', '<YOUR_VAULT_URL>', token_provider)
     connectionConfig = ConnectionConfig('<YOUR_CONNECTION_URL>', RequestMethod.POST,
     requestHeader={
                 'Content-Type': 'application/json',
