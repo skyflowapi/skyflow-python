@@ -1,9 +1,9 @@
 import unittest
-from skyflow.ServiceAccount._token import generateBearerToken
-from skyflow.Vault._connection import *
-from skyflow.Vault._client import *
-from skyflow.Vault._config import *
-from skyflow.Errors._skyflowErrors import *
+from skyflow.service_account._token import generate_bearer_token
+from skyflow.vault._connection import *
+from skyflow.vault._client import *
+from skyflow.vault._config import *
+from skyflow.errors._skyflowerrors import *
 from dotenv import dotenv_values
 
 
@@ -134,7 +134,7 @@ class testInvokeConnection(unittest.TestCase):
     #     connectionURL = env_values['CVV_GEN_CONNECTION_URL']
 
     #     def tokenProvider():
-    #         token, _ = generateBearerToken(env_values['CREDENTIALS_FILE_PATH'])
+    #         token, _ = generate_bearer_token(env_values['CREDENTIALS_FILE_PATH'])
     #         return token
 
     #     config = Configuration(env_values['VAULT_ID'], env_values['VAULT_URL'], tokenProvider)
@@ -154,7 +154,7 @@ class testInvokeConnection(unittest.TestCase):
     #     client = Client(config)
 
     #     try:
-    #         resp = client.invokeConnection(connectionConfig)
+    #         resp = client.invoke_connection(connectionConfig)
     #         self.assertIsNotNone(resp['resource']['cvv2'])
     #         self.assertIsNotNone(resp['processingTimeinMs'])
     #         self.assertIsNotNone(resp['receivedTimestamp'])

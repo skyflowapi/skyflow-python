@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.5.0] - 2022-03-22
+
+### Changed
+- `getById` changed to `get_by_id`
+- `invokeConnection`changed to `invoke_connection`
+- `generateBearerToken` changed to `generate_bearer_token`
+- `generateBearerTokenDromCreds` changed to `generate_bearer_token_from_creds`
+- `isExpired` changed to `is_expired`
+- `setLogLevel` changed to `set_log_level`
+
+### Removed
+- `isValid` function
+- `GenerateToken` function
+
 ## [1.4.0] - 2022-03-15
 
 ### Changed

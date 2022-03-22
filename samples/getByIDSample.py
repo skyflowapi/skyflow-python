@@ -1,21 +1,22 @@
-from skyflow.Errors import SkyflowError
-from skyflow.ServiceAccount import generateBearerToken, isExpired
-from skyflow.Vault import Client, Configuration, RedactionType
+from skyflow.errors import SkyflowError
+from skyflow.service_account import generate_bearer_token, is_expired
+from skyflow.vault import Client, Configuration, RedactionType
 
 
 # cache token for reuse
 bearerToken = ''
 
 
-def tokenProvider():
-    if isExpired(bearerToken):
-        bearerToken, _ = generateBearerToken('<YOUR_CREDENTIALS_FILE_PATH>')
+def token_provider():
+    global bearerToken
+    if is_expired(bearerToken):
+        bearerToken, _ = generate_bearer_token('<YOUR_CREDENTIALS_FILE_PATH>')
     return bearerToken
 
 
 try:
     config = Configuration(
-        '<YOUR_VAULT_ID>', '<YOUR_VAULT_URL>', tokenProvider)
+        '<YOUR_VAULT_ID>', '<YOUR_VAULT_URL>', token_provider)
     client = Client(config)
 
     data = {"records": [
@@ -26,7 +27,7 @@ try:
         }
     ]}
 
-    response = client.getById(data)
+    response = client.get_by_id(data)
     print('Response:', response)
 except SkyflowError as e:
     print('Error Occurred:', e)

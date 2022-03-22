@@ -1,4 +1,4 @@
-from skyflow.Errors._skyflowErrors import SkyflowError, SkyflowErrorCodes, SkyflowErrorMessages
+from skyflow.errors._skyflowerrors import SkyflowError, SkyflowErrorCodes, SkyflowErrorMessages
 import asyncio
 from aiohttp import ClientSession, request
 import json
