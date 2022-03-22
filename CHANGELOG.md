@@ -2,11 +2,25 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.5.0] - 2022-03-22
+
+### Changed
+- `getById` changed to `get_by_id`
+- `invokeConnection`changed to `invoke_connection`
+- `generateBearerToken` changed to `generate_bearer_token`
+- `generateBearerTokenDromCreds` changed to `generate_bearer_token_from_creds`
+- `isExpired` changed to `is_expired`
+- `setLogLevel` changed to `set_log_level`
+
+### Removed
+- `isValid` function
+- `GenerateToken` function
+
 ## [1.4.0] - 2022-03-15
 
 ### Changed
 
-- deprecated `isValid` in favour of `is_expired`
+- deprecated `isValid` in favour of `isExpired`
 
 ## [1.3.0] - 2022-02-24
 
@@ -20,19 +34,19 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
-- `generate_bearer_token_from_creds` raising error "invalid credentials" on correct credentials
+- `generateBearerTokenFromCreds` raising error "invalid credentials" on correct credentials
 
 ## [1.2.0] - 2022-01-04
 
 ### Added
 
 - Logging functionality
-- `set_log_level` function for setting the package-level LogLevel
-- `generate_bearer_token_from_creds` function which takes credentials as string
+- `setLogLevel` function for setting the package-level LogLevel
+- `generateBearerTokenFromCreds` function which takes credentials as string
 
 ### Changed
 
-- Renamed and deprecated `generate_bearer_token` in favor of `generate_bearer_token`
+- Renamed and deprecated `GenerateToken` in favor of `generateBearerToken`
 - Make `vaultID` and `vaultURL` optional in `Client` constructor
 
 ## [1.1.0] - 2021-11-10
@@ -41,8 +55,8 @@ All notable changes to this project will be documented in this file.
 
 - `insert` vault API
 - `detokenize` vault API
-- `get_by_id` vault API
-- `invoke_connection`
+- `getById` vault API
+- `invokeConnection`
 
 ## [1.0.1] - 2021-10-26
 
