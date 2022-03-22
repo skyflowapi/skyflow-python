@@ -14,7 +14,7 @@ def token_provider():
 
 try:
     config = Configuration(
-        '', '', token_provider)
+       '<YOUR_VAULT_ID>', '<YOUR_VAULT_URL>', token_provider)
     client = Client(config)
 
     options = InsertOptions(True)
@@ -22,9 +22,9 @@ try:
     data = {
         "records": [
             {
-                "table": "cards",
+                "table": "<TABLE_NAME>",
                 "fields": {
-                    "fullnam": "san"
+                    "<FIELDNAME>": "<VALUE>"
                 }
             }
         ]

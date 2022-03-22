@@ -7,6 +7,8 @@ tokenType = ''
 
 
 def token_provider():
+    global bearerToken
+    global tokenType
     if is_expired(bearerToken):
         bearerToken, tokenType = generate_bearer_token(
             '<YOUR_CREDENTIALS_FILE_PATH>')
