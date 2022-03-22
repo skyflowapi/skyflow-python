@@ -16,7 +16,8 @@ tokenType = ''
 
 
 def token_provider():
-
+    global bearerToken
+    global tokenType
     # As an example
     credentials = {
         "clientID": "<YOUR_clientID>",
