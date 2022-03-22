@@ -43,26 +43,26 @@ pip install skyflow
 
 ## Service Account Bearer Token Generation
 
-The [Service Account](https://github.com/skyflowapi/skyflow-python/tree/main/skyflow/ServiceAccount) python module is used to generate service account tokens from service account credentials file which is downloaded upon creation of service account. The token generated from this module is valid for 60 minutes and can be used to make API calls to vault services as well as management API(s) based on the permissions of the service account.
+The [Service Account](https://github.com/skyflowapi/skyflow-python/tree/main/skyflow/service_account) python module is used to generate service account tokens from service account credentials file which is downloaded upon creation of service account. The token generated from this module is valid for 60 minutes and can be used to make API calls to vault services as well as management API(s) based on the permissions of the service account.
 
-The `generateBearerToken(filepath)` function takes the credentials file path for token generation, alternatively, you can also send the entire credentials as string, by using `generateBearerTokenFromCreds(credentials)`
+The `generate_bearer_token(filepath)` function takes the credentials file path for token generation, alternatively, you can also send the entire credentials as string, by using `generate_bearer_token_from_creds(credentials)`
 
 [Example](https://github.com/skyflowapi/skyflow-python/blob/main/samples/SATokenSample.py):
 
 ```python
-from skyflow.Errors import SkyflowError
-from skyflow.ServiceAccount import generateBearerToken, isExpired
+from skyflow.errors import SkyflowError
+from skyflow.service_account import generate_bearer_token, is_expired
 
 # cache token for reuse
 bearerToken = ''
 tokenType = ''
-def tokenProvider():
-    if isExpired(bearerToken):
-        bearerToken, tokenType = generateBearerToken('<YOUR_CREDENTIALS_FILE_PATH>')
+def token_provider():
+    if is_expired(bearerToken):
+        bearerToken, tokenType = generate_bearer_token('<YOUR_CREDENTIALS_FILE_PATH>')
     return bearerToken, tokenType
 
 try:
-    accessToken, tokenType = tokenProvider()
+    accessToken, tokenType = token_provider()
     print("Access Token:", accessToken)
     print("Type of token:", tokenType)
 except SkyflowError as e:
@@ -72,26 +72,26 @@ except SkyflowError as e:
 
 ## Vault APIs
 
-The [Vault](https://github.com/skyflowapi/skyflow-python/tree/main/skyflow/Vault) python module is used to perform operations on the vault such as inserting records, detokenizing tokens, retrieving tokens for a skyflow_id and to invoke a connection.
+The [Vault](https://github.com/skyflowapi/skyflow-python/tree/main/skyflow/vault) python module is used to perform operations on the vault such as inserting records, detokenizing tokens, retrieving tokens for a skyflow_id and to invoke a connection.
 
 To use this module, the skyflow client must first be initialized as follows.
 
 ```python
-from skyflow.Vault import Client, Configuration
-from skyflow.ServiceAccount import generateBearerToken, isExpired
+from skyflow.vault import Client, Configuration
+from skyflow.service_account import generate_bearer_token, is_expired
 
 # cache for reuse
 bearerToken = ''
 
 # User defined function to provide access token to the vault apis
-def tokenProvider():
-    if isExpired(bearerToken):
+def token_provider():
+    if is_expired(bearerToken):
         return bearerToken
-    bearerToken, _ = generateBearerToken('<YOUR_CREDENTIALS_FILE_PATH>')
+    bearerToken, _ = generate_bearer_token('<YOUR_CREDENTIALS_FILE_PATH>')
     return bearerToken
 
 #Initializing a Skyflow Client instance with a SkyflowConfiguration object
-config = Configuration('<YOUR_VAULT_ID>', '<YOUR_VAULT_URL>', tokenProvider)
+config = Configuration('<YOUR_VAULT_ID>', '<YOUR_VAULT_URL>', token_provider)
 client = Client(config)
 ```
 
@@ -102,8 +102,8 @@ All Vault APIs must be invoked using a client instance.
 To insert data into the vault use the insert(records: dict, options: InsertOptions) method. The records parameter is a dictionary that must have a `records` key which has an array of records to be inserted into the vault as it's value. The options parameter takes a Skyflow.InsertOptions object, as shown below:
 
 ```python
-from skyflow.Vault import InsertOptions
-from skyflow.Errors import SkyflowError
+from skyflow.vault import InsertOptions
+from skyflow.errors import SkyflowError
 
 #Initialize Client
 try:
@@ -217,7 +217,7 @@ Sample response:
 
 ### Get By Id
 
-In order to retrieve data from your vault using SkyflowIDs, use the getById(records: dict) method. The records parameter takes a dictionary that should contain an array of SkyflowIDs to be fetched, as shown below:
+In order to retrieve data from your vault using SkyflowIDs, use the get_by_id(records: dict) method. The records parameter takes a dictionary that should contain an array of SkyflowIDs to be fetched, as shown below:
 
 ```python
 {
@@ -238,10 +238,10 @@ There are 4 accepted values in Skyflow.RedactionTypes:
 - `REDACTED`
 - `DEFAULT`
 
-An example of getById call:
+An example of get_by_id call:
 
 ```python
-from skyflow.Vault import RedactionType
+from skyflow.vault import RedactionType
 
 skyflowIDs = [
     "f8d8a622-b557-4c6b-a12c-c5ebe0b0bfd9",
@@ -255,7 +255,7 @@ badRecord = {"ids": invalidID, "table": "cards", "redaction": RedactionType.PLAI
 records = {"records": [record, badRecord]}
 
 try:
-    client.getById(records)
+    client.get_by_id(records)
 except SkyflowError as e:
     if e.data:
         print(e.data) # see note below
@@ -301,11 +301,11 @@ Sample response:
 }
 ```
 
-`Note:` While using detokenize and getByID methods, there is a possibility that some or all of the tokens might be invalid. In such cases, the data from response consists of both errors and detokenized records. In the SDK, this will raise a SkyflowError Exception and you can retrieve the data from this Exception object as shown above.
+`Note:` While using detokenize and get_by_id methods, there is a possibility that some or all of the tokens might be invalid. In such cases, the data from response consists of both errors and detokenized records. In the SDK, this will raise a SkyflowError Exception and you can retrieve the data from this Exception object as shown above.
 
 ### Invoke Connection
 
-Using the InvokeConnection method, you can integrate their server-side application with third party APIs and services without directly handling sensitive data. Prior to invoking the InvokeConnection method, you must have created a connection and have a connectionURL already generated. Once you have the connectionURL, you can invoke a connection by using the invokeConnection(config: ConnectionConfig) method. The ConnectionConfig parameter must include a connectionURL and methodName. The other fields are optional
+Using the InvokeConnection method, you can integrate their server-side application with third party APIs and services without directly handling sensitive data. Prior to invoking the InvokeConnection method, you must have created a connection and have a connectionURL already generated. Once you have the connectionURL, you can invoke a connection by using the invoke_connection(config: ConnectionConfig) method. The ConnectionConfig parameter must include a connectionURL and methodName. The other fields are optional
 
 ```python
 config = ConnectionConfig(
@@ -316,7 +316,7 @@ config = ConnectionConfig(
   requestHeader: dict, # optional
   requestBody: dict,	# optional
 )
-client.invokeConnection(config)
+client.invoke_connection(connectionConfig)
 ```
 
 `methodName` supports the following methods:
@@ -329,20 +329,20 @@ client.invokeConnection(config)
 
 **pathParams, queryParams, requestHeader, requestBody** are the JSON objects represented as dictionaries that will be sent through the connection integration url.
 
-An example of invokeConnection:
+An example of invoke_connection:
 
 ```python
-from skyflow.Vault import ConnectionConfig, Configuration, RequestMethod
+from skyflow.vault import ConnectionConfig, Configuration, RequestMethod
 
 bearerToken = ''
-def tokenProvider():
-    if isExpired(bearerToken):
+def token_provider():
+    if is_expired(bearerToken):
         return bearerToken
-    bearerToken, _ = generateBearerToken('<YOUR_CREDENTIALS_FILE_PATH>')
+    bearerToken, _ = generate_bearer_token('<YOUR_CREDENTIALS_FILE_PATH>')
     return bearerToken
 
 try:
-    config = Configuration('<YOUR_VAULT_ID>', '<YOUR_VAULT_URL>', tokenProvider)
+    config = Configuration('<YOUR_VAULT_ID>', '<YOUR_VAULT_URL>', token_provider)
     connectionConfig = ConnectionConfig('<YOUR_CONNECTION_URL>', RequestMethod.POST,
     requestHeader={
                 'Content-Type': 'application/json',
@@ -358,7 +358,7 @@ try:
     pathParams={'cardID': '<CARD_VALUE>'}) # param as in the example
     client = Client(config)
 
-    response = client.invokeConnection(connectionConfig)
+    response = client.invoke_connection(connectionConfig)
     print('Response:', response)
 except SkyflowError as e:
     print('Error Occurred:', e)
@@ -378,14 +378,14 @@ Sample response:
 
 ## Logging
 
-The skyflow python SDK provides useful logging using python's inbuilt `logging` library. By default the logging level of the SDK is set to `LogLevel.ERROR`. This can be changed by using `setLogLevel(logLevel)` as shown below:
+The skyflow python SDK provides useful logging using python's inbuilt `logging` library. By default the logging level of the SDK is set to `LogLevel.ERROR`. This can be changed by using `set_log_level(logLevel)` as shown below:
 
 ```python
 import logging
-from skyflow import setLogLevel, LogLevel
+from skyflow import set_log_level, LogLevel
 
 logging.basicConfig() # You can set the basic config here
-setLogLevel(LogLevel.INFO) # sets the skyflow SDK log level to INFO
+set_log_level(LogLevel.INFO) # sets the skyflow SDK log level to INFO
 ```
 
 Current the following 5 log levels are supported:

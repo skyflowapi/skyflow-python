@@ -1,6 +1,6 @@
 import unittest
 
-from skyflow.Vault._config import *
+from skyflow.vault._config import *
 
 class TestConfig(unittest.TestCase):
     def testInsertOptions(self):

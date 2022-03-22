@@ -1,20 +1,22 @@
-from skyflow.Errors import SkyflowError
-from skyflow.ServiceAccount import generateBearerToken, isExpired
+from skyflow.errors import SkyflowError
+from skyflow.service_account import generate_bearer_token, is_expired
 
 # cache token for reuse
 bearerToken = ''
 tokenType = ''
 
 
-def tokenProvider():
-    if isExpired(bearerToken):
-        bearerToken, tokenType = generateBearerToken(
+def token_provider():
+    global bearerToken
+    global tokenType
+    if is_expired(bearerToken):
+        bearerToken, tokenType = generate_bearer_token(
             '<YOUR_CREDENTIALS_FILE_PATH>')
     return bearerToken, tokenType
 
 
 try:
-    accessToken, tokenType = tokenProvider()
+    accessToken, tokenType = token_provider()
     print("Access Token:", accessToken)
     print("Type of token:", tokenType)
 except SkyflowError as e:

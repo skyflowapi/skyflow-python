@@ -1,16 +1,16 @@
 import unittest
 import os
 from dotenv import dotenv_values
-from skyflow.ServiceAccount import generateBearerToken, generateBearerTokenFromCreds, GenerateToken
-from skyflow.Errors._skyflowErrors import *
+from skyflow.service_account import generate_bearer_token, generate_bearer_token_from_creds, generate_bearer_token
+from skyflow.errors._skyflowerrors import *
 import json
-from skyflow.ServiceAccount._token import getSignedJWT, getResponseToken, sendRequestWithToken
+from skyflow.service_account._token import getSignedJWT, getResponseToken, sendRequestWithToken
 
 
 class TestGenerateBearerToken(unittest.TestCase):
 
     def setUp(self) -> None:
-        self.dataPath = os.path.join(os.getcwd(), 'tests/ServiceAccount/data/')
+        self.dataPath = os.path.join(os.getcwd(), 'tests/service_account/data/')
         return super().setUp()
 
     def getDataPath(self, file):
@@ -18,7 +18,7 @@ class TestGenerateBearerToken(unittest.TestCase):
 
     def testWithInvalidFilePath(self):
         try:
-            generateBearerToken('unknownfilepath')
+            generate_bearer_token('unknownfilepath')
         except SkyflowError as se:
             self.assertEqual(se.code, SkyflowErrorCodes.INVALID_INPUT.value)
             self.assertEqual(
@@ -27,7 +27,7 @@ class TestGenerateBearerToken(unittest.TestCase):
     def testInvalidJSON(self):
         path = self.getDataPath('empty')
         try:
-            generateBearerToken(path)
+            generate_bearer_token(path)
         except SkyflowError as se:
             self.assertEqual(se.code, SkyflowErrorCodes.INVALID_INPUT.value)
             self.assertEqual(
@@ -35,7 +35,7 @@ class TestGenerateBearerToken(unittest.TestCase):
 
     def testWithNoPrivateKey(self):
         try:
-            generateBearerToken(self.getDataPath('noPrivateKey'))
+            generate_bearer_token(self.getDataPath('noPrivateKey'))
         except SkyflowError as se:
             self.assertEqual(se.code, SkyflowErrorCodes.INVALID_INPUT.value)
             self.assertEqual(
@@ -43,7 +43,7 @@ class TestGenerateBearerToken(unittest.TestCase):
 
     def testWithNoClientID(self):
         try:
-            generateBearerToken(self.getDataPath('noClientID'))
+            generate_bearer_token(self.getDataPath('noClientID'))
         except SkyflowError as se:
             self.assertEqual(se.code, SkyflowErrorCodes.INVALID_INPUT.value)
             self.assertEqual(
@@ -51,7 +51,7 @@ class TestGenerateBearerToken(unittest.TestCase):
 
     def testWithNoKeyID(self):
         try:
-            generateBearerToken(self.getDataPath('noKeyID'))
+            generate_bearer_token(self.getDataPath('noKeyID'))
         except SkyflowError as se:
             self.assertEqual(se.code, SkyflowErrorCodes.INVALID_INPUT.value)
             self.assertEqual(
@@ -59,7 +59,7 @@ class TestGenerateBearerToken(unittest.TestCase):
 
     def testWithNoTokenURI(self):
         try:
-            generateBearerToken(self.getDataPath('noTokenURI'))
+            generate_bearer_token(self.getDataPath('noTokenURI'))
         except SkyflowError as se:
             self.assertEqual(se.code, SkyflowErrorCodes.INVALID_INPUT.value)
             self.assertEqual(
@@ -67,17 +67,17 @@ class TestGenerateBearerToken(unittest.TestCase):
 
     def testInvalidCreds(self):
         try:
-            generateBearerToken(self.getDataPath('invalidPrivateKey'))
+            generate_bearer_token(self.getDataPath('invalidPrivateKey'))
         except SkyflowError as se:
             self.assertEqual(se.code, SkyflowErrorCodes.INVALID_INPUT.value)
             self.assertEqual(
                 se.message, SkyflowErrorMessages.JWT_INVALID_FORMAT.value)
 
-    def testgenerateBearerTokenSuccess(self):
+    def testgenerate_bearer_tokenSuccess(self):
         env_values = dotenv_values('.env')
         credentials_path = env_values['CREDENTIALS_FILE_PATH']
         try:
-            token, type = generateBearerToken(credentials_path)
+            token, type = generate_bearer_token(credentials_path)
             self.assertIsNotNone(token)
             self.assertEqual(type, 'Bearer')
         except SkyflowError:
@@ -88,7 +88,7 @@ class TestGenerateBearerToken(unittest.TestCase):
         credentialsString = json.dumps(creds_file.read())
         creds_file.close()
         try:
-            generateBearerTokenFromCreds(credentialsString)
+            generate_bearer_token_from_creds(credentialsString)
         except SkyflowError as se:
             self.assertEqual(se.code, SkyflowErrorCodes.INVALID_INPUT.value)
             self.assertEqual(
@@ -100,7 +100,7 @@ class TestGenerateBearerToken(unittest.TestCase):
         creds_file = open(credentials_path, 'r')
         credentialsString = json.dumps(creds_file.read())
         try:
-            generateBearerTokenFromCreds(credentialsString)
+            generate_bearer_token_from_creds(credentialsString)
         except SkyflowError as se:
             self.assertEqual(se.code, SkyflowErrorCodes.INVALID_INPUT.value)
             self.assertEqual(
@@ -114,7 +114,7 @@ class TestGenerateBearerToken(unittest.TestCase):
             json.loads(creds_file.read()))
         creds_file.close()
         try:
-            token, type = generateBearerTokenFromCreds(credentialsString)
+            token, type = generate_bearer_token_from_creds(credentialsString)
             self.assertIsNotNone(token)
             self.assertEqual(type, "Bearer")
         except SkyflowError as se:
@@ -122,7 +122,7 @@ class TestGenerateBearerToken(unittest.TestCase):
 
     def testNonExistentFileArg(self):
         try:
-            generateBearerToken('non-existent-file.json')
+            generate_bearer_token('non-existent-file.json')
             self.fail()
         except SkyflowError as e:
             self.assertEqual(e.code, SkyflowErrorCodes.INVALID_INPUT.value)
@@ -132,14 +132,14 @@ class TestGenerateBearerToken(unittest.TestCase):
     def testInvalidJSONInCreds(self):
         filepath = self.getDataPath('invalidJson')
         try:
-            generateBearerToken(filepath)
+            generate_bearer_token(filepath)
             self.fail()
         except SkyflowError as e:
             self.assertEqual(e.code, SkyflowErrorCodes.INVALID_INPUT.value)
             self.assertEqual(
                 e.message, SkyflowErrorMessages.FILE_INVALID_JSON.value % filepath)
         try:
-            generateBearerTokenFromCreds(self.getDataPath('invalid-json'))
+            generate_bearer_token_from_creds(self.getDataPath('invalid-json'))
             self.fail()
         except SkyflowError as e:
             self.assertEqual(e.code, SkyflowErrorCodes.INVALID_INPUT.value)
@@ -148,7 +148,7 @@ class TestGenerateBearerToken(unittest.TestCase):
 
     def testGenerateToken(self):
         try:
-            GenerateToken(self.getDataPath('invalid-json'))
+            generate_bearer_token(self.getDataPath('invalid-json'))
             self.fail()
         except SkyflowError as e:
             self.assertEqual(e.code, SkyflowErrorCodes.INVALID_INPUT.value)
