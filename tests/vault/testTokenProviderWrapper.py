@@ -1,9 +1,9 @@
 import unittest
 
 import dotenv
-from skyflow.Vault._token import tokenProviderWrapper
-from skyflow.ServiceAccount import generateBearerToken
-from skyflow.Errors._skyflowErrors import *
+from skyflow.vault._token import tokenProviderWrapper
+from skyflow.service_account import generate_bearer_token
+from skyflow.errors._skyflowerrors import *
 
 
 class TestTokenProviderWrapper(unittest.TestCase):
@@ -15,7 +15,7 @@ class TestTokenProviderWrapper(unittest.TestCase):
         env_values = dotenv.dotenv_values('.env')
 
         def tokenProvider():
-            newerToken, _ = generateBearerToken(
+            newerToken, _ = generate_bearer_token(
                 env_values['CREDENTIALS_FILE_PATH'])
             return newerToken
 
@@ -32,7 +32,7 @@ class TestTokenProviderWrapper(unittest.TestCase):
         self.newToken = ''
 
         def tokenProvider():
-            self.newerToken, _ = generateBearerToken(
+            self.newerToken, _ = generate_bearer_token(
                 env_values['CREDENTIALS_FILE_PATH'])
             return self.newToken
 
@@ -47,7 +47,7 @@ class TestTokenProviderWrapper(unittest.TestCase):
         self.newerToken = ''
 
         def tokenProvider():
-            self.newerToken, _ = generateBearerToken(
+            self.newerToken, _ = generate_bearer_token(
                 env_values['CREDENTIALS_FILE_PATH'])
             return self.newerToken
 

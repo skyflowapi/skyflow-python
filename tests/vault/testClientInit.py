@@ -2,10 +2,10 @@ import logging
 import unittest
 
 
-from skyflow.Vault._config import *
-from skyflow.Vault._client import Client
-from skyflow.Errors._skyflowErrors import *
-from skyflow import setLogLevel, LogLevel
+from skyflow.vault._config import *
+from skyflow.vault._client import Client
+from skyflow.errors._skyflowerrors import *
+from skyflow import set_log_level, LogLevel
 class TestConfig(unittest.TestCase):
 
     # Invalid test
@@ -45,5 +45,5 @@ class TestConfig(unittest.TestCase):
         skyflowLogger = logging.getLogger('skyflow')
         # skyflowLogger.setLevel(logging.ERROR)
         self.assertEqual(skyflowLogger.getEffectiveLevel(), logging.ERROR)
-        setLogLevel(logLevel=LogLevel.DEBUG)
+        set_log_level(logLevel=LogLevel.DEBUG)
         self.assertEqual(skyflowLogger.level, logging.DEBUG)

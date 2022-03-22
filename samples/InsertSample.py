@@ -1,20 +1,20 @@
-from skyflow.Errors import SkyflowError
-from skyflow.ServiceAccount import generateBearerToken, isExpired
-from skyflow.Vault import Client, InsertOptions, Configuration
+from skyflow.errors import SkyflowError
+from skyflow.service_account import generate_bearer_token, is_expired
+from skyflow.vault import Client, InsertOptions, Configuration
 
 # cache token for reuse
 bearerToken = ''
 
-
 def tokenProvider():
-    if isExpired(bearerToken):
-        bearerToken, _ = generateBearerToken('<YOUR_CREDENTIALS_FILE_PATH>')
+    global bearerToken
+    if is_expired(bearerToken):
+        bearerToken, _ = generate_bearer_token('<YOUR_CREDENTIALS_FILE_PATH>')
     return bearerToken
 
 
 try:
     config = Configuration(
-        '<YOUR_VAULT_ID>', '<YOUR_VAULT_URL>', tokenProvider)
+        '', '', tokenProvider)
     client = Client(config)
 
     options = InsertOptions(True)
@@ -22,9 +22,9 @@ try:
     data = {
         "records": [
             {
-                "table": "<TABLE_NAME>",
+                "table": "cards",
                 "fields": {
-                    "<FIELDNAME>": "<VALUE>"
+                    "fullnam": "san"
                 }
             }
         ]

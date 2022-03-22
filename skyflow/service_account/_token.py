@@ -7,21 +7,13 @@ from collections import namedtuple
 from skyflow._utils import log_info, InterfaceName, InfoMessages
 
 
-from skyflow.Errors._skyflowErrors import *
+from skyflow.errors._skyflowerrors import *
 
 ResponseToken = namedtuple('ResponseToken', ['AccessToken', 'TokenType'])
 interface = InterfaceName.GENERATE_BEARER_TOKEN
 
 
-def GenerateToken(credentialsFilePath: str) -> ResponseToken:
-    '''
-    This function has been deprecated and replaced with generateBearerToken(credentialsFilePath: str)
-    '''
-    warn('This function has been deprecated and replaced with generateBearerToken(credentialsFilePath: str)', DeprecationWarning)
-    return generateBearerToken(credentialsFilePath)
-
-
-def generateBearerToken(credentialsFilePath: str) -> ResponseToken:
+def generate_bearer_token(credentialsFilePath: str) -> ResponseToken:
     '''
     This function is used to get the access token for skyflow Service Accounts.
     `credentialsFilePath` is the file path in string of the credentials file that is downloaded after Service Account creation.
@@ -55,7 +47,7 @@ def generateBearerToken(credentialsFilePath: str) -> ResponseToken:
     return result
 
 
-def generateBearerTokenFromCreds(credentials: str) -> ResponseToken:
+def generate_bearer_token_from_creds(credentials: str) -> ResponseToken:
     '''
     This function is used to get the access token for skyflow Service Accounts.
     `credentials` arg takes the content of the credentials file that is downloaded after Service Account creation.

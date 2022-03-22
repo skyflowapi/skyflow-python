@@ -3,17 +3,17 @@ import unittest
 import os
 from requests.models import Response
 from dotenv import dotenv_values
-from skyflow.Vault._insert import getInsertRequestBody, processResponse
-from skyflow.Errors._skyflowErrors import SkyflowError, SkyflowErrorCodes, SkyflowErrorMessages
-from skyflow.ServiceAccount import generateBearerToken
-from skyflow.Vault._client import Client
-from skyflow.Vault._config import Configuration, InsertOptions
+from skyflow.vault._insert import getInsertRequestBody, processResponse
+from skyflow.errors._skyflowerrors import SkyflowError, SkyflowErrorCodes, SkyflowErrorMessages
+from skyflow.service_account import generate_bearer_token
+from skyflow.vault._client import Client
+from skyflow.vault._config import Configuration, InsertOptions
 
 
 class TestInsert(unittest.TestCase):
 
     def setUp(self) -> None:
-        self.dataPath = os.path.join(os.getcwd(), 'tests/Vault/data/')
+        self.dataPath = os.path.join(os.getcwd(), 'tests/vault/data/')
         field = {
             "table": "pii_fields",
             "fields": {
@@ -182,7 +182,7 @@ class TestInsert(unittest.TestCase):
         env_values = dotenv_values('.env')
 
         def tokenProvider():
-            token, _ = generateBearerToken(env_values['CREDENTIALS_FILE_PATH'])
+            token, _ = generate_bearer_token(env_values['CREDENTIALS_FILE_PATH'])
             return token
 
         config = Configuration(
@@ -215,7 +215,7 @@ class TestInsert(unittest.TestCase):
         env_values = dotenv_values('.env')
 
         def tokenProvider():
-            token, _ = generateBearerToken(env_values['CREDENTIALS_FILE_PATH'])
+            token, _ = generate_bearer_token(env_values['CREDENTIALS_FILE_PATH'])
             return token
 
         config = Configuration(
