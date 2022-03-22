@@ -2,20 +2,15 @@
 
 ---
 
-skyflow-python is the Skyflow SDK for the Python programming language.
+This Python SDK is designed to help developers easily implement Skyflow into their python backend.
 
-## Usage
 
----
-
-You can install the package using the following command:
-
-```bash
-$ pip install skyflow
-```
 
 ## Table of Contents
-
+- [Features](#features)
+- [Installation](#installation)
+  - [Requirements](#requirements)
+  - [Configuration](#configuration)
 - [Service Account Bearer Token Generation](#service-account-bearer-token-generation)
 - [Vault APIs](#vault-apis)
   - [Insert](#insert)
@@ -24,7 +19,29 @@ $ pip install skyflow
   - [InvokeConnection](#invoke-connection)
 - [Logging](#logging)
 
-### Service Account Bearer Token Generation
+## Features
+
+Authentication with a Skyflow Service Account and generation of a bearer token
+
+Vault API operations to insert, retrieve and tokenize sensitive data
+
+Invoking connections to call downstream third party APIs without directly handling sensitive data
+
+## Installation
+
+### Requirements
+
+- Python 3.7.0 and above
+
+### Configuration
+
+The package can be installed using pip:
+
+```bash
+pip install skyflow
+```
+
+## Service Account Bearer Token Generation
 
 The [Service Account](https://github.com/skyflowapi/skyflow-python/tree/main/skyflow/ServiceAccount) python module is used to generate service account tokens from service account credentials file which is downloaded upon creation of service account. The token generated from this module is valid for 60 minutes and can be used to make API calls to vault services as well as management API(s) based on the permissions of the service account.
 
@@ -53,7 +70,7 @@ except SkyflowError as e:
 
 ```
 
-### Vault APIs
+## Vault APIs
 
 The [Vault](https://github.com/skyflowapi/skyflow-python/tree/main/skyflow/Vault) python module is used to perform operations on the vault such as inserting records, detokenizing tokens, retrieving tokens for a skyflow_id and to invoke a connection.
 
@@ -80,9 +97,9 @@ client = Client(config)
 
 All Vault APIs must be invoked using a client instance.
 
-#### Insert
+### Insert
 
-To insert data into the vault from the integrated application, use the insert(records: dict, options: InsertOptions) method of the Skyflow client. The records parameter takes an array of records to be inserted into the vault. The options parameter takes a Skyflow.InsertOptions object. See below:
+To insert data into the vault use the insert(records: dict, options: InsertOptions) method. The records parameter is a dictionary that must have a `records` key which has an array of records to be inserted into the vault as it's value. The options parameter takes a Skyflow.InsertOptions object, as shown below:
 
 ```python
 from skyflow.Vault import InsertOptions
@@ -143,9 +160,9 @@ Sample response :
 }
 ```
 
-#### Detokenize
+### Detokenize
 
-For retrieving using tokens, use the detokenize(records: dict) method. The records parameter takes a dictionary that contains records to be fetched as shown below.
+In order to retrieve data from your vault using tokens that you have previously generated for that data, you can use the detokenize(records: dict) method. The records parameter takes a dictionary that contains the `records` key that takes an array of records to be fetched from the vault as shown below.
 
 ```python
 {
@@ -198,9 +215,9 @@ Sample response:
 }
 ```
 
-#### Get By Id
+### Get By Id
 
-For retrieving using SkyflowID's, use the getById(records: dict) method. The records parameter takes a Dictionary that contains records to be fetched as shown below:
+In order to retrieve data from your vault using SkyflowIDs, use the getById(records: dict) method. The records parameter takes a dictionary that should contain an array of SkyflowIDs to be fetched, as shown below:
 
 ```python
 {
@@ -286,12 +303,12 @@ Sample response:
 
 `Note:` While using detokenize and getByID methods, there is a possibility that some or all of the tokens might be invalid. In such cases, the data from response consists of both errors and detokenized records. In the SDK, this will raise a SkyflowError Exception and you can retrieve the data from this Exception object as shown above.
 
-#### Invoke Connection
+### Invoke Connection
 
-Using Skyflow Connection, end-user applications can integrate checkout/card issuance flow with their apps/systems. To invoke connection, use the invokeConnection(config: Skyflow.ConnectionConfig) method of the Skyflow client.
+Using the InvokeConnection method, you can integrate their server-side application with third party APIs and services without directly handling sensitive data. Prior to invoking the InvokeConnection method, you must have created a connection and have a connectionURL already generated. Once you have the connectionURL, you can invoke a connection by using the invokeConnection(config: ConnectionConfig) method. The ConnectionConfig parameter must include a connectionURL and methodName. The other fields are optional
 
 ```python
-connectionConfig = ConnectionConfig(
+config = ConnectionConfig(
   connectionURL: str, # connection url received when creating a skyflow connection integration
   methodName: Skyflow.RequestMethod,
   pathParams: dict,	# optional
@@ -299,7 +316,7 @@ connectionConfig = ConnectionConfig(
   requestHeader: dict, # optional
   requestBody: dict,	# optional
 )
-client.invokeConnection(connectionConfig)
+client.invokeConnection(config)
 ```
 
 `methodName` supports the following methods:
@@ -359,7 +376,7 @@ Sample response:
 }
 ```
 
-### Logging
+## Logging
 
 The skyflow python SDK provides useful logging using python's inbuilt `logging` library. By default the logging level of the SDK is set to `LogLevel.ERROR`. This can be changed by using `setLogLevel(logLevel)` as shown below:
 
