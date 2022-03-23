@@ -38,4 +38,11 @@ jobs:
         pip install requests pyjwt datetime aiohttp cryptography python-dotenv coverage
         coverage run --source skyflow -m unittest discover
     - name: coverage
-      run: coverage report -m
+      run: coverage xml -o test-coverage.xml
+    - name: Codecov
+      uses: codecov/codecov-action@v2.1.0
+      with:
+        token: ${{ secrets.CODECOV_REPO_UPLOAD_TOKEN }}
+        files: test-coverage.xml
+        name: codecov-core-ui
+        verbose: true
