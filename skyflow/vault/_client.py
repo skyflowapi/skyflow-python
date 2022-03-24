@@ -7,7 +7,7 @@ from ._connection import createRequest
 from ._detokenize import sendDetokenizeRequests, createDetokenizeResponseBody
 from ._getById import sendGetByIdRequests, createGetByIdResponseBody
 import asyncio
-from skyflow.Errors._skyflowErrors import SkyflowError, SkyflowErrorCodes, SkyflowErrorMessages
+from skyflow.errors._skyflowerrors import SkyflowError, SkyflowErrorCodes, SkyflowErrorMessages
 from skyflow._utils import log_info, InfoMessages, InterfaceName
 from ._token import tokenProviderWrapper
 class Client:
@@ -52,7 +52,7 @@ class Client:
         log_info(InfoMessages.INSERT_DATA_SUCCESS.value, interface)
         return result
 
-    def invokeConnection(self, config: ConnectionConfig):
+    def invoke_connection(self, config: ConnectionConfig):
         
         interface = InterfaceName.INVOKE_CONNECTION.value
         log_info(InfoMessages.INVOKE_CONNECTION_TRIGGERED.value, interface)
@@ -87,7 +87,7 @@ class Client:
             log_info(InfoMessages.DETOKENIZE_SUCCESS.value, interface)
             return result
     
-    def getById(self, records):
+    def get_by_id(self, records):
         interface = InterfaceName.GET_BY_ID.value
         log_info(InfoMessages.GET_BY_ID_TRIGGERED.value, interface)
 

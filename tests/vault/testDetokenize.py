@@ -1,9 +1,9 @@
 import unittest
 import os
-from skyflow.Vault._detokenize import getDetokenizeRequestBody
-from skyflow.Errors._skyflowErrors import SkyflowError, SkyflowErrorCodes, SkyflowErrorMessages
-from skyflow.Vault._client import Client, Configuration
-from skyflow.ServiceAccount import generateBearerToken
+from skyflow.vault._detokenize import getDetokenizeRequestBody
+from skyflow.errors._skyflowerrors import SkyflowError, SkyflowErrorCodes, SkyflowErrorMessages
+from skyflow.vault._client import Client, Configuration
+from skyflow.service_account import generate_bearer_token
 from dotenv import dotenv_values
 import warnings
 
@@ -12,7 +12,7 @@ class TestDetokenize(unittest.TestCase):
 
     def setUp(self) -> None:
         self.envValues = dotenv_values(".env")
-        self.dataPath = os.path.join(os.getcwd(), 'tests/Vault/data/')
+        self.dataPath = os.path.join(os.getcwd(), 'tests/vault/data/')
         self.testToken = self.envValues["DETOKENIZE_TEST_TOKEN"]
         self.tokenField = {
             "token": self.envValues["DETOKENIZE_TEST_TOKEN"]
@@ -20,7 +20,7 @@ class TestDetokenize(unittest.TestCase):
         self.data = {"records": [self.tokenField]}
 
         def tokenProvider():
-            token, type = generateBearerToken(
+            token, type = generate_bearer_token(
                 self.envValues["CREDENTIALS_FILE_PATH"])
             return token
 

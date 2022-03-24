@@ -1,8 +1,8 @@
 import unittest
 import os
-from skyflow.Errors._skyflowErrors import SkyflowError, SkyflowErrorCodes, SkyflowErrorMessages
-from skyflow.Vault import Client, Configuration, RedactionType
-from skyflow.ServiceAccount import generateBearerToken
+from skyflow.errors._skyflowerrors import SkyflowError, SkyflowErrorCodes, SkyflowErrorMessages
+from skyflow.vault import Client, Configuration, RedactionType
+from skyflow.service_account import generate_bearer_token
 from dotenv import dotenv_values
 import warnings
 
@@ -11,10 +11,10 @@ class TestGetById(unittest.TestCase):
 
     def setUp(self) -> None:
         self.envValues = dotenv_values(".env")
-        self.dataPath = os.path.join(os.getcwd(), 'tests/Vault/data/')
+        self.dataPath = os.path.join(os.getcwd(), 'tests/vault/data/')
 
         def tokenProvider():
-            token, type = generateBearerToken(
+            token, type = generate_bearer_token(
                 self.envValues["CREDENTIALS_FILE_PATH"])
             return token
 
@@ -31,7 +31,7 @@ class TestGetById(unittest.TestCase):
     def testGetByIdNoRecords(self):
         invalidData = {"invalidKey": "invalid"}
         try:
-            self.client.getById(invalidData)
+            self.client.get_by_id(invalidData)
             self.fail('Should have thrown an error')
         except SkyflowError as e:
             self.assertEqual(e.code, SkyflowErrorCodes.INVALID_INPUT.value)
@@ -41,7 +41,7 @@ class TestGetById(unittest.TestCase):
     def testGetByIdRecordsInvalidType(self):
         invalidData = {"records": "invalid"}
         try:
-            self.client.getById(invalidData)
+            self.client.get_by_id(invalidData)
             self.fail('Should have thrown an error')
         except SkyflowError as e:
             self.assertEqual(e.code, SkyflowErrorCodes.INVALID_INPUT.value)
@@ -52,7 +52,7 @@ class TestGetById(unittest.TestCase):
         invalidData = {"records": [
             {"invalid": "invalid", "table": "pii_fields", "redaction": "PLAIN_TEXT"}]}
         try:
-            self.client.getById(invalidData)
+            self.client.get_by_id(invalidData)
             self.fail('Should have thrown an error')
         except SkyflowError as e:
             self.assertEqual(e.code, SkyflowErrorCodes.INVALID_INPUT.value)
@@ -63,7 +63,7 @@ class TestGetById(unittest.TestCase):
         invalidData = {"records": [
             {"ids": "invalid", "table": "pii_fields", "redaction": "PLAIN_TEXT"}]}
         try:
-            self.client.getById(invalidData)
+            self.client.get_by_id(invalidData)
             self.fail('Should have thrown an error')
         except SkyflowError as e:
             self.assertEqual(e.code, SkyflowErrorCodes.INVALID_INPUT.value)
@@ -74,7 +74,7 @@ class TestGetById(unittest.TestCase):
         invalidData = {"records": [
             {"ids": ["123", 123], "table": "pii_fields", "redaction": "PLAIN_TEXT"}]}
         try:
-            self.client.getById(invalidData)
+            self.client.get_by_id(invalidData)
             self.fail('Should have thrown an error')
         except SkyflowError as e:
             self.assertEqual(e.code, SkyflowErrorCodes.INVALID_INPUT.value)
@@ -85,7 +85,7 @@ class TestGetById(unittest.TestCase):
         invalidData = {"records": [
             {"ids": ["id1", "id2"], "invalid": "invalid", "redaction": "PLAIN_TEXT"}]}
         try:
-            self.client.getById(invalidData)
+            self.client.get_by_id(invalidData)
             self.fail('Should have thrown an error')
         except SkyflowError as e:
             self.assertEqual(e.code, SkyflowErrorCodes.INVALID_INPUT.value)
@@ -96,7 +96,7 @@ class TestGetById(unittest.TestCase):
         invalidData = {"records": [
             {"ids": ["id1", "id2"], "table": ["invalid"], "redaction": "PLAIN_TEXT"}]}
         try:
-            self.client.getById(invalidData)
+            self.client.get_by_id(invalidData)
             self.fail('Should have thrown an error')
         except SkyflowError as e:
             self.assertEqual(e.code, SkyflowErrorCodes.INVALID_INPUT.value)
@@ -107,7 +107,7 @@ class TestGetById(unittest.TestCase):
         invalidData = {"records": [
             {"ids": ["id1", "id2"], "table": "pii_fields", "invalid": "invalid"}]}
         try:
-            self.client.getById(invalidData)
+            self.client.get_by_id(invalidData)
             self.fail('Should have thrown an error')
         except SkyflowError as e:
             self.assertEqual(e.code, SkyflowErrorCodes.INVALID_INPUT.value)
@@ -118,7 +118,7 @@ class TestGetById(unittest.TestCase):
         invalidData = {"records": [
             {"ids": ["id1", "id2"], "table": "pii_fields", "redaction": "PLAIN_TEXT"}]}
         try:
-            self.client.getById(invalidData)
+            self.client.get_by_id(invalidData)
             self.fail('Should have thrown an error')
         except SkyflowError as e:
             self.assertEqual(e.code, SkyflowErrorCodes.INVALID_INPUT.value)
@@ -134,7 +134,7 @@ class TestGetById(unittest.TestCase):
             }
         ]}
         try:
-            response = self.client.getById(data)
+            response = self.client.get_by_id(data)
             self.assertIsNotNone(response["records"][0]["fields"])
             self.assertIsNotNone(
                 response["records"][0]["fields"]["skyflow_id"])
@@ -159,7 +159,7 @@ class TestGetById(unittest.TestCase):
                 "redaction": RedactionType.PLAIN_TEXT
             }]}
         try:
-            self.client.getById(data)
+            self.client.get_by_id(data)
             self.fail('Should have thrown an error')
         except SkyflowError as e:
             errors = e.data['errors']
