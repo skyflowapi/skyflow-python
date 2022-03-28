@@ -43,7 +43,7 @@ class Client:
         self._checkConfig(interface)
 
         jsonBody = getInsertRequestBody(records, options.tokens)
-        requestURL = self.vaultURL + "/v1/vaults/" + self.vaultID
+        requestURL = self._get_complete_vault_url()
         self.storedToken = tokenProviderWrapper(
             self.storedToken, self.tokenProvider, interface)
         headers = {
@@ -56,6 +56,43 @@ class Client:
 
         log_info(InfoMessages.INSERT_DATA_SUCCESS.value, interface)
         return result
+
+    def detokenize(self, records):
+        interface = InterfaceName.DETOKENIZE.value
+        log_info(InfoMessages.DETOKENIZE_TRIGGERED.value, interface)
+
+        self._checkConfig(interface)
+        self.storedToken = tokenProviderWrapper(
+            self.storedToken, self.tokenProvider, interface)
+        url = self._get_complete_vault_url()
+        responses = asyncio.run(sendDetokenizeRequests(
+            records, url, self.storedToken))
+        result, partial = createDetokenizeResponseBody(responses)
+        if partial:
+            raise SkyflowError(SkyflowErrorCodes.PARTIAL_SUCCESS,
+                               SkyflowErrorMessages.PARTIAL_SUCCESS, result, interface=interface)
+        else:
+            log_info(InfoMessages.DETOKENIZE_SUCCESS.value, interface)
+            return result
+
+    def get_by_id(self, records):
+        interface = InterfaceName.GET_BY_ID.value
+        log_info(InfoMessages.GET_BY_ID_TRIGGERED.value, interface)
+
+        self._checkConfig(interface)
+        self.storedToken = tokenProviderWrapper(
+            self.storedToken, self.tokenProvider, interface)
+        url = self._get_complete_vault_url()
+        responses = asyncio.run(sendGetByIdRequests(
+            records, url, self.storedToken))
+        result, partial = createGetByIdResponseBody(responses)
+        if partial:
+            raise SkyflowError(SkyflowErrorCodes.PARTIAL_SUCCESS,
+                               SkyflowErrorMessages.PARTIAL_SUCCESS, result, interface=interface)
+        else:
+            log_info(InfoMessages.GET_BY_ID_SUCCESS.value, interface)
+
+            return result
 
     def invoke_connection(self, config: ConnectionConfig):
 
@@ -81,46 +118,19 @@ class Client:
         session.close()
         return processResponse(response, interface=interface)
 
-    def detokenize(self, records):
-        interface = InterfaceName.DETOKENIZE.value
-        log_info(InfoMessages.DETOKENIZE_TRIGGERED.value, interface)
-
-        self._checkConfig(interface)
-        self.storedToken = tokenProviderWrapper(
-            self.storedToken, self.tokenProvider, interface)
-        url = self.vaultURL + "/v1/vaults/" + self.vaultID + "/detokenize"
-        responses = asyncio.run(sendDetokenizeRequests(
-            records, url, self.storedToken))
-        result, partial = createDetokenizeResponseBody(responses)
-        if partial:
-            raise SkyflowError(SkyflowErrorCodes.PARTIAL_SUCCESS,
-                               SkyflowErrorMessages.PARTIAL_SUCCESS, result, interface=interface)
-        else:
-            log_info(InfoMessages.DETOKENIZE_SUCCESS.value, interface)
-            return result
-
-    def get_by_id(self, records):
-        interface = InterfaceName.GET_BY_ID.value
-        log_info(InfoMessages.GET_BY_ID_TRIGGERED.value, interface)
-
-        self._checkConfig(interface)
-        self.storedToken = tokenProviderWrapper(
-            self.storedToken, self.tokenProvider, interface)
-        url = self.vaultURL + "/v1/vaults/" + self.vaultID
-        responses = asyncio.run(sendGetByIdRequests(
-            records, url, self.storedToken))
-        result, partial = createGetByIdResponseBody(responses)
-        if partial:
-            raise SkyflowError(SkyflowErrorCodes.PARTIAL_SUCCESS,
-                               SkyflowErrorMessages.PARTIAL_SUCCESS, result, interface=interface)
-        else:
-            log_info(InfoMessages.GET_BY_ID_SUCCESS.value, interface)
-            return result
-
     def _checkConfig(self, interface):
+        '''
+            Performs basic check on the given client config
+        '''
         if not len(self.vaultID) > 0:
             raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT,
                                SkyflowErrorMessages.EMPTY_VAULT_ID, interface=interface)
         if not len(self.vaultURL) > 0:
             raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT,
                                SkyflowErrorMessages.EMPTY_VAULT_URL, interface=interface)
+
+    def _get_complete_vault_url(self):
+        '''
+            Get the complete vault url from given vault url and vault id
+        '''
+        return self.vaultURL + "/v1/vaults/" + self.vaultID
