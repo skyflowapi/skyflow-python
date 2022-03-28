@@ -32,14 +32,14 @@ class TestTokenProviderWrapper(unittest.TestCase):
         self.newToken = ''
 
         def tokenProvider():
-            self.newerToken, _ = generate_bearer_token(
+            self.newToken, _ = generate_bearer_token(
                 env_values['CREDENTIALS_FILE_PATH'])
             return self.newToken
 
         try:
             newerToken = tokenProviderWrapper('', tokenProvider, "Test")
             self.assertEqual(newerToken, self.newToken)
-        except SkyflowError:
+        except SkyflowError as e:
             self.fail('Should have decoded token')
 
     def testStoredTokenNotExpired(self):

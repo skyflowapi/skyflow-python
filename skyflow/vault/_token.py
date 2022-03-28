@@ -37,8 +37,9 @@ def verify_token_from_provider(token, interface):
     '''
     try:
         jwt.decode(token, options={
+            "verify_signature": False,
             "verify_aud": False
-        })
-    except Exception:
+        }, algorithms=['RS256'])
+    except Exception as e:
         raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT,
                            SkyflowErrorMessages.TOKEN_PROVIDER_INVALID_TOKEN, interface=interface)
