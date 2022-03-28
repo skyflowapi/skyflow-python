@@ -64,7 +64,7 @@ class Client:
         self._checkConfig(interface)
         self.storedToken = tokenProviderWrapper(
             self.storedToken, self.tokenProvider, interface)
-        url = self._get_complete_vault_url()
+        url = self._get_complete_vault_url() + '/detokenize'
         responses = asyncio.run(sendDetokenizeRequests(
             records, url, self.storedToken))
         result, partial = createDetokenizeResponseBody(responses)
