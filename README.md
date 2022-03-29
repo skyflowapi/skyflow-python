@@ -128,7 +128,7 @@ except SkyflowError as e:
     print('Error Occurred:', e)
 ```
 
-An example of an insert call is given below:
+An [example](https://github.com/skyflowapi/skyflow-python/blob/main/samples/InsertSample.py) of an insert call is given below:
 
 ```python
 client.insert(
@@ -177,7 +177,7 @@ In order to retrieve data from your vault using tokens that you have previously 
 }
 ```
 
-An example of a detokenize call:
+An [example](https://github.com/skyflowapi/skyflow-python/blob/main/samples/detokenizeSample.py) of a detokenize call:
 
 ```python
 try:
@@ -241,7 +241,7 @@ There are 4 accepted values in Skyflow.RedactionTypes:
 - `REDACTED`
 - `DEFAULT`
 
-An example of get_by_id call:
+An [example](https://github.com/skyflowapi/skyflow-python/blob/main/samples/getByIDSample.py) of get_by_id call:
 
 ```python
 from skyflow.vault import RedactionType
@@ -332,7 +332,7 @@ client.invoke_connection(connectionConfig)
 
 **pathParams, queryParams, requestHeader, requestBody** are the JSON objects represented as dictionaries that will be sent through the connection integration url.
 
-An example of invoke_connection:
+An [example](https://github.com/skyflowapi/skyflow-python/blob/main/samples/invokeConnectionSample.py) of invoke_connection:
 
 ```python
 from skyflow.vault import ConnectionConfig, Configuration, RequestMethod
