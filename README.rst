@@ -15,8 +15,7 @@ What you need
 -------------
 - A Skyflow account (You can also request for a demo `here <https://www.skyflow.com/get-demo>`_)
 
-- `A Service Account <https://docs.skyflow.com/developer-portal/how-tos/how-to:-generate-an-access-token-for-a-service-account/#step-1--create-an-api-service-account-and-assign-a-role-to-it>`_
-
+- A Skyflow Service Account
 
 Resources
 ---------
