@@ -61,6 +61,8 @@ class SkyflowErrorMessages(Enum):
     EMPTY_VAULT_URL = "Vault URL must not be empty"
     RESPONSE_NOT_JSON = "Response %s is not valid JSON"
 
+    TOKEN_PROVIDER_INVALID_TOKEN = "Invalid token from tokenProvider"
+
 
 class SkyflowError(Exception):
     def __init__(self, code, message="An Error occured", data={}, interface: str = 'Unknown') -> None:
