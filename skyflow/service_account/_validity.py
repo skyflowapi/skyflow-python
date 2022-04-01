@@ -15,15 +15,15 @@ def is_expired(token: str):
     if len(token) == 0:
         log_info(InfoMessages.EMPTY_ACCESS_TOKEN, interface=interface)
         return True
-    
+
     try:
-        decoded = jwt.decode(token, options={"verify_signature": False,"verify_aud":False})
+        decoded = jwt.decode(
+            token, options={"verify_signature": False, "verify_aud": False})
         if time.time() < decoded['exp']:
             return False
     except jwt.ExpiredSignatureError:
         return True
     except Exception as e:
-        print(e)
         log_error(InfoMessages.INVALID_TOKEN.value, interface=interface)
         return True
 

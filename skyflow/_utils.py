@@ -1,3 +1,4 @@
+import urllib.parse
 import logging
 from enum import Enum
 
@@ -66,8 +67,40 @@ class InterfaceName(Enum):
     INVOKE_CONNECTION = "client.invoke_connection"
     GENERATE_BEARER_TOKEN = "service_account.generate_bearer_token"
 
-    
-
     IS_TOKEN_VALID = "service_account.isTokenValid"
     IS_EXPIRED = "service_account.is_expired"
 
+
+def http_build_query(data):
+    '''
+        Creates a form urlencoded string from python dictionary
+        urllib.urlencode() doesn't encode it in a php-esque way, this function helps in that
+    '''
+
+    return urllib.parse.urlencode(r_urlencode(list(), dict(), data))
+
+
+def render_key(parents):
+    depth, outStr = 0, ''
+    for x in parents:
+        s = "[%s]" if depth > 0 or isinstance(x, int) else "%s"
+        outStr += s % str(x)
+        depth += 1
+    return outStr
+
+
+def r_urlencode(parents, pairs, data):
+    if isinstance(data, list) or isinstance(data, tuple):
+        for i in range(len(data)):
+            parents.append(i)
+            r_urlencode(parents, pairs, data[i])
+            parents.pop()
+    elif isinstance(data, dict):
+        for key, value in data.items():
+            parents.append(key)
+            r_urlencode(parents, pairs, value)
+            parents.pop()
+    else:
+        pairs[render_key(parents)] = str(data)
+
+    return pairs

@@ -105,14 +105,8 @@ class Client:
             self.storedToken, self.tokenProvider, interface)
         request = createRequest(config)
 
-        lowercase_headers = [header.lower()
-                             for header in request.headers.keys()]
-
-        if not 'X-Skyflow-Authorization'.lower() in lowercase_headers:
-            request.headers['X-Skyflow-Authorization'] = self.storedToken
-
-        if not 'Content-Type'.lower() in lowercase_headers:
-            request.headers['Content-Type'] = 'application/json'
+        if not 'X-Skyflow-Authorization'.lower() in request.headers:
+            request.headers['x-skyflow-authorization'] = self.storedToken
 
         response = session.send(request)
         session.close()

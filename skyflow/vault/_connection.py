@@ -3,7 +3,7 @@ from ._config import ConnectionConfig
 from skyflow.errors._skyflowerrors import *
 import requests
 import json
-from skyflow._utils import InterfaceName
+from skyflow._utils import InterfaceName, http_build_query
 
 interface = InterfaceName.INVOKE_CONNECTION.value
 
@@ -13,21 +13,25 @@ def createRequest(config: ConnectionConfig) -> PreparedRequest:
 
     try:
         if isinstance(config.requestHeader, dict):
-            header = json.loads(json.dumps(config.requestHeader))
+            header = to_lowercase_keys(json.loads(
+                json.dumps(config.requestHeader)))
         else:
             raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT,
                                SkyflowErrorMessages.INVALID_REQUEST_BODY, interface=interface)
     except Exception:
         raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT,
                            SkyflowErrorMessages.INVALID_HEADERS, interface=interface)
+    if not 'Content-Type'.lower() in header:
+        header['content-type'] = 'application/json'
 
     try:
         if isinstance(config.requestBody, dict):
-            jsonData = json.dumps(config.requestBody)
+            json_data = get_data_from_content_type(
+                config.requestBody, header["content-type"])
         else:
             raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT,
                                SkyflowErrorMessages.INVALID_RESPONSE_BODY, interface=interface)
-    except Exception:
+    except Exception as e:
         raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT,
                            SkyflowErrorMessages.INVALID_REQUEST_BODY, interface=interface)
 
@@ -37,7 +41,7 @@ def createRequest(config: ConnectionConfig) -> PreparedRequest:
         return requests.Request(
             method=config.methodName.value,
             url=url,
-            data=jsonData,
+            data=json_data,
             headers=header,
             params=config.queryParams
         ).prepare()
@@ -77,3 +81,32 @@ def verifyParams(queryParams, pathParams):
     except TypeError:
         raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT,
                            SkyflowErrorMessages.INVALID_QUERY_PARAMS, interface=interface)
+
+
+def to_lowercase_keys(dict):
+    '''
+        convert keys of dictionary to lowercase
+    '''
+    result = {}
+    for key, value in dict.items():
+        result[key.lower()] = value
+
+    return result
+
+
+def get_data_from_content_type(data, content_type):
+    '''
+        Get request data according to content type
+    '''
+    converted_data = {}
+    content_types = {
+        "JSON": "application/json",
+        "FORMDATA": "application/form-data",
+        "URLENCODED": "application/x-www-form-urlencoded"
+    }
+    if content_type == content_types["URLENCODED"]:
+        converted_data = http_build_query(data)
+    else:
+        converted_data = json.loads(json.dumps(data))
+
+    return converted_data
