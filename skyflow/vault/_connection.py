@@ -3,7 +3,7 @@ from ._config import ConnectionConfig
 from skyflow.errors._skyflowerrors import *
 import requests
 import json
-from skyflow._utils import InterfaceName, http_build_query
+from skyflow._utils import InterfaceName, http_build_query, supported_content_types
 
 interface = InterfaceName.INVOKE_CONNECTION.value
 
@@ -22,7 +22,7 @@ def createRequest(config: ConnectionConfig) -> PreparedRequest:
         raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT,
                            SkyflowErrorMessages.INVALID_HEADERS, interface=interface)
     if not 'Content-Type'.lower() in header:
-        header['content-type'] = 'application/json'
+        header['content-type'] = supported_content_types["JSON"]
 
     try:
         if isinstance(config.requestBody, dict):

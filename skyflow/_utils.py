@@ -5,6 +5,14 @@ from enum import Enum
 skyflowLog = logging.getLogger('skyflow')
 skyflowLog.setLevel(logging.ERROR)
 
+supported_content_types = {
+    "JSON": 'application/json',
+    "PLAINTEXT": 'text/plain',
+    "XML": 'text/xml',
+    "URLENCODED": 'application/x-www-form-urlencoded',
+    "FORMDATA": 'multipart/form-data',
+}
+
 
 class LogLevel(Enum):
     DEBUG = logging.DEBUG
@@ -80,16 +88,10 @@ def http_build_query(data):
     return urllib.parse.urlencode(r_urlencode(list(), dict(), data))
 
 
-def render_key(parents):
-    depth, outStr = 0, ''
-    for x in parents:
-        s = "[%s]" if depth > 0 or isinstance(x, int) else "%s"
-        outStr += s % str(x)
-        depth += 1
-    return outStr
-
-
 def r_urlencode(parents, pairs, data):
+    '''
+        convert the python dict recursively into a php style associative dictionary
+    '''
     if isinstance(data, list) or isinstance(data, tuple):
         for i in range(len(data)):
             parents.append(i)
@@ -104,3 +106,15 @@ def r_urlencode(parents, pairs, data):
         pairs[render_key(parents)] = str(data)
 
     return pairs
+
+
+def render_key(parents):
+    '''
+        renders the nested dictionary key as an associative array (php style dict)
+    '''
+    depth, outStr = 0, ''
+    for x in parents:
+        s = "[%s]" if depth > 0 or isinstance(x, int) else "%s"
+        outStr += s % str(x)
+        depth += 1
+    return outStr
