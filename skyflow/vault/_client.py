@@ -99,7 +99,6 @@ class Client:
         interface = InterfaceName.INVOKE_CONNECTION.value
         log_info(InfoMessages.INVOKE_CONNECTION_TRIGGERED.value, interface)
 
-        self._checkConfig(interface)
         session = requests.Session()
         self.storedToken = tokenProviderWrapper(
             self.storedToken, self.tokenProvider, interface)
