@@ -10,7 +10,8 @@ from skyflow.service_account._token import getSignedJWT, getResponseToken, sendR
 class TestGenerateBearerToken(unittest.TestCase):
 
     def setUp(self) -> None:
-        self.dataPath = os.path.join(os.getcwd(), 'tests/service_account/data/')
+        self.dataPath = os.path.join(
+            os.getcwd(), 'tests/service_account/data/')
         return super().setUp()
 
     def getDataPath(self, file):
@@ -73,16 +74,6 @@ class TestGenerateBearerToken(unittest.TestCase):
             self.assertEqual(
                 se.message, SkyflowErrorMessages.JWT_INVALID_FORMAT.value)
 
-    def testgenerate_bearer_tokenSuccess(self):
-        env_values = dotenv_values('.env')
-        credentials_path = env_values['CREDENTIALS_FILE_PATH']
-        try:
-            token, type = generate_bearer_token(credentials_path)
-            self.assertIsNotNone(token)
-            self.assertEqual(type, 'Bearer')
-        except SkyflowError:
-            self.fail('Should have successfully returned the token')
-
     def testGenerateBearerTokenFromCredsInvalid(self):
         creds_file = open(self.getDataPath('invalidPrivateKey'), 'r')
         credentialsString = json.dumps(creds_file.read())
@@ -105,20 +96,6 @@ class TestGenerateBearerToken(unittest.TestCase):
             self.assertEqual(se.code, SkyflowErrorCodes.INVALID_INPUT.value)
             self.assertEqual(
                 se.message, SkyflowErrorMessages.MISSING_PRIVATE_KEY.value)
-
-    def testGenerateBearerTokenFromCredsSuccess(self):
-        env_values = dotenv_values('.env')
-        credentials_path = env_values['CREDENTIALS_FILE_PATH']
-        creds_file = open(credentials_path, 'r')
-        credentialsString = json.dumps(
-            json.loads(creds_file.read()))
-        creds_file.close()
-        try:
-            token, type = generate_bearer_token_from_creds(credentialsString)
-            self.assertIsNotNone(token)
-            self.assertEqual(type, "Bearer")
-        except SkyflowError as se:
-            self.fail()
 
     def testNonExistentFileArg(self):
         try:
@@ -172,7 +149,7 @@ class TestGenerateBearerToken(unittest.TestCase):
             self.assertEqual(
                 se.message, SkyflowErrorMessages.MISSING_TOKEN_TYPE.value)
 
-    def testGetResponseTokenNoType(self):
+    def testGetResponseTokenNoAccessToken(self):
         try:
             getResponseToken({'tokenType': 'only token type'})
             self.fail('Should throw')

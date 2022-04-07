@@ -9,17 +9,9 @@ from skyflow.service_account import is_expired
 class TestGenerateBearerToken(unittest.TestCase):
 
     def setUp(self) -> None:
-        self.dataPath = os.path.join(os.getcwd(), 'tests/service_account/data/')
+        self.dataPath = os.path.join(
+            os.getcwd(), 'tests/service_account/data/')
         return super().setUp()
-        
-    def testIsExpired(self):
-        env_values = dotenv_values('.env')
-        credentials_path = env_values['CREDENTIALS_FILE_PATH']
-        try:
-            token, _ = generate_bearer_token(credentials_path)
-            self.assertEqual(False, is_expired(token))
-        except SkyflowError as se:
-            self.fail(se.message)
 
     def testIsExpiredInvalidToken(self):
         try:

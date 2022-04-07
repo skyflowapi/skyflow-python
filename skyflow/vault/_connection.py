@@ -3,7 +3,7 @@ from ._config import ConnectionConfig
 from skyflow.errors._skyflowerrors import *
 import requests
 import json
-from skyflow._utils import InterfaceName, http_build_query
+from skyflow._utils import InterfaceName, http_build_query, supported_content_types, r_urlencode
 
 interface = InterfaceName.INVOKE_CONNECTION.value
 
@@ -22,11 +22,11 @@ def createRequest(config: ConnectionConfig) -> PreparedRequest:
         raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT,
                            SkyflowErrorMessages.INVALID_HEADERS, interface=interface)
     if not 'Content-Type'.lower() in header:
-        header['content-type'] = 'application/json'
+        header['content-type'] = supported_content_types["JSON"]
 
     try:
         if isinstance(config.requestBody, dict):
-            json_data = get_data_from_content_type(
+            json_data, files = get_data_from_content_type(
                 config.requestBody, header["content-type"])
         else:
             raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT,
@@ -43,7 +43,8 @@ def createRequest(config: ConnectionConfig) -> PreparedRequest:
             url=url,
             data=json_data,
             headers=header,
-            params=config.queryParams
+            params=config.queryParams,
+            files=files
         ).prepare()
     except requests.exceptions.InvalidURL:
         raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.INVALID_URL.value % (
@@ -98,15 +99,14 @@ def get_data_from_content_type(data, content_type):
     '''
         Get request data according to content type
     '''
-    converted_data = {}
-    content_types = {
-        "JSON": "application/json",
-        "FORMDATA": "application/form-data",
-        "URLENCODED": "application/x-www-form-urlencoded"
-    }
-    if content_type == content_types["URLENCODED"]:
+    converted_data = data
+    files = {}
+    if content_type == supported_content_types["URLENCODED"]:
         converted_data = http_build_query(data)
-    else:
-        converted_data = json.loads(json.dumps(data))
+    elif content_type == supported_content_types["FORMDATA"]:
+        converted_data = r_urlencode(list(), dict(), data)
+        files = {(None, None)}
+    elif content_type == supported_content_types["JSON"]:
+        converted_data = json.dumps(data)
 
-    return converted_data
+    return converted_data, files
