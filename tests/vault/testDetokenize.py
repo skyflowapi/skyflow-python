@@ -36,9 +36,12 @@ class TestDetokenize(unittest.TestCase):
             action="ignore", message="unclosed", category=ResourceWarning)
         return super().setUp()
 
-    def add_mock_response(self, response, statusCode):
+    def add_mock_response(self, response, statusCode, encode=True):
         future = asyncio.Future(loop=self.event_loop)
-        future.set_result((json.dumps(response).encode(), statusCode))
+        if encode:
+            future.set_result((json.dumps(response).encode(), statusCode))
+        else:
+            future.set_result((response, statusCode))
         future.done()
         self.mocked_futures.append(future)
 
@@ -148,3 +151,14 @@ class TestDetokenize(unittest.TestCase):
                          error_response["error"]["http_code"])
         self.assertEqual(
             errors[0]["error"]["description"], error_response["error"]["message"])
+
+    def testResponseNotJson(self):
+        response = "not a valid json".encode()
+        self.add_mock_response(response, 200, encode=False)
+        try:
+            createDetokenizeResponseBody(self.mocked_futures)
+        except SkyflowError as error:
+            expectedError = SkyflowErrorMessages.RESPONSE_NOT_JSON
+            self.assertEqual(error.code, 200)
+            self.assertEqual(error.message, expectedError.value %
+                             response.decode('utf-8'))

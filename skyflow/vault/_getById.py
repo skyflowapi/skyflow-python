@@ -108,7 +108,7 @@ def createGetByIdResponseBody(responses):
             temp = {"error": {}}
             temp["error"]["code"] = jsonRes["error"]["http_code"]
             temp["error"]["description"] = jsonRes["error"]["message"]
-            if len(r) >= 3 and r[3] != None:
+            if len(r) > 3 and r[3] != None:
                 temp["error"]["description"] += ' - Request ID: ' + str(r[3])
             result["errors"].append(temp)
             result["errors"].append(temp)

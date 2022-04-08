@@ -1,10 +1,15 @@
 import unittest
 import os
+
+import aiohttp
 from skyflow.errors._skyflowerrors import SkyflowError, SkyflowErrorCodes, SkyflowErrorMessages
 from skyflow.vault import Client, Configuration, RedactionType
+from skyflow.vault._getById import createGetByIdResponseBody
 from skyflow.service_account import generate_bearer_token
 from dotenv import dotenv_values
 import warnings
+import asyncio
+import json
 
 
 class TestGetById(unittest.TestCase):
@@ -12,6 +17,8 @@ class TestGetById(unittest.TestCase):
     def setUp(self) -> None:
         self.envValues = dotenv_values(".env")
         self.dataPath = os.path.join(os.getcwd(), 'tests/vault/data/')
+        self.event_loop = asyncio.new_event_loop()
+        self.mocked_futures = []
 
         def tokenProvider():
             token, type = generate_bearer_token(
@@ -24,6 +31,16 @@ class TestGetById(unittest.TestCase):
         warnings.filterwarnings(
             action="ignore", message="unclosed", category=ResourceWarning)
         return super().setUp()
+
+    def add_mock_response(self, response, statusCode, table, encode=True):
+        future = asyncio.Future(loop=self.event_loop)
+        if encode:
+            future.set_result(
+                (json.dumps(response).encode(), statusCode, table))
+        else:
+            future.set_result((response, statusCode, table))
+        future.done()
+        self.mocked_futures.append(future)
 
     def getDataPath(self, file):
         return self.dataPath + file + '.json'
@@ -124,3 +141,51 @@ class TestGetById(unittest.TestCase):
             self.assertEqual(e.code, SkyflowErrorCodes.INVALID_INPUT.value)
             self.assertEqual(
                 e.message, SkyflowErrorMessages.INVALID_REDACTION_TYPE.value % (str))
+
+    def testCreateResponseBodySuccess(self):
+        response = {"records": [
+            {"fields": {"card_number": "4111-1111-1111-1111"}}]}
+        self.add_mock_response(response, 200, "table")
+        result, partial = createGetByIdResponseBody(self.mocked_futures)
+
+        self.assertFalse(partial)
+        self.assertEqual(len(result["records"]), 1)
+        self.assertEqual(result["records"][0]["fields"],
+                         response["records"][0]["fields"])
+        self.assertEqual(result["records"][0]["table"], "table")
+
+    def testCreateResponseBodyPartialSuccess(self):
+        success_response = {"records": [
+            {"fields": {"card_number": "4111-1111-1111-1111"}}]}
+        self.add_mock_response(success_response, 200, "table")
+
+        failed_response = {"error": {
+            "http_code": 404,
+            "message": "Not Found"
+        }}
+        self.add_mock_response(failed_response, 404, "ok")
+
+        result, partial = createGetByIdResponseBody(self.mocked_futures)
+
+        self.assertTrue(partial)
+        self.assertEqual(len(result["records"]), 1)
+        self.assertEqual(result["records"][0]["fields"],
+                         success_response["records"][0]["fields"])
+        self.assertEqual(result["records"][0]["table"], "table")
+
+        self.assertTrue(len(result["errors"]), 1)
+        self.assertEqual(result["errors"][0]['error']['code'],
+                         failed_response["error"]['http_code'])
+        self.assertEqual(result["errors"][0]['error']['description'],
+                         failed_response["error"]['message'])
+
+    def testCreateResponseBodyInvalidJson(self):
+        response = "invalid json"
+        self.add_mock_response(response.encode(), 200, 'table', encode=False)
+
+        try:
+            createGetByIdResponseBody(self.mocked_futures)
+        except SkyflowError as error:
+            expectedError = SkyflowErrorMessages.RESPONSE_NOT_JSON
+            self.assertEqual(error.code, 200)
+            self.assertEqual(error.message, expectedError.value % response)
