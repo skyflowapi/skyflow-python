@@ -3,7 +3,8 @@ from ._config import ConnectionConfig
 from skyflow.errors._skyflowerrors import *
 import requests
 import json
-from skyflow._utils import InterfaceName, http_build_query, supported_content_types
+
+from skyflow._utils import InterfaceName, http_build_query, supported_content_types, r_urlencode
 
 interface = InterfaceName.INVOKE_CONNECTION.value
 
@@ -104,6 +105,7 @@ def get_data_from_content_type(data, content_type):
     if content_type == supported_content_types["URLENCODED"]:
         converted_data = http_build_query(data)
     elif content_type == supported_content_types["FORMDATA"]:
+        converted_data = r_urlencode(list(), dict(), data)
         files = {(None, None)}
     elif content_type == supported_content_types["JSON"]:
         converted_data = json.dumps(data)
