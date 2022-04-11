@@ -1,4 +1,6 @@
 import unittest
+
+from requests import request
 from skyflow.service_account._token import generate_bearer_token
 from skyflow.vault._connection import *
 from skyflow.vault._client import *
@@ -128,3 +130,16 @@ class testInvokeConnection(unittest.TestCase):
             self.assertEqual(e.code, SkyflowErrorCodes.INVALID_INPUT.value)
             self.assertEqual(
                 e.message, SkyflowErrorMessages.INVALID_QUERY_PARAMS.value)
+
+    def testInvokeConnectionFailure(self):
+        config = Configuration('', '', lambda: 'token')
+        client = Client(config)
+        connectionConfig = ConnectionConfig(
+            'url', RequestMethod.POST, requestBody=[])
+        try:
+            client.invoke_connection(connectionConfig)
+            self.fail()
+        except SkyflowError as e:
+            self.assertEqual(e.code, SkyflowErrorCodes.INVALID_INPUT.value)
+            self.assertEqual(
+                e.message, SkyflowErrorMessages.TOKEN_PROVIDER_INVALID_TOKEN.value)
