@@ -2,17 +2,26 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.6.0] - 2022-04-12
+
+### Added
+
+- support for application/x-www-form-urlencoded and multipart/form-data content-type's in connections.
+
 ## [1.5.1] - 2022-03-29
 
 ### Added
+
 - Validation to token obtained from `tokenProvider`
 
 ### Fixed
+
 - Request headers not getting overriden due to case sensitivity
 
 ## [1.5.0] - 2022-03-22
 
 ### Changed
+
 - `getById` changed to `get_by_id`
 - `invokeConnection`changed to `invoke_connection`
 - `generateBearerToken` changed to `generate_bearer_token`
@@ -21,6 +30,7 @@ All notable changes to this project will be documented in this file.
 - `setLogLevel` changed to `set_log_level`
 
 ### Removed
+
 - `isValid` function
 - `GenerateToken` function
 

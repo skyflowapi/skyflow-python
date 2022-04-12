@@ -1,11 +1,14 @@
 import unittest
 import os
-from skyflow.vault._detokenize import getDetokenizeRequestBody
+from skyflow.vault._detokenize import getDetokenizeRequestBody, createDetokenizeResponseBody
 from skyflow.errors._skyflowerrors import SkyflowError, SkyflowErrorCodes, SkyflowErrorMessages
 from skyflow.vault._client import Client, Configuration
 from skyflow.service_account import generate_bearer_token
 from dotenv import dotenv_values
 import warnings
+
+import json
+import asyncio
 
 
 class TestDetokenize(unittest.TestCase):
@@ -18,9 +21,11 @@ class TestDetokenize(unittest.TestCase):
             "token": self.envValues["DETOKENIZE_TEST_TOKEN"]
         }
         self.data = {"records": [self.tokenField]}
+        self.mocked_futures = []
+        self.event_loop = asyncio.new_event_loop()
 
         def tokenProvider():
-            token, type = generate_bearer_token(
+            token, _ = generate_bearer_token(
                 self.envValues["CREDENTIALS_FILE_PATH"])
             return token
 
@@ -30,6 +35,15 @@ class TestDetokenize(unittest.TestCase):
         warnings.filterwarnings(
             action="ignore", message="unclosed", category=ResourceWarning)
         return super().setUp()
+
+    def add_mock_response(self, response, statusCode, encode=True):
+        future = asyncio.Future(loop=self.event_loop)
+        if encode:
+            future.set_result((json.dumps(response).encode(), statusCode))
+        else:
+            future.set_result((response, statusCode))
+        future.done()
+        self.mocked_futures.append(future)
 
     def getDataPath(self, file):
         return self.dataPath + file + '.json'
@@ -113,3 +127,38 @@ class TestDetokenize(unittest.TestCase):
             self.assertEqual(e.data["errors"][0]["error"]["code"], 404)
             self.assertTrue(e.data["errors"][0]["error"]["description"].find(
                 "Token not found for invalid-token") != -1)
+
+    def testResponseBodySuccess(self):
+        response = {"records": [{"token": "abc", "value": "secret"}]}
+        self.add_mock_response(response, 200)
+        res, partial = createDetokenizeResponseBody(self.mocked_futures)
+        self.assertEqual(partial, False)
+        self.assertEqual(res, {"records": response["records"], "errors": []})
+
+    def testResponseBodyPartialSuccess(self):
+        success_response = {"records": [{"token": "abc", "value": "secret"}]}
+        error_response = {"error": {"http_code": 404, "message": "not found"}}
+        self.add_mock_response(success_response, 200)
+        self.add_mock_response(error_response, 404)
+        res, partial = createDetokenizeResponseBody(self.mocked_futures)
+        self.assertTrue(partial)
+        self.assertEqual(res["records"], success_response["records"])
+        errors = res["errors"]
+
+        self.assertIsNotNone(errors)
+        self.assertEqual(len(errors), 1)
+        self.assertEqual(errors[0]["error"]["code"],
+                         error_response["error"]["http_code"])
+        self.assertEqual(
+            errors[0]["error"]["description"], error_response["error"]["message"])
+
+    def testResponseNotJson(self):
+        response = "not a valid json".encode()
+        self.add_mock_response(response, 200, encode=False)
+        try:
+            createDetokenizeResponseBody(self.mocked_futures)
+        except SkyflowError as error:
+            expectedError = SkyflowErrorMessages.RESPONSE_NOT_JSON
+            self.assertEqual(error.code, 200)
+            self.assertEqual(error.message, expectedError.value %
+                             response.decode('utf-8'))

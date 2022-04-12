@@ -22,10 +22,6 @@ def tokenProviderWrapper(storedToken: str, newTokenProvider, interface: str):
             newToken = newTokenProvider()
             verify_token_from_provider(newToken, interface)
             return newToken
-    except jwt.ExpiredSignatureError:
-        newToken = newTokenProvider()
-        verify_token_from_provider(newToken, interface)
-        return newToken
     except Exception:
         raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT,
                            SkyflowErrorMessages.JWT_DECODE_ERROR, interface=interface)
