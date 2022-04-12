@@ -99,20 +99,13 @@ class Client:
         interface = InterfaceName.INVOKE_CONNECTION.value
         log_info(InfoMessages.INVOKE_CONNECTION_TRIGGERED.value, interface)
 
-        self._checkConfig(interface)
         session = requests.Session()
         self.storedToken = tokenProviderWrapper(
             self.storedToken, self.tokenProvider, interface)
         request = createRequest(config)
 
-        lowercase_headers = [header.lower()
-                             for header in request.headers.keys()]
-
-        if not 'X-Skyflow-Authorization'.lower() in lowercase_headers:
-            request.headers['X-Skyflow-Authorization'] = self.storedToken
-
-        if not 'Content-Type'.lower() in lowercase_headers:
-            request.headers['Content-Type'] = 'application/json'
+        if not 'X-Skyflow-Authorization'.lower() in request.headers:
+            request.headers['x-skyflow-authorization'] = self.storedToken
 
         response = session.send(request)
         session.close()

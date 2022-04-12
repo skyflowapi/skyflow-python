@@ -67,8 +67,8 @@ def createDetokenizeResponseBody(responses):
         "records": [],
         "errors": []
     }
+    partial = False
     for response in responses:
-        partial = False
         r = response.result()
         status = r[1]
         try:
@@ -86,7 +86,7 @@ def createDetokenizeResponseBody(responses):
             temp = {"error": {}}
             temp["error"]["code"] = jsonRes["error"]["http_code"]
             temp["error"]["description"] = jsonRes["error"]["message"]
-            if len(r) >= 2 and r[2] != None:
+            if len(r) > 2 and r[2] != None:
                 temp["error"]["description"] += ' - Request ID: ' + str(r[2])
             result["errors"].append(temp)
             partial = True

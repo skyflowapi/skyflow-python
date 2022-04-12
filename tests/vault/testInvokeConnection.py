@@ -1,4 +1,6 @@
 import unittest
+
+from requests import request
 from skyflow.service_account._token import generate_bearer_token
 from skyflow.vault._connection import *
 from skyflow.vault._client import *
@@ -129,35 +131,15 @@ class testInvokeConnection(unittest.TestCase):
             self.assertEqual(
                 e.message, SkyflowErrorMessages.INVALID_QUERY_PARAMS.value)
 
-    # def testinvokeConnectionCvvGenSuccess(self):
-    #     env_values = dotenv_values('.env')
-    #     connectionURL = env_values['CVV_GEN_CONNECTION_URL']
-
-    #     def tokenProvider():
-    #         token, _ = generate_bearer_token(env_values['CREDENTIALS_FILE_PATH'])
-    #         return token
-
-    #     config = Configuration(env_values['VAULT_ID'], env_values['VAULT_URL'], tokenProvider)
-    #     connectionConfig = ConnectionConfig(connectionURL, RequestMethod.POST,
-    #     requestHeader={
-    #                 'Content-Type': 'application/json',
-    #                 'Authorization': env_values['VISA_CONNECTION_BASIC_AUTH']
-    #     },
-    #     requestBody=
-    #     {
-    #         "expirationDate": {
-    #             "mm": "12",
-    #             "yy": "22"
-    #         }
-    #     },
-    #     pathParams={'cardID': env_values['DETOKENIZE_TEST_TOKEN']})
-    #     client = Client(config)
-
-    #     try:
-    #         resp = client.invoke_connection(connectionConfig)
-    #         self.assertIsNotNone(resp['resource']['cvv2'])
-    #         self.assertIsNotNone(resp['processingTimeinMs'])
-    #         self.assertIsNotNone(resp['receivedTimestamp'])
-    #     except SkyflowError as e:
-    #         print(e)
-            # self.fail()
+    def testInvokeConnectionFailure(self):
+        config = Configuration('', '', lambda: 'token')
+        client = Client(config)
+        connectionConfig = ConnectionConfig(
+            'url', RequestMethod.POST, requestBody=[])
+        try:
+            client.invoke_connection(connectionConfig)
+            self.fail()
+        except SkyflowError as e:
+            self.assertEqual(e.code, SkyflowErrorCodes.INVALID_INPUT.value)
+            self.assertEqual(
+                e.message, SkyflowErrorMessages.TOKEN_PROVIDER_INVALID_TOKEN.value)

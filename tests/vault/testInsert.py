@@ -3,7 +3,7 @@ import unittest
 import os
 from requests.models import Response
 from dotenv import dotenv_values
-from skyflow.vault._insert import getInsertRequestBody, processResponse
+from skyflow.vault._insert import getInsertRequestBody, processResponse, convertResponse
 from skyflow.errors._skyflowerrors import SkyflowError, SkyflowErrorCodes, SkyflowErrorMessages
 from skyflow.service_account import generate_bearer_token
 from skyflow.vault._client import Client
@@ -14,14 +14,29 @@ class TestInsert(unittest.TestCase):
 
     def setUp(self) -> None:
         self.dataPath = os.path.join(os.getcwd(), 'tests/vault/data/')
-        field = {
+        record = {
             "table": "pii_fields",
             "fields": {
                 "cardNumber": "4111-1111-1111-1111",
                 "cvv": "234"
             }
         }
-        self.data = {"records": [field]}
+        self.data = {"records": [record]}
+        self.mockRequest = {"records": [record]}
+
+        self.mockResponse = {"responses": [
+            {
+                "records": [{"skyflow_id": 123}],
+                "table": "pii_fields"
+            },
+            {
+                "fields": {
+                    "cardNumber": "card_number_token",
+                    "cvv": "cvv_token"
+                }
+            }
+        ]}
+
         return super().setUp()
 
     def getDataPath(self, file):
@@ -178,72 +193,6 @@ class TestInsert(unittest.TestCase):
         self.assertEqual(client.vaultID, 'vaultid')
         self.assertEqual(client.tokenProvider(), 'test')
 
-    def testClientInsert(self):
-        env_values = dotenv_values('.env')
-
-        def tokenProvider():
-            token, _ = generate_bearer_token(env_values['CREDENTIALS_FILE_PATH'])
-            return token
-
-        config = Configuration(
-            env_values['VAULT_ID'], env_values['VAULT_URL'], tokenProvider)
-        client = Client(config)
-
-        options = InsertOptions(False)
-
-        data = {
-            "records": [
-                {
-                    "table": "pii_fields",
-                    "fields": {
-                        "primary_card": {
-                            "expiry_date": "1221",
-                            "card_number": "4111111111111111",
-                        },
-                        "first_name": "Bob"
-                    }
-                }
-            ]
-        }
-        try:
-            response = client.insert(data, options=options)
-            self.assertEqual(len(response['records']), 1)
-        except SkyflowError as e:
-            self.fail()
-
-    def testClientInsertWithTokens(self):
-        env_values = dotenv_values('.env')
-
-        def tokenProvider():
-            token, _ = generate_bearer_token(env_values['CREDENTIALS_FILE_PATH'])
-            return token
-
-        config = Configuration(
-            env_values['VAULT_ID'], env_values['VAULT_URL'], tokenProvider)
-        client = Client(config)
-
-        options = InsertOptions(True)
-
-        data = {
-            "records": [
-                {
-                    "table": "pii_fields",
-                    "fields": {
-                        "primary_card": {
-                            "expiry_date": "1221",
-                            "card_number": "4111111111111111",
-                        },
-                        "first_name": "Bob"
-                    }
-                }
-            ]
-        }
-        try:
-            response = client.insert(data, options=options)
-            self.assertEqual(len(response['records']), 1)
-        except SkyflowError as e:
-            self.fail('should have inserted without error')
-
     def testProcessResponseInvalidJson(self):
         invalid_response = Response()
         invalid_response.status_code = 200
@@ -267,3 +216,38 @@ class TestInsert(unittest.TestCase):
             self.assertEqual(se.code, 404)
             self.assertEqual(
                 se.message, SkyflowErrorMessages.RESPONSE_NOT_JSON.value % 'error')
+
+    def testConvertResponseNoTokens(self):
+        tokens = False
+        result = convertResponse(self.mockRequest, self.mockResponse, tokens)
+
+        self.assertEqual(len(result["records"]), 1)
+        self.assertEqual(result["records"][0]["skyflow_id"], 123)
+        self.assertEqual(result["records"][0]["table"], "pii_fields")
+        self.assertNotIn("fields", result["records"][0])
+
+    def testConvertResponseWithTokens(self):
+        tokens = True
+        result = convertResponse(self.mockRequest, self.mockResponse, tokens)
+
+        self.assertEqual(len(result["records"]), 1)
+        self.assertNotIn("skyflow_id", result["records"][0])
+        self.assertEqual(result["records"][0]["table"], "pii_fields")
+
+        self.assertIn("fields", result["records"][0])
+        self.assertEqual(result["records"][0]["fields"]["skyflow_id"], 123)
+
+        self.assertEqual(result["records"][0]["fields"]
+                         ["cardNumber"], "card_number_token")
+        self.assertEqual(result["records"][0]["fields"]
+                         ["cvv"], "cvv_token")
+
+    def testInsertInvalidToken(self):
+        config = Configuration('id', 'url', lambda: 'invalid-token')
+        try:
+            Client(config).insert({'records': []})
+            self.fail()
+        except SkyflowError as e:
+            self.assertEqual(e.code, SkyflowErrorCodes.INVALID_INPUT.value)
+            self.assertEqual(
+                e.message, SkyflowErrorMessages.TOKEN_PROVIDER_INVALID_TOKEN.value)
