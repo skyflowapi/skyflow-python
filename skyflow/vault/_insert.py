@@ -101,9 +101,9 @@ def convertResponse(request: dict, response: dict, tokens: bool):
     records = request['records']
     recordsSize = len(records)
     result = []
-    for idx, _ in enumerate(request):
+    for idx, _ in enumerate(records):
         table = records[idx]['table']
-        skyflow_id = responseArray[0]['records'][idx]['skyflow_id']
+        skyflow_id = responseArray[idx]['records'][0]['skyflow_id']
         if tokens:
             fieldsDict = responseArray[recordsSize + idx]['fields']
             fieldsDict['skyflow_id'] = skyflow_id
