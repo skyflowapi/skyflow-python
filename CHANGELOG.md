@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.6.1] - 2022-05-17
+
+### Fixed
+
+- Insert with multiple records returning invalid output
+
 ## [1.6.0] - 2022-04-12
 
 ### Added
