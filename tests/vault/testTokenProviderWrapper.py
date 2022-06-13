@@ -55,5 +55,5 @@ class TestTokenProviderWrapper(unittest.TestCase):
             newToken = tokenProviderWrapper(
                 tokenProvider(), tokenProvider, "Test")
             self.assertEqual(newToken, self.newerToken)
-        except SkyflowError:
+        except SkyflowError as e:
             self.fail('Should have decoded token')

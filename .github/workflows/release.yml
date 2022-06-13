@@ -1,0 +1,53 @@
+name: Public Release
+
+on:
+  push:
+    tags: "*.*.*"
+    paths-ignore:
+      - "setup.py"
+      - "*.yml"
+      - "*.md"
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          token: ${{ secrets.PAT_ACTIONS }}
+          ref: master
+          fetch-depth: 0
+      - name: Set up Python
+        uses: actions/setup-python@v1
+        with:
+          python-version: 3.9
+
+      - name: Get Previous tag
+        id: previoustag
+        uses: WyriHaximus/github-action-get-previous-tag@v1
+        with:
+          fallback: 1.0.0
+
+      - name: Bump Version
+        run: |
+          chmod +x ./ci-scripts/bump_version.sh
+          ./ci-scripts/bump_version.sh "${{ steps.previoustag.outputs.tag }}"
+
+      - name: Commit changes
+        run: |
+          git config user.name ${{ github.actor }}
+          git config user.email ${{ github.actor }}@users.noreply.github.com
+          git add setup.py
+          git commit -m "[AUTOMATED] Public Release - ${{ steps.previoustag.outputs.tag }}"
+          git push origin
+
+      - name: Install build
+        run: python -m pip install build --user
+
+      - name: Build binary wheel and source tarball
+        run: python -m pip build --sdist --wheel --outdir dist/ .
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@master
+        with:
+          password: ${{ secrets.PYPI_PUBLISH_TOKEN }}
