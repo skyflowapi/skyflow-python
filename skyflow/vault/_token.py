@@ -1,3 +1,6 @@
+'''
+	Copyright (c) 2022 Skyflow, Inc.
+'''
 import jwt
 import time
 from skyflow.errors._skyflowerrors import *

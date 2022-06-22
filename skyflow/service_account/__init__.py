@@ -1,3 +1,6 @@
+'''
+	Copyright (c) 2022 Skyflow, Inc.
+'''
 from ._token import generate_bearer_token
 from ._token import generate_bearer_token
 from ._token import ResponseToken

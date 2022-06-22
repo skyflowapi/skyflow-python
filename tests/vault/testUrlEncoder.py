@@ -1,3 +1,6 @@
+'''
+	Copyright (c) 2022 Skyflow, Inc.
+'''
 import unittest
 from skyflow._utils import http_build_query
 

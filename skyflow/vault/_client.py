@@ -1,3 +1,6 @@
+'''
+	Copyright (c) 2022 Skyflow, Inc.
+'''
 import types
 import requests
 from ._insert import getInsertRequestBody, processResponse, convertResponse
