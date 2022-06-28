@@ -1,3 +1,6 @@
+'''
+	Copyright (c) 2022 Skyflow, Inc.
+'''
 import unittest
 import os
 from skyflow.vault._detokenize import getDetokenizeRequestBody, createDetokenizeResponseBody

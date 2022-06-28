@@ -1,3 +1,6 @@
+'''
+	Copyright (c) 2022 Skyflow, Inc.
+'''
 import urllib.parse
 import logging
 from enum import Enum

@@ -1,3 +1,6 @@
+'''
+	Copyright (c) 2022 Skyflow, Inc.
+'''
 from setuptools import setup, find_packages
 import sys
 

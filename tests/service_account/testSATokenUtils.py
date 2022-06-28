@@ -1,3 +1,6 @@
+'''
+	Copyright (c) 2022 Skyflow, Inc.
+'''
 import os
 import unittest
 from dotenv import dotenv_values

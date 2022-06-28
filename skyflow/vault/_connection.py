@@ -1,3 +1,6 @@
+'''
+	Copyright (c) 2022 Skyflow, Inc.
+'''
 from requests.sessions import PreparedRequest
 from ._config import ConnectionConfig
 from skyflow.errors._skyflowerrors import *

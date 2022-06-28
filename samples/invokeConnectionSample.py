@@ -1,3 +1,6 @@
+'''
+	Copyright (c) 2022 Skyflow, Inc.
+'''
 from skyflow.errors import SkyflowError
 from skyflow.service_account import generate_bearer_token, is_expired
 from skyflow.vault import Client, Configuration, RequestMethod, ConnectionConfig

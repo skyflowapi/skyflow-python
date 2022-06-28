@@ -1,3 +1,6 @@
+'''
+	Copyright (c) 2022 Skyflow, Inc.
+'''
 from enum import Enum
 from skyflow._utils import log_error
 
