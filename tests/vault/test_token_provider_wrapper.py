@@ -6,7 +6,7 @@ import unittest
 import dotenv
 from skyflow.vault._token import tokenProviderWrapper
 from skyflow.service_account import generate_bearer_token
-from skyflow.errors._skyflowerrors import *
+from skyflow.errors._skyflow_errors import *
 
 
 class TestTokenProviderWrapper(unittest.TestCase):

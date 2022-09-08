@@ -7,7 +7,7 @@ import os
 from requests.models import Response
 from dotenv import dotenv_values
 from skyflow.vault._insert import getInsertRequestBody, processResponse, convertResponse
-from skyflow.errors._skyflowerrors import SkyflowError, SkyflowErrorCodes, SkyflowErrorMessages
+from skyflow.errors._skyflow_errors import SkyflowError, SkyflowErrorCodes, SkyflowErrorMessages
 from skyflow.service_account import generate_bearer_token
 from skyflow.vault._client import Client
 from skyflow.vault._config import Configuration, InsertOptions

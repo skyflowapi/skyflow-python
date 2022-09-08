@@ -5,9 +5,9 @@ import unittest
 import os
 
 import aiohttp
-from skyflow.errors._skyflowerrors import SkyflowError, SkyflowErrorCodes, SkyflowErrorMessages
+from skyflow.errors._skyflow_errors import SkyflowError, SkyflowErrorCodes, SkyflowErrorMessages
 from skyflow.vault import Client, Configuration, RedactionType
-from skyflow.vault._getById import createGetByIdResponseBody
+from skyflow.vault._get_by_id import createGetByIdResponseBody
 from skyflow.service_account import generate_bearer_token
 from dotenv import dotenv_values
 import warnings

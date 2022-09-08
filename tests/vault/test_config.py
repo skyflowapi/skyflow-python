@@ -6,7 +6,7 @@ import unittest
 
 from skyflow.vault._config import *
 from skyflow.vault import Client
-from skyflow.errors._skyflowerrors import SkyflowError, SkyflowErrorCodes, SkyflowErrorMessages
+from skyflow.errors._skyflow_errors import SkyflowError, SkyflowErrorCodes, SkyflowErrorMessages
 
 
 class TestConfig(unittest.TestCase):
