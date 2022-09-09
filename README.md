@@ -57,6 +57,7 @@ from skyflow.service_account import generate_bearer_token, is_expired
 bearerToken = ''
 tokenType = ''
 def token_provider():
+    global bearerToken, tokenType
     if is_expired(bearerToken):
         bearerToken, tokenType = generate_bearer_token('<YOUR_CREDENTIALS_FILE_PATH>')
     return bearerToken, tokenType
@@ -85,6 +86,7 @@ bearerToken = ''
 
 # User defined function to provide access token to the vault apis
 def token_provider():
+    global bearerToken
     if is_expired(bearerToken):
         return bearerToken
     bearerToken, _ = generate_bearer_token('<YOUR_CREDENTIALS_FILE_PATH>')
