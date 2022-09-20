@@ -19,7 +19,7 @@ setup(
     description='Skyflow SDK for the Python programming language',
     long_description=open('README.rst').read(),
     install_requires=[
-        'PyJWT',
+        'PyJWT>=2.0.0',
         'datetime',
         'requests',
         'aiohttp',
