@@ -1,5 +1,5 @@
 # PYTHON-SDK sample templates
-Use this folder to test the functionalities of JAVA-SDK just by adding `VAULT-ID` `VAULT-URL` and `SERVICE-ACCOUNT` details at the required place.
+Use this folder to test the functionalities of PYTHON-SDK just by adding `VAULT-ID` `VAULT-URL` and `SERVICE-ACCOUNT` details at the required place.
 
 ## Prerequisites
 - A Skylow account. If you don't have one, you can register for one on the [Try Skyflow](https://skyflow.com/try-skyflow) page.
