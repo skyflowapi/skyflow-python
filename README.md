@@ -7,17 +7,20 @@ This Python SDK is designed to help developers easily implement Skyflow into the
 
 
 ## Table of Contents
-- [Features](#features)
-- [Installation](#installation)
-  - [Requirements](#requirements)
-  - [Configuration](#configuration)
-- [Service Account Bearer Token Generation](#service-account-bearer-token-generation)
-- [Vault APIs](#vault-apis)
-  - [Insert](#insert)
-  - [Detokenize](#detokenize)
-  - [GetById](#get-by-id)
-  - [InvokeConnection](#invoke-connection)
-- [Logging](#logging)
+- [Description](#description)
+  - [Table of Contents](#table-of-contents)
+  - [Features](#features)
+  - [Installation](#installation)
+    - [Requirements](#requirements)
+    - [Configuration](#configuration)
+  - [Service Account Bearer Token Generation](#service-account-bearer-token-generation)
+  - [Vault APIs](#vault-apis)
+    - [Insert](#insert)
+    - [Detokenize](#detokenize)
+    - [Get By Id](#get-by-id)
+    - [Invoke Connection](#invoke-connection)
+  - [Logging](#logging)
+  - [Reporting a Vulnerability](#reporting-a-vulnerability)
 
 ## Features
 
@@ -57,6 +60,9 @@ from skyflow.service_account import generate_bearer_token, is_expired
 bearerToken = ''
 tokenType = ''
 def token_provider():
+    global bearerToken
+    global tokenType
+    
     if is_expired(bearerToken):
         bearerToken, tokenType = generate_bearer_token('<YOUR_CREDENTIALS_FILE_PATH>')
     return bearerToken, tokenType
