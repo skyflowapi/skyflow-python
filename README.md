@@ -76,6 +76,30 @@ except SkyflowError as e:
 
 ```
 
+[Example](https://github.com/skyflowapi/skyflow-python/blob/main/samples/generate_bearer_token_from_creds_sample.py):
+
+```python
+from skyflow.errors import SkyflowError
+from skyflow.service_account import generate_bearer_token_from_creds, is_expired
+
+# cache token for reuse
+bearerToken = ''
+tokenType = ''
+def token_provider():
+    if is_expired(bearerToken):
+        bearerToken, tokenType = generate_bearer_token_from_creds('<YOUR_CREDENTIALS_FILE_AS_JSON_STRING_FORMAT>')
+    return bearerToken, tokenType
+
+try:
+    accessToken, tokenType = token_provider()
+    print("Access Token:", accessToken)
+    print("Type of token:", tokenType)
+except SkyflowError as e:
+    print(e)
+
+```
+
+
 ## Vault APIs
 
 The [Vault](https://github.com/skyflowapi/skyflow-python/tree/main/skyflow/vault) python module is used to perform operations on the vault such as inserting records, detokenizing tokens, retrieving tokens for a skyflow_id and to invoke a connection.
