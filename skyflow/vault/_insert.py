@@ -5,7 +5,7 @@ import json
 
 import requests
 from requests.models import HTTPError
-from skyflow.errors._skyflowerrors import SkyflowError, SkyflowErrorCodes, SkyflowErrorMessages
+from skyflow.errors._skyflow_errors import SkyflowError, SkyflowErrorCodes, SkyflowErrorMessages
 from skyflow._utils import InterfaceName
 
 interface = InterfaceName.INSERT.value

@@ -3,7 +3,7 @@
 '''
 from requests.sessions import PreparedRequest
 from ._config import ConnectionConfig
-from skyflow.errors._skyflowerrors import *
+from skyflow.errors._skyflow_errors import *
 import requests
 import json
 

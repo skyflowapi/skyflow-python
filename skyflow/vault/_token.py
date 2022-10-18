@@ -3,7 +3,7 @@
 '''
 import jwt
 import time
-from skyflow.errors._skyflowerrors import *
+from skyflow.errors._skyflow_errors import *
 
 
 def tokenProviderWrapper(storedToken: str, newTokenProvider, interface: str):
