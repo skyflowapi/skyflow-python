@@ -32,7 +32,7 @@ Detokenize a data token from the vault. Make sure the specified token is for dat
 5. Replace **<YOUR_CREDENTIALS_FILE_PATH>** with relative  path of **SERVICE ACCOUNT CREDENTIAL FILE**.
 #### Run the sample
 
-    python3 detokenize_sample.py
+        python3 detokenize_sample.py
 
 ### GetById
 Get data using skyflow id. 
@@ -46,7 +46,7 @@ Get data using skyflow id.
 7. Replace **<TABLE_NAME>** with **credit_cards**.
  #### Run the sample
             
-    python3 get_by_ids_sample.py
+        python3 get_by_ids_sample.py
 
 ### Insert
 Insert data in the vault.
@@ -59,7 +59,7 @@ Insert data in the vault.
 6. Replace **<VALUE>** with **valid value corresponding to column name**.
 #### Run the sample
     
-    python3 insert_sample.py
+        python3 insert_sample.py
 ### InvokeConnection
 Skyflow Connections is a gateway service that uses Skyflow's underlying tokenization capabilities to securely connect to first-party and third-party services. This way, your infrastructure is never directly exposed to sensitive data, and you offload security and compliance requirements to Skyflow.
 #### Configure
@@ -72,7 +72,7 @@ Skyflow Connections is a gateway service that uses Skyflow's underlying tokeniza
 7. Replace value of **pathParams** with your's path params content.
 #### Run the sample
     
-    python3 invoke_connection_sample.py
+        python3 invoke_connection_sample.py
     
 ### Service account token generation
 Generates SA Token using path of credentials file.
@@ -81,7 +81,7 @@ Generates SA Token using path of credentials file.
 
 #### Run the sample
     
-    python3 sa_token_sample.py
+        python3 sa_token_sample.py
 
 ### Generate Bearer Token From Credentails
 Generates SA Token using json content of credentials file.
@@ -90,4 +90,4 @@ Generates SA Token using json content of credentials file.
 
 #### Run the sample
     
-    python3 generate_bearer_token_from_creds_sample.py
+        python3 generate_bearer_token_from_creds_sample.py
