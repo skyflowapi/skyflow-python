@@ -4,7 +4,7 @@
 import unittest
 import os
 from skyflow.vault._detokenize import getDetokenizeRequestBody, createDetokenizeResponseBody
-from skyflow.errors._skyflowerrors import SkyflowError, SkyflowErrorCodes, SkyflowErrorMessages
+from skyflow.errors._skyflow_errors import SkyflowError, SkyflowErrorCodes, SkyflowErrorMessages
 from skyflow.vault._client import Client, Configuration
 from skyflow.service_account import generate_bearer_token
 from dotenv import dotenv_values

@@ -7,7 +7,7 @@ import unittest
 
 from skyflow.vault._config import *
 from skyflow.vault._client import Client
-from skyflow.errors._skyflowerrors import *
+from skyflow.errors._skyflow_errors import *
 from skyflow import set_log_level, LogLevel
 
 

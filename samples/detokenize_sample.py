@@ -16,6 +16,8 @@ def token_provider():
     return bearerToken
 
 
+
+
 try:
     config = Configuration(
         '<YOUR_VAULT_ID>', '<YOUR_VAULT_URL>', token_provider)

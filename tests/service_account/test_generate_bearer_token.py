@@ -5,7 +5,7 @@ import unittest
 import os
 from dotenv import dotenv_values
 from skyflow.service_account import generate_bearer_token, generate_bearer_token_from_creds, generate_bearer_token
-from skyflow.errors._skyflowerrors import *
+from skyflow.errors._skyflow_errors import *
 import json
 from skyflow.service_account._token import getSignedJWT, getResponseToken, sendRequestWithToken
 

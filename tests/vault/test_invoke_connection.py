@@ -8,7 +8,7 @@ from skyflow.service_account._token import generate_bearer_token
 from skyflow.vault._connection import *
 from skyflow.vault._client import *
 from skyflow.vault._config import *
-from skyflow.errors._skyflowerrors import *
+from skyflow.errors._skyflow_errors import *
 from dotenv import dotenv_values
 
 

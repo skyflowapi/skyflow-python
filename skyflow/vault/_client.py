@@ -8,9 +8,9 @@ from ._config import Configuration
 from ._config import InsertOptions, ConnectionConfig
 from ._connection import createRequest
 from ._detokenize import sendDetokenizeRequests, createDetokenizeResponseBody
-from ._getById import sendGetByIdRequests, createGetByIdResponseBody
+from ._get_by_id import sendGetByIdRequests, createGetByIdResponseBody
 import asyncio
-from skyflow.errors._skyflowerrors import SkyflowError, SkyflowErrorCodes, SkyflowErrorMessages
+from skyflow.errors._skyflow_errors import SkyflowError, SkyflowErrorCodes, SkyflowErrorMessages
 from skyflow._utils import log_info, InfoMessages, InterfaceName
 from ._token import tokenProviderWrapper
 

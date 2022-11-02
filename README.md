@@ -50,7 +50,7 @@ The [Service Account](https://github.com/skyflowapi/skyflow-python/tree/main/sky
 
 The `generate_bearer_token(filepath)` function takes the credentials file path for token generation, alternatively, you can also send the entire credentials as string, by using `generate_bearer_token_from_creds(credentials)`
 
-[Example](https://github.com/skyflowapi/skyflow-python/blob/main/samples/SATokenSample.py):
+[Example](https://github.com/skyflowapi/skyflow-python/blob/main/samples/sa_token_sample.py):
 
 ```python
 from skyflow.errors import SkyflowError
@@ -155,7 +155,7 @@ except SkyflowError as e:
     print('Error Occurred:', e)
 ```
 
-An [example](https://github.com/skyflowapi/skyflow-python/blob/main/samples/InsertSample.py) of an insert call is given below:
+An [example](https://github.com/skyflowapi/skyflow-python/blob/main/samples/insert_sample.py) of an insert call is given below:
 
 ```python
 client.insert(
@@ -204,7 +204,7 @@ In order to retrieve data from your vault using tokens that you have previously 
 }
 ```
 
-An [example](https://github.com/skyflowapi/skyflow-python/blob/main/samples/detokenizeSample.py) of a detokenize call:
+An [example](https://github.com/skyflowapi/skyflow-python/blob/main/samples/detokenize_sample.py) of a detokenize call:
 
 ```python
 try:
@@ -268,7 +268,7 @@ There are 4 accepted values in Skyflow.RedactionTypes:
 - `REDACTED`
 - `DEFAULT`
 
-An [example](https://github.com/skyflowapi/skyflow-python/blob/main/samples/getByIDSample.py) of get_by_id call:
+An [example](https://github.com/skyflowapi/skyflow-python/blob/main/samples/get_by_ids_sample.py) of get_by_id call:
 
 ```python
 from skyflow.vault import RedactionType
@@ -359,7 +359,7 @@ client.invokeConnection(config)
 
 **pathParams, queryParams, requestHeader, requestBody** are the JSON objects represented as dictionaries that will be sent through the connection integration url.
 
-An [example](https://github.com/skyflowapi/skyflow-python/blob/main/samples/invokeConnectionSample.py) of invoke_connection:
+An [example](https://github.com/skyflowapi/skyflow-python/blob/main/samples/invoke_connection_sample.py) of invoke_connection:
 
 ```python
 from skyflow.vault import ConnectionConfig, Configuration, RequestMethod

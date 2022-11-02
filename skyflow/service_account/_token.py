@@ -10,7 +10,7 @@ from collections import namedtuple
 from skyflow._utils import log_info, InterfaceName, InfoMessages
 
 
-from skyflow.errors._skyflowerrors import *
+from skyflow.errors._skyflow_errors import *
 
 ResponseToken = namedtuple('ResponseToken', ['AccessToken', 'TokenType'])
 interface = InterfaceName.GENERATE_BEARER_TOKEN

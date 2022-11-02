@@ -4,7 +4,7 @@
 from warnings import warn
 import jwt
 import time
-from skyflow.errors._skyflowerrors import *
+from skyflow.errors._skyflow_errors import *
 from skyflow._utils import InterfaceName, log_info, log_error, InfoMessages
 
 

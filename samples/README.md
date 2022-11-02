@@ -4,7 +4,6 @@ Test the SDK by adding `VAULT-ID`, `VAULT-URL`, and `SERVICE-ACCOUNT` details in
 the required places for each sample.
 
 ## Prerequisites
-
 - A Skyflow account. If you don't have one, register for one on the
   [Try Skyflow](https://skyflow.com/try-skyflow) page.
 - Python 3.7.0 or higher.
