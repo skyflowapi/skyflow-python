@@ -1,7 +1,7 @@
-# Description
+# Skyflow-python
 
 ---
-
+## Description
 This Python SDK is designed to help developers easily implement Skyflow into their python backend.
 
 
@@ -50,7 +50,7 @@ The [Service Account](https://github.com/skyflowapi/skyflow-python/tree/main/sky
 
 The `generate_bearer_token(filepath)` function takes the credentials file path for token generation, alternatively, you can also send the entire credentials as string, by using `generate_bearer_token_from_creds(credentials)`
 
-[Example](https://github.com/skyflowapi/skyflow-python/blob/main/samples/sa_token_sample.py):
+[Example using filepath](https://github.com/skyflowapi/skyflow-python/blob/main/samples/sa_token_sample.py):
 
 ```python
 from skyflow.errors import SkyflowError
@@ -76,7 +76,8 @@ except SkyflowError as e:
 
 ```
 
-[Example](https://github.com/skyflowapi/skyflow-python/blob/main/samples/generate_bearer_token_from_creds_sample.py):
+
+[Example using credentials string](https://github.com/skyflowapi/skyflow-python/blob/main/samples/generate_bearer_token_from_creds_sample.py):
 
 ```python
 from skyflow.errors import SkyflowError
@@ -86,8 +87,20 @@ from skyflow.service_account import generate_bearer_token_from_creds, is_expired
 bearerToken = ''
 tokenType = ''
 def token_provider():
+    global bearerToken
+    global tokenType
+    # As an example
+    credentials = {
+        "clientID": "<YOUR_clientID>",
+        "clientName": "<YOUR_clientName>",
+        "keyID": "<YOUR_keyID>",
+        "tokenURI": '<YOUR_tokenURI>',
+        "privateKey": "<YOUR_PEM_privateKey>"
+    }
+    jsonString = json.dumps(credentials)
     if is_expired(bearerToken):
-        bearerToken, tokenType = generate_bearer_token_from_creds('<YOUR_CREDENTIALS_FILE_AS_JSON_STRING_FORMAT>')
+        bearerToken, tokenType = generate_bearer_token_from_creds(
+            credentials=jsonString)
     return bearerToken, tokenType
 
 try:
@@ -98,7 +111,6 @@ except SkyflowError as e:
     print(e)
 
 ```
-
 
 ## Vault APIs
 
@@ -115,6 +127,7 @@ bearerToken = ''
 
 # User defined function to provide access token to the vault apis
 def token_provider():
+    global bearerToken
     if is_expired(bearerToken):
         return bearerToken
     bearerToken, _ = generate_bearer_token('<YOUR_CREDENTIALS_FILE_PATH>')
@@ -366,6 +379,7 @@ from skyflow.vault import ConnectionConfig, Configuration, RequestMethod
 
 bearerToken = ''
 def token_provider():
+    global bearerToken
     if is_expired(bearerToken):
         return bearerToken
     bearerToken, _ = generate_bearer_token('<YOUR_CREDENTIALS_FILE_PATH>')
