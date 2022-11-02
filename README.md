@@ -76,6 +76,7 @@ except SkyflowError as e:
 
 ```
 
+
 [Example using credentials string](https://github.com/skyflowapi/skyflow-python/blob/main/samples/generate_bearer_token_from_creds_sample.py):
 
 ```python
@@ -100,8 +101,7 @@ def token_provider():
     if is_expired(bearerToken):
         bearerToken, tokenType = generate_bearer_token_from_creds(
             credentials=jsonString)
-
-    return bearerToken
+    return bearerToken, tokenType
 
 try:
     accessToken, tokenType = token_provider()
