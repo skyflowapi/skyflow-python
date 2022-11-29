@@ -11,7 +11,7 @@ from skyflow._utils import InterfaceName
 interface = InterfaceName.INSERT.value
 
 
-def getInsertRequestBody(data, tokens: bool):
+def getInsertRequestBody(data, options):
     try:
         records = data["records"]
     except KeyError:
@@ -22,17 +22,23 @@ def getInsertRequestBody(data, tokens: bool):
         recordsType = str(type(records))
         raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.INVALID_RECORDS_TYPE.value % (
             recordsType), interface=interface)
-
+    
+    upsertOptions = options.upsertOptions 
+    
+    if upsertOptions:
+        validateUpsertOptions(upsertOptions=upsertOptions)
+            
     requestPayload = []
     insertTokenPayload = []
     for index, record in enumerate(records):
         tableName, fields = getTableAndFields(record)
-        requestPayload.append({
-            "tableName": tableName,
-            "fields": fields,
-            "method": "POST",
-            "quorum": True})
-        if tokens:
+        postPayload = {"tableName": tableName, "fields": fields,"method": "POST","quorum": True}
+        
+        if options.upsertOptions:
+            postPayload["upsert"] = getUpsertColumn(tableName,options.upsertOptions)
+        
+        requestPayload.append(postPayload)
+        if options.tokens:
             insertTokenPayload.append({
                 "method": "GET",
                 "tableName": tableName,
@@ -114,3 +120,33 @@ def convertResponse(request: dict, response: dict, tokens: bool):
         else:
             result.append({'table': table, 'skyflow_id': skyflow_id})
     return {'records': result}
+
+def getUpsertColumn(tableName, upsertOptions):
+    uniqueColumn:str = ''
+    for upsertOption in upsertOptions:
+        if tableName == upsertOption.table:
+            uniqueColumn = upsertOption.column
+    print(uniqueColumn)
+    return uniqueColumn
+
+def validateUpsertOptions(upsertOptions):
+    if not isinstance(upsertOptions,list):
+        upsertOptionsType = str(type(upsertOptions))
+        raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.INVALID_UPSERT_OPTIONS_TYPE.value %(
+                upsertOptionsType),interface=interface)
+    if len(upsertOptions) == 0:
+        raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.EMPTY_UPSERT_OPTIONS_LIST.value, interface=interface)
+    
+    for index, upsertOption in enumerate(upsertOptions):
+        if upsertOption.table == None or not isinstance(upsertOption.table,str):
+            raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.INVALID_UPSERT_TABLE_TYPE.value %(
+                    index),interface=interface)
+        if upsertOption.table == '':
+                raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.EMPTY_UPSERT_OPTION_TABLE.value %(
+                    index),interface=interface)
+        if upsertOption.column == None or not isinstance(upsertOption.column,str):
+                raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.INVALID_UPSERT_COLUMN_TYPE.value %(
+                    index),interface=interface)
+        if upsertOption.column == '':
+                raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.EMPTY_UPSERT_OPTION_COLUMN.value %(
+                    index),interface=interface)

@@ -45,7 +45,7 @@ class Client:
 
         self._checkConfig(interface)
 
-        jsonBody = getInsertRequestBody(records, options.tokens)
+        jsonBody = getInsertRequestBody(records, options)
         requestURL = self._get_complete_vault_url()
         self.storedToken = tokenProviderWrapper(
             self.storedToken, self.tokenProvider, interface)
