@@ -297,7 +297,6 @@ class TestInsert(unittest.TestCase):
             validateUpsertOptions(upsertOptions=[UpsertOption(table=123,column='')])
         except SkyflowError as e:
              self.assertEqual(e.code, SkyflowErrorCodes.INVALID_INPUT.value)
-             print(e.message)
              self.assertEqual(
                 e.message, SkyflowErrorMessages.INVALID_UPSERT_TABLE_TYPE.value % 0)
         try:

@@ -2,7 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
-## [1.16.2] - 2022-06-28
+## [1.7.0] - 2022-12-06
+### Added
+- `upsert` support for insert method.
+
+## [1.6.2] - 2022-06-28
 
 ### Added
 - Copyright header to all files

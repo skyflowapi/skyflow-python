@@ -126,7 +126,6 @@ def getUpsertColumn(tableName, upsertOptions):
     for upsertOption in upsertOptions:
         if tableName == upsertOption.table:
             uniqueColumn = upsertOption.column
-    print(uniqueColumn)
     return uniqueColumn
 
 def validateUpsertOptions(upsertOptions):
