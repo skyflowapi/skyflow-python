@@ -140,17 +140,22 @@ client = Client(config)
 
 All Vault APIs must be invoked using a client instance.
 
-### Insert
+### Insert data into the vault
 
-To insert data into the vault use the insert(records: dict, options: InsertOptions) method. The records parameter is a dictionary that must have a `records` key which has an array of records to be inserted into the vault as it's value. The options parameter takes a Skyflow.InsertOptions object, as shown below:
+To insert data into your vault use the insert(records: dict, options: InsertOptions) method. The `records` parameter is a dictionary that requires a `records` key and takes an array of records to insert into the vault. The `options` parameter is a Skyflow.InsertOptions object that provides further options including Upsert operations, for your insert call.
 
+Insert call schema
 ```python
-from skyflow.vault import InsertOptions
+from skyflow.vault import InsertOptions, UpsertOption
 from skyflow.errors import SkyflowError
 
 #Initialize Client
 try:
-    options = InsertOptions(True) #indicates whether or not tokens should be returned for the inserted data. Defaults to 'True'
+    # Create an Upsert option.
+    upsertOption =  UpsertOption(table='<TABLE_NAME>',column='<UNIQUE_COLUMN>') 
+    # The tokens parameter indicates whether you return tokens for inserted data.
+    # The Upsert parameter indicates support in the vault.
+    options = InsertOptions(tokens=True,upsert=[upsertOption]) 
 
     data = {
         "records": [
@@ -168,7 +173,7 @@ except SkyflowError as e:
     print('Error Occurred:', e)
 ```
 
-An [example](https://github.com/skyflowapi/skyflow-python/blob/main/samples/insert_sample.py) of an insert call is given below:
+**Insert call [example](https://github.com/skyflowapi/skyflow-python/blob/main/samples/insert_sample.py)**
 
 ```python
 client.insert(
@@ -187,7 +192,43 @@ client.insert(
 )
 ```
 
-Sample response :
+Skyflow returns tokens for the record you just inserted.
+
+```python
+{
+    "records": [
+        {
+            "table": "cards",
+            "fields": {
+                "cardNumber": "f3907186-e7e2-466f-91e5-48e12c2bcbc1",
+                "cvv": "1989cb56-63da-4482-a2df-1f74cd0dd1a5",
+            },
+        }
+    ]
+}
+```
+
+**Insert call [example](https://github.com/skyflowapi/skyflow-python/blob/main/samples/insert_sample.py) with `upsert` options**
+
+```python
+upsertOption = UpsertOption(table="cards",column="cardNumber")
+client.insert(
+    {
+        "records": [
+            {
+                "table": "cards",
+                "fields": {
+                    "cardNumber": "41111111111",
+                    "cvv": "123",
+                },
+            }
+        ]
+    },
+    InsertOptions(tokens=True,upsert=[upsertOption]),
+)
+```
+
+Skyflow returns tokens, with `upsert` support, for the record you just inserted.
 
 ```python
 {
