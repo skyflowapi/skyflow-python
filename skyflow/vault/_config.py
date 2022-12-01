@@ -30,9 +30,9 @@ class UpsertOption:
         self.column = column
 
 class InsertOptions:
-    def __init__(self, tokens: bool=True,upsertOptions :List[UpsertOption]=None):
+    def __init__(self, tokens: bool=True,upsert :List[UpsertOption]=None):
         self.tokens = tokens
-        self.upsertOptions = upsertOptions
+        self.upsert = upsert
 
 class RequestMethod(Enum):
     GET = 'GET'

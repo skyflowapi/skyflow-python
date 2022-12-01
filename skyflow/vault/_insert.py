@@ -23,7 +23,7 @@ def getInsertRequestBody(data, options):
         raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.INVALID_RECORDS_TYPE.value % (
             recordsType), interface=interface)
     
-    upsertOptions = options.upsertOptions 
+    upsertOptions = options.upsert 
     
     if upsertOptions:
         validateUpsertOptions(upsertOptions=upsertOptions)
@@ -34,8 +34,8 @@ def getInsertRequestBody(data, options):
         tableName, fields = getTableAndFields(record)
         postPayload = {"tableName": tableName, "fields": fields,"method": "POST","quorum": True}
         
-        if options.upsertOptions:
-            postPayload["upsert"] = getUpsertColumn(tableName,options.upsertOptions)
+        if upsertOptions:
+            postPayload["upsert"] = getUpsertColumn(tableName,upsertOptions)
         
         requestPayload.append(postPayload)
         if options.tokens:
