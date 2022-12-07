@@ -65,7 +65,12 @@ class SkyflowErrorMessages(Enum):
     RESPONSE_NOT_JSON = "Response %s is not valid JSON"
 
     TOKEN_PROVIDER_INVALID_TOKEN = "Invalid token from tokenProvider"
-
+    INVALID_UPSERT_OPTIONS_TYPE = "upsertOptions key has value of type %s, expected list"
+    EMPTY_UPSERT_OPTIONS_LIST = "upsert option cannot be an empty array, atleast one object of table and column is required"
+    INVALID_UPSERT_TABLE_TYPE = "upsert object table key has value of type %s, expected string"
+    INVALID_UPSERT_COLUMN_TYPE = "upsert object column key has value of type %s, expected string"
+    EMPTY_UPSERT_OPTION_TABLE = "upsert object table value is empty string at index %s, expected non-empty string"
+    EMPTY_UPSERT_OPTION_COLUMN = "upsert object column value is empty string at index %s, expected non-empty string"
 
 class SkyflowError(Exception):
     def __init__(self, code, message="An Error occured", data={}, interface: str = 'Unknown') -> None:

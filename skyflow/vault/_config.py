@@ -3,7 +3,7 @@
 '''
 from enum import Enum
 from types import FunctionType
-from typing import OrderedDict
+from typing import List
 
 
 class Configuration:
@@ -24,9 +24,15 @@ class Configuration:
             self.vaultURL = vaultURL or ""
             self.tokenProvider = tokenProvider
 
+class UpsertOption:
+    def __init__(self,table: str,column: str):
+        self.table = table
+        self.column = column
+
 class InsertOptions:
-    def __init__(self, tokens: bool=True):
+    def __init__(self, tokens: bool=True,upsert :List[UpsertOption]=None):
         self.tokens = tokens
+        self.upsert = upsert
 
 class RequestMethod(Enum):
     GET = 'GET'

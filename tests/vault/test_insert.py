@@ -6,11 +6,11 @@ import unittest
 import os
 from requests.models import Response
 from dotenv import dotenv_values
-from skyflow.vault._insert import getInsertRequestBody, processResponse, convertResponse
+from skyflow.vault._insert import getInsertRequestBody, processResponse, convertResponse, getUpsertColumn, validateUpsertOptions
 from skyflow.errors._skyflow_errors import SkyflowError, SkyflowErrorCodes, SkyflowErrorMessages
 from skyflow.service_account import generate_bearer_token
 from skyflow.vault._client import Client
-from skyflow.vault._config import Configuration, InsertOptions
+from skyflow.vault._config import Configuration, InsertOptions, UpsertOption
 
 
 class TestInsert(unittest.TestCase):
@@ -39,6 +39,8 @@ class TestInsert(unittest.TestCase):
                 }
             }
         ]}
+        
+        self.insertOptions = InsertOptions(tokens=True)
 
         return super().setUp()
 
@@ -46,7 +48,7 @@ class TestInsert(unittest.TestCase):
         return self.dataPath + file + '.json'
 
     def testGetInsertRequestBodyWithValidBody(self):
-        body = json.loads(getInsertRequestBody(self.data, True))
+        body = json.loads(getInsertRequestBody(self.data, self.insertOptions))
         expectedOutput = {
             "tableName": "pii_fields",
             "fields": {
@@ -57,11 +59,25 @@ class TestInsert(unittest.TestCase):
             "quorum": True
         }
         self.assertEqual(body["records"][0], expectedOutput)
+    
+    def testGetInsertRequestBodyWithValidUpsertOptions(self):
+        body = json.loads(getInsertRequestBody(self.data, InsertOptions(True,[UpsertOption(table='pii_fields',column='column1')])))
+        expectedOutput = {
+            "tableName": "pii_fields",
+            "fields": {
+                "cardNumber": "4111-1111-1111-1111",
+                "cvv": "234"
+            },
+            "method": 'POST',
+            "quorum": True,
+            "upsert": 'column1',
+        }
+        self.assertEqual(body["records"][0], expectedOutput)
 
     def testGetInsertRequestBodyNoRecords(self):
         invalidData = {"invalidKey": self.data["records"]}
         try:
-            getInsertRequestBody(invalidData, True)
+            getInsertRequestBody(invalidData, self.insertOptions)
             self.fail('Should have thrown an error')
         except SkyflowError as e:
             self.assertEqual(e.code, SkyflowErrorCodes.INVALID_INPUT.value)
@@ -71,7 +87,7 @@ class TestInsert(unittest.TestCase):
     def testGetInsertRequestBodyRecordsInvalidType(self):
         invalidData = {"records": 'records'}
         try:
-            getInsertRequestBody(invalidData, True)
+            getInsertRequestBody(invalidData, self.insertOptions)
             self.fail('Should have thrown an error')
         except SkyflowError as e:
             self.assertEqual(e.code, SkyflowErrorCodes.INVALID_INPUT.value)
@@ -91,7 +107,7 @@ class TestInsert(unittest.TestCase):
         }
         ]}
         try:
-            getInsertRequestBody(invalidData, True)
+            getInsertRequestBody(invalidData, self.insertOptions)
             self.fail('Should have thrown an error')
         except SkyflowError as e:
             self.assertEqual(e.code, SkyflowErrorCodes.INVALID_INPUT.value)
@@ -105,7 +121,7 @@ class TestInsert(unittest.TestCase):
         }
         ]}
         try:
-            getInsertRequestBody(invalidData, True)
+            getInsertRequestBody(invalidData, self.insertOptions)
             self.fail('Should have thrown an error')
         except SkyflowError as e:
             self.assertEqual(e.code, SkyflowErrorCodes.INVALID_INPUT.value)
@@ -125,7 +141,7 @@ class TestInsert(unittest.TestCase):
         }
         ]}
         try:
-            getInsertRequestBody(invalidData, True)
+            getInsertRequestBody(invalidData, self.insertOptions)
             self.fail('Should have thrown an error')
         except SkyflowError as e:
             self.assertEqual(e.code, SkyflowErrorCodes.INVALID_INPUT.value)
@@ -141,7 +157,7 @@ class TestInsert(unittest.TestCase):
         }
         ]}
         try:
-            getInsertRequestBody(invalidData, True)
+            getInsertRequestBody(invalidData, self.insertOptions)
             self.fail('Should have thrown an error')
         except SkyflowError as e:
             self.assertEqual(e.code, SkyflowErrorCodes.INVALID_INPUT.value)
@@ -159,7 +175,7 @@ class TestInsert(unittest.TestCase):
         }
 
         try:
-            getInsertRequestBody(invalidjson, True)
+            getInsertRequestBody(invalidjson, self.insertOptions)
             self.fail('Should have thrown an error')
         except SkyflowError as e:
             self.assertEqual(e.code, SkyflowErrorCodes.INVALID_INPUT.value)
@@ -254,3 +270,51 @@ class TestInsert(unittest.TestCase):
             self.assertEqual(e.code, SkyflowErrorCodes.INVALID_INPUT.value)
             self.assertEqual(
                 e.message, SkyflowErrorMessages.TOKEN_PROVIDER_INVALID_TOKEN.value)
+            
+    def testGetUpsertColumn(self):
+        testUpsertOptions = [UpsertOption(table='table1',column='column1'),
+                         UpsertOption(table='table2',column='column2')]
+        upsertValid = getUpsertColumn('table1',upsertOptions=testUpsertOptions)
+        upsertInvalid = getUpsertColumn('table3',upsertOptions=testUpsertOptions)
+        self.assertEqual(upsertValid,'column1')
+        self.assertEqual(upsertInvalid,'')
+    
+    def testValidUpsertOptions(self):
+        testUpsertOptions = 'upsert_string'
+        try:
+            validateUpsertOptions(testUpsertOptions)
+        except SkyflowError as e:
+             self.assertEqual(e.code, SkyflowErrorCodes.INVALID_INPUT.value)
+             self.assertEqual(
+                e.message, SkyflowErrorMessages.INVALID_UPSERT_OPTIONS_TYPE.value % type(testUpsertOptions) )
+        try:
+            validateUpsertOptions(upsertOptions=[])
+        except SkyflowError as e:
+             self.assertEqual(e.code, SkyflowErrorCodes.INVALID_INPUT.value)
+             self.assertEqual(
+                e.message, SkyflowErrorMessages.EMPTY_UPSERT_OPTIONS_LIST.value)
+        try:
+            validateUpsertOptions(upsertOptions=[UpsertOption(table=123,column='')])
+        except SkyflowError as e:
+             self.assertEqual(e.code, SkyflowErrorCodes.INVALID_INPUT.value)
+             self.assertEqual(
+                e.message, SkyflowErrorMessages.INVALID_UPSERT_TABLE_TYPE.value % 0)
+        try:
+            validateUpsertOptions(upsertOptions=[UpsertOption(table='',column='')])
+        except SkyflowError as e:
+             self.assertEqual(e.code, SkyflowErrorCodes.INVALID_INPUT.value)
+             self.assertEqual(
+                e.message, SkyflowErrorMessages.EMPTY_UPSERT_OPTION_TABLE.value % 0)
+        try:
+            validateUpsertOptions(upsertOptions=[UpsertOption(table='table1',column=1343)])
+        except SkyflowError as e:
+             self.assertEqual(e.code, SkyflowErrorCodes.INVALID_INPUT.value)
+             self.assertEqual(
+                e.message, SkyflowErrorMessages.INVALID_UPSERT_COLUMN_TYPE.value % 0)
+        try:
+            validateUpsertOptions(upsertOptions=[UpsertOption(table='table2',column='')])
+        except SkyflowError as e:
+             self.assertEqual(e.code, SkyflowErrorCodes.INVALID_INPUT.value)
+             self.assertEqual(
+                e.message, SkyflowErrorMessages.EMPTY_UPSERT_OPTION_COLUMN.value % 0)
+             
