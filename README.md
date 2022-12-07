@@ -15,7 +15,7 @@ This Python SDK is designed to help developers easily implement Skyflow into the
     - [Configuration](#configuration)
   - [Service Account Bearer Token Generation](#service-account-bearer-token-generation)
   - [Vault APIs](#vault-apis)
-    - [Insert](#insert)
+    - [Insert](#insert-data-into-the-vault)
     - [Detokenize](#detokenize)
     - [Get By Id](#get-by-id)
     - [Invoke Connection](#invoke-connection)
@@ -142,7 +142,14 @@ All Vault APIs must be invoked using a client instance.
 
 ### Insert data into the vault
 
-To insert data into your vault use the insert(records: dict, options: InsertOptions) method. The `records` parameter is a dictionary that requires a `records` key and takes an array of records to insert into the vault. The `options` parameter is a Skyflow.InsertOptions object that provides further options including Upsert operations, for your insert call.
+To insert data into your vault use the `insert(records: dict, options: InsertOptions)` method. The `records` parameter is a dictionary that requires a `records` key and takes an array of records to insert into the vault. The `options` parameter takes a dictionary of optional parameters for the insertion. This includes an option to return tokenized data and upsert records.
+
+```python
+# Optional, indicates whether you return tokens for inserted data. Defaults to 'true'.
+tokens: bool
+# Optional, indicates Upsert support in the vault. 
+upsert: [UpsertOption]  
+```
 
 Insert call schema
 ```python
@@ -152,9 +159,7 @@ from skyflow.errors import SkyflowError
 #Initialize Client
 try:
     # Create an Upsert option.
-    upsertOption =  UpsertOption(table='<TABLE_NAME>',column='<UNIQUE_COLUMN>') 
-    # The tokens parameter indicates whether you return tokens for inserted data.
-    # The Upsert parameter indicates support in the vault.
+    upsertOption =  UpsertOption(table="<TABLE_NAME>",column="<UNIQUE_COLUMN>") 
     options = InsertOptions(tokens=True,upsert=[upsertOption]) 
 
     data = {
@@ -168,9 +173,9 @@ try:
         ]
     }
     response = client.insert(data, options=options)
-    print('Response:', response)
+    print("Response:", response)
 except SkyflowError as e:
-    print('Error Occurred:', e)
+    print("Error Occurred:", e)
 ```
 
 **Insert call [example](https://github.com/skyflowapi/skyflow-python/blob/main/samples/insert_sample.py)**
@@ -208,7 +213,7 @@ Skyflow returns tokens for the record you just inserted.
 }
 ```
 
-**Insert call [example](https://github.com/skyflowapi/skyflow-python/blob/main/samples/insert_sample.py) with `upsert` options**
+**Insert call [example](https://github.com/skyflowapi/skyflow-python/blob/main/samples/insert_upsert_sample.py) with `upsert` options**
 
 ```python
 upsertOption = UpsertOption(table="cards",column="cardNumber")
