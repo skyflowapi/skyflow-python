@@ -52,15 +52,21 @@ def getGetByIdRequestBody(data):
     if "columnName" in data:   
         columnName = data["columnName"] 
         if not isinstance(columnName, str):
-            columnName = str(type(columnName))
-        # changes error text
-        # raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.INVALID_TABLE_TYPE.value % (
-        #     tableType), interface=interface)
+            columnNameType = str(type(columnName))
+            raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.INVALID_COLUMN_NAME.value % (
+            columnNameType), interface=interface)
     
     columnValues = None
     if "columnValues" in data:   
-        columnValues = data["columnValues"] 
-        
+        columnValues = data["columnValues"]
+        if not isinstance(columnValues, list):
+            columnValuesType= str(type(columnValues))
+            raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.INVALID_COLUMN_VALUE.value % (
+            columnValuesType), interface=interface)
+            
+    if(ids is None and (columnName is None or columnValues is None)):
+        raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, 
+        SkyflowErrorMessages.UNIQUE_COLUMN_OR_IDS_KEY_ERROR.value, interface= interface)
     return ids, table, redaction.value, columnName, columnValues
 
 
