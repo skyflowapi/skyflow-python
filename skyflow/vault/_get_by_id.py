@@ -12,20 +12,23 @@ interface = InterfaceName.GET_BY_ID.value
 
 
 def getGetByIdRequestBody(data):
-    try:
+    # try:
+    #     ids = data["ids"]
+    # except KeyError:
+    #     raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT,
+    #                        SkyflowErrorMessages.IDS_KEY_ERROR, interface=interface)
+    ids = None
+    if "ids" in data:
         ids = data["ids"]
-    except KeyError:
-        raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT,
-                           SkyflowErrorMessages.IDS_KEY_ERROR, interface=interface)
-    if not isinstance(ids, list):
-        idsType = str(type(ids))
-        raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT,
-                           SkyflowErrorMessages.INVALID_IDS_TYPE.value % (idsType), interface=interface)
-    for id in ids:
-        if not isinstance(id, str):
-            idType = str(type(id))
-            raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.INVALID_ID_TYPE.value % (
-                idType), interface=interface)
+        if not isinstance(ids, list):
+            idsType = str(type(ids))
+            raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT,
+                            SkyflowErrorMessages.INVALID_IDS_TYPE.value % (idsType), interface=interface)
+        for id in ids:
+            if not isinstance(id, str):
+                idType = str(type(id))
+                raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.INVALID_ID_TYPE.value % (
+                    idType), interface=interface)
     try:
         table = data["table"]
     except KeyError:
@@ -44,7 +47,21 @@ def getGetByIdRequestBody(data):
         redactionType = str(type(redaction))
         raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.INVALID_REDACTION_TYPE.value % (
             redactionType), interface=interface)
-    return ids, table, redaction.value
+    
+    columnName = None
+    if "columnName" in data:   
+        columnName = data["columnName"] 
+        if not isinstance(columnName, str):
+            columnName = str(type(columnName))
+        # changes error text
+        # raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.INVALID_TABLE_TYPE.value % (
+        #     tableType), interface=interface)
+    
+    columnValues = None
+    if "columnValues" in data:   
+        columnValues = data["columnValues"] 
+        
+    return ids, table, redaction.value, columnName, columnValues
 
 
 async def sendGetByIdRequests(data, url, token):
@@ -61,14 +78,22 @@ async def sendGetByIdRequests(data, url, token):
 
     validatedRecords = []
     for record in records:
-        ids, table, redaction = getGetByIdRequestBody(record)
-        validatedRecords.append((ids, table, redaction))
+        ids, table, redaction, columnName, columnValues = getGetByIdRequestBody(record)
+        validatedRecords.append((ids, table, redaction,columnName,columnValues))
+        print(validatedRecords.__len__)
+        print(validatedRecords)
     async with ClientSession() as session:
         for record in validatedRecords:
             headers = {
                 "Authorization": "Bearer " + token
             }
-            params = {"skyflow_ids": record[0], "redaction": record[2]}
+            params = {"redaction": record[2]}
+            if record[0] is not None:
+                params["skyflow_ids"] = record[0]
+            if record[3] is not None:
+                params["column_name"] = record[3]
+                params["column_values"] = record[4]
+            print(params)
             task = asyncio.ensure_future(
                 get(url, headers, params, session, record[1]))
             tasks.append(task)
@@ -93,6 +118,7 @@ def createGetByIdResponseBody(responses):
     for response in responses:
         partial = False
         r = response.result()
+        print(r)
         status = r[1]
         try:
             jsonRes = json.loads(r[0].decode('utf-8'))
@@ -113,7 +139,6 @@ def createGetByIdResponseBody(responses):
             temp["error"]["description"] = jsonRes["error"]["message"]
             if len(r) > 3 and r[3] != None:
                 temp["error"]["description"] += ' - Request ID: ' + str(r[3])
-            result["errors"].append(temp)
             result["errors"].append(temp)
             partial = True
     return result, partial
