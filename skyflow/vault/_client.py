@@ -81,7 +81,7 @@ class Client:
     def get(self, records):
         interface = InterfaceName.GET.value
         log_info(InfoMessages.GET_BY_ID_TRIGGERED.value, interface)
-        self.get_by_id(records)
+        return self.get_by_id(records)
 
     def get_by_id(self, records):
         interface = InterfaceName.GET_BY_ID.value

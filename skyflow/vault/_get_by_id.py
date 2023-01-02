@@ -57,7 +57,7 @@ def getGetByIdRequestBody(data):
             columnNameType), interface=interface)
     
     columnValues = None
-    if "columnValues" in data:   
+    if columnName is not None and "columnValues" in data:   
         columnValues = data["columnValues"]
         if not isinstance(columnValues, list):
             columnValuesType= str(type(columnValues))
