@@ -85,13 +85,13 @@ async def sendGetByIdRequests(data, url, token):
     validatedRecords = []
     for record in records:
         ids, table, redaction, columnName, columnValues = getGetByIdRequestBody(record)
-        validatedRecords.append((ids, table, redaction,columnName,columnValues))
+        validatedRecords.append((ids, table, redaction, columnName, columnValues))
     async with ClientSession() as session:
         for record in validatedRecords:
             headers = {
                 "Authorization": "Bearer " + token
             }
-            params = {"redaction": record[2]}
+            params = {"redaction": redaction}
             if ids is not None:
                 params["skyflow_ids"] = ids
             if columnName is not None:
