@@ -75,6 +75,7 @@ class InterfaceName(Enum):
     INSERT = "client.insert"
     DETOKENIZE = "client.detokenize"
     GET_BY_ID = "client.get_by_id"
+    GET = "client.get"
     INVOKE_CONNECTION = "client.invoke_connection"
     GENERATE_BEARER_TOKEN = "service_account.generate_bearer_token"
 

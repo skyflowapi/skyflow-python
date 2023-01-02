@@ -78,6 +78,11 @@ class Client:
             log_info(InfoMessages.DETOKENIZE_SUCCESS.value, interface)
             return result
 
+    def get(self, records):
+        interface = InterfaceName.GET.value
+        log_info(InfoMessages.GET_BY_ID_TRIGGERED.value, interface)
+        self.get_by_id(self, records)
+
     def get_by_id(self, records):
         interface = InterfaceName.GET_BY_ID.value
         log_info(InfoMessages.GET_BY_ID_TRIGGERED.value, interface)
