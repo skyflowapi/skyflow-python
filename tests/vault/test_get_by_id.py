@@ -236,4 +236,14 @@ class TestGetById(unittest.TestCase):
             self.assertEqual(e.code, SkyflowErrorCodes.INVALID_INPUT.value)
             self.assertEqual(
                 e.message, SkyflowErrorMessages.INVALID_COLUMN_VALUE.value % (str))
-               
+    
+    def testGet(self):
+        invalidData = {"records": [
+            {"ids": ["id1", "id2"], "invalid": "invalid", "redaction": "PLAIN_TEXT"}]}
+        try:
+            self.client.get(invalidData)
+            self.fail('Should have thrown an error')
+        except SkyflowError as e:
+            self.assertEqual(e.code, SkyflowErrorCodes.INVALID_INPUT.value)
+            self.assertEqual(
+                e.message, SkyflowErrorMessages.TABLE_KEY_ERROR.value)
