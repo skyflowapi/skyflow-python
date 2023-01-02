@@ -86,20 +86,17 @@ async def sendGetByIdRequests(data, url, token):
     for record in records:
         ids, table, redaction, columnName, columnValues = getGetByIdRequestBody(record)
         validatedRecords.append((ids, table, redaction,columnName,columnValues))
-        print(validatedRecords.__len__)
-        print(validatedRecords)
     async with ClientSession() as session:
         for record in validatedRecords:
             headers = {
                 "Authorization": "Bearer " + token
             }
             params = {"redaction": record[2]}
-            if record[0] is not None:
-                params["skyflow_ids"] = record[0]
-            if record[3] is not None:
-                params["column_name"] = record[3]
-                params["column_values"] = record[4]
-            print(params)
+            if ids is not None:
+                params["skyflow_ids"] = ids
+            if columnName is not None:
+                params["column_name"] = columnName
+                params["column_values"] = columnValues
             task = asyncio.ensure_future(
                 get(url, headers, params, session, record[1]))
             tasks.append(task)
@@ -124,7 +121,6 @@ def createGetByIdResponseBody(responses):
     for response in responses:
         partial = False
         r = response.result()
-        print(r)
         status = r[1]
         try:
             jsonRes = json.loads(r[0].decode('utf-8'))
