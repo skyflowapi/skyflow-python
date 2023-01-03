@@ -68,6 +68,8 @@ class InfoMessages(Enum):
     IS_EXPIRED_TRIGGERED = "is_expired() triggered"
     EMPTY_ACCESS_TOKEN = "Give access token is empty"
     INVALID_TOKEN = "Given token is invalid"
+    UPDATE_TRIGGERED = "Update method triggered"
+    UPDATE_DATA_SUCCESS = "Data has been updated successfully"
 
 
 class InterfaceName(Enum):
@@ -76,6 +78,7 @@ class InterfaceName(Enum):
     DETOKENIZE = "client.detokenize"
     GET_BY_ID = "client.get_by_id"
     GET = "client.get"
+    UPDATE = "client.update"
     INVOKE_CONNECTION = "client.invoke_connection"
     GENERATE_BEARER_TOKEN = "service_account.generate_bearer_token"
 

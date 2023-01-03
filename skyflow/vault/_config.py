@@ -34,6 +34,10 @@ class InsertOptions:
         self.tokens = tokens
         self.upsert = upsert
 
+class UpdateOptions:
+    def __init__(self, tokens: bool=True):
+        self.tokens = tokens
+
 class RequestMethod(Enum):
     GET = 'GET'
     POST = 'POST'
