@@ -12,11 +12,6 @@ interface = InterfaceName.GET_BY_ID.value
 
 
 def getGetByIdRequestBody(data):
-    # try:
-    #     ids = data["ids"]
-    # except KeyError:
-    #     raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT,
-    #                        SkyflowErrorMessages.IDS_KEY_ERROR, interface=interface)
     ids = None
     if "ids" in data:
         ids = data["ids"]
