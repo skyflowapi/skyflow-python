@@ -70,14 +70,14 @@ class TestGetById(unittest.TestCase):
 
     def testGetByIdNoIds(self):
         invalidData = {"records": [
-            {"invalid": "invalid", "table": "pii_fields", "redaction": "PLAIN_TEXT"}]}
+            {"invalid": "invalid", "table": "pii_fields", "redaction": RedactionType.PLAIN_TEXT}]}
         try:
             self.client.get_by_id(invalidData)
             self.fail('Should have thrown an error')
         except SkyflowError as e:
             self.assertEqual(e.code, SkyflowErrorCodes.INVALID_INPUT.value)
             self.assertEqual(
-                e.message, SkyflowErrorMessages.IDS_KEY_ERROR.value)
+                e.message, SkyflowErrorMessages.UNIQUE_COLUMN_OR_IDS_KEY_ERROR.value)
 
     def testGetByIdInvalidIdsType(self):
         invalidData = {"records": [
@@ -192,3 +192,58 @@ class TestGetById(unittest.TestCase):
             expectedError = SkyflowErrorMessages.RESPONSE_NOT_JSON
             self.assertEqual(error.code, 200)
             self.assertEqual(error.message, expectedError.value % response)
+
+    def testGetByIdNoColumnName(self):
+        invalidData = {"records": [
+            {"table": "pii_fields", "redaction": RedactionType.PLAIN_TEXT}]}
+        try:
+            self.client.get_by_id(invalidData)
+            self.fail('Should have thrown an error')
+        except SkyflowError as e:
+            self.assertEqual(e.code, SkyflowErrorCodes.INVALID_INPUT.value)
+            self.assertEqual(
+                e.message, SkyflowErrorMessages.UNIQUE_COLUMN_OR_IDS_KEY_ERROR.value)
+    
+    def testGetByIdInvalidColumnName(self):
+        invalidData = {"records": [
+            {"ids": ["123", "456"],"table": "pii_fields", "redaction": RedactionType.PLAIN_TEXT, "columnName": ["invalid"]}]}
+        try:
+            self.client.get_by_id(invalidData)
+            self.fail('Should have thrown an error')
+        except SkyflowError as e:
+            self.assertEqual(e.code, SkyflowErrorCodes.INVALID_INPUT.value)
+            self.assertEqual(
+                e.message, SkyflowErrorMessages.INVALID_COLUMN_NAME.value % (list))
+    
+    def testGetByIdNoColumnValues(self):
+        invalidData = {"records": [
+            {"table": "pii_fields", "redaction": RedactionType.PLAIN_TEXT, "columnName": "first_name"}]}
+        try:
+            self.client.get_by_id(invalidData)
+            self.fail('Should have thrown an error')
+        except SkyflowError as e:
+            self.assertEqual(e.code, SkyflowErrorCodes.INVALID_INPUT.value)
+            self.assertEqual(
+                e.message, SkyflowErrorMessages.UNIQUE_COLUMN_OR_IDS_KEY_ERROR.value)
+
+    def testGetByIdInvalidColumnValues(self):
+        invalidData = {"records": [
+            {"ids": ["123", "456"], "table": "pii_fields", "redaction": RedactionType.PLAIN_TEXT, "columnName": "first_name", "columnValues": "invalid"}]}
+        try:
+            self.client.get_by_id(invalidData)
+            self.fail('Should have thrown an error')
+        except SkyflowError as e:
+            self.assertEqual(e.code, SkyflowErrorCodes.INVALID_INPUT.value)
+            self.assertEqual(
+                e.message, SkyflowErrorMessages.INVALID_COLUMN_VALUE.value % (str))
+    
+    def testGet(self):
+        invalidData = {"records": [
+            {"ids": ["id1", "id2"], "invalid": "invalid", "redaction": "PLAIN_TEXT"}]}
+        try:
+            self.client.get(invalidData)
+            self.fail('Should have thrown an error')
+        except SkyflowError as e:
+            self.assertEqual(e.code, SkyflowErrorCodes.INVALID_INPUT.value)
+            self.assertEqual(
+                e.message, SkyflowErrorMessages.TABLE_KEY_ERROR.value)
