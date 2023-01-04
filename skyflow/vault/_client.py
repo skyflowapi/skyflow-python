@@ -147,7 +147,7 @@ class Client:
         url = self._get_complete_vault_url()
         responses = asyncio.run(sendUpdateRequests(
             updateInput, options, url, self.storedToken))
-        result, partial = createUpdateResponseBody(responses, interface)
+        result, partial = createUpdateResponseBody(responses)
         if partial:
             raise SkyflowError(SkyflowErrorCodes.PARTIAL_SUCCESS,
                                SkyflowErrorMessages.PARTIAL_SUCCESS, result, interface=interface)
