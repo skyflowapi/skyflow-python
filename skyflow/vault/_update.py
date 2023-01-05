@@ -7,11 +7,12 @@ import asyncio
 from skyflow.errors._skyflow_errors import SkyflowError, SkyflowErrorCodes, SkyflowErrorMessages
 from ._insert import getTableAndFields
 from skyflow._utils import InterfaceName
-from aiohttp import ClientSession, request
+from aiohttp import ClientSession
+from ._config import UpdateOptions
 
 interface = InterfaceName.UPDATE.value
 
-async def sendUpdateRequests(data,options,url,token):
+async def sendUpdateRequests(data,options: UpdateOptions,url,token):
     tasks = []
 
     try:
@@ -35,7 +36,7 @@ async def sendUpdateRequests(data,options,url,token):
                 "record": {
                     "fields": record["fields"]
                 },
-                "tokenization": options["tokens"]
+                "tokenization": options.tokens
             }
             reqBody = json.dumps(reqBody)
             headers = {
