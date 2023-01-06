@@ -316,8 +316,7 @@ For retrieving using SkyflowID's or Unique Column Values, use the get_by_id(reco
             "table": str,  # name of table holding the above skyflow_id's
             "redaction": Skyflow.RedactionType,  # redaction to be applied to retrieved data
         }
-            (or)
-             #To get records using unique column name and values.
+        #To get records using unique column name and values.
         {
             "redaction" : "<REDACTION_TYPE>",
             "table": "<TABLE_NAME>",
@@ -345,8 +344,14 @@ skyflowIDs = [
     "da26de53-95d5-4bdb-99db-8d8c66a35ff9"
 ]
 record = {"ids": skyflowIDs, "table": "cards", "redaction": RedactionType.PLAIN_TEXT}
-recordWithUniqueColumn = {"table": "cards", "redaction": ReadctionType.PLAIN_TEXT, "columnName":             "card_number", "columnValues": ["1234566789"]}
-
+recordWithUniqueColumn ={
+    "table":"cards",
+    "redaction":"RedactionType.PLAIN_TEXT",
+    "columnName":"card_number",
+    "columnValues":[
+        "1234566789"
+    ]
+}
 invalidID = ["invalid skyflow ID"]
 badRecord = {"ids": invalidID, "table": "cards", "redaction": RedactionType.PLAIN_TEXT}
 
