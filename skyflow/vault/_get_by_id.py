@@ -12,18 +12,20 @@ interface = InterfaceName.GET_BY_ID.value
 
 
 def getGetByIdRequestBody(data):
-    ids = None
-    if "ids" in data:
+    try:
         ids = data["ids"]
-        if not isinstance(ids, list):
-            idsType = str(type(ids))
-            raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT,
-                            SkyflowErrorMessages.INVALID_IDS_TYPE.value % (idsType), interface=interface)
-        for id in ids:
-            if not isinstance(id, str):
-                idType = str(type(id))
-                raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.INVALID_ID_TYPE.value % (
-                    idType), interface=interface)
+    except KeyError:
+        raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT,
+                           SkyflowErrorMessages.IDS_KEY_ERROR, interface=interface)
+    if not isinstance(ids, list):
+        idsType = str(type(ids))
+        raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT,
+                           SkyflowErrorMessages.INVALID_IDS_TYPE.value % (idsType), interface=interface)
+    for id in ids:
+        if not isinstance(id, str):
+            idType = str(type(id))
+            raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.INVALID_ID_TYPE.value % (
+                idType), interface=interface)
     try:
         table = data["table"]
     except KeyError:
@@ -42,27 +44,7 @@ def getGetByIdRequestBody(data):
         redactionType = str(type(redaction))
         raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.INVALID_REDACTION_TYPE.value % (
             redactionType), interface=interface)
-    
-    columnName = None
-    if "columnName" in data:   
-        columnName = data["columnName"] 
-        if not isinstance(columnName, str):
-            columnNameType = str(type(columnName))
-            raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.INVALID_COLUMN_NAME.value % (
-            columnNameType), interface=interface)
-    
-    columnValues = None
-    if columnName is not None and "columnValues" in data:   
-        columnValues = data["columnValues"]
-        if not isinstance(columnValues, list):
-            columnValuesType= str(type(columnValues))
-            raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.INVALID_COLUMN_VALUE.value % (
-            columnValuesType), interface=interface)
-            
-    if(ids is None and (columnName is None or columnValues is None)):
-        raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, 
-        SkyflowErrorMessages.UNIQUE_COLUMN_OR_IDS_KEY_ERROR.value, interface= interface)
-    return ids, table, redaction.value, columnName, columnValues
+    return ids, table, redaction.value
 
 
 async def sendGetByIdRequests(data, url, token):
@@ -79,19 +61,14 @@ async def sendGetByIdRequests(data, url, token):
 
     validatedRecords = []
     for record in records:
-        ids, table, redaction, columnName, columnValues = getGetByIdRequestBody(record)
-        validatedRecords.append((ids, table, redaction, columnName, columnValues))
+        ids, table, redaction = getGetByIdRequestBody(record)
+        validatedRecords.append((ids, table, redaction))
     async with ClientSession() as session:
         for record in validatedRecords:
             headers = {
                 "Authorization": "Bearer " + token
             }
-            params = {"redaction": redaction}
-            if ids is not None:
-                params["skyflow_ids"] = ids
-            if columnName is not None:
-                params["column_name"] = columnName
-                params["column_values"] = columnValues
+            params = {"skyflow_ids": record[0], "redaction": record[2]}
             task = asyncio.ensure_future(
                 get(url, headers, params, session, record[1]))
             tasks.append(task)
@@ -108,7 +85,7 @@ async def get(url, headers, params, session, table):
             return (await response.read(), response.status, table)
 
 
-def createGetByIdResponseBody(responses):
+def createGetResponseBody(responses):
     result = {
         "records": [],
         "errors": []

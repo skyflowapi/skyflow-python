@@ -70,6 +70,8 @@ class InfoMessages(Enum):
     INVALID_TOKEN = "Given token is invalid"
     UPDATE_TRIGGERED = "Update method triggered"
     UPDATE_DATA_SUCCESS = "Data has been updated successfully"
+    GET_TRIGGERED = "Get triggered."
+    GET_SUCCESS = "Data fetched successfully."
 
 
 class InterfaceName(Enum):
