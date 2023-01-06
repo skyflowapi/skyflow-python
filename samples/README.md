@@ -36,7 +36,7 @@ pip install skyflow
 
 ### [Get data by ID](./getByIDSample.py)
 
-Get data using Skyflow IDs for the desired records.
+Get data using Skyflow IDs or Unique Column Values for the desired records. Either Skyflow IDs or Unique Column Values can be used to fetch records.
 
 #### Configure
 
@@ -51,6 +51,9 @@ Replace the following values in the sample file:
 | `<SKYFLOW_ID3>`                | Skyflow ID of the third record.                         |
 | `<YOUR_CREDENTIALS_FILE_PATH>` | relative path to your service account credentials file. |
 | `<TABLE_NAME>`                 | Name of the table to get data from.                     |
+| `<UNIQUE_COLUMN_VALUE>`        | Name of the unique column of the tabe.                  |
+| `<COLUMN_VALUE_1>`             | Value of the first record.                              |
+| `<COLUMN_VALUE_2>`             | Value od the second record.                             |
 
 #### Run the sample
 

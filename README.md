@@ -306,7 +306,7 @@ Sample response:
 
 ### Get By Id
 
-For retrieving using SkyflowID's, use the get_by_id(records: dict) method. The records parameter takes a Dictionary that contains records to be fetched as shown below:
+For retrieving using SkyflowID's or Unique Column Values, use the get_by_id(records: dict) method. The records parameter takes a Dictionary that contains records to be fetched as shown below:
 
 ```python
 {
@@ -315,6 +315,14 @@ For retrieving using SkyflowID's, use the get_by_id(records: dict) method. The r
             "ids": [str],  # List of SkyflowID's of the records to be fetched
             "table": str,  # name of table holding the above skyflow_id's
             "redaction": Skyflow.RedactionType,  # redaction to be applied to retrieved data
+        }
+            (or)
+             #To get records using unique column name and values.
+        {
+            "redaction" : "<REDACTION_TYPE>",
+            "table": "<TABLE_NAME>",
+            "columnName": "<UNIQUE_COLUMN_NAME>",
+            "columnValues": "[<COLUMN_VALUE_1>,<COLUMN_VALUE_2>]",
         }
     ]
 }
@@ -337,11 +345,12 @@ skyflowIDs = [
     "da26de53-95d5-4bdb-99db-8d8c66a35ff9"
 ]
 record = {"ids": skyflowIDs, "table": "cards", "redaction": RedactionType.PLAIN_TEXT}
+recordWithUniqueColumn = {"table": "cards", "redaction": ReadctionType.PLAIN_TEXT, "columnName":             "card_number", "columnValues": ["1234566789"]}
 
 invalidID = ["invalid skyflow ID"]
 badRecord = {"ids": invalidID, "table": "cards", "redaction": RedactionType.PLAIN_TEXT}
 
-records = {"records": [record, badRecord]}
+records = {"records": [record, badRecord, recordWithUniqueColumn]}
 
 try:
     client.get_by_id(records)
@@ -374,6 +383,16 @@ Sample response:
               "expiry_date": "10/23",
               "fullname": "sam",
               "skyflow_id": "da26de53-95d5-4bdb-99db-8d8c66a35ff9"
+          },
+          "table": "cards"
+      },
+       {
+          "fields": {
+              "card_number": "1234566789",
+              "cvv": "318",
+              "expiry_date": "08/36",
+              "fullname": "samuel",
+              "skyflow_id": "56513264-fc45-41fa-9cb0-d1ad3602bc49"
           },
           "table": "cards"
       }
