@@ -74,7 +74,7 @@ def getTableAndFields(record):
                            SkyflowErrorMessages.FIELDS_KEY_ERROR, interface=interface)
 
     if not isinstance(fields, dict):
-        fieldsType = str(type(table))
+        fieldsType = str(type(fields))
         raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.INVALID_FIELDS_TYPE.value % (
             fieldsType), interface=interface)
 
