@@ -85,7 +85,7 @@ async def get(url, headers, params, session, table):
             return (await response.read(), response.status, table)
 
 
-def createGetByIdResponseBody(responses):
+def createGetResponseBody(responses):
     result = {
         "records": [],
         "errors": []
@@ -113,7 +113,6 @@ def createGetByIdResponseBody(responses):
             temp["error"]["description"] = jsonRes["error"]["message"]
             if len(r) > 3 and r[3] != None:
                 temp["error"]["description"] += ' - Request ID: ' + str(r[3])
-            result["errors"].append(temp)
             result["errors"].append(temp)
             partial = True
     return result, partial

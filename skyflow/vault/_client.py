@@ -4,11 +4,13 @@
 import types
 import requests
 from ._insert import getInsertRequestBody, processResponse, convertResponse
+from ._update import sendUpdateRequests, createUpdateResponseBody
 from ._config import Configuration
-from ._config import InsertOptions, ConnectionConfig
+from ._config import InsertOptions, ConnectionConfig, UpdateOptions
 from ._connection import createRequest
 from ._detokenize import sendDetokenizeRequests, createDetokenizeResponseBody
-from ._get_by_id import sendGetByIdRequests, createGetByIdResponseBody
+from ._get_by_id import sendGetByIdRequests, createGetResponseBody
+from ._get import sendGetRequests
 import asyncio
 from skyflow.errors._skyflow_errors import SkyflowError, SkyflowErrorCodes, SkyflowErrorMessages
 from skyflow._utils import log_info, InfoMessages, InterfaceName
@@ -78,6 +80,25 @@ class Client:
             log_info(InfoMessages.DETOKENIZE_SUCCESS.value, interface)
             return result
 
+    def get(self, records):
+        interface = InterfaceName.GET.value
+        log_info(InfoMessages.GET_TRIGGERED.value, interface)
+
+        self._checkConfig(interface)
+        self.storedToken = tokenProviderWrapper(
+            self.storedToken, self.tokenProvider, interface)
+        url = self._get_complete_vault_url()
+        responses = asyncio.run(sendGetRequests(
+            records, url, self.storedToken))
+        result, partial = createGetResponseBody(responses)
+        if partial:
+            raise SkyflowError(SkyflowErrorCodes.PARTIAL_SUCCESS,
+                               SkyflowErrorMessages.PARTIAL_SUCCESS, result, interface=interface)
+        else:
+            log_info(InfoMessages.GET_SUCCESS.value, interface)
+
+            return result
+
     def get_by_id(self, records):
         interface = InterfaceName.GET_BY_ID.value
         log_info(InfoMessages.GET_BY_ID_TRIGGERED.value, interface)
@@ -88,7 +109,7 @@ class Client:
         url = self._get_complete_vault_url()
         responses = asyncio.run(sendGetByIdRequests(
             records, url, self.storedToken))
-        result, partial = createGetByIdResponseBody(responses)
+        result, partial = createGetResponseBody(responses)
         if partial:
             raise SkyflowError(SkyflowErrorCodes.PARTIAL_SUCCESS,
                                SkyflowErrorMessages.PARTIAL_SUCCESS, result, interface=interface)
@@ -130,3 +151,21 @@ class Client:
             Get the complete vault url from given vault url and vault id
         '''
         return self.vaultURL + "/v1/vaults/" + self.vaultID
+
+    def update(self, updateInput, options: UpdateOptions = UpdateOptions()):
+        interface = InterfaceName.UPDATE.value
+        log_info(InfoMessages.UPDATE_TRIGGERED.value, interface=interface)
+
+        self._checkConfig(interface)
+        self.storedToken = tokenProviderWrapper(
+            self.storedToken, self.tokenProvider, interface)
+        url = self._get_complete_vault_url()
+        responses = asyncio.run(sendUpdateRequests(
+            updateInput, options, url, self.storedToken))
+        result, partial = createUpdateResponseBody(responses)
+        if partial:
+            raise SkyflowError(SkyflowErrorCodes.PARTIAL_SUCCESS,
+                               SkyflowErrorMessages.PARTIAL_SUCCESS, result, interface=interface)
+        else:
+            log_info(InfoMessages.UPDATE_DATA_SUCCESS.value, interface)
+            return result
