@@ -505,3 +505,101 @@ Current the following 5 log levels are supported:
 ## Reporting a Vulnerability
 
 If you discover a potential security issue in this project, please reach out to us at security@skyflow.com. Please do not create public GitHub issues or Pull Requests, as malicious actors could potentially view them.
+
+### Get
+
+To retrieve data using Skyflow IDs or unique column values, use the `get(records: dict)` method. The `records` parameter takes a Dictionary that contains either an array of Skyflow IDs or a unique column name and values.
+
+Note: You can use either Skyflow IDs  or `unique` values to retrieve records. You can't use both at the same time.
+
+```python
+{
+   'records': [
+       {
+           'columnName': str,  # Name of the unique column.
+           'columnValues': [str], # List of unique column values.
+           'table': str,  # Name of table holding the data.
+           'redaction': Skyflow.RedactionType,  # Redaction applied to retrieved data.
+       }
+   ]
+}
+ or
+{
+   'records': [
+       {
+           'ids': [str], # List of Skyflow IDs.
+           'table': str,  # Name of table holding the data.
+           'redaction': Skyflow.RedactionType,  # Redaction applied to retrieved data.
+       }
+   ]
+}
+
+```
+Sample usage
+
+The following snippet shows how to use the `get()` method. For details, see [get_sample.py].(https://github.com/skyflowapi/skyflow-python/blob/main/samples/get_sample.py),
+
+```python
+from skyflow.vault import RedactionType
+ 
+skyflowIDs = ['f8d8a622-b557-4c6b-a12c-c5ebe0b0bfd9']
+record = {'ids': skyflowIDs, 'table': 'cards',       'redaction':RedactionType.PLAIN_TEXT}
+recordsWithUniqueColumn =
+           {
+               'table': 'test_table',
+               'columnName': 'card_number',
+               'columnValues': ['123456'],
+               'redaction': RedactionType.PLAIN_TEXT
+           }
+ 
+invalidID = ['invalid skyflow ID']
+badRecord = {'ids': invalidID, 'table': 'cards', 'redaction': RedactionType.PLAIN_TEXT}
+ 
+records = {'records': [record, badRecord]}
+ 
+try:
+   client.get(records)
+except SkyflowError as e:
+   if e.data:
+       print(e.data)
+   else:
+       print(e)
+```
+
+Sample response:
+
+```python
+{
+ 'records': [
+     {
+         'fields': {
+             'card_number': '4111111111111111',
+             'cvv': '127',
+             'expiry_date': '11/35',
+             'fullname': 'monica',
+             'skyflow_id': 'f8d8a622-b557-4c6b-a12c-c5ebe0b0bfd9'
+         },
+         'table': 'cards'
+     },
+     {
+         'fields': {
+             'card_number': '123456',
+             'cvv': '317',
+             'expiry_date': '10/23',
+             'fullname': 'sam',
+             'skyflow_id': 'da26de53-95d5-4bdb-99db-8d8c66a35ff9'
+         },
+         'table': 'cards'
+     }
+ ],
+ 'errors': [
+     {
+         'error': {
+             'code': '404',
+             'description': 'No Records Found'
+         },
+         'skyflow_ids': ['invalid skyflow id']
+     }
+ ]
+}
+```

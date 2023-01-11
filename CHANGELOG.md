@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.8.0] - 2023-01-10
+### Added
+- update and get methods.
+
 ## [1.7.0] - 2022-12-07
 ### Added
 - `upsert` support for insert method.

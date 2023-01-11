@@ -34,7 +34,7 @@ pip install skyflow
 
 ## The samples
 
-### [Get data by ID](./getByIDSample.py)
+### [Get data by ID](./get_by_ids_sample.py)
 
 Get data using Skyflow IDs for the desired records.
 
@@ -55,10 +55,10 @@ Replace the following values in the sample file:
 #### Run the sample
 
 ```bash
-python3 getByIDSample.py
+python3 get_by_ids_sample.py
 ```
 
-### [Insert data](./InsertSample.py)
+### [Insert data](./insert_sample.py)
 
 Insert data in the vault.
 
@@ -78,10 +78,10 @@ Replace the following values in the sample file:
 #### Run the sample
 
 ```bash
-python3 InsertSample.py
+python3 insert_sample.py
 ```
 
-### [Detokenize data](./detokenizeSample.py)
+### [Detokenize data](./detokenize_sample.py)
 
 Detokenize a data token from the vault. Make sure the specified token is for
 data that exists in the vault. If you need a valid token, use
@@ -103,10 +103,10 @@ Replace the following values in the sample file:
 #### Run the sample
 
 ```bash
-python3 detokenizeSample.py
+python3 detokenize_sample.py
 ```
 
-### [Invoke a connection](./invokeConnectionSample.py)
+### [Invoke a connection](./invoke_connection_sample.py)
 
 Skyflow Connections is a gateway service that uses Skyflow's underlying
 tokenization capabilities to securely connect to first-party and third-party
@@ -130,10 +130,10 @@ Replace the following values in the sample file:
 #### Run the sample
 
 ```bash
-python3 invokeConnectionSample.py
+python3 invoke_connection_sample.py
 ```
 
-### [Service account token generation](./SATokenSample.py)
+### [Service account token generation](./sa_token_sample.py)
 
 Generates SA Token using path of credentials file.
 
@@ -144,10 +144,10 @@ Replace `<YOUR_CREDENTIALS_FILE_PATH>` with the relative path to your service ac
 #### Run the sample
 
 ```bash
-python3 SATokenSample.py
+python3 sa_token_sample.py
 ```
 
-### [Generate Bearer Token](./generateBearerTokenFromCredsSample.py)
+### [Generate Bearer Token](./generate_bearer_token_from_creds_sample.py)
 
 Generates SA Token using json content of credentials file.
 
@@ -158,5 +158,31 @@ Replace `credentials` with the content of service account credentials file.
 #### Run the sample
 
 ```bash
-python3 generateBearerTokenFromCredsSample.py
+python3 generate_bearer_token_from_creds_sample.py
+```
+
+### [Get data](./get_sample.py)
+
+To retrieve data using Skyflow IDs or unique column values, use the `get(records: dict)` method. The `records` parameter takes a Dictionary that contains either an array of Skyflow IDs or a unique column name and values.
+
+Note: You can use either Skyflow IDs  or `unique` values to retrieve records. You can't use both at the same time.
+#### Configure
+
+Replace the following values in the sample file:
+
+| Value                          | Description                                             |
+| ------------------------------ | ------------------------------------------------------- |
+| `<YOUR_VAULT_ID>`              | ID of your vault.                                       |
+| `<YOUR_VAULT_URL>`             | URL of your vault.                                      |
+| `<YOUR_CREDENTIALS_FILE_PATH>` | relative path to your service account credentials file. |
+| `<TABLE_NAME>`                 | Name of the table to insert data into.                  |
+| `<REDACTION_TYPE>`             | One of the four Redaction Types.                        |
+| `<SKYFLOW_ID>`                 | Skyflow Id of the record to be fetched.                 |
+| `<UNQIUE_COLUMN_NAME>`         | Unique column name to fetch the data.                   |
+| `<COLUMN_VALUE>`               | Column value of the corresponding column.               |
+
+#### Run the sample
+
+```bash
+python3 get_sample.py
 ```
