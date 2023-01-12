@@ -603,3 +603,101 @@ Sample response:
  ]
 }
 ```
+
+### Update
+
+To update data in your vault, use the `update(records: dict, options: UpdateOptions)` method. The `records` parameter takes a Dictionary that contains records to fetch. If `UpdateTokens` is `True`, Skyflow returns tokens for the record you just updated. If `, ids if `UpdateOptions` is `False`, Skyflow returns IDs for the record you updated.
+
+```python
+# Optional, indicates whether to return all fields for updated data. Defaults to 'true'.
+options: UpdateOptions
+```
+
+```python
+{
+       'records': [
+           {
+               'id': str, # Skyflow ID of the record to be updated.
+               'table': str, # Name of table holding the skyflowID.
+               'fields': {
+                  str: str # Name of the column and value to update.
+               }
+           }
+       ]
+}
+```
+Sample usage
+
+The following snippet shows how to use the `update()` method. For details, see [update_sample.py](https://github.com/skyflowapi/skyflow-python/blob/main/samples/update_sample.py),
+
+```python
+records = {
+       'records': [
+           {
+               'id': '56513264-fc45-41fa-9cb0-d1ad3602bc49',
+               'table': 'cards',
+               'fields': {
+                   'card_number': '45678910234'
+               }
+           }
+       ]
+   }
+try:
+   client.update(records, UpdateOptions(True))
+except SkyflowError as e:
+   if e.data:
+       print(e.data)
+   else:
+       print(e)
+```
+
+Sample response
+
+`UpdateOptions` set to `True`
+
+```python
+{
+ 'records':[
+   {
+     'id':'56513264-fc45-41fa-9cb0-d1ad3602bc49',
+     'fields':{
+       'card_number':'0051-6502-5704-9879'
+     }
+   }
+ ],
+ 'errors':[]
+}
+```
+
+`UpdateOptions` set to `False`
+
+```python
+{
+ 'records':[
+   {
+     'id':'56513264-fc45-41fa-9cb0-d1ad3602bc49'
+   }
+ ],
+ 'errors':[]
+}
+```
+
+Sample Error
+
+```python
+{
+ 'records':[
+   {
+     'id':'56513264-fc45-41fa-9cb0-d1ad3602bc49'
+   }
+ ],
+ 'errors':[
+   {
+     'error':{
+       'code':404,
+       'description':'Token for skyflowID  doesn"t exist in vault - Request ID: a8def196-9569-9cb7-9974-f899f9e4bd0a'
+     }
+   }
+ ]
+}
+```

@@ -186,3 +186,27 @@ Replace the following values in the sample file:
 ```bash
 python3 get_sample.py
 ```
+
+### [Update data](./update_sample.py)
+
+Update data in the vault.
+
+#### Configure
+
+Replace the following values in the sample file:
+
+| Value                          | Description                                             |
+| ------------------------------ | ------------------------------------------------------- |
+| `<YOUR_VAULT_ID>`              | ID of your vault.                                       |
+| `<YOUR_VAULT_URL>`             | URL of your vault.                                      |
+| `<YOUR_CREDENTIALS_FILE_PATH>` | relative path to your service account credentials file. |
+| `<TABLE_NAME>`                 | Name of the table to insert data into.                  |
+| `<SKYFLOW_ID>`                 | Skyflow Id of the record to be updated.                 |
+| `<FIELD_NAME>`                 | Name of the column to update data.                      |
+| `<VALUE>`                      | Valid value to update into the corresponding column.    |
+
+#### Run the sample
+
+```bash
+python3 update_sample.py
+```
