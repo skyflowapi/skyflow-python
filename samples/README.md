@@ -33,7 +33,31 @@ pip install skyflow
    this file secure, as You'll need it for each of the samples.
 
 ## The samples
+### [Get data](./get_sample.py)
 
+To retrieve data using Skyflow IDs or unique column values, use the `get(records: dict)` method. The `records` parameter takes a Dictionary that contains either an array of Skyflow IDs or a unique column name and values.
+
+Note: You can use either Skyflow IDs  or `unique` values to retrieve records. You can't use both at the same time.
+#### Configure
+
+Replace the following values in the sample file:
+
+| Value                          | Description                                             |
+| ------------------------------ | ------------------------------------------------------- |
+| `<YOUR_VAULT_ID>`              | ID of your vault.                                       |
+| `<YOUR_VAULT_URL>`             | URL of your vault.                                      |
+| `<YOUR_CREDENTIALS_FILE_PATH>` | relative path to your service account credentials file. |
+| `<TABLE_NAME>`                 | Name of the table to insert data into.                  |
+| `<REDACTION_TYPE>`             | One of the four Redaction Types.                        |
+| `<SKYFLOW_ID>`                 | Skyflow Id of the record to be fetched.                 |
+| `<UNQIUE_COLUMN_NAME>`         | Unique column name to fetch the data.                   |
+| `<COLUMN_VALUE>`               | Column value of the corresponding column.               |
+
+#### Run the sample
+
+```bash
+python3 get_sample.py
+```
 ### [Get data by ID](./get_by_ids_sample.py)
 
 Get data using Skyflow IDs for the desired records.
@@ -56,6 +80,31 @@ Replace the following values in the sample file:
 
 ```bash
 python3 get_by_ids_sample.py
+```
+
+
+### [Update data](./update_sample.py)
+
+Update data in the vault.
+
+#### Configure
+
+Replace the following values in the sample file:
+
+| Value                          | Description                                             |
+| ------------------------------ | ------------------------------------------------------- |
+| `<YOUR_VAULT_ID>`              | ID of your vault.                                       |
+| `<YOUR_VAULT_URL>`             | URL of your vault.                                      |
+| `<YOUR_CREDENTIALS_FILE_PATH>` | relative path to your service account credentials file. |
+| `<TABLE_NAME>`                 | Name of the table to insert data into.                  |
+| `<SKYFLOW_ID>`                 | Skyflow Id of the record to be updated.                 |
+| `<FIELD_NAME>`                 | Name of the column to update data.                      |
+| `<VALUE>`                      | Valid value to update into the corresponding column.    |
+
+#### Run the sample
+
+```bash
+python3 update_sample.py
 ```
 
 ### [Insert data](./insert_sample.py)
@@ -159,54 +208,4 @@ Replace `credentials` with the content of service account credentials file.
 
 ```bash
 python3 generate_bearer_token_from_creds_sample.py
-```
-
-### [Get data](./get_sample.py)
-
-To retrieve data using Skyflow IDs or unique column values, use the `get(records: dict)` method. The `records` parameter takes a Dictionary that contains either an array of Skyflow IDs or a unique column name and values.
-
-Note: You can use either Skyflow IDs  or `unique` values to retrieve records. You can't use both at the same time.
-#### Configure
-
-Replace the following values in the sample file:
-
-| Value                          | Description                                             |
-| ------------------------------ | ------------------------------------------------------- |
-| `<YOUR_VAULT_ID>`              | ID of your vault.                                       |
-| `<YOUR_VAULT_URL>`             | URL of your vault.                                      |
-| `<YOUR_CREDENTIALS_FILE_PATH>` | relative path to your service account credentials file. |
-| `<TABLE_NAME>`                 | Name of the table to insert data into.                  |
-| `<REDACTION_TYPE>`             | One of the four Redaction Types.                        |
-| `<SKYFLOW_ID>`                 | Skyflow Id of the record to be fetched.                 |
-| `<UNQIUE_COLUMN_NAME>`         | Unique column name to fetch the data.                   |
-| `<COLUMN_VALUE>`               | Column value of the corresponding column.               |
-
-#### Run the sample
-
-```bash
-python3 get_sample.py
-```
-
-### [Update data](./update_sample.py)
-
-Update data in the vault.
-
-#### Configure
-
-Replace the following values in the sample file:
-
-| Value                          | Description                                             |
-| ------------------------------ | ------------------------------------------------------- |
-| `<YOUR_VAULT_ID>`              | ID of your vault.                                       |
-| `<YOUR_VAULT_URL>`             | URL of your vault.                                      |
-| `<YOUR_CREDENTIALS_FILE_PATH>` | relative path to your service account credentials file. |
-| `<TABLE_NAME>`                 | Name of the table to insert data into.                  |
-| `<SKYFLOW_ID>`                 | Skyflow Id of the record to be updated.                 |
-| `<FIELD_NAME>`                 | Name of the column to update data.                      |
-| `<VALUE>`                      | Valid value to update into the corresponding column.    |
-
-#### Run the sample
-
-```bash
-python3 update_sample.py
 ```
