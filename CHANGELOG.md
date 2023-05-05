@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.8.1] - 2023-03-17
+### Removed
+- removed grace period logic in bearer token generation
+
 ## [1.8.0] - 2023-01-10
 ### Added
 - update and get methods.
