@@ -1,9 +1,11 @@
 '''
 	Copyright (c) 2022 Skyflow, Inc.
 '''
+import platform
+import sys
 import unittest
-from skyflow._utils import http_build_query
-
+from skyflow._utils import http_build_query, getMetrics
+from version import SDK_VERSION
 
 class TestUrlEncoder(unittest.TestCase):
     def setUp(self) -> None:
@@ -50,3 +52,13 @@ class TestUrlEncoder(unittest.TestCase):
 
         self.assertEqual(
             http_data, "key=value&nested%5Barray%5D%5B0%5D=one&nested%5Barray%5D%5B1%5D=two&nested%5Bkey%5D=value")
+
+    def test_get_metrics(self):
+        expected = {
+            'sdk_name_version': "skyflow-python@" + SDK_VERSION, 
+            'sdk_client_device_model': platform.node(),
+            'sdk_client_os_details': sys.platform,
+            'sdk_runtime_details': sys.version,
+        }
+        actual = getMetrics()
+        self.assertEqual(actual, expected)

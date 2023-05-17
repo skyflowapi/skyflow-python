@@ -6,7 +6,7 @@ import asyncio
 from aiohttp import ClientSession
 import json
 from ._config import RedactionType
-from skyflow._utils import InterfaceName
+from skyflow._utils import InterfaceName, getMetrics
 
 interface = InterfaceName.GET_BY_ID.value
 
@@ -66,7 +66,8 @@ async def sendGetByIdRequests(data, url, token):
     async with ClientSession() as session:
         for record in validatedRecords:
             headers = {
-                "Authorization": "Bearer " + token
+                "Authorization": "Bearer " + token,
+                "sky-metadata": json.dumps(getMetrics())
             }
             params = {"skyflow_ids": record[0], "redaction": record[2]}
             task = asyncio.ensure_future(

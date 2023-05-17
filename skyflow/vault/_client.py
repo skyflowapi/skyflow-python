@@ -1,6 +1,7 @@
 '''
 	Copyright (c) 2022 Skyflow, Inc.
 '''
+import json
 import types
 import requests
 from ._insert import getInsertRequestBody, processResponse, convertResponse
@@ -13,7 +14,7 @@ from ._get_by_id import sendGetByIdRequests, createGetResponseBody
 from ._get import sendGetRequests
 import asyncio
 from skyflow.errors._skyflow_errors import SkyflowError, SkyflowErrorCodes, SkyflowErrorMessages
-from skyflow._utils import log_info, InfoMessages, InterfaceName
+from skyflow._utils import log_info, InfoMessages, InterfaceName, getMetrics
 from ._token import tokenProviderWrapper
 
 
@@ -52,7 +53,8 @@ class Client:
         self.storedToken = tokenProviderWrapper(
             self.storedToken, self.tokenProvider, interface)
         headers = {
-            "Authorization": "Bearer " + self.storedToken
+            "Authorization": "Bearer " + self.storedToken,
+            "sky-metadata": json.dumps(getMetrics())
         }
 
         response = requests.post(requestURL, data=jsonBody, headers=headers)

@@ -4,6 +4,9 @@
 import urllib.parse
 import logging
 from enum import Enum
+import platform
+import sys
+from version import SDK_VERSION
 
 skyflowLog = logging.getLogger('skyflow')
 skyflowLog.setLevel(logging.ERROR)
@@ -127,3 +130,14 @@ def render_key(parents):
         outStr += s % str(x)
         depth += 1
     return outStr
+
+def getMetrics():
+    ''' fetch metrics
+    '''
+    details_dic = {
+        'sdk_name_version': "skyflow-python@" + SDK_VERSION,
+        'sdk_client_device_model': platform.node(),
+        'sdk_client_os_details': sys.platform,
+        'sdk_runtime_details': sys.version,
+    }
+    return details_dic
