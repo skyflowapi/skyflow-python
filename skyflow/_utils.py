@@ -134,10 +134,27 @@ def render_key(parents):
 def getMetrics():
     ''' fetch metrics
     '''
+    sdk_name_version = "skyflow-python@" + SDK_VERSION
+
+    try:
+        sdk_client_device_model = platform.node()
+    except Exception:
+        sdk_client_device_model = ""
+
+    try:
+        sdk_client_os_details = sys.platform
+    except Exception:
+        sdk_client_os_details = ""
+
+    try:
+        sdk_runtime_details = sys.version
+    except Exception:
+        sdk_runtime_details = ""
+
     details_dic = {
-        'sdk_name_version': "skyflow-python@" + SDK_VERSION,
-        'sdk_client_device_model': platform.node(),
-        'sdk_client_os_details': sys.platform,
-        'sdk_runtime_details': sys.version,
+        'sdk_name_version': sdk_name_version,
+        'sdk_client_device_model': sdk_client_device_model,
+        'sdk_client_os_details': sdk_client_os_details,
+        'sdk_runtime_details': "Python " + sdk_runtime_details,
     }
     return details_dic

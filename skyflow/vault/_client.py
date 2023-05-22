@@ -133,6 +133,8 @@ class Client:
         if not 'X-Skyflow-Authorization'.lower() in request.headers:
             request.headers['x-skyflow-authorization'] = self.storedToken
 
+        request.headers['sky-metadata'] = json.dumps(getMetrics())
+
         response = session.send(request)
         session.close()
         return processResponse(response, interface=interface)
