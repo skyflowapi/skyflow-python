@@ -7,6 +7,7 @@ from skyflow.vault._detokenize import getDetokenizeRequestBody, createDetokenize
 from skyflow.errors._skyflow_errors import SkyflowError, SkyflowErrorCodes, SkyflowErrorMessages
 from skyflow.vault._client import Client, Configuration
 from skyflow.service_account import generate_bearer_token
+from skyflow.vault._config import RedactionType
 from dotenv import dotenv_values
 import warnings
 
@@ -55,7 +56,8 @@ class TestDetokenize(unittest.TestCase):
         body = getDetokenizeRequestBody(self.tokenField)
         expectedOutput = {
             "detokenizationParameters": [{
-                "token": self.testToken
+                "token": self.testToken,
+                "redaction": "PLAIN_TEXT"
             }]
         }
 
@@ -101,6 +103,15 @@ class TestDetokenize(unittest.TestCase):
             self.assertEqual(
                 e.message, SkyflowErrorMessages.INVALID_TOKEN_TYPE.value % (list))
 
+    def testDetokenizeRedactionInvalidType(self):
+        invalidData = {"records": [{"token": "valid", "redaction": 'demo'}]}
+        try:
+            self.client.detokenize(invalidData)
+        except SkyflowError as error:
+            self.assertTrue(error)
+            self.assertEqual(error.code, SkyflowErrorCodes.INVALID_INPUT.value)
+            self.assertEqual(error.message, SkyflowErrorMessages.INVALID_REDACTION_TYPE.value % str(type("demo")))
+
     def testResponseBodySuccess(self):
         response = {"records": [{"token": "abc", "value": "secret"}]}
         self.add_mock_response(response, 200)
@@ -135,3 +146,39 @@ class TestDetokenize(unittest.TestCase):
             self.assertEqual(error.code, 200)
             self.assertEqual(error.message, expectedError.value %
                              response.decode('utf-8'))
+
+    def testRequestBodyNoRedactionKey(self):
+        expectedOutput = {
+            "detokenizationParameters": [{
+                "token": self.testToken,
+                "redaction": "PLAIN_TEXT"
+            }]
+        }    
+        requestBody =  getDetokenizeRequestBody(self.tokenField)
+        self.assertEqual(requestBody, expectedOutput)
+    
+    def testRequestBodyWithValidRedaction(self):
+        expectedOutput = {
+            "detokenizationParameters": [{
+                "token": self.testToken,
+                "redaction": "REDACTED"
+            }]
+        } 
+        data = {
+            "token": self.testToken,
+            "redaction": RedactionType.REDACTED
+        }
+        requestBody = getDetokenizeRequestBody(data)
+        self.assertEqual(expectedOutput, requestBody)
+    
+    def testRequestBodyWithInValidRedaction(self):
+        data = {
+            "token": self.testToken,
+            "redaction": "123"
+        } 
+        try: 
+            getDetokenizeRequestBody(data)
+        except SkyflowError as error:
+            self.assertTrue(error)
+            self.assertEqual(error.code, SkyflowErrorCodes.INVALID_INPUT.value)
+            self.assertEqual(error.message, SkyflowErrorMessages.INVALID_REDACTION_TYPE.value % str(type(data["redaction"])))
