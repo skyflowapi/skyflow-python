@@ -7,6 +7,7 @@ on:
       - "setup.py"
       - "*.yml"
       - "*.md"
+      - "version.py"
 
 jobs:
   build-and-deploy:
@@ -39,6 +40,7 @@ jobs:
           git config user.name ${{ github.actor }}
           git config user.email ${{ github.actor }}@users.noreply.github.com
           git add setup.py
+          git add version.py
           git commit -m "[AUTOMATED] Public Release - ${{ steps.previoustag.outputs.tag }}"
           git push origin
           
