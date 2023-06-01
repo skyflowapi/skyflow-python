@@ -5,8 +5,8 @@ from skyflow.errors._skyflow_errors import SkyflowError, SkyflowErrorCodes, Skyf
 import asyncio
 from aiohttp import ClientSession, request
 import json
-from skyflow._utils import InterfaceName
 from ._config import RedactionType
+from skyflow._utils import InterfaceName, getMetrics
 
 interface = InterfaceName.DETOKENIZE.value
 
@@ -61,7 +61,9 @@ async def sendDetokenizeRequests(data, url, token):
     async with ClientSession() as session:
         for record in validatedRecords:
             headers = {
-                "Authorization": "Bearer " + token
+                "Authorization": "Bearer " + token,
+                "sky-metadata": json.dumps(getMetrics())
+
             }
             task = asyncio.ensure_future(post(url, record, headers, session))
             tasks.append(task)

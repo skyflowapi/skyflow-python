@@ -6,7 +6,7 @@ import json
 import asyncio
 from skyflow.errors._skyflow_errors import SkyflowError, SkyflowErrorCodes, SkyflowErrorMessages
 from ._insert import getTableAndFields
-from skyflow._utils import InterfaceName
+from skyflow._utils import InterfaceName, getMetrics
 from aiohttp import ClientSession
 from ._config import UpdateOptions
 
@@ -40,7 +40,8 @@ async def sendUpdateRequests(data,options: UpdateOptions,url,token):
             }
             reqBody = json.dumps(reqBody)
             headers = {
-                "Authorization": "Bearer " + token
+                "Authorization": "Bearer " + token,
+                "sky-metadata": json.dumps(getMetrics())
             }
             task = asyncio.ensure_future(put(recordUrl, reqBody, headers, session))
             tasks.append(task)

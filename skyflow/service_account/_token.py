@@ -7,7 +7,7 @@ import datetime
 import requests
 from warnings import warn
 from collections import namedtuple
-from skyflow._utils import log_info, InterfaceName, InfoMessages
+from skyflow._utils import log_info, InterfaceName, InfoMessages, getMetrics
 
 
 from skyflow.errors._skyflow_errors import *
@@ -126,7 +126,8 @@ def getSignedJWT(clientID, keyID, tokenURI, privateKey):
 
 def sendRequestWithToken(url, token):
     headers = {
-        "content-type": "application/json"
+        "content-type": "application/json",
+        "sky-metadata": json.dumps(getMetrics())
     }
     payload = {
         "grant_type": "urn:ietf:params:oauth:grant-type:jwt-bearer",
