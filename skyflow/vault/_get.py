@@ -1,11 +1,12 @@
 '''
 	Copyright (c) 2022 Skyflow, Inc.
 '''
+import json
 from skyflow.errors._skyflow_errors import SkyflowError, SkyflowErrorCodes, SkyflowErrorMessages
 import asyncio
 from aiohttp import ClientSession
 from ._config import RedactionType
-from skyflow._utils import InterfaceName
+from skyflow._utils import InterfaceName, getMetrics
 from ._get_by_id import get
 
 interface = InterfaceName.GET.value
@@ -83,7 +84,8 @@ async def sendGetRequests(data, url, token):
     async with ClientSession() as session:
         for record in validatedRecords:
             headers = {
-                "Authorization": "Bearer " + token
+                "Authorization": "Bearer " + token,
+                "sky-metadata": json.dumps(getMetrics())
             }
             params = {"redaction": redaction}
             if ids is not None:

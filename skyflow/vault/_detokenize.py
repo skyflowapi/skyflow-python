@@ -5,7 +5,8 @@ from skyflow.errors._skyflow_errors import SkyflowError, SkyflowErrorCodes, Skyf
 import asyncio
 from aiohttp import ClientSession, request
 import json
-from skyflow._utils import InterfaceName
+from ._config import RedactionType
+from skyflow._utils import InterfaceName, getMetrics
 
 interface = InterfaceName.DETOKENIZE.value
 
@@ -15,14 +16,27 @@ def getDetokenizeRequestBody(data):
         token = data["token"]
     except KeyError:
         raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT,
-                           SkyflowErrorMessages.TOKEN_KEY_ERROR, interface=interface)
+                            SkyflowErrorMessages.TOKEN_KEY_ERROR, interface=interface)
     if not isinstance(token, str):
         tokenType = str(type(token))
         raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.INVALID_TOKEN_TYPE.value % (
             tokenType), interface=interface)
+
+    if "redaction" in data:
+        if not isinstance(data["redaction"], RedactionType):
+            redactionType = str(type(data["redaction"]))
+            raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.INVALID_REDACTION_TYPE.value % (
+            redactionType), interface=interface)
+        else:
+            redactionType =  data["redaction"]
+    else:
+        redactionType = RedactionType.PLAIN_TEXT
+
     requestBody = {"detokenizationParameters": []}
     requestBody["detokenizationParameters"].append({
-        "token": token})
+        "token": token,
+        "redaction": redactionType.value
+        })
     return requestBody
 
 
@@ -39,7 +53,6 @@ async def sendDetokenizeRequests(data, url, token):
         recordsType = str(type(records))
         raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.INVALID_RECORDS_TYPE.value % (
             recordsType), interface=interface)
-
     validatedRecords = []
     for record in records:
         requestBody = getDetokenizeRequestBody(record)
@@ -48,7 +61,9 @@ async def sendDetokenizeRequests(data, url, token):
     async with ClientSession() as session:
         for record in validatedRecords:
             headers = {
-                "Authorization": "Bearer " + token
+                "Authorization": "Bearer " + token,
+                "sky-metadata": json.dumps(getMetrics())
+
             }
             task = asyncio.ensure_future(post(url, record, headers, session))
             tasks.append(task)
