@@ -6,7 +6,7 @@ import logging
 from enum import Enum
 import platform
 import sys
-from version import SDK_VERSION
+from skyflow.version import SDK_VERSION
 
 skyflowLog = logging.getLogger('skyflow')
 skyflowLog.setLevel(logging.ERROR)
