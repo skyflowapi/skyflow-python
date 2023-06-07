@@ -6,7 +6,7 @@ import sys
 import unittest
 from unittest import mock
 from skyflow._utils import http_build_query, getMetrics
-from version import SDK_VERSION
+from skyflow.version import SDK_VERSION
 
 class TestUrlEncoder(unittest.TestCase):
     def setUp(self) -> None:
