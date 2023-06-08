@@ -7,7 +7,8 @@ This Python SDK is designed to help developers easily implement Skyflow into the
 
 
 ## Table of Contents
-- [Description](#description)
+- [Skyflow-python](#skyflow-python)
+  - [Description](#description)
   - [Table of Contents](#table-of-contents)
   - [Features](#features)
   - [Installation](#installation)
@@ -15,14 +16,17 @@ This Python SDK is designed to help developers easily implement Skyflow into the
     - [Configuration](#configuration)
   - [Service Account Bearer Token Generation](#service-account-bearer-token-generation)
   - [Vault APIs](#vault-apis)
-    - [Insert](#insert-data-into-the-vault)
+    - [Insert data into the vault](#insert-data-into-the-vault)
     - [Detokenize](#detokenize)
     - [Get](#get)
     - [Get By Id](#get-by-id)
-    - [Update](#update-data)
+      - [Redaction Types](#redaction-types)
+    - [Update](#update)
     - [Invoke Connection](#invoke-connection)
   - [Logging](#logging)
   - [Reporting a Vulnerability](#reporting-a-vulnerability)
+    - [Get](#get-1)
+    - [Update](#update-1)
 
 ## Features
 
@@ -259,11 +263,13 @@ In order to retrieve data from your vault using tokens that you have previously 
 {
   "records":[
     {
-      "token": str     #token for the record to be fetched
+      "token": str ,    # Token for the record to fetch
+      "redaction": Skyflow.RedactionType # Optional. Redaction to apply for retrieved data. E.g. RedactionType.MASKED
     }
   ]
 }
 ```
+Note:  `redaction` defaults to [RedactionType.PLAIN_TEXT](#redaction-types).
 
 An [example](https://github.com/skyflowapi/skyflow-python/blob/main/samples/detokenize_sample.py) of a detokenize call:
 
@@ -272,8 +278,16 @@ try:
     client.detokenize(
         {
             "records": [
-                {"token": "45012507-f72b-4f5c-9bf9-86b133bae719"},
-                {'token': 'invalid-token'}
+                {
+                    "token": "45012507-f72b-4f5c-9bf9-86b133bae719"
+                },
+                {
+                    "token": '1r434532-6f76-4319-bdd3-96281e051051',
+                    "redaction": Skyflow.RedactionType.MASKED
+                },
+                {
+                    "token": "invalid-token"
+                }
             ]
         }
     )
@@ -292,6 +306,10 @@ Sample response:
     {
       "token": "131e70dc-6f76-4319-bdd3-96281e051051",
       "value": "1990-01-01"
+    },
+    {
+     "token": "1r434532-6f76-4319-bdd3-96281e051051",
+     "value": "xxxxxxer",
     }
   ],
   "errors": [
@@ -337,7 +355,7 @@ Note: You can use either Skyflow IDs  or `unique` values to retrieve records. Yo
 ```
 Sample usage
 
-The following snippet shows how to use the `get()` method. For details, see [get_sample.py].(https://github.com/skyflowapi/skyflow-python/blob/main/samples/get_sample.py),
+The following snippet shows how to use the `get()` method. For details, see [get_sample.py](https://github.com/skyflowapi/skyflow-python/blob/main/samples/get_sample.py),
 
 ```python
 from skyflow.vault import RedactionType
@@ -420,6 +438,7 @@ For retrieving using SkyflowID's, use the get_by_id(records: dict) method. The r
 }
 ```
 
+#### Redaction Types
 There are 4 accepted values in Skyflow.RedactionTypes:
 
 - `PLAIN_TEXT`

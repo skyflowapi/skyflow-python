@@ -4,6 +4,7 @@
 from skyflow.errors import SkyflowError
 from skyflow.service_account import generate_bearer_token, is_expired
 from skyflow.vault import Client, Configuration
+from skyflow.vault import RedactionType
 
 # cache token for reuse
 bearerToken = ''
@@ -23,7 +24,17 @@ try:
         '<YOUR_VAULT_ID>', '<YOUR_VAULT_URL>', token_provider)
     client = Client(config)
 
-    data = {"records": [{"<FIELD_NAME>": '<TOKEN>'}]}
+    data = {
+        "records": [
+            {
+                "token": '<TOKEN>',
+                "redaction": RedactionType.MASKED
+            }, 
+            {
+                "token": '<TOKEN>',
+            }
+        ]
+        }
     response = client.detokenize(data)
     print('Response:', response)
 except SkyflowError as e:

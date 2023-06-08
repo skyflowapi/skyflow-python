@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.9.1] - 2023-06-07
+### Fixed
+- Fixed bug in metrics
+
+## [1.9.0] - 2023-06-07
+### Added
+- Added redaction type in detokenize
+
 ## [1.8.1] - 2023-03-17
 ### Removed
 - removed grace period logic in bearer token generation
