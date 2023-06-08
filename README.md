@@ -20,6 +20,7 @@ This Python SDK is designed to help developers easily implement Skyflow into the
     - [Detokenize](#detokenize)
     - [Get](#get)
     - [Get By Id](#get-by-id)
+      - [Redaction Types](#redaction-types)
     - [Update](#update)
     - [Invoke Connection](#invoke-connection)
   - [Logging](#logging)
@@ -263,12 +264,12 @@ In order to retrieve data from your vault using tokens that you have previously 
   "records":[
     {
       "token": str ,    # Token for the record to fetch
-      "redaction": Skyflow.RedactionType # Optional. Redaction to apply for retrieved data.
+      "redaction": Skyflow.RedactionType # Optional. Redaction to apply for retrieved data. E.g. RedactionType.MASKED
     }
   ]
 }
 ```
-Note: If you do not provide a redaction type, RedactionType.PLAIN_TEXT is the default.
+Note:  `redaction` defaults to [RedactionType.PLAIN_TEXT](#redaction-types).
 
 An [example](https://github.com/skyflowapi/skyflow-python/blob/main/samples/detokenize_sample.py) of a detokenize call:
 
@@ -354,7 +355,7 @@ Note: You can use either Skyflow IDs  or `unique` values to retrieve records. Yo
 ```
 Sample usage
 
-The following snippet shows how to use the `get()` method. For details, see [get_sample.py].(https://github.com/skyflowapi/skyflow-python/blob/main/samples/get_sample.py),
+The following snippet shows how to use the `get()` method. For details, see [get_sample.py](https://github.com/skyflowapi/skyflow-python/blob/main/samples/get_sample.py),
 
 ```python
 from skyflow.vault import RedactionType
@@ -437,6 +438,7 @@ For retrieving using SkyflowID's, use the get_by_id(records: dict) method. The r
 }
 ```
 
+#### Redaction Types
 There are 4 accepted values in Skyflow.RedactionTypes:
 
 - `PLAIN_TEXT`
