@@ -9,6 +9,8 @@ class SkyflowErrorCodes(Enum):
     INVALID_INPUT = 400
     SERVER_ERROR = 500
     PARTIAL_SUCCESS = 500
+    TOKENS_GET_COLUMN_NOT_SUPPORTED = 400
+    REDACTION_WITH_TOKENS_NOT_SUPPORTED = 400
 
 
 class SkyflowErrorMessages(Enum):
@@ -58,6 +60,8 @@ class SkyflowErrorMessages(Enum):
     INVALID_QUERY_PARAM_TYPE = "Query params (key, value) must be of type 'str' given type - (%s, %s)"
 
     INVALID_TOKEN_TYPE = "Token key has value of type %s, expected string"
+    REDACTION_WITH_TOKENS_NOT_SUPPORTED = "Redaction cannot be used when tokens are true in options"
+    TOKENS_GET_COLUMN_NOT_SUPPORTED = "Column_name or column_values cannot be used with tokens in options"
     PARTIAL_SUCCESS = "Server returned errors, check SkyflowError.data for more"
 
     VAULT_ID_INVALID_TYPE = "Expected Vault ID to be str, got %s"
@@ -75,6 +79,7 @@ class SkyflowErrorMessages(Enum):
     INVALID_UPSERT_COLUMN_TYPE = "upsert object column key has value of type %s, expected string"
     EMPTY_UPSERT_OPTION_TABLE = "upsert object table value is empty string at index %s, expected non-empty string"
     EMPTY_UPSERT_OPTION_COLUMN = "upsert object column value is empty string at index %s, expected non-empty string"
+
 
 class SkyflowError(Exception):
     def __init__(self, code, message="An Error occured", data={}, interface: str = 'Unknown') -> None:
