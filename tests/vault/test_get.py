@@ -22,15 +22,12 @@ class TestGet(unittest.TestCase):
         self.mocked_futures = []
 
         def tokenProvider():
-            # filePath = "credentials.json"
             token, type = generate_bearer_token(
                 self.envValues["CREDENTIALS_FILE_PATH"])
-                # self.envValues[filePath])
             return token
 
         config = Configuration(
             self.envValues["VAULT_ID"], self.envValues["VAULT_URL"], tokenProvider)
-            # self.envValues["e80f3623b8ef4f57bcedb6619075fcff"], self.envValues["https://sb.area51.vault.skyflowapis.dev"], tokenProvider)
         self.client = Client(config)
         warnings.filterwarnings(
             action="ignore", message="unclosed", category=ResourceWarning)
@@ -71,7 +68,6 @@ class TestGet(unittest.TestCase):
 
     def testGetByIdNoIds(self):
         invalidData = {"records": [
-            # {"invalid": "invalid", "table": "pii_fields", "redaction": RedactionType.PLAIN_TEXT}]}
             {"invalid": "invalid", "table": "newstripe", "redaction": RedactionType.PLAIN_TEXT}]}
         try:
             self.client.get(invalidData)
@@ -83,7 +79,6 @@ class TestGet(unittest.TestCase):
 
     def testGetByIdInvalidIdsType(self):
         invalidData = {"records": [
-            # {"ids": "invalid", "table": "pii_fields", "redaction": "PLAIN_TEXT"}]}
             {"ids": "invalid", "table": "newstripe", "redaction": "PLAIN_TEXT"}]}
         try:
             self.client.get(invalidData)
@@ -95,7 +90,6 @@ class TestGet(unittest.TestCase):
 
     def testGetByIdInvalidIdsType2(self):
         invalidData = {"records": [
-            # {"ids": ["123", 123], "table": "pii_fields", "redaction": "PLAIN_TEXT"}]}
             {"ids": ["123", 123], "table": "newstripe", "redaction": "PLAIN_TEXT"}]}
         try:
             self.client.get(invalidData)
@@ -118,7 +112,6 @@ class TestGet(unittest.TestCase):
 
     def testGetByIdInvalidTableType(self):
         invalidData = {"records": [
-            # {"ids": ["id1", "id2"], "table": ["invalid"], "redaction": "PLAIN_TEXT"}]}
             {"ids": ["id1", "id2"], "table": ["invalid"], "redaction": "PLAIN_TEXT"}]}
         try:
             self.client.get(invalidData)
@@ -130,7 +123,6 @@ class TestGet(unittest.TestCase):
 
     def testGetByIdNoColumnName(self):
         invalidData = {"records": [
-            # {"table": "pii_fields", "redaction": RedactionType.PLAIN_TEXT}]}
             {"table": "newstripe", "redaction": RedactionType.PLAIN_TEXT}]}
         try:
             self.client.get(invalidData)
@@ -142,7 +134,6 @@ class TestGet(unittest.TestCase):
 
     def testGetByIdInvalidColumnName(self):
         invalidData = {"records": [
-            # {"ids": ["123", "456"],"table": "pii_fields", "redaction": RedactionType.PLAIN_TEXT, "columnName": ["invalid"]}]}
               {"ids": ["123", "456"], "table": "newstripe", "redaction": RedactionType.PLAIN_TEXT,
              "columnName": ["invalid"]}]}
         try:
@@ -167,7 +158,6 @@ class TestGet(unittest.TestCase):
 
     def testGetByIdInvalidColumnValues(self):
         invalidData = {"records": [
-            # {"ids": ["123", "456"], "table": "pii_fields", "redaction": RedactionType.PLAIN_TEXT, "columnName": "first_name", "columnValues": "invalid"}]}
             {"ids": ["123", "456"], "table": "newstripe", "redaction": RedactionType.PLAIN_TEXT,
              "columnName": "card_number", "columnValues": "invalid"}]}
         try:
