@@ -146,7 +146,6 @@ class TestGet(unittest.TestCase):
 
     def testGetByIdNoColumnValues(self):
         invalidData = {"records": [
-            # {"table": "pii_fields", "redaction": RedactionType.PLAIN_TEXT, "columnName": "first_name"}]}
             {"table": "newstripe", "redaction": RedactionType.PLAIN_TEXT, "columnName": "card_number"}]}
         try:
             self.client.get(invalidData)

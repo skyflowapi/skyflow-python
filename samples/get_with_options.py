@@ -27,12 +27,12 @@ try:
             "redaction": RedactionType.PLAIN_TEXT
         },
         # To get records using unique column name and values.
-        # {
-        #     "redaction": "<REDACTION_TYPE>",
-        #     "table": "<TABLE_NAME>",
-        #     "columnName": "<UNIQUE_COLUMN_NAME>",
-        #     "columnValues": "[<COLUMN_VALUE_1>,<COLUMN_VALUE_2>]",
-        # }
+        {
+            "redaction": "<REDACTION_TYPE>",
+            "table": "<TABLE_NAME>",
+            "columnName": "<UNIQUE_COLUMN_NAME>",
+            "columnValues": "[<COLUMN_VALUE_1>,<COLUMN_VALUE_2>]",
+        }
     ]}
 
     response = client.get(data,options=options)

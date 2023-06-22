@@ -47,13 +47,6 @@ class GetOptions:
         self.tokens = tokens
 
 
-# class GetOptions:
-#     def __init__(self, tokens: bool = True):
-#         if not isinstance(tokens, (bool, int, float)):
-#             raise ValueError("Invalid value for tokens. Expected bool, int, or float.")
-#         self.tokens = tokens
-
-
 class RequestMethod(Enum):
     GET = 'GET'
     POST = 'POST'
