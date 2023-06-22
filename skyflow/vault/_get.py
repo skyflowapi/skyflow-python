@@ -83,6 +83,7 @@ async def sendGetRequests(data, url, token):
         validatedRecords.append((ids, table, redaction, columnName, columnValues))
     async with ClientSession() as session:
         for record in validatedRecords:
+            ids, table, redaction, columnName, columnValues = record
             headers = {
                 "Authorization": "Bearer " + token,
                 "sky-metadata": json.dumps(getMetrics())
