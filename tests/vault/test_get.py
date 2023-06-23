@@ -11,6 +11,8 @@ from dotenv import dotenv_values
 import warnings
 import asyncio
 import json
+import coverage
+
 
 
 class TestGet(unittest.TestCase):
@@ -206,3 +208,37 @@ class TestGet(unittest.TestCase):
             self.assertEqual(e.code, SkyflowErrorCodes.TOKENS_GET_COLUMN_NOT_SUPPORTED.value)
             self.assertEqual(
                 e.message, SkyflowErrorMessages.TOKENS_GET_COLUMN_NOT_SUPPORTED.value)
+
+    def testGetByOptionAndRedactionAndColumnname(self):
+        invalidData = {"records": [
+            {"ids": ["123", "456"],
+            "table": "stripe", "redaction": RedactionType.PLAIN_TEXT, "columnName": "card_number"}]}
+        options = GetOptions(True)
+        try:
+            self.client.get(invalidData, options=options)
+            self.fail('Should have thrown an error')
+        except SkyflowError as e:
+            self.assertEqual(e.code, SkyflowErrorCodes.TOKENS_GET_COLUMN_NOT_SUPPORTED.value)
+            self.assertEqual(
+                e.message, SkyflowErrorMessages.TOKENS_GET_COLUMN_NOT_SUPPORTED.value)
+
+    def testGetRequestBodyWithIds(self):
+        data = {"ids": ["123", "456"], "table": "stripe", "redaction": RedactionType.PLAIN_TEXT}
+        options = GetOptions(True)
+        result = self.client.getGetRequestBody(data, options)
+        expected_result = (data["ids"], data["table"], data["redaction"], None, None)
+        self.assertEqual(result, expected_result)
+
+    def testGetRequestBodyWithoutIds(self):
+        data = {"table": "stripe", "redaction": RedactionType.PLAIN_TEXT}
+        options = GetOptions(True)
+        result = self.client.getGetRequestBody(data, options)
+        expected_result = (None, data["table"], data["redaction"], None, None)
+        self.assertEqual(result, expected_result)
+
+    def testGetRequestBodyWithDefaultRedaction(self):
+        data = {"table": "stripe"}
+        options = GetOptions(True)
+        result = self.client.getGetRequestBody(data, options)
+        expected_result = (None, data["table"], "DEFAULT", None, None)
+        self.assertEqual(result, expected_result)
