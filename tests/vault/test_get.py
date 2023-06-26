@@ -6,11 +6,13 @@ import os
 
 from skyflow.errors._skyflow_errors import SkyflowError, SkyflowErrorCodes, SkyflowErrorMessages
 from skyflow.vault import Client, Configuration, RedactionType, GetOptions
+from skyflow.vault._get_by_id import encrypt_data
 from skyflow.service_account import generate_bearer_token
 from dotenv import dotenv_values
 import warnings
 import asyncio
 import json
+from cryptography.fernet import Fernet
 
 
 class TestGet(unittest.TestCase):
@@ -219,3 +221,36 @@ class TestGet(unittest.TestCase):
             self.assertEqual(e.code, SkyflowErrorCodes.INVALID_INPUT.value)
             self.assertEqual(e.message, SkyflowErrorMessages.INVALID_REDACTION_TYPE.value % (str))
 
+    def test_encrypt_data_with_token(self):
+        data = {
+            "records": [
+                {
+                    "fields": {
+                        "ids": ["123","456"],
+                        "table": "stripe",
+                    }
+                }
+            ]
+        }
+        token = "secret_token"
+        encrypted_bytes = encrypt_data(data, token)
+        self.assertIsNotNone(encrypted_bytes)
+
+    def test_encrypt_data_without_token(self):
+        data = {
+            "records": [
+                {
+                    "fields": {
+                        "ids": ["123", "456"],
+                        "table": "stripe",
+                    }
+                }
+            ]
+        }
+        token = None
+        encrypted_data, key = encrypt_data(data, token)
+        self.assertEqual(encrypted_data, data)
+        self.assertIsNone(key)
+
+
+ 
