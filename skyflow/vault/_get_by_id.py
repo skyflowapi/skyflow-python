@@ -99,7 +99,7 @@ async def sendGetByIdRequests(data, url, token):
     return tasks
 
 
-async def get(url, headers, params, session, table,token):
+async def get(url, headers, params, session, table,token=False):
     async with session.get(url + "/" + table, headers=headers, params=params, ssl=False) as response:
         try:
             response_data = await response.text()
