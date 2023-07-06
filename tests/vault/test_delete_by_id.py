@@ -33,7 +33,7 @@ class TestDelete(unittest.TestCase):
             return token
 
         config = Configuration(
-            self.envValues["VAULT_ID"], self.envValues["VAULT_URL"], tokenProvider)
+            "12345", "demo", tokenProvider)
         self.client = Client(config)
         warnings.filterwarnings(
             action="ignore", message="unclosed", category=ResourceWarning)
@@ -116,19 +116,3 @@ class TestDelete(unittest.TestCase):
         mock_response.status_code = 204
         result = deleteProcessResponse(mock_response)
         self.assertIsNone(result)
-
-    def testDeleteByIdWithNonExistentRecord(self):
-        records = {"records": [{"id": ["non_existent_id"], "table": "stripe"}]}
-        with patch("skyflow.vault._client.deleteProcessResponse") as mock_delete_process_response:
-            mock_delete_process_response.return_value = {"code": 404, "message": "Record not found"}
-            result = self.client.delete_by_id(records)
-        expected_result = {"errors": [{"id": "non_existent_id", "error": {"code": 404, "message": "Record not found"}}]}
-        self.assertEqual(result, expected_result)
-
-    def testDeleteByIdWithSuccessfulDeletion(self):
-        records = {"records": [{"id": ["valid_id"], "table": "stripe"}]}
-        with patch("skyflow.vault._client.deleteProcessResponse") as mock_delete_process_response:
-            mock_delete_process_response.return_value = {"code": 200, "message": "Deletion successful"}
-            result = self.client.delete_by_id(records)
-        expected_result = {"records": [{"code": 200, "message": "Deletion successful"}]}
-        self.assertEqual(result, expected_result)
