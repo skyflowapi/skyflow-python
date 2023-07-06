@@ -4,9 +4,11 @@
 import json
 import types
 import requests
+
+from ._delete_by_id import deleteProcessResponse
 from ._insert import getInsertRequestBody, processResponse, convertResponse
 from ._update import sendUpdateRequests, createUpdateResponseBody
-from ._config import Configuration
+from ._config import Configuration, DeleteOptions
 from ._config import InsertOptions, ConnectionConfig, UpdateOptions
 from ._connection import createRequest
 from ._detokenize import sendDetokenizeRequests, createDetokenizeResponseBody
@@ -173,3 +175,36 @@ class Client:
         else:
             log_info(InfoMessages.UPDATE_DATA_SUCCESS.value, interface)
             return result
+
+    def delete_by_id(self, records: dict,options: DeleteOptions = DeleteOptions()):
+        interface = InterfaceName.DELETE_BY_ID.value
+        log_info(InfoMessages.DELETE_BY_ID_TRIGGERED.value, interface=interface)
+
+        self._checkConfig(interface)
+
+        self.storedToken = tokenProviderWrapper(
+            self.storedToken, self.tokenProvider, interface)
+        headers = {
+            "Authorization": "Bearer " + self.storedToken,
+            "sky-metadata": json.dumps(getMetrics())
+        }
+        error_list = []
+        result_list = []
+        errors = {}
+        result = {}
+        for record in records["records"]:
+            request_url = self._get_complete_vault_url() + "/" + record["table"] + "/" + record["id"][0]
+            response = requests.delete(request_url, headers=headers)
+            processed_response = deleteProcessResponse(response, records)
+            if processed_response.get('code') == 404:
+                errors.update({'id': record["id"][0], 'error': processed_response})
+                error_list.append(errors)
+            else:
+                result_list.append(processed_response)
+        if result_list:
+            result.update({'records': result_list})
+        if errors:
+            result.update({'errors': error_list})
+
+        log_info(InfoMessages.DELETE_DATA_SUCCESS.value, interface)
+        return result
