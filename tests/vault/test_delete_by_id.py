@@ -4,6 +4,8 @@ import os
 
 import asyncio
 import warnings
+from unittest.mock import patch, MagicMock
+
 import requests
 from requests import HTTPError
 from requests.models import Response
@@ -101,3 +103,32 @@ class TestDelete(unittest.TestCase):
             self.assertEqual(
                 e.message, SkyflowErrorMessages.INVALID_TABLE_TYPE.value)
 
+    def testDeleteProcessResponseWithSuccessfulResponse(self):
+        mock_response = requests.Response()
+        mock_response.status_code = 200
+        mock_response._content = b'{"key": "value"}'
+        result = deleteProcessResponse(mock_response)
+        self.assertIsInstance(result, dict)
+        self.assertEqual(result, {"key": "value"})
+
+    def testDeleteProcessResponseWithNoContentResponse(self):
+        mock_response = requests.Response()
+        mock_response.status_code = 204
+        result = deleteProcessResponse(mock_response)
+        self.assertIsNone(result)
+
+    def testDeleteByIdWithNonExistentRecord(self):
+        records = {"records": [{"id": ["non_existent_id"], "table": "stripe"}]}
+        with patch("skyflow.vault._client.deleteProcessResponse") as mock_delete_process_response:
+            mock_delete_process_response.return_value = {"code": 404, "message": "Record not found"}
+            result = self.client.delete_by_id(records)
+        expected_result = {"errors": [{"id": "non_existent_id", "error": {"code": 404, "message": "Record not found"}}]}
+        self.assertEqual(result, expected_result)
+
+    def testDeleteByIdWithSuccessfulDeletion(self):
+        records = {"records": [{"id": ["valid_id"], "table": "stripe"}]}
+        with patch("skyflow.vault._client.deleteProcessResponse") as mock_delete_process_response:
+            mock_delete_process_response.return_value = {"code": 200, "message": "Deletion successful"}
+            result = self.client.delete_by_id(records)
+        expected_result = {"records": [{"code": 200, "message": "Deletion successful"}]}
+        self.assertEqual(result, expected_result)
