@@ -13,7 +13,7 @@ interface = InterfaceName.DELETE_BY_ID.value
 
 def deleteProcessResponse(response: requests.Response, interface=interface):
     statusCode = response.status_code
-    content = response.content.decode('utf-8')
+    content = response.content
     try:
         response.raise_for_status()
         if statusCode == 204:
@@ -38,3 +38,4 @@ def deleteProcessResponse(response: requests.Response, interface=interface):
             message += ' - request id: ' + response.headers['x-request-id']
             error.update({"code": statusCode, "description": message})
             return error
+

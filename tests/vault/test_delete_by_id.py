@@ -57,22 +57,33 @@ class TestDelete(unittest.TestCase):
     def getDataPath(self, file):
         return self.dataPath + file + '.json'
 
-    def testDeleteByIdInvalidIdsType(self):
+    def testDeleteByIdInvalidIdType(self):
         invalidData = {"records": [
-            {"ids": "invalid", "table": "stripe"}]}
+            {"id": "invalid", "table": "stripe"}]}
         try:
-            self.client.get_by_id(invalidData)
+            self.client.delete_by_id(invalidData)
             self.fail('Should have thrown an error')
         except SkyflowError as e:
             self.assertEqual(e.code, SkyflowErrorCodes.INVALID_INPUT.value)
             self.assertEqual(
-                e.message, SkyflowErrorMessages.INVALID_IDS_TYPE.value % (str))
+                e.message, SkyflowErrorMessages.INVALID_IDS_TYPE.value)
+
+    def testDeleteByIdNoId(self):
+        invalidData = {"records": [
+            {"invalid": "invalid", "table": "stripe"}]}
+        try:
+            self.client.delete_by_id(invalidData)
+            self.fail('Should have thrown an error')
+        except SkyflowError as e:
+            self.assertEqual(e.code, SkyflowErrorCodes.INVALID_INPUT.value)
+            self.assertEqual(
+                e.message, SkyflowErrorMessages.IDS_KEY_ERROR.value)
 
     def testDeleteByIdNoTable(self):
         invalidData = {"records": [
-            {"ids": ["id1"], "invalid": "invalid"}]}
+            {"id": ["id1"], "invalid": "invalid"}]}
         try:
-            self.client.get_by_id(invalidData)
+            self.client.delete_by_id(invalidData)
             self.fail('Should have thrown an error')
         except SkyflowError as e:
             self.assertEqual(e.code, SkyflowErrorCodes.INVALID_INPUT.value)
@@ -81,39 +92,12 @@ class TestDelete(unittest.TestCase):
 
     def testDeleteByIdInvalidTableType(self):
         invalidData = {"records": [
-            {"ids": ["id1"], "table": ["invalid"]}]}
+            {"id": ["id1"], "table": ["invalid"]}]}
         try:
-            self.client.get_by_id(invalidData)
+            self.client.delete_by_id(invalidData)
             self.fail('Should have thrown an error')
         except SkyflowError as e:
             self.assertEqual(e.code, SkyflowErrorCodes.INVALID_INPUT.value)
             self.assertEqual(
-                e.message, SkyflowErrorMessages.INVALID_TABLE_TYPE.value % (list))
+                e.message, SkyflowErrorMessages.INVALID_TABLE_TYPE.value)
 
-    def deleteProcessResponse(response: requests.Response, interface=None):
-        statusCode = response.status_code
-        content = response.content.decode('utf-8')
-        try:
-            response.raise_for_status()
-            if statusCode == 204:
-                return None
-            try:
-                return json.loads(content)
-            except:
-                raise SkyflowError(
-                    statusCode, SkyflowErrorMessages.RESPONSE_NOT_JSON.value % content, interface=interface)
-        except HTTPError:
-            message = SkyflowErrorMessages.API_ERROR.value % statusCode
-            if content is not None:
-                try:
-                    errorResponse = json.loads(content)
-                    if 'error' in errorResponse and type(errorResponse['error']) == dict and 'message' in errorResponse[
-                        'error']:
-                        message = errorResponse['error']['message']
-                except:
-                    message = SkyflowErrorMessages.RESPONSE_NOT_JSON.value % content
-            error = {}
-            if 'x-request-id' in response.headers:
-                message += ' - request id: ' + response.headers['x-request-id']
-                error.update({"code": statusCode, "description": message})
-            return error

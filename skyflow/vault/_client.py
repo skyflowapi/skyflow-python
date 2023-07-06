@@ -192,6 +192,27 @@ class Client:
         result_list = []
         errors = {}
         result = {}
+
+        try:
+            record_list=records["records"][0]['id']
+            if not isinstance(record_list, list):
+                raise SkyflowError(
+                    SkyflowErrorCodes.INVALID_INPUT.value,
+                    SkyflowErrorMessages.INVALID_IDS_TYPE.value,interface=interface
+                )
+        except KeyError:
+            raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT,
+                               SkyflowErrorMessages.IDS_KEY_ERROR, interface=interface)
+        try:
+            record_table = records["records"][0]['table']
+            if isinstance(record_table, list):
+                raise SkyflowError(
+                    SkyflowErrorCodes.INVALID_INPUT.value,
+                    SkyflowErrorMessages.INVALID_TABLE_TYPE.value,interface=interface
+                )
+        except KeyError:
+            raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT,
+                               SkyflowErrorMessages.TABLE_KEY_ERROR, interface=interface)
         for record in records["records"]:
             request_url = self._get_complete_vault_url() + "/" + record["table"] + "/" + record["id"][0]
             response = requests.delete(request_url, headers=headers)
