@@ -4,6 +4,7 @@ import os
 
 import asyncio
 import warnings
+from unittest import mock
 from unittest.mock import patch, MagicMock
 
 import requests
@@ -116,3 +117,54 @@ class TestDelete(unittest.TestCase):
         mock_response.status_code = 204
         result = deleteProcessResponse(mock_response)
         self.assertIsNone(result)
+
+    def test_http_error_with_error_message(self):
+        error_response = {
+                'code': 400,
+                'description': 'Error occurred'
+            }
+        response = mock.Mock(spec=requests.Response)
+        response.status_code = 400
+        response.content = json.dumps(error_response).encode()
+        error = deleteProcessResponse(response)
+        self.assertEqual(error, {
+            "code": 400,
+            "description": "Error occurred",
+        })
+
+    def test_delete_data_success(self):
+        records = {"records": [
+            {"id": ["id1"], "table": "stripe"}]}
+        self.mock_response = mock.Mock(spec=requests.Response)
+        self.mock_response.status_code = 204
+        self.mock_response.content = b''
+        with mock.patch('requests.delete', return_value=self.mock_response):
+            result = self.client.delete_by_id(records)
+        self.assertIn('records', result)
+        self.assertEqual(result['records'], [None])
+
+    def test_delete_data_with_errors(self):
+        response = mock.Mock(spec=requests.Response)
+        response.status_code = 404
+        response.content = b'{"code": 404, "description": "Not found"}'
+        with mock.patch('requests.delete', return_value=response):
+            records = {"records": [
+                {"id": ["id1"], "table": "stripe"},
+            ]}
+            result = self.client.delete_by_id(records)
+
+        self.assertIn('errors', result)
+        error = result['errors'][0]
+        self.assertEqual(error['id'], "id1")
+        self.assertEqual(error['error'], {'code': 404, 'description': 'Not found'})
+
+    def testDeleteProcessInvalidResponse(self):
+        response = Response()
+        response.status_code = 500
+        response._content = b"Invalid Request"
+        try:
+            deleteProcessResponse(response)
+        except SkyflowError as e:
+            self.assertEqual(e.code, 500)
+            self.assertEqual(e.message, SkyflowErrorMessages.RESPONSE_NOT_JSON.value %
+                             response.content.decode('utf-8'))

@@ -217,7 +217,7 @@ class Client:
             request_url = self._get_complete_vault_url() + "/" + record["table"] + "/" + record["id"][0]
             response = requests.delete(request_url, headers=headers)
             processed_response = deleteProcessResponse(response, records)
-            if processed_response.get('code') == 404:
+            if processed_response is not None and processed_response.get('code') == 404:
                 errors.update({'id': record["id"][0], 'error': processed_response})
                 error_list.append(errors)
             else:
