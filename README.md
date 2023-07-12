@@ -23,6 +23,7 @@ This Python SDK is designed to help developers easily implement Skyflow into the
       - [Redaction Types](#redaction-types)
     - [Update](#update)
     - [Invoke Connection](#invoke-connection)
+    - [Delete By Id](#delete-by-id)
   - [Logging](#logging)
   - [Reporting a Vulnerability](#reporting-a-vulnerability)
 
@@ -607,6 +608,68 @@ Sample Error
  ]
 }
 ```
+
+### Delete By Id
+
+For deleting using SkyflowID's, use the delete_by_id(records: dict) method. The records parameter takes a Dictionary that contains records to be deleted as shown below:
+
+```python
+{
+    "records": [
+        {
+            "id": [str],  # List of SkyflowID's of the records to be deleted
+            "table": str,  # name of table holding the above skyflow_id
+        }
+    ]
+}
+```
+
+An [example](https://github.com/skyflowapi/skyflow-python/blob/main/samples/delete_by_id_sample.py) of delete_by_id call:
+
+```python
+
+skyflowID = [
+    "b3d52e6d-1d6c-4750-ba28-aa30d04dbf01"
+]
+record = {"id": skyflowID, "table": "stripe"}
+
+invalidID = ["invalid skyflow ID"]
+badRecord = {"id": invalidID, "table": "stripe"}
+
+records = {"records": [record, badRecord]}
+
+try:
+    client.delete_by_id(records)
+except SkyflowError as e:
+    if e.data:
+        print(e.data) # see note below
+    else:
+        print(e)
+```
+
+Sample response:
+
+```python
+{
+	'records': [
+		{
+			'skyflow_id': 'b3d52e6d-1d6c-4750-ba28-aa30d04dbf01', 
+			'deleted': True
+		}
+	], 
+	'errors': [
+		{
+		    'id': ["invalid skyflow id"], 
+		    'error': {
+				'code': 404, 
+				'description': 'No Records Found - request id: 239d462c-aa13-9f9d-a349-165b3dd11217'
+			     }
+		}
+	]
+}
+```
+
+`Note:` While using detokenize and delete_by_id methods, there is a possibility that some or all of the tokens might be invalid. In such cases, the data from response consists of both errors and detokenized records. In the SDK, this will raise a SkyflowError Exception and you can delete the data from this Exception object as shown above.
 
 ### Invoke Connection
 
