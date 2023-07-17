@@ -6,6 +6,9 @@ from skyflow._utils import log_error
 
 
 class SkyflowErrorCodes(Enum):
+    '''
+    This is the documentation for SkyflowErrorCodes enum class
+    '''
     INVALID_INPUT = 400
     SERVER_ERROR = 500
     PARTIAL_SUCCESS = 500
@@ -77,6 +80,14 @@ class SkyflowErrorMessages(Enum):
     EMPTY_UPSERT_OPTION_COLUMN = "upsert object column value is empty string at index %s, expected non-empty string"
 
 class SkyflowError(Exception):
+    '''
+    This is the documentation for SkyflowError Class
+
+    :param code: This is the description for code parameter
+    :param message: This is the description for message parameter
+    :param data: This is the description for data parameter
+    :param interface: This is the description for interface parameter
+    '''
     def __init__(self, code, message="An Error occured", data={}, interface: str = 'Unknown') -> None:
         if type(code) is SkyflowErrorCodes:
             self.code = code.value
