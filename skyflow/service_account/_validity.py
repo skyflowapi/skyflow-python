@@ -12,6 +12,9 @@ def is_expired(token: str):
     '''
     Check if stored token is not expired, if not return a new token, 
     if the token has expiry time before 5min of current time, call returns False
+
+    :param token: This is the description for token parameter
+    :returns: This is the description for what the method returns
     '''
     interface = InterfaceName.IS_EXPIRED.value
     log_info(InfoMessages.IS_EXPIRED_TRIGGERED.value, interface=interface)

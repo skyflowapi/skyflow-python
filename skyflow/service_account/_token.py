@@ -22,8 +22,11 @@ def generate_bearer_token(credentialsFilePath: str) -> ResponseToken:
     `credentialsFilePath` is the file path in string of the credentials file that is downloaded after Service Account creation.
 
     Response Token is a named tupe with two attributes:
-        1. AccessToken: The access token
-        2. TokenType: The type of access token (eg: Bearer)
+    1. AccessToken: The access token
+    2. TokenType: The type of access token (eg: Bearer)
+
+    :param credentialsFilePath: This is the description for credentialsFilePath parameter
+    :returns: This is the description for what the method returns
     '''
 
     log_info(InfoMessages.GENERATE_BEARER_TOKEN_TRIGGERED.value,
@@ -56,8 +59,11 @@ def generate_bearer_token_from_creds(credentials: str) -> ResponseToken:
     `credentials` arg takes the content of the credentials file that is downloaded after Service Account creation.
 
     Response Token is a named tupe with two attributes:
-        1. AccessToken: The access token
-        2. TokenType: The type of access token (eg: Bearer)
+    1. AccessToken: The access token
+    2. TokenType: The type of access token (eg: Bearer)
+    
+    :param credentials: This is the description for credentials parameter
+    :returns: This is the description for what the method returns
     '''
 
     log_info(InfoMessages.GENERATE_BEARER_TOKEN_TRIGGERED.value,
