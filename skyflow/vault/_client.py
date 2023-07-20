@@ -215,7 +215,7 @@ class Client:
             if not isinstance(record_list, str):
                 error = {}
                 error.update({"error": {"code": SkyflowErrorCodes.INVALID_INDEX.value,
-                                        "description": SkyflowErrorMessages.INVALID_ID_TYPE.value}})
+                                        "description": SkyflowErrorMessages.INVALID_ID_TYPE_DELETE.value}})
                 return error
             elif record_list == "":
                 error = {}
@@ -230,7 +230,7 @@ class Client:
             if not isinstance(record_table, str):
                 error = {}
                 error.update({"error": {"code": SkyflowErrorCodes.INVALID_INPUT.value,
-                                        "description": SkyflowErrorMessages.INVALID_TABLE_TYPE.value}})
+                                        "description": SkyflowErrorMessages.INVALID_TABLE_TYPE_DELETE.value}})
                 return error
             elif record_table == "":
                 error = {}
