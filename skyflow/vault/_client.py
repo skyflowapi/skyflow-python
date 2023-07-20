@@ -192,33 +192,60 @@ class Client:
         result_list = []
         errors = {}
         result = {}
-
         try:
-            record_list=records["records"][0]['id']
-            if not isinstance(record_list, list):
-                raise SkyflowError(
-                    SkyflowErrorCodes.INVALID_INPUT.value,
-                    SkyflowErrorMessages.INVALID_IDS_TYPE.value,interface=interface
-                )
+            if not isinstance(records, dict) or "records" not in records:
+                error = {"error": {"code": SkyflowErrorCodes.INVALID_INPUT.value,
+                                   "description": SkyflowErrorMessages.RECORDS_KEY_NOT_FOUND_DELETE.value}}
+                return error
+            records_list = records["records"]
+            if not isinstance(records_list, list):
+                error = {}
+                error.update({"error": {"code": SkyflowErrorCodes.INVALID_INPUT.value,
+                                        "description": SkyflowErrorMessages.INVALID_RECORDS_IN_DELETE.value}})
+                return error
+            elif len(records_list) == 0:
+                error = {"error": {"code": SkyflowErrorCodes.INVALID_INPUT.value,
+                                   "description": SkyflowErrorMessages.EMPTY_RECORDS_IN_DELETE.value}}
+                return error
+        except KeyError:
+            raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT,
+                               SkyflowErrorMessages.RECORDS_KEY_ERROR, interface=interface)
+        try:
+            record_list = records["records"][0]['id']
+            if not isinstance(record_list, str):
+                error = {}
+                error.update({"error": {"code": SkyflowErrorCodes.INVALID_INDEX.value,
+                                        "description": SkyflowErrorMessages.INVALID_ID_TYPE.value}})
+                return error
+            elif record_list == "":
+                error = {}
+                error.update({"error": {"code": SkyflowErrorCodes.INVALID_INPUT.value,
+                                        "description": SkyflowErrorMessages.IDS_KEY_ERROR.value}})
+                return error
         except KeyError:
             raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT,
                                SkyflowErrorMessages.IDS_KEY_ERROR, interface=interface)
         try:
             record_table = records["records"][0]['table']
-            if isinstance(record_table, list):
-                raise SkyflowError(
-                    SkyflowErrorCodes.INVALID_INPUT.value,
-                    SkyflowErrorMessages.INVALID_TABLE_TYPE.value,interface=interface
-                )
+            if not isinstance(record_table, str):
+                error = {}
+                error.update({"error": {"code": SkyflowErrorCodes.INVALID_INPUT.value,
+                                        "description": SkyflowErrorMessages.INVALID_TABLE_TYPE.value}})
+                return error
+            elif record_table == "":
+                error = {}
+                error.update({"error": {"code": SkyflowErrorCodes.INVALID_INPUT.value,
+                                        "description": SkyflowErrorMessages.TABLE_KEY_ERROR.value}})
+                return error
         except KeyError:
             raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT,
                                SkyflowErrorMessages.TABLE_KEY_ERROR, interface=interface)
         for record in records["records"]:
-            request_url = self._get_complete_vault_url() + "/" + record["table"] + "/" + record["id"][0]
+            request_url = self._get_complete_vault_url() + "/" + record["table"] + "/" + record["id"]
             response = requests.delete(request_url, headers=headers)
             processed_response = deleteProcessResponse(response, records)
             if processed_response is not None and processed_response.get('code') == 404:
-                errors.update({'id': record["id"][0], 'error': processed_response})
+                errors.update({'id': record["id"], 'error': processed_response})
                 error_list.append(errors)
             else:
                 result_list.append(processed_response)

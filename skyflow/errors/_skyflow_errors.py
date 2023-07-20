@@ -7,6 +7,7 @@ from skyflow._utils import log_error
 
 class SkyflowErrorCodes(Enum):
     INVALID_INPUT = 400
+    INVALID_INDEX = 404
     SERVER_ERROR = 500
     PARTIAL_SUCCESS = 500
 
@@ -42,12 +43,15 @@ class SkyflowErrorMessages(Enum):
     INVALID_JSON = "Given %s is invalid JSON"
     INVALID_RECORDS_TYPE = "Records key has value of type %s, expected list"
     INVALID_FIELDS_TYPE = "Fields key has value of type %s, expected dict"
-    INVALID_TABLE_TYPE = "Table key has value of type %s, expected string"
+    INVALID_TABLE_TYPE = "Table of type string is required in records array"
     INVALID_IDS_TYPE = "Ids key has value of type %s, expected list"
-    INVALID_ID_TYPE = "Id key has value of type %s, expected string"
+    INVALID_ID_TYPE = "Id of type string is required at index 0 in records array"
     INVALID_REDACTION_TYPE = "Redaction key has value of type %s, expected Skyflow.Redaction"
     INVALID_COLUMN_NAME = "Column name has value of type %s, expected string"
     INVALID_COLUMN_VALUE = "Column values has value of type %s, expected list"
+    INVALID_RECORDS_IN_DELETE = "Invalid records. records object should be an array"
+    EMPTY_RECORDS_IN_DELETE = "records array cannot be empty"
+    RECORDS_KEY_NOT_FOUND_DELETE = "records object is required"
 
     INVALID_REQUEST_BODY = "Given request body is not valid"
     INVALID_RESPONSE_BODY = "Given response body is not valid"

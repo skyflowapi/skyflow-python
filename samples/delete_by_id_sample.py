@@ -25,7 +25,11 @@ try:
 
     data = {"records": [
         {
-            "id": ["<SKYFLOW_ID1>"],
+            "id": "<SKYFLOW_ID1>",
+            "table": "<TABLE_NAME>",
+        },
+        {
+            "id": "<SKYFLOW_ID2>",
             "table": "<TABLE_NAME>",
         }
     ]}
