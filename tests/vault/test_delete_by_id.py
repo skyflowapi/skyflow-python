@@ -137,26 +137,20 @@ class TestDelete(unittest.TestCase):
         self.assertEqual(error["description"], SkyflowErrorMessages.INVALID_ID_TYPE_DELETE.value)
 
     def testDeleteByIdNoId(self):
-        invalidData = {"records": [
-            {"invalid": "invalid", "table": "stripe"}]}
-        try:
-            self.client.delete_by_id(invalidData)
-            self.fail('Should have thrown an error')
-        except SkyflowError as e:
-            self.assertEqual(e.code, SkyflowErrorCodes.INVALID_INPUT.value)
-            self.assertEqual(
-                e.message, SkyflowErrorMessages.IDS_KEY_ERROR.value)
+        invalidData = {"records": [{"invalid": "invalid", "table": "stripe"}]}
+        response = self.client.delete_by_id(invalidData)
+        self.assertIn("error", response)
+        error = response["error"]
+        self.assertEqual(error["code"], SkyflowErrorCodes.INVALID_INDEX.value)
+        self.assertEqual(error["description"], SkyflowErrorMessages.IDS_KEY_ERROR.value)
 
     def testDeleteByIdNoTable(self):
-        invalidData = {"records": [
-            {"id": "id1", "invalid": "invalid"}]}
-        try:
-            self.client.delete_by_id(invalidData)
-            self.fail('Should have thrown an error')
-        except SkyflowError as e:
-            self.assertEqual(e.code, SkyflowErrorCodes.INVALID_INPUT.value)
-            self.assertEqual(
-                e.message, SkyflowErrorMessages.TABLE_KEY_ERROR.value)
+        invalidData = {"records": [{"id": "id1", "invalid": "invalid"}]}
+        response = self.client.delete_by_id(invalidData)
+        self.assertIn("error", response)
+        error = response["error"]
+        self.assertEqual(error["code"], SkyflowErrorCodes.INVALID_INDEX.value)
+        self.assertEqual(error["description"], SkyflowErrorMessages.TABLE_KEY_ERROR.value)
 
     def testDeleteByIdInvalidTableType(self):
         invalidData = {"records": [
