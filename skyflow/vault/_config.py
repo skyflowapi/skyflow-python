@@ -38,6 +38,10 @@ class UpdateOptions:
     def __init__(self, tokens: bool=True):
         self.tokens = tokens
 
+class DeleteOptions:
+    def __init__(self, tokens: bool=False):
+        self.tokens = tokens
+
 class RequestMethod(Enum):
     GET = 'GET'
     POST = 'POST'
