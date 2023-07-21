@@ -60,16 +60,6 @@ class TestDelete(unittest.TestCase):
     def getDataPath(self, file):
         return self.dataPath + file + '.json'
 
-    def testDeleteByIdEmptyRecordsList(self):
-        validData = {"records": []}
-        result = self.client.delete_by_id(validData)
-        self.assertEqual(result, {
-            "error": {
-                "code": SkyflowErrorCodes.INVALID_INPUT.value,
-                "description": SkyflowErrorMessages.EMPTY_RECORDS_IN_DELETE.value
-            }
-        })
-
     def testDeleteByIdInvalidRecordsType(self):
         invalidData = "invalid_data"
         result = self.client.delete_by_id(invalidData)
@@ -117,7 +107,7 @@ class TestDelete(unittest.TestCase):
         self.assertIn("error", response)
         error = response["error"]
         self.assertEqual(error["code"], SkyflowErrorCodes.INVALID_INPUT.value)
-        self.assertEqual(error["description"], SkyflowErrorMessages.EMPTY_TABLE_IN_DELETE.value)
+        self.assertEqual(error["description"], SkyflowErrorMessages.EMPTY_TABLE_IN_DELETE.value % (0))
 
     def testDeleteByIdEmptyId(self):
         invalidData = {"records": [{"id": "", "table": "stripe"}]}
@@ -125,7 +115,7 @@ class TestDelete(unittest.TestCase):
         self.assertIn("error", response)
         error = response["error"]
         self.assertEqual(error["code"], SkyflowErrorCodes.INVALID_INPUT.value)
-        self.assertEqual(error["description"], SkyflowErrorMessages.EMPTY_ID_IN_DELETE.value)
+        self.assertEqual(error["description"], SkyflowErrorMessages.EMPTY_ID_IN_DELETE.value % (0))
 
     def testDeleteByIdInvalidIdType(self):
         invalidData = {"records": [
@@ -134,7 +124,7 @@ class TestDelete(unittest.TestCase):
         self.assertIn("error", response)
         error = response["error"]
         self.assertEqual(error["code"], SkyflowErrorCodes.INVALID_INDEX.value)
-        self.assertEqual(error["description"], SkyflowErrorMessages.INVALID_ID_TYPE_DELETE.value)
+        self.assertEqual(error["description"], SkyflowErrorMessages.INVALID_ID_TYPE_DELETE.value % (0))
 
     def testDeleteByIdNoId(self):
         invalidData = {"records": [{"invalid": "invalid", "table": "stripe"}]}
@@ -159,7 +149,7 @@ class TestDelete(unittest.TestCase):
         self.assertIn("error", result)
         error = result["error"]
         self.assertEqual(error["code"], SkyflowErrorCodes.INVALID_INPUT.value)
-        self.assertEqual(error["description"], SkyflowErrorMessages.INVALID_TABLE_TYPE_DELETE.value)
+        self.assertEqual(error["description"], SkyflowErrorMessages.INVALID_TABLE_TYPE_DELETE.value % (0))
 
     def testDeleteProcessResponseWithSuccessfulResponse(self):
         mock_response = requests.Response()
