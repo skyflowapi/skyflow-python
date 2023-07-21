@@ -220,7 +220,7 @@ class Client:
             elif record_list == "":
                 error = {}
                 error.update({"error": {"code": SkyflowErrorCodes.INVALID_INPUT.value,
-                                        "description": SkyflowErrorMessages.IDS_KEY_ERROR.value}})
+                                        "description": SkyflowErrorMessages.EMPTY_ID_IN_DELETE.value}})
                 return error
         except KeyError:
             raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT,
@@ -235,7 +235,7 @@ class Client:
             elif record_table == "":
                 error = {}
                 error.update({"error": {"code": SkyflowErrorCodes.INVALID_INPUT.value,
-                                        "description": SkyflowErrorMessages.TABLE_KEY_ERROR.value}})
+                                        "description": SkyflowErrorMessages.EMPTY_TABLE_IN_DELETE.value}})
                 return error
         except KeyError:
             raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT,
