@@ -617,7 +617,11 @@ For deleting using SkyflowID's, use the delete_by_id(records: dict) method. The 
 {
     "records": [
         {
-            "id": [str],  # List of SkyflowID's of the records to be deleted
+            "id": str,     # SkyflowID of the records to be deleted
+            "table": str,  # name of table holding the above skyflow_id
+        },
+        {
+            "id": str,     # SkyflowID of the records to be deleted
             "table": str,  # name of table holding the above skyflow_id
         }
     ]
@@ -628,12 +632,10 @@ An [example](https://github.com/skyflowapi/skyflow-python/blob/main/samples/dele
 
 ```python
 
-skyflowID = [
-    "b3d52e6d-1d6c-4750-ba28-aa30d04dbf01"
-]
+skyflowID = "b3d52e6d-1d6c-4750-ba28-aa30d04dbf01"
 record = {"id": skyflowID, "table": "stripe"}
 
-invalidID = ["invalid skyflow ID"]
+invalidID = "invalid skyflow ID"
 badRecord = {"id": invalidID, "table": "stripe"}
 
 records = {"records": [record, badRecord]}
@@ -659,7 +661,7 @@ Sample response:
 	], 
 	'errors': [
 		{
-		    'id': ["invalid skyflow id"], 
+		    'id': "invalid skyflow id", 
 		    'error': {
 				'code': 404, 
 				'description': 'No Records Found - request id: 239d462c-aa13-9f9d-a349-165b3dd11217'

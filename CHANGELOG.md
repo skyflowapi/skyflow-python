@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.10.0] - 2023-07-21
+### Added
+- Added delete method
+
 ## [1.9.1] - 2023-06-07
 ### Fixed
 - Fixed bug in metrics
