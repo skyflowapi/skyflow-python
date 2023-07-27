@@ -8,7 +8,7 @@ from requests.models import HTTPError
 from skyflow.errors._skyflow_errors import SkyflowError, SkyflowErrorCodes, SkyflowErrorMessages
 from skyflow._utils import InterfaceName
 
-interface = InterfaceName.DELETE_BY_ID.value
+interface = InterfaceName.DELETE.value
 
 
 def deleteProcessResponse(response: requests.Response, interface=interface):

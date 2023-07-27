@@ -5,7 +5,7 @@ import json
 import types
 import requests
 
-from ._delete_by_id import deleteProcessResponse
+from ._delete import deleteProcessResponse
 from ._insert import getInsertRequestBody, processResponse, convertResponse
 from ._update import sendUpdateRequests, createUpdateResponseBody
 from ._config import Configuration, DeleteOptions
@@ -176,9 +176,9 @@ class Client:
             log_info(InfoMessages.UPDATE_DATA_SUCCESS.value, interface)
             return result
 
-    def delete_by_id(self, records: dict,options: DeleteOptions = DeleteOptions()):
-        interface = InterfaceName.DELETE_BY_ID.value
-        log_info(InfoMessages.DELETE_BY_ID_TRIGGERED.value, interface=interface)
+    def delete(self, records: dict,options: DeleteOptions = DeleteOptions()):
+        interface = InterfaceName.DELETE.value
+        log_info(InfoMessages.DELETE_TRIGGERED.value, interface=interface)
 
         self._checkConfig(interface)
 
