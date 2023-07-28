@@ -34,7 +34,7 @@ try:
         }
     ]}
 
-    response = client.delete_by_id(data,options=options)
+    response = client.delete(data,options=options)
     print('Response:', response)
 except SkyflowError as e:
     print('Error Occurred:', e)
