@@ -221,3 +221,15 @@ class TestDelete(unittest.TestCase):
         partial, error = deleteProcessResponse(mock_response)
         self.assertFalse(partial)
         self.assertEqual(error, {"error": {"message": "Not found"}})
+
+    def test_delete_process_response_response_not_json(self):
+        mock_response = mock.Mock(spec=requests.Response)
+        mock_response.status_code = 500
+        mock_response.content = b'Not a valid JSON response'
+
+        with self.assertRaises(SkyflowError) as cm:
+            deleteProcessResponse(mock_response)
+
+        exception = cm.exception
+        self.assertEqual(exception.code, 500)
+        self.assertIn("Not a valid JSON response", str(exception))
