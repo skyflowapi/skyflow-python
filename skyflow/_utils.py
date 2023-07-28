@@ -75,7 +75,7 @@ class InfoMessages(Enum):
     UPDATE_DATA_SUCCESS = "Data has been updated successfully"
     GET_TRIGGERED = "Get triggered."
     GET_SUCCESS = "Data fetched successfully."
-    DELETE_BY_ID_TRIGGERED = "Delete by ID triggered."
+    DELETE_TRIGGERED = "Delete triggered."
     DELETE_DATA_SUCCESS = "Data has been deleted successfully."
 
 
@@ -91,7 +91,7 @@ class InterfaceName(Enum):
 
     IS_TOKEN_VALID = "service_account.isTokenValid"
     IS_EXPIRED = "service_account.is_expired"
-    DELETE_BY_ID = "client.delete_by_id"
+    DELETE = "client.delete"
 
 
 def http_build_query(data):
