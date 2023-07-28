@@ -653,7 +653,7 @@ Sample response:
 
 ```python
 {
-	'records': [
+    'records': [
 		{
 			'skyflow_id': 'b3d52e6d-1d6c-4750-ba28-aa30d04dbf01', 
 			'deleted': True
@@ -661,17 +661,15 @@ Sample response:
 	], 
 	'errors': [
 		{
-		    'id': "invalid skyflow id", 
+		    'id': "invalid skyflow ID", 
 		    'error': {
 				'code': 404, 
 				'description': 'No Records Found - request id: 239d462c-aa13-9f9d-a349-165b3dd11217'
-			     }
+		    }
 		}
 	]
 }
 ```
-
-`Note:` While using detokenize and delete methods, there is a possibility that some or all of the tokens might be invalid. In such cases, the data from response consists of both errors and detokenized records. In the SDK, this will raise a SkyflowError Exception and you can delete the data from this Exception object as shown above.
 
 ### Invoke Connection
 
