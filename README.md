@@ -23,7 +23,7 @@ This Python SDK is designed to help developers easily implement Skyflow into the
       - [Redaction Types](#redaction-types)
     - [Update](#update)
     - [Invoke Connection](#invoke-connection)
-    - [Delete By Id](#delete-by-id)
+    - [Delete](#delete)
   - [Logging](#logging)
   - [Reporting a Vulnerability](#reporting-a-vulnerability)
 
@@ -609,9 +609,9 @@ Sample Error
 }
 ```
 
-### Delete By Id
+### Delete
 
-For deleting using SkyflowID's, use the delete_by_id(records: dict) method. The records parameter takes a Dictionary that contains records to be deleted as shown below:
+For deleting using SkyflowID's, use the delete(records: dict) method. The records parameter takes a Dictionary that contains records to be deleted as shown below:
 
 ```python
 {
@@ -628,20 +628,20 @@ For deleting using SkyflowID's, use the delete_by_id(records: dict) method. The 
 }
 ```
 
-An [example](https://github.com/skyflowapi/skyflow-python/blob/main/samples/delete_by_id_sample.py) of delete_by_id call:
+An [example](https://github.com/skyflowapi/skyflow-python/blob/main/samples/delete_sample.py) of delete call:
 
 ```python
 
 skyflowID = "b3d52e6d-1d6c-4750-ba28-aa30d04dbf01"
-record = {"id": skyflowID, "table": "stripe"}
+record = {"id": skyflowID, "table": "cards"}
 
 invalidID = "invalid skyflow ID"
-badRecord = {"id": invalidID, "table": "stripe"}
+badRecord = {"id": invalidID, "table": "cards"}
 
 records = {"records": [record, badRecord]}
 
 try:
-    client.delete_by_id(records)
+    client.delete(records)
 except SkyflowError as e:
     if e.data:
         print(e.data) # see note below
@@ -671,7 +671,7 @@ Sample response:
 }
 ```
 
-`Note:` While using detokenize and delete_by_id methods, there is a possibility that some or all of the tokens might be invalid. In such cases, the data from response consists of both errors and detokenized records. In the SDK, this will raise a SkyflowError Exception and you can delete the data from this Exception object as shown above.
+`Note:` While using detokenize and delete methods, there is a possibility that some or all of the tokens might be invalid. In such cases, the data from response consists of both errors and detokenized records. In the SDK, this will raise a SkyflowError Exception and you can delete the data from this Exception object as shown above.
 
 ### Invoke Connection
 
