@@ -23,6 +23,7 @@ This Python SDK is designed to help developers easily implement Skyflow into the
       - [Redaction Types](#redaction-types)
     - [Update](#update)
     - [Invoke Connection](#invoke-connection)
+    - [Delete](#delete)
   - [Logging](#logging)
   - [Reporting a Vulnerability](#reporting-a-vulnerability)
 
@@ -605,6 +606,68 @@ Sample Error
      }
    }
  ]
+}
+```
+
+### Delete
+
+For deleting using SkyflowID's, use the delete(records: dict) method. The records parameter takes a Dictionary that contains records to be deleted as shown below:
+
+```python
+{
+    "records": [
+        {
+            "id": str,     # SkyflowID of the records to be deleted
+            "table": str,  # name of table holding the above skyflow_id
+        },
+        {
+            "id": str,     # SkyflowID of the records to be deleted
+            "table": str,  # name of table holding the above skyflow_id
+        }
+    ]
+}
+```
+
+An [example](https://github.com/skyflowapi/skyflow-python/blob/main/samples/delete_sample.py) of delete call:
+
+```python
+
+skyflowID = "b3d52e6d-1d6c-4750-ba28-aa30d04dbf01"
+record = {"id": skyflowID, "table": "cards"}
+
+invalidID = "invalid skyflow ID"
+badRecord = {"id": invalidID, "table": "cards"}
+
+records = {"records": [record, badRecord]}
+
+try:
+    client.delete(records)
+except SkyflowError as e:
+    if e.data:
+        print(e.data) # see note below
+    else:
+        print(e)
+```
+
+Sample response:
+
+```python
+{
+   "records":[
+      {
+         "skyflow_id":"b3d52e6d-1d6c-4750-ba28-aa30d04dbf01",
+         "deleted":true
+      }
+   ],
+   "errors":[
+      {
+         "id":"invalid skyflow ID",
+         "error":{
+            "code":404,
+            "description":"No Records Found - request id: 239d462c-aa13-9f9d-a349-165b3dd11217"
+         }
+      }
+   ]
 }
 ```
 
