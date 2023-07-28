@@ -16,7 +16,7 @@ from skyflow.errors import SkyflowError, SkyflowErrorCodes
 from skyflow.errors._skyflow_errors import SkyflowErrorMessages
 from skyflow.service_account import generate_bearer_token
 from skyflow.vault._client import Client
-from skyflow.vault._config import Configuration,DeleteOptions
+from skyflow.vault._config import Configuration, DeleteOptions
 from skyflow.vault._delete import deleteProcessResponse
 
 
@@ -163,9 +163,7 @@ class TestDelete(unittest.TestCase):
         mock_response.status_code = 200
         mock_response._content = b'{"key": "value"}'
         partial, result = deleteProcessResponse(mock_response)
-
-        # Check if the response is processed correctly
-        self.assertFalse(partial)  # Expecting partial to be False for a successful response
+        self.assertFalse(partial)
         self.assertIsInstance(result, dict)
         self.assertEqual(result, {"key": "value"})
 
@@ -182,11 +180,8 @@ class TestDelete(unittest.TestCase):
         }
         response = mock.Mock(spec=requests.Response, status_code=400,
                              content=json.dumps(error_response).encode())
-
         partial, error = deleteProcessResponse(response)
-
-        # Check if the response is processed correctly
-        self.assertFalse(partial)  # Expecting partial to be False for an error response
+        self.assertFalse(partial)
         self.assertEqual(error, {
             "code": 400,
             "description": "Error occurred",
@@ -217,3 +212,12 @@ class TestDelete(unittest.TestCase):
             self.assertEqual(e.code, 500)
             self.assertEqual(e.message, SkyflowErrorMessages.RESPONSE_NOT_JSON.value %
                              response.content.decode('utf-8'))
+
+    def test_delete_process_response_with_error(self):
+        mock_response = mock.Mock(spec=requests.Response)
+        mock_response.status_code = 404
+        mock_response.content = b'{"error": {"message": "Not found"}}'
+        mock_response.headers = {'x-request-id': 'request-id-123'}
+        partial, error = deleteProcessResponse(mock_response)
+        self.assertFalse(partial)
+        self.assertEqual(error, {"error": {"message": "Not found"}})
