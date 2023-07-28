@@ -10,6 +10,9 @@ All notable changes to this project will be documented in this file.
 ### Added
 - Added delete method
 
+## [1.9.2] - 2023-06-22
+### Fixed
+- Multiple record error in get method
 
 ## [1.9.1] - 2023-06-07
 ### Fixed
