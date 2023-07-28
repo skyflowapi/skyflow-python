@@ -176,7 +176,7 @@ class Client:
             log_info(InfoMessages.UPDATE_DATA_SUCCESS.value, interface)
             return result
 
-    def delete(self, records: dict,options: DeleteOptions = DeleteOptions()):
+    def delete(self, records: dict, options: DeleteOptions = DeleteOptions()):
         interface = InterfaceName.DELETE.value
         log_info(InfoMessages.DELETE_TRIGGERED.value, interface=interface)
 
@@ -192,58 +192,53 @@ class Client:
         result_list = []
         errors = {}
         result = {}
-        error = {}
         try:
-            if not isinstance(records, dict) or "records" not in records:
-                error = {"error": {"code": SkyflowErrorCodes.INVALID_INPUT.value,
-                                   "description": SkyflowErrorMessages.RECORDS_KEY_NOT_FOUND_DELETE.value}}
-                return error
-            records_list = records["records"]
-            if not isinstance(records_list, list):
-                error.update({"error": {"code": SkyflowErrorCodes.INVALID_INPUT.value,
-                                        "description": SkyflowErrorMessages.INVALID_RECORDS_IN_DELETE.value}})
-                return error
-            elif len(records_list) == 0:
-                error = {"error": {"code": SkyflowErrorCodes.INVALID_INPUT.value,
-                                   "description": SkyflowErrorMessages.EMPTY_RECORDS_IN_DELETE.value}}
-                return error
+            record = records["records"]
+            if not isinstance(record, list):
+                recordsType = str(type(record))
+                raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.INVALID_RECORDS_TYPE.value % (
+                    recordsType), interface=interface)
+            if len(record) == 0:
+                raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT,
+                                   SkyflowErrorMessages.EMPTY_RECORDS_IN_DELETE, interface=interface)
+
         except KeyError:
             raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT,
                                SkyflowErrorMessages.RECORDS_KEY_ERROR, interface=interface)
         try:
-            for index,record in enumerate(records["records"]):
-                record_list = record["id"]
-                if not isinstance(record_list, str):
-                    error.update({"error": {"code": SkyflowErrorCodes.INVALID_INDEX.value,
-                                            "description": SkyflowErrorMessages.INVALID_ID_TYPE_DELETE.value % (index)}})
-                    return error
-                elif record_list == "":
-                    error.update({"error": {"code": SkyflowErrorCodes.INVALID_INPUT.value,
-                                            "description": SkyflowErrorMessages.EMPTY_ID_IN_DELETE.value % (index)}})
-                    return error
+            for record in records["records"]:
+                id = record["id"]
+                if not isinstance(id, str):
+                    idType = str(type(id))
+                    raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT,
+                                       SkyflowErrorMessages.INVALID_ID_TYPE.value % (idType), interface=interface)
+                if id == "":
+                    raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT,
+                                       SkyflowErrorMessages.EMPTY_ID_IN_DELETE, interface=interface)
         except KeyError:
-            error.update({"error": {"code": SkyflowErrorCodes.INVALID_INDEX.value,
-                                    "description": SkyflowErrorMessages.IDS_KEY_ERROR.value}})
-            return error
+            raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT,
+                               SkyflowErrorMessages.IDS_KEY_ERROR, interface=interface)
         try:
-            for index,record in enumerate(records["records"]):
-                record_table = record["table"]
-                if not isinstance(record_table, str):
-                    error.update({"error": {"code": SkyflowErrorCodes.INVALID_INPUT.value,
-                                            "description": SkyflowErrorMessages.INVALID_TABLE_TYPE_DELETE.value % (index)}})
-                    return error
-                elif record_table == "":
-                    error.update({"error": {"code": SkyflowErrorCodes.INVALID_INPUT.value,
-                                            "description": SkyflowErrorMessages.EMPTY_TABLE_IN_DELETE.value % (index)}})
-                    return error
+            for record in records["records"]:
+                table = record["table"]
+                if not isinstance(table, str):
+                    tableType = str(type(table))
+                    raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT,
+                                       SkyflowErrorMessages.INVALID_TABLE_TYPE.value % (
+                                           tableType), interface=interface)
+                if table == "":
+                    raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT,
+                                       SkyflowErrorMessages.EMPTY_TABLE_IN_DELETE, interface=interface)
         except KeyError:
-            error.update({"error": {"code": SkyflowErrorCodes.INVALID_INDEX.value,
-                                    "description": SkyflowErrorMessages.TABLE_KEY_ERROR.value}})
-            return error
+            raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT,
+                               SkyflowErrorMessages.TABLE_KEY_ERROR, interface=interface)
+
+        partial=None
+
         for record in records["records"]:
             request_url = self._get_complete_vault_url() + "/" + record["table"] + "/" + record["id"]
             response = requests.delete(request_url, headers=headers)
-            processed_response = deleteProcessResponse(response, records)
+            partial,processed_response = deleteProcessResponse(response, records)
             if processed_response is not None and processed_response.get('code') == 404:
                 errors.update({'id': record["id"], 'error': processed_response})
                 error_list.append(errors)
@@ -254,5 +249,10 @@ class Client:
         if errors:
             result.update({'errors': error_list})
 
-        log_info(InfoMessages.DELETE_DATA_SUCCESS.value, interface)
-        return result
+        if partial:
+            raise SkyflowError(SkyflowErrorCodes.PARTIAL_SUCCESS,
+                               SkyflowErrorMessages.PARTIAL_SUCCESS, result, interface=interface)
+
+        else:
+            log_info(InfoMessages.DELETE_DATA_SUCCESS.value, interface)
+            return result

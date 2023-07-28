@@ -51,10 +51,9 @@ class SkyflowErrorMessages(Enum):
     INVALID_REDACTION_TYPE = "Redaction key has value of type %s, expected Skyflow.Redaction"
     INVALID_COLUMN_NAME = "Column name has value of type %s, expected string"
     INVALID_COLUMN_VALUE = "Column values has value of type %s, expected list"
-    INVALID_RECORDS_IN_DELETE = "Invalid records. records object should be an array"
     EMPTY_RECORDS_IN_DELETE = "records array cannot be empty"
-    EMPTY_ID_IN_DELETE = "Id cannot be empty in records array at index %s"
-    EMPTY_TABLE_IN_DELETE = "Table cannot be empty in records array at index %s"
+    EMPTY_ID_IN_DELETE = "Id cannot be empty in records array"
+    EMPTY_TABLE_IN_DELETE = "Table cannot be empty in records array"
     RECORDS_KEY_NOT_FOUND_DELETE = "records object is required"
 
     INVALID_REQUEST_BODY = "Given request body is not valid"
