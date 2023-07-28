@@ -653,21 +653,21 @@ Sample response:
 
 ```python
 {
-    'records': [
-		{
-			'skyflow_id': 'b3d52e6d-1d6c-4750-ba28-aa30d04dbf01', 
-			'deleted': True
-		}
-	], 
-	'errors': [
-		{
-		    'id': "invalid skyflow ID", 
-		    'error': {
-				'code': 404, 
-				'description': 'No Records Found - request id: 239d462c-aa13-9f9d-a349-165b3dd11217'
-		    }
-		}
-	]
+   "records":[
+      {
+         "skyflow_id":"b3d52e6d-1d6c-4750-ba28-aa30d04dbf01",
+         "deleted":true
+      }
+   ],
+   "errors":[
+      {
+         "id":"invalid skyflow ID",
+         "error":{
+            "code":404,
+            "description":"No Records Found - request id: 239d462c-aa13-9f9d-a349-165b3dd11217"
+         }
+      }
+   ]
 }
 ```
 
