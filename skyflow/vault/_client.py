@@ -20,9 +20,9 @@ from ._token import tokenProviderWrapper
 
 class Client:
     '''
-    This is the documentation for Client Class
+    Represents a client for interacting with Skyflow services.
 
-    :param config: This is the description for config parameter
+    :param config: Configuration for the Skyflow client.
     '''
     def __init__(self, config: Configuration):
 
@@ -49,11 +49,11 @@ class Client:
 
     def insert(self, records: dict, options: InsertOptions = InsertOptions()):
         '''
-        This is the description for insert method
+        Inserts data into the vault.
 
-        :param records: This is the description for records parameter
-        :param options: This is the description for options parameter
-        :returns: This is the description for what the method returns
+        :param records: Records to insert.
+        :param options: Options for the insertion.
+        :returns: Returns the insert response.
         '''
         interface = InterfaceName.INSERT.value
         log_info(InfoMessages.INSERT_TRIGGERED.value, interface=interface)
@@ -78,10 +78,10 @@ class Client:
 
     def detokenize(self, records):
         '''
-        This is the description for detokenize method
+        Returns values that correspond to the specified tokens.
 
-        :param records: This is the description for record parameter
-        :returns: This is the description for what the method returns
+        :param records: Takes a dictionary that contains the records key that takes an array of records to fetch from the vault.
+        :returns: Tokens to return values for.
         '''
         interface = InterfaceName.DETOKENIZE.value
         log_info(InfoMessages.DETOKENIZE_TRIGGERED.value, interface)
@@ -102,10 +102,10 @@ class Client:
 
     def get(self, records):
         '''
-        This is the description for get method
+        Returns records by Skyflow IDs or column values.
 
-        :param records: This is the description for records parameter
-        :returns: This is the description for what the method returns
+        :param records: Takes a Dictionary that contains either an array of Skyflow IDs or a unique column name and values.
+        :returns: Returns the specified records and any errors.
         '''
         interface = InterfaceName.GET.value
         log_info(InfoMessages.GET_TRIGGERED.value, interface)
@@ -127,10 +127,10 @@ class Client:
 
     def get_by_id(self, records):
         '''
-        This is the description for get_by_id method
+        Reveals records by Skyflow ID.
 
-        :param records: This is the description for records parameter
-        :returns: This is the description for what the method returns
+        :param records: Takes a Dictionary that contains records to fetch.
+        :returns: Returns the specified records and any errors.
         '''
         interface = InterfaceName.GET_BY_ID.value
         log_info(InfoMessages.GET_BY_ID_TRIGGERED.value, interface)
@@ -152,10 +152,10 @@ class Client:
 
     def invoke_connection(self, config: ConnectionConfig):
         '''
-        This is the description for invoke_connection method
+        Invokes a connection using the provided configuration.
 
-        :param config: This is the description for config parameter
-        :returns: This is the description for what the method returns
+        :param config: Configuration for the connection.
+        :returns: Returns the response from the connection invocation.
         '''
         interface = InterfaceName.INVOKE_CONNECTION.value
         log_info(InfoMessages.INVOKE_CONNECTION_TRIGGERED.value, interface)
@@ -175,12 +175,7 @@ class Client:
         return processResponse(response, interface=interface)
 
     def _checkConfig(self, interface):
-        '''
-        Performs basic check on the given client config
 
-        :param interface: This is the description for interface parameter
-        :returns: This is the description for what the method returns
-        '''
         if not len(self.vaultID) > 0:
             raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT,
                                SkyflowErrorMessages.EMPTY_VAULT_ID, interface=interface)
@@ -189,20 +184,16 @@ class Client:
                                SkyflowErrorMessages.EMPTY_VAULT_URL, interface=interface)
 
     def _get_complete_vault_url(self):
-        '''
-        Get the complete vault url from given vault url and vault id
 
-        :returns: This is the description for what the method returns
-        '''
         return self.vaultURL + "/v1/vaults/" + self.vaultID
 
     def update(self, updateInput, options: UpdateOptions = UpdateOptions()):
         '''
-        This is the description for update method
+        Updates the configuration of elements in the vault.
 
-        :param updateInput: This is the description for updateInput parameter
-        :param options: This is the description for options parameter
-        :returns: This is the description for what the method returns
+        :param updateInput: Input for updating elements in the vault.
+        :param options: Options for the container update.
+        :returns: Returns the result of the update operation.
         '''
         interface = InterfaceName.UPDATE.value
         log_info(InfoMessages.UPDATE_TRIGGERED.value, interface=interface)

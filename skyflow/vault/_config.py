@@ -8,11 +8,11 @@ from typing import List
 
 class Configuration:
     '''
-        This is the documentation for Configuration class
+        Configuration for interacting with Skyflow services.
 
-        :param vaultID: This is the description for vaultID parameter
-        :param vaultURL: This is the description for vaultURL parameter
-        :param tokenProvider: This is the description for tokenProvider parameter
+        :param vaultID: ID of the vault to connect to.
+        :param vaultURL: URL of the vault to connect to.
+        :param tokenProvider: Token provider for authentication.
     '''
     def __init__(self, vaultID: str=None, vaultURL: str=None, tokenProvider: FunctionType=None):
         
@@ -32,10 +32,10 @@ class Configuration:
 
 class UpsertOption:
     '''
-        This is the documentation for UpsertOption class
+        Wrapper for parameters required by upsert option.
 
-        :param table: This is the description for table parameter
-        :param column: This is the description for column parameter
+        :param table: Table that the data belongs to.
+        :param column: Name of the unique column.
     '''
     def __init__(self,table: str,column: str):
         self.table = table
@@ -43,10 +43,10 @@ class UpsertOption:
 
 class InsertOptions:
     '''
-        This is the documentation for InsertOptions class
+        Wrapper for parameters required by insert options.
 
-        :param tokens: This is the description for tokens parameter
-        :param upsert: This is the description for upsert parameter
+        :param tokens: If `true`, returns tokens for the collected data. Defaults to `false`.
+        :param upsert: If specified, upserts data. If not specified, inserts data.
     '''
     def __init__(self, tokens: bool=True,upsert :List[UpsertOption]=None):
         self.tokens = tokens
@@ -54,16 +54,16 @@ class InsertOptions:
 
 class UpdateOptions:
     '''
-        This is the documentation for UpdateOptions class
+        Updates the configuration of elements in the vault
 
-        :param tokens: This is the description for tokens parameter
+        :param tokens: Indicates whether to return tokens. Defaults to `True`.
     '''
     def __init__(self, tokens: bool=True):
         self.tokens = tokens
 
 class RequestMethod(Enum):
     '''
-        This is the documentation for RequestMethod enum class
+        Supported request methods.
     '''
     GET = 'GET'
     POST = 'POST'
@@ -73,14 +73,14 @@ class RequestMethod(Enum):
 
 class ConnectionConfig:
     '''
-        This is the documentation for ConnectionConfig class
+        Configuration for making a connection to an external service.
 
-        :param connectionURL: This is the description for connectionURL parameter
-        :param methodName: This is the description for methodName parameter
-        :param pathParams: This is the description for pathParams parameter
-        :param queryParams: This is the description for queryParams parameter
-        :param requestHeader: This is the description for requestHeader parameter
-        :param requestBody: This is the description for requestBody parameter
+        :param connectionURL: URL for the connection.
+        :param methodName: HTTP request method to use.
+        :param pathParams: Parameters to include in the URL path. Defaults to an empty dictionary.
+        :param queryParams: Parameters to include in the URL query. Defaults to an empty dictionary.
+        :param requestHeader: Headers for the request. Defaults to an empty dictionary.
+        :param requestBody: The body of the request. Defaults to an empty dictionary.
     '''
     def __init__(self, connectionURL: str, methodName: RequestMethod, 
     pathParams: dict={}, queryParams: dict={}, requestHeader: dict={}, requestBody: dict={}):
@@ -93,7 +93,7 @@ class ConnectionConfig:
 
 class RedactionType(Enum):
     '''
-        This is the documentation for RedactionType enum class
+        Supported redaction types.
     '''
     PLAIN_TEXT = "PLAIN_TEXT"
     MASKED = "MASKED"

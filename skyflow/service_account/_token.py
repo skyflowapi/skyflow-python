@@ -25,8 +25,8 @@ def generate_bearer_token(credentialsFilePath: str) -> ResponseToken:
     1. AccessToken: The access token
     2. TokenType: The type of access token (eg: Bearer)
 
-    :param credentialsFilePath: This is the description for credentialsFilePath parameter
-    :returns: This is the description for what the method returns
+    :param credentialsFilePath: The file path to the downloaded credentials file created for the Service Account.
+    :returns: A named tuple containing AccessToken and TokenType attributes.
     '''
 
     log_info(InfoMessages.GENERATE_BEARER_TOKEN_TRIGGERED.value,
@@ -62,8 +62,8 @@ def generate_bearer_token_from_creds(credentials: str) -> ResponseToken:
     1. AccessToken: The access token
     2. TokenType: The type of access token (eg: Bearer)
     
-    :param credentials: This is the description for credentials parameter
-    :returns: This is the description for what the method returns
+    :param credentials: The content of the credentials file obtained after creating the Service Account.
+    :returns: Returns an instance of ResponseToken containing AccessToken and TokenType.
     '''
 
     log_info(InfoMessages.GENERATE_BEARER_TOKEN_TRIGGERED.value,

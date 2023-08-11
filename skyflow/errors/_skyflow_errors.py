@@ -7,7 +7,7 @@ from skyflow._utils import log_error
 
 class SkyflowErrorCodes(Enum):
     '''
-    This is the documentation for SkyflowErrorCodes enum class
+    Supported error codes.
     '''
     INVALID_INPUT = 400
     SERVER_ERROR = 500
@@ -81,12 +81,12 @@ class SkyflowErrorMessages(Enum):
 
 class SkyflowError(Exception):
     '''
-    This is the documentation for SkyflowError Class
+    This class defines the SkyflowError exception.
 
-    :param code: This is the description for code parameter
-    :param message: This is the description for message parameter
-    :param data: This is the description for data parameter
-    :param interface: This is the description for interface parameter
+    :param code: The error code associated with the exception.
+    :param message: The error message to describe the exception.
+    :param data: Additional data related to the exception.
+    :param interface: The interface where the exception occurred.
     '''
     def __init__(self, code, message="An Error occured", data={}, interface: str = 'Unknown') -> None:
         if type(code) is SkyflowErrorCodes:

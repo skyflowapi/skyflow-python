@@ -22,7 +22,7 @@ supported_content_types = {
 
 class LogLevel(Enum):
     '''
-        This is the documentation for LogLevel enum class
+        Supported log levels.
     '''
     DEBUG = logging.DEBUG
     INFO = logging.INFO
@@ -33,10 +33,9 @@ class LogLevel(Enum):
 
 def set_log_level(logLevel: LogLevel):
     '''
-        Sets the Log Level for the Skyflow python SDK
+        Sets the log level for the Skyflow python SDK.
 
-        :param logLevel: This is the description for logLevel parameter
-        :returns: This is the description for what the method returns
+        :param logLevel: Log level to apply.
     '''
     skyflowLog.setLevel(logLevel.value)
 
