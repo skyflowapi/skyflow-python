@@ -134,7 +134,7 @@ bearerToken = ''
 # User defined function to provide access token to the vault apis
 def token_provider():
     global bearerToken
-    if is_expired(bearerToken):
+    if !(is_expired(bearerToken)):
         return bearerToken
     bearerToken, _ = generate_bearer_token('<YOUR_CREDENTIALS_FILE_PATH>')
     return bearerToken
@@ -513,7 +513,7 @@ Sample response:
 
 ### Update
 
-To update data in your vault, use the `update(records: dict, options: UpdateOptions)` method. The `records` parameter takes a Dictionary that contains records to fetch. If `UpdateTokens` is `True`, Skyflow returns tokens for the record you just updated. If `, ids if `UpdateOptions` is `False`, Skyflow returns IDs for the record you updated.
+To update data in your vault, use the `update(records: dict, options: UpdateOptions)` method. The `records` parameter takes a Dictionary that contains records to fetch. If `UpdateTokens` is `True`, Skyflow returns tokens for the record you just updated. If `UpdateOptions` is `False`, Skyflow returns IDs for the record you updated.
 
 ```python
 # Optional, indicates whether to return all fields for updated data. Defaults to 'true'.
@@ -705,7 +705,7 @@ from skyflow.vault import ConnectionConfig, Configuration, RequestMethod
 bearerToken = ''
 def token_provider():
     global bearerToken
-    if is_expired(bearerToken):
+    if !(is_expired(bearerToken)):
         return bearerToken
     bearerToken, _ = generate_bearer_token('<YOUR_CREDENTIALS_FILE_PATH>')
     return bearerToken
