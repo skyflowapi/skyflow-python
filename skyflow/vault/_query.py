@@ -22,6 +22,9 @@ def getQueryRequestBody(data, options):
     if not isinstance(query, str):
         queryType = str(type(query))
         raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.INVALID_QUERY_TYPE.value % queryType, interface=interface)
+    
+    if not query.strip():
+        raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT,SkyflowErrorMessages.EMPTY_QUERY.value, interface=interface)
         
     requestBody = {"query": query}
     try:

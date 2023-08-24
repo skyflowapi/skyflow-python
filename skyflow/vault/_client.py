@@ -157,8 +157,6 @@ class Client:
         }
         
         response = requests.post(requestURL, data=jsonBody, headers=headers)
-        # print(response.json())
-        # print("\n\n\n")
         result = getQueryResponse(response)
 
         log_info(InfoMessages.QUERY_SUCCESS.value, interface)

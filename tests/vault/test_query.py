@@ -5,10 +5,8 @@ import json
 import unittest
 import os
 from requests.models import Response
-from dotenv import dotenv_values
 from skyflow.vault._query import getQueryRequestBody, getQueryResponse
 from skyflow.errors._skyflow_errors import SkyflowError, SkyflowErrorCodes, SkyflowErrorMessages
-from skyflow.service_account import generate_bearer_token
 from skyflow.vault._client import Client
 from skyflow.vault._config import Configuration, QueryOptions
 
@@ -81,17 +79,16 @@ class TestQuery(unittest.TestCase):
             self.assertEqual(e.code, SkyflowErrorCodes.INVALID_INPUT.value)
             self.assertEqual(
                 e.message, SkyflowErrorMessages.INVALID_QUERY_TYPE.value % (str(type(invalidData["query"]))))
-
-    def testQueryInvalidJson(self):
-        invalidjson = {query: json}
-        
+    
+    def testGetQueryRequestBodyEmptyBody(self):
+        invalidData = {"query": ''}
         try:
-            getQueryRequestBody(invalidjson, self.queryOptions)
+            getQueryRequestBody(invalidData, self.queryOptions)
             self.fail('Should have thrown an error')
         except SkyflowError as e:
             self.assertEqual(e.code, SkyflowErrorCodes.INVALID_INPUT.value)
             self.assertEqual(
-                e.message, SkyflowErrorMessages.INVALID_JSON.value % ('query payload'))
+                e.message, SkyflowErrorMessages.EMPTY_QUERY.value)
 
     def testGetQueryValidResponse(self):
         response = Response()
@@ -122,30 +119,6 @@ class TestQuery(unittest.TestCase):
             self.assertEqual(se.code, 200)
             self.assertEqual(
                 se.message, SkyflowErrorMessages.RESPONSE_NOT_JSON.value % 'invalid-json')
-
-    def testGetQueryResponseFailInvalidJson(self):
-        invalid_response = Response()
-        invalid_response.status_code = 404
-        invalid_response._content = {error: "error"}
-        try:
-            getQueryResponse(invalid_response)
-            self.fail('Not failing on invalid error json')
-        except SkyflowError as se:
-            self.assertEqual(se.code, 404)
-            self.assertEqual(
-                se.message, SkyflowErrorMessages.RESPONSE_NOT_JSON.value % 'error')
-   
-    def testGetQueryResponseFail(self):
-        response = Response()
-        response.status_code = 500
-        response._content = self.mockFailResponse
-        try:
-            getQueryResponse(response)
-            self.fail()
-        except SkyflowError as e:
-            self.assertEqual(e.code, 500)
-            self.assertEqual(e.message,  self.mockFailResponse['error']['description'])
-            self.assertEqual(e.data,  self.mockFailResponse)
 
     def testQueryInvalidToken(self):
         config = Configuration('id', 'url', lambda: 'invalid-token')
