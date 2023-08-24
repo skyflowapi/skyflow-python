@@ -4,12 +4,13 @@
 import json
 import unittest
 import os
+from unittest import mock
+import requests
 from requests.models import Response
 from skyflow.vault._query import getQueryRequestBody, getQueryResponse
 from skyflow.errors._skyflow_errors import SkyflowError, SkyflowErrorCodes, SkyflowErrorMessages
 from skyflow.vault._client import Client
 from skyflow.vault._config import Configuration, QueryOptions
-
 
 class TestQuery(unittest.TestCase):
 
@@ -37,6 +38,18 @@ class TestQuery(unittest.TestCase):
                 "tokens": None
                 }
             ]
+        }
+        
+        self.requestId = '5d5d7e21-c789-9fcc-ba31-2a279d3a28ef'
+        
+        self.mockApiError = {
+            "error": {
+                "grpc_code": 13,
+                "http_code": 500,
+                "message": "ERROR (internal_error): Could not find Notebook Mapping Notebook Name was not found",
+                "http_status": "Internal Server Error",
+                "details": []
+            }
         }
         
         self.mockFailResponse = {
@@ -119,6 +132,37 @@ class TestQuery(unittest.TestCase):
             self.assertEqual(se.code, 200)
             self.assertEqual(
                 se.message, SkyflowErrorMessages.RESPONSE_NOT_JSON.value % 'invalid-json')
+            
+    def testGetQueryResponseFailInvalidJson(self):
+        invalid_response = mock.Mock(
+            spec=requests.Response,
+            status_code=404,
+            content=b'error'
+        )
+        invalid_response.raise_for_status.side_effect = requests.exceptions.HTTPError("Not found")
+        try:
+            getQueryResponse(invalid_response)
+            self.fail('Not failing on invalid error json')
+        except SkyflowError as se:
+            self.assertEqual(se.code, 404)
+            self.assertEqual(
+                se.message, SkyflowErrorMessages.RESPONSE_NOT_JSON.value % 'error')
+   
+    def testGetQueryResponseFail(self):
+        response = mock.Mock(
+            spec=requests.Response,
+            status_code=500,
+            content=json.dumps(self.mockApiError).encode('utf-8')
+        )
+        response.headers = {"x-request-id": self.requestId}
+        response.raise_for_status.side_effect = requests.exceptions.HTTPError("Server Error")
+        try:
+            getQueryResponse(response)
+            self.fail('not throwing exception when error code is 500')
+        except SkyflowError as e:
+            self.assertEqual(e.code, 500)
+            self.assertEqual(e.message,  SkyflowErrorMessages.SERVER_ERROR.value)
+            self.assertDictEqual(e.data,  self.mockFailResponse)
 
     def testQueryInvalidToken(self):
         config = Configuration('id', 'url', lambda: 'invalid-token')

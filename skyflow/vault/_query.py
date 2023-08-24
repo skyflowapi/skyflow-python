@@ -54,6 +54,7 @@ def getQueryResponse(response: requests.Response, interface=interface):
                     message = errorResponse['error']['message']
             except:
                 message = SkyflowErrorMessages.RESPONSE_NOT_JSON.value % content
+                raise SkyflowError(SkyflowErrorCodes.INVALID_INDEX, message, interface=interface)
         error = {"error": {}}
         if 'x-request-id' in response.headers:
             message += ' - request id: ' + response.headers['x-request-id']
