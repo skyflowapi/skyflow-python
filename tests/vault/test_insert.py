@@ -22,23 +22,39 @@ class TestInsert(unittest.TestCase):
             "fields": {
                 "cardNumber": "4111-1111-1111-1111",
                 "cvv": "234"
+            },
+            "tokens":{
+                "cardNumber": "4111-1111-1111-1111",
             }
         }
         self.data = {"records": [record]}
         self.mockRequest = {"records": [record]}
+        record2 = {
+            "table": "pii_fields",
+            "fields": {
+                "cardNumber": "4111-1111-1111-1111",
+                "cvv": "234"
+            }
+        }
+        self.data2 = {"records": [record2]}
+        self.mockRequest2 = {"records": [record2]}
 
         self.mockResponse = {"responses": [
-            {
-                "records": [{"skyflow_id": 123}],
-                "table": "pii_fields"
-            },
-            {
-                "fields": {
-                    "cardNumber": "card_number_token",
-                    "cvv": "cvv_token"
+        {
+            "records": [
+                {
+                    "skyflow_id": 123,
+                    "tokens": {
+                        "first_name": "4db12c22-758e-4fc9-b41d-e8e48b876776",
+                        "cardNumber": "card_number_token",
+                        "cvv": "cvv_token",
+                        "expiry_date": "6b45daa3-0e81-42a8-a911-23929f1cf9da"
+    
+                    }
                 }
-            }
-        ]}
+            ]
+        }
+    ]}
         
         self.insertOptions = InsertOptions(tokens=True)
 
@@ -55,13 +71,17 @@ class TestInsert(unittest.TestCase):
                 "cardNumber": "4111-1111-1111-1111",
                 "cvv": "234"
             },
+            "tokens":{
+                "cardNumber": "4111-1111-1111-1111",
+            },
             "method": 'POST',
-            "quorum": True
+            "quorum": True,
+            "tokenization": True
         }
         self.assertEqual(body["records"][0], expectedOutput)
     
-    def testGetInsertRequestBodyWithValidUpsertOptions(self):
-        body = json.loads(getInsertRequestBody(self.data, InsertOptions(True,[UpsertOption(table='pii_fields',column='column1')])))
+    def testGetInsertRequestBodyWithValidBodyWithoutTokens(self):
+        body = json.loads(getInsertRequestBody(self.data2, self.insertOptions))
         expectedOutput = {
             "tableName": "pii_fields",
             "fields": {
@@ -70,6 +90,39 @@ class TestInsert(unittest.TestCase):
             },
             "method": 'POST',
             "quorum": True,
+            "tokenization": True
+        }
+        self.assertEqual(body["records"][0], expectedOutput)
+
+    def testGetInsertRequestBodyWithValidUpsertOptions(self):
+        body = json.loads(getInsertRequestBody(self.data, InsertOptions(True,[UpsertOption(table='pii_fields',column='column1')])))
+        expectedOutput = {
+            "tableName": "pii_fields",
+            "fields": {
+                "cardNumber": "4111-1111-1111-1111",
+                "cvv": "234"
+            }, 
+            "tokens": {
+                "cardNumber": "4111-1111-1111-1111",
+            },
+            "method": 'POST',
+            "quorum": True,
+            "tokenization": True,
+            "upsert": 'column1',
+        }
+        self.assertEqual(body["records"][0], expectedOutput)
+
+    def testGetInsertRequestBodyWithValidUpsertOptionsWithOutTokens(self):
+        body = json.loads(getInsertRequestBody(self.data2, InsertOptions(True,[UpsertOption(table='pii_fields',column='column1')])))
+        expectedOutput = {
+            "tableName": "pii_fields",
+            "fields": {
+                "cardNumber": "4111-1111-1111-1111",
+                "cvv": "234"
+            }, 
+            "method": 'POST',
+            "quorum": True,
+            "tokenization": True,
             "upsert": 'column1',
         }
         self.assertEqual(body["records"][0], expectedOutput)
@@ -127,6 +180,97 @@ class TestInsert(unittest.TestCase):
             self.assertEqual(e.code, SkyflowErrorCodes.INVALID_INPUT.value)
             self.assertEqual(
                 e.message, SkyflowErrorMessages.INVALID_FIELDS_TYPE.value % (str(type('str'))))
+
+    def testInvalidTokensInRecord(self):
+        invalidData = {"records": [{
+            "table": "table",
+            "fields": {
+                "card_number": "4111-1111"
+            },
+            "tokens": "tokens"
+        }
+        ]}
+        try:
+            getInsertRequestBody(invalidData, self.insertOptions)
+            self.fail('Should have thrown an error')
+        except SkyflowError as e:
+            self.assertEqual(e.code, SkyflowErrorCodes.INVALID_INPUT.value)
+            self.assertEqual(
+                e.message, SkyflowErrorMessages.INVALID_TOKENS_TYPE.value % (str(type('str'))))
+
+    def testEmptyTokensInRecord(self):
+        invalidData = {"records": [{
+            "table": "table",
+            "fields": {
+                "card_number": "4111-1111"
+            },
+            "tokens": {
+            }
+        }
+        ]}
+        try:
+            getInsertRequestBody(invalidData, self.insertOptions)
+            self.fail('Should have thrown an error')
+        except SkyflowError as e:
+            self.assertEqual(e.code, SkyflowErrorCodes.INVALID_INPUT.value)
+            self.assertEqual(
+                e.message, SkyflowErrorMessages.EMPTY_TOKENS_IN_INSERT.value)
+
+    def testMismatchTokensInRecord(self):
+        invalidData = {"records": [{
+            "table": "table",
+            "fields": {
+                "card_number": "4111-1111"
+            },
+            "tokens": {
+                "cvv": "123"
+            }
+        }
+        ]}
+        try:
+            getInsertRequestBody(invalidData, self.insertOptions)
+            self.fail('Should have thrown an error')
+        except SkyflowError as e:
+            self.assertEqual(e.code, SkyflowErrorCodes.INVALID_INPUT.value)
+            self.assertEqual(
+                e.message, SkyflowErrorMessages.MISMATCH_OF_FIELDS_AND_TOKENS.value)
+
+    # def testTokensInRecord(self):
+    #     invalidData = {"records": [{
+    #         "table": "table",
+    #         "fields": {
+    #             "card_number": "4111-1111"
+    #         },
+    #         "tokens": {
+    #             "cvv": "123"
+    #         }
+    #     }
+    #     ]}
+    #     try:
+    #         getInsertRequestBody(invalidData, self.insertOptions)
+    #         self.fail('Should have thrown an error')
+    #     except SkyflowError as e:
+    #         self.assertEqual(e.code, SkyflowErrorCodes.INVALID_INPUT.value)
+    #         self.assertEqual(
+    #             e.message, SkyflowErrorMessages.MISMATCH_OF_FIELDS_AND_TOKENS.value)
+
+    def testGetInsertRequestBodyWithTokensValidBody(self):
+        body = json.loads(getInsertRequestBody(self.data, self.insertOptions))
+        expectedOutput = {
+            "tableName": "pii_fields",
+            "fields": {
+                "cardNumber": "4111-1111-1111-1111",
+                "cvv": "234"
+            },
+            "tokens": {
+                "cardNumber": "4111-1111-1111-1111",
+
+            },
+            "method": 'POST',
+            "quorum": True,
+            "tokenization": True
+        }
+        self.assertEqual(body["records"][0], expectedOutput)
 
     def testGetInsertRequestBodyNoTable(self):
         invalidData = {"records": [{
@@ -239,11 +383,10 @@ class TestInsert(unittest.TestCase):
     def testConvertResponseNoTokens(self):
         tokens = False
         result = convertResponse(self.mockRequest, self.mockResponse, tokens)
-
         self.assertEqual(len(result["records"]), 1)
         self.assertEqual(result["records"][0]["skyflow_id"], 123)
         self.assertEqual(result["records"][0]["table"], "pii_fields")
-        self.assertNotIn("fields", result["records"][0])
+        self.assertNotIn("tokens", result["records"][0])
 
     def testConvertResponseWithTokens(self):
         tokens = True

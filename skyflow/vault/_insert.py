@@ -29,23 +29,26 @@ def getInsertRequestBody(data, options):
         validateUpsertOptions(upsertOptions=upsertOptions)
             
     requestPayload = []
-    insertTokenPayload = []
     for index, record in enumerate(records):
         tableName, fields = getTableAndFields(record)
-        postPayload = {"tableName": tableName, "fields": fields,"method": "POST","quorum": True}
+        postPayload = {
+            "tableName": tableName, 
+            "fields": fields,
+            "method": "POST",
+            "quorum": True,
+        }  
+        if  "tokens" in record:
+            tokens = getTokens(record)
+            postPayload["tokens"] =  tokens
         
         if upsertOptions:
             postPayload["upsert"] = getUpsertColumn(tableName,upsertOptions)
         
-        requestPayload.append(postPayload)
         if options.tokens:
-            insertTokenPayload.append({
-                "method": "GET",
-                "tableName": tableName,
-                "ID": "$responses." + str(index) + ".records.0.skyflow_id",
-                "tokenization": True
-            })
-    requestBody = {"records": requestPayload + insertTokenPayload}
+            postPayload['tokenization'] = True
+
+        requestPayload.append(postPayload)
+    requestBody = {"records": requestPayload }
     try:
         jsonBody = json.dumps(requestBody)
     except Exception as e:
@@ -80,6 +83,21 @@ def getTableAndFields(record):
 
     return (table, fields)
 
+def getTokens(record):
+    tokens = record["tokens"]
+    if not isinstance(tokens, dict):
+        tokensType = str(type(tokens))
+        raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.INVALID_TOKENS_TYPE.value % (
+            tokensType), interface=interface)
+    
+    if len(tokens) == 0 :
+        raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.EMPTY_TOKENS_IN_INSERT, interface= interface)
+    
+    fields = record["fields"]
+    for tokenKey in tokens:
+            if tokenKey not in fields:
+                raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.MISMATCH_OF_FIELDS_AND_TOKENS, interface= interface)
+    return tokens
 
 def processResponse(response: requests.Response, interface=interface):
     statusCode = response.status_code
@@ -110,11 +128,11 @@ def convertResponse(request: dict, response: dict, tokens: bool):
     records = request['records']
     recordsSize = len(records)
     result = []
-    for idx, _ in enumerate(records):
+    for idx, _ in enumerate(responseArray):
         table = records[idx]['table']
         skyflow_id = responseArray[idx]['records'][0]['skyflow_id']
         if tokens:
-            fieldsDict = responseArray[recordsSize + idx]['fields']
+            fieldsDict = responseArray[idx]['records'][0]['tokens']
             fieldsDict['skyflow_id'] = skyflow_id
             result.append({'table': table, 'fields': fieldsDict})
         else:
