@@ -18,7 +18,7 @@ def token_provider():
 
 try:
     config = Configuration(
-       '<UOIR_VAULT_ID>', '<YOUR_VAULT_URL>', token_provider)
+       '<YOUR_VAULT_ID>', '<YOUR_VAULT_URL>', token_provider)
     client = Client(config)
     
     set_log_level(LogLevel.DEBUG)
