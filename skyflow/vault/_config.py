@@ -41,6 +41,10 @@ class UpdateOptions:
 class DeleteOptions:
     def __init__(self, tokens: bool=False):
         self.tokens = tokens
+        
+class QueryOptions:
+    def __init__(self):
+        pass
 
 class RequestMethod(Enum):
     GET = 'GET'
