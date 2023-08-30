@@ -81,12 +81,12 @@ class SkyflowErrorMessages(Enum):
 
 class SkyflowError(Exception):
     '''
-    This class defines the SkyflowError exception.
+    The SkyflowError exception.
 
-    :param code: The error code associated with the exception.
-    :param message: The error message to describe the exception.
+    :param code: Error associated with the exception.
+    :param message: Error describing the exception.
     :param data: Additional data related to the exception.
-    :param interface: The interface where the exception occurred.
+    :param interface: Interface where the exception happened.
     '''
     def __init__(self, code, message="An Error occured", data={}, interface: str = 'Unknown') -> None:
         if type(code) is SkyflowErrorCodes:

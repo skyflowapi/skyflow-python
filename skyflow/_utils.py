@@ -33,9 +33,9 @@ class LogLevel(Enum):
 
 def set_log_level(logLevel: LogLevel):
     '''
-        Sets the log level for the Skyflow python SDK.
+        Sets the log level.
 
-        :param logLevel: Log level to apply.
+        :param logLevel: Log level to set.
     '''
     skyflowLog.setLevel(logLevel.value)
 

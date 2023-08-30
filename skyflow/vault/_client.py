@@ -20,7 +20,7 @@ from ._token import tokenProviderWrapper
 
 class Client:
     '''
-    Represents a client for interacting with Skyflow services.
+    Represents a client for interacting with Skyflow.
 
     :param config: Configuration for the Skyflow client.
     '''
@@ -80,7 +80,7 @@ class Client:
         '''
         Returns values that correspond to the specified tokens.
 
-        :param records: Takes a dictionary that contains the records key that takes an array of records to fetch from the vault.
+        :param records: Dictionary that contains the `records` key, which is an array of records to fetch from the vault.
         :returns: Tokens to return values for.
         '''
         interface = InterfaceName.DETOKENIZE.value
@@ -104,7 +104,7 @@ class Client:
         '''
         Returns records by Skyflow IDs or column values.
 
-        :param records: Takes a Dictionary that contains either an array of Skyflow IDs or a unique column name and values.
+        :param records: Dictionary that contains either an array of Skyflow IDs or a the name of a unique column and associated values.
         :returns: Returns the specified records and any errors.
         '''
         interface = InterfaceName.GET.value
@@ -129,7 +129,7 @@ class Client:
         '''
         Reveals records by Skyflow ID.
 
-        :param records: Takes a Dictionary that contains records to fetch.
+        :param records: Dictionary that contains records to fetch.
         :returns: Returns the specified records and any errors.
         '''
         interface = InterfaceName.GET_BY_ID.value

@@ -8,7 +8,7 @@ from typing import List
 
 class Configuration:
     '''
-        Configuration for interacting with Skyflow services.
+        Configuration for interacting with Skyflow.
 
         :param vaultID: ID of the vault to connect to.
         :param vaultURL: URL of the vault to connect to.
@@ -32,7 +32,7 @@ class Configuration:
 
 class UpsertOption:
     '''
-        Wrapper for parameters required by upsert option.
+        Configuration for upsert.
 
         :param table: Table that the data belongs to.
         :param column: Name of the unique column.
@@ -43,7 +43,7 @@ class UpsertOption:
 
 class InsertOptions:
     '''
-        Wrapper for parameters required by insert options.
+        Configuration for an insert operation.
 
         :param tokens: If `true`, returns tokens for the collected data. Defaults to `false`.
         :param upsert: If specified, upserts data. If not specified, inserts data.
@@ -54,9 +54,9 @@ class InsertOptions:
 
 class UpdateOptions:
     '''
-        Updates the configuration of elements in the vault
+        Updates the configuration of elements in the vault.
 
-        :param tokens: Indicates whether to return tokens. Defaults to `True`.
+        :param tokens: If `true`, returns tokens for the collected data. Defaults to `false`.
     '''
     def __init__(self, tokens: bool=True):
         self.tokens = tokens

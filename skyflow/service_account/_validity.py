@@ -10,11 +10,10 @@ from skyflow._utils import InterfaceName, log_info, log_error, InfoMessages
 
 def is_expired(token: str):
     '''
-    Check if stored token is not expired, if not return a new token, 
-    if the token has expiry time before 5min of current time, call returns False
+    Checks if a token is expired. If the token is expired or will expire within 5 minutes, returns True. Otherwise, returns False.
 
-    :param token: The token to be checked for expiration.
-    :returns: Returns `True`, if the token is expired or invalid, `False` otherwise.
+    :param token: Token to check.
+    :returns: If the token is expired or will expire within 5 minutes, returns `True`. Otherwise, returns `False`.
     '''
     interface = InterfaceName.IS_EXPIRED.value
     log_info(InfoMessages.IS_EXPIRED_TRIGGERED.value, interface=interface)
