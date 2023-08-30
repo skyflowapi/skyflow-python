@@ -7,11 +7,12 @@ import requests
 from requests.models import HTTPError
 from skyflow.errors._skyflow_errors import SkyflowError, SkyflowErrorCodes, SkyflowErrorMessages
 from skyflow._utils import InterfaceName
+from skyflow.vault._config import InsertOptions
 
 interface = InterfaceName.INSERT.value
 
 
-def getInsertRequestBody(data, options):
+def getInsertRequestBody(data, options: InsertOptions):
     try:
         records = data["records"]
     except KeyError:
@@ -48,7 +49,12 @@ def getInsertRequestBody(data, options):
             postPayload['tokenization'] = True
 
         requestPayload.append(postPayload)
-    requestBody = {"records": requestPayload }
+    requestBody = {
+        "records": requestPayload, 
+        "continueOnError": options.continueOnError
+    }
+    if options.continueOnError == None:
+        requestBody.pop('continueOnError')
     try:
         jsonBody = json.dumps(requestBody)
     except Exception as e:
@@ -105,7 +111,11 @@ def processResponse(response: requests.Response, interface=interface):
     try:
         response.raise_for_status()
         try:
-            return json.loads(content)
+            jsonContent = json.loads(content)
+            if 'x-request-id' in response.headers:
+                requestId = response.headers['x-request-id']
+                jsonContent['requestId'] = requestId
+            return jsonContent
         except:
             raise SkyflowError(
                 statusCode, SkyflowErrorMessages.RESPONSE_NOT_JSON.value % content, interface=interface)
@@ -123,10 +133,47 @@ def processResponse(response: requests.Response, interface=interface):
         raise SkyflowError(statusCode, message, interface=interface)
 
 
-def convertResponse(request: dict, response: dict, tokens: bool):
+def convertResponse(request: dict, response: dict, options: InsertOptions):
     responseArray = response['responses']
+    requestId = response['requestId']
     records = request['records']
-    recordsSize = len(records)
+    
+    if options.continueOnError:
+        return buildResponseWithContinueOnError(responseArray, records, options.tokens, requestId)
+    
+    else:
+        return buildResponseWithoutContinueOnError(responseArray, records, options.tokens)
+
+def buildResponseWithContinueOnError(responseArray, records, tokens: bool, requestId):
+    errors = []
+    result = []
+    for idx, response in enumerate(responseArray):
+        table = records[idx]['table']
+        body = response['Body']
+        status = response['Status']
+        
+        if 'records' in body:
+            skyflow_id = body['records'][0]['skyflow_id']
+            if tokens:
+                fieldsDict = body['records'][0]['tokens']
+                fieldsDict['skyflow_id'] = skyflow_id
+                result.append({'table': table, 'fields': fieldsDict})
+            else:
+                result.append({'table': table, 'skyflow_id': skyflow_id})
+        elif 'error' in body:
+            message = body['error']
+            message += ' - request id: ' + requestId
+            error = {"code": status, "description": message}
+            errors.append({"error": error})
+    finalResponse = {"records": result, "errors": errors}
+    if len(result) == 0:
+        finalResponse.pop('records')
+    elif len(errors) == 0:
+        finalResponse.pop('errors')
+    return finalResponse
+
+def buildResponseWithoutContinueOnError(responseArray, records, tokens: bool):
+    # recordsSize = len(records)
     result = []
     for idx, _ in enumerate(responseArray):
         table = records[idx]['table']

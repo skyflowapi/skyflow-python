@@ -61,7 +61,7 @@ class Client:
 
         response = requests.post(requestURL, data=jsonBody, headers=headers)
         processedResponse = processResponse(response)
-        result = convertResponse(records, processedResponse, options.tokens)
+        result = convertResponse(records, processedResponse, options)
 
         log_info(InfoMessages.INSERT_DATA_SUCCESS.value, interface)
         return result
