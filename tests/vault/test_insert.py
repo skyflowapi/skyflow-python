@@ -39,22 +39,57 @@ class TestInsert(unittest.TestCase):
         self.data2 = {"records": [record2]}
         self.mockRequest2 = {"records": [record2]}
 
-        self.mockResponse = {"responses": [
-        {
-            "records": [
+        self.mockResponse = {
+            "responses": [
                 {
-                    "skyflow_id": 123,
-                    "tokens": {
-                        "first_name": "4db12c22-758e-4fc9-b41d-e8e48b876776",
-                        "cardNumber": "card_number_token",
-                        "cvv": "cvv_token",
-                        "expiry_date": "6b45daa3-0e81-42a8-a911-23929f1cf9da"
-    
-                    }
+                    "records": [
+                        {
+                            "skyflow_id": 123,
+                            "tokens": {
+                                "first_name": "4db12c22-758e-4fc9-b41d-e8e48b876776",
+                                "cardNumber": "card_number_token",
+                                "cvv": "cvv_token",
+                                "expiry_date": "6b45daa3-0e81-42a8-a911-23929f1cf9da"
+            
+                            }
+                        }
+                    ],
                 }
-            ]
+            ],
+            "requestId": "2g3fd14-z9bs-xnvn4k6-vn1s-e28w35"
         }
-    ]}
+        
+        self.mockResponseCOESuccessObject = {
+            "Body": {
+                "records": self.mockResponse['responses'][0]['records']
+            },
+            "Status": 200
+        }
+        
+        self.mockResponseCOEErrorObject = {
+            "Body": {
+                "error": "Error Inserting Records due to unique constraint violation"
+            },
+            "Status": 400
+        }
+        
+        self.mockResponseCOESuccess = {
+            "responses": [self.mockResponseCOESuccessObject],
+            "requestId": self.mockResponse['requestId']
+        }
+        
+        self.mockResponseCOEPartialSuccess = {
+            "responses": [
+                self.mockResponseCOESuccessObject,
+                self.mockResponseCOEErrorObject
+            ],
+            "requestId": self.mockResponse['requestId']
+        }
+        
+        self.mockResponseCOEFailure = {
+            "responses": [self.mockResponseCOEErrorObject],
+            "requestId": self.mockResponse['requestId']
+        }
         
         self.insertOptions = InsertOptions(tokens=True)
 
@@ -308,6 +343,35 @@ class TestInsert(unittest.TestCase):
             self.assertEqual(e.message, SkyflowErrorMessages.INVALID_TABLE_TYPE.value % (
                 str(type({'a': 'b'}))))
 
+    def testGetInsertRequestBodyWithContinueOnErrorAsTrue(self):
+        try:
+            options = InsertOptions(tokens=True, continueOnError=True)
+            request = getInsertRequestBody(self.data, options)
+            self.assertIn('continueOnError', request)
+            request = json.loads(request)
+            self.assertEqual(request['continueOnError'], True)
+        except SkyflowError as e:
+            self.fail('Should not have thrown an error')
+    
+    def testGetInsertRequestBodyWithContinueOnErrorAsFalse(self):
+        try:
+            options = InsertOptions(tokens=True, continueOnError=False)
+            request = getInsertRequestBody(self.data, options)
+            # assert 'continueOnError' in request
+            self.assertIn('continueOnError', request)
+            request = json.loads(request)
+            self.assertEqual(request['continueOnError'], False)
+        except SkyflowError as e:
+            self.fail('Should not have thrown an error')
+   
+    def testGetInsertRequestBodyWithoutContinueOnError(self):
+        try:
+            request = getInsertRequestBody(self.data, self.insertOptions)
+            # assert 'continueOnError' not in request
+            self.assertNotIn('continueOnError', request)
+        except SkyflowError as e:
+            self.fail('Should not have thrown an error')
+
     def testInsertInvalidJson(self):
         invalidjson = {
             "records": [{
@@ -381,16 +445,16 @@ class TestInsert(unittest.TestCase):
                 se.message, SkyflowErrorMessages.RESPONSE_NOT_JSON.value % 'error')
 
     def testConvertResponseNoTokens(self):
-        tokens = False
-        result = convertResponse(self.mockRequest, self.mockResponse, tokens)
+        options = InsertOptions(tokens=False)
+        result = convertResponse(self.mockRequest, self.mockResponse, options)
         self.assertEqual(len(result["records"]), 1)
         self.assertEqual(result["records"][0]["skyflow_id"], 123)
         self.assertEqual(result["records"][0]["table"], "pii_fields")
         self.assertNotIn("tokens", result["records"][0])
 
     def testConvertResponseWithTokens(self):
-        tokens = True
-        result = convertResponse(self.mockRequest, self.mockResponse, tokens)
+        options = InsertOptions(tokens=True)
+        result = convertResponse(self.mockRequest, self.mockResponse, options)
 
         self.assertEqual(len(result["records"]), 1)
         self.assertNotIn("skyflow_id", result["records"][0])
@@ -403,6 +467,59 @@ class TestInsert(unittest.TestCase):
                          ["cardNumber"], "card_number_token")
         self.assertEqual(result["records"][0]["fields"]
                          ["cvv"], "cvv_token")
+    
+    def testConvertResponseWithContinueoOnErrorSuccess(self):
+        options = InsertOptions(tokens=True, continueOnError=True)
+        result = convertResponse(self.mockRequest, self.mockResponseCOESuccess, options)
+
+        self.assertEqual(len(result["records"]), 1)
+        self.assertNotIn("errors", result)
+        
+        self.assertNotIn("skyflow_id", result["records"][0])
+        self.assertEqual(result["records"][0]["table"], "pii_fields")
+
+        self.assertIn("fields", result["records"][0])
+        self.assertEqual(result["records"][0]["fields"]["skyflow_id"], 123)
+        self.assertEqual(result["records"][0]["fields"]["cardNumber"], "card_number_token")
+        self.assertEqual(result["records"][0]["fields"]["cvv"], "cvv_token")
+    
+    def testConvertResponseWithContinueoOnErrorPartialSuccess(self):
+        options = InsertOptions(tokens=True, continueOnError=True)
+        partialSuccessRequest = {
+            "records": [
+                self.mockRequest['records'][0],
+                self.mockRequest['records'][0],
+            ]
+        }
+        result = convertResponse(partialSuccessRequest, self.mockResponseCOEPartialSuccess, options)
+
+        self.assertEqual(len(result["records"]), 1)
+        self.assertEqual(len(result["errors"]), 1)
+        
+        self.assertNotIn("skyflow_id", result["records"][0])
+        self.assertEqual(result["records"][0]["table"], "pii_fields")
+
+        self.assertIn("fields", result["records"][0])
+        self.assertEqual(result["records"][0]["fields"]["skyflow_id"], 123)
+        self.assertEqual(result["records"][0]["fields"]["cardNumber"], "card_number_token")
+        self.assertEqual(result["records"][0]["fields"]["cvv"], "cvv_token")
+        
+        message = self.mockResponseCOEErrorObject['Body']['error'] 
+        message += ' - request id: ' + self.mockResponse['requestId']
+        self.assertEqual(result["errors"][0]["error"]["code"], 400)
+        self.assertEqual(result["errors"][0]["error"]["description"], message)
+    
+    def testConvertResponseWithContinueoOnErrorFailure(self):
+        options = InsertOptions(tokens=True, continueOnError=True)
+        result = convertResponse(self.mockRequest, self.mockResponseCOEFailure, options)
+
+        self.assertEqual(len(result["errors"]), 1)
+        self.assertNotIn("records", result) 
+        
+        message = self.mockResponseCOEErrorObject['Body']['error'] 
+        message += ' - request id: ' + self.mockResponse['requestId']
+        self.assertEqual(result["errors"][0]["error"]["code"], 400)
+        self.assertEqual(result["errors"][0]["error"]["description"], message)
 
     def testInsertInvalidToken(self):
         config = Configuration('id', 'url', lambda: 'invalid-token')
