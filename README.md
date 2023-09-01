@@ -391,9 +391,6 @@ try:
                 {
                     "token": '1r434532-6f76-4319-bdd3-96281e051051',
                     "redaction": Skyflow.RedactionType.MASKED
-                },
-                {
-                    "token": "invalid-token"
                 }
             ] 
         }, DetokenizeOptions(continueOnError=False)
