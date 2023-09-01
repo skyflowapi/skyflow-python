@@ -3,11 +3,11 @@
 '''
 import unittest
 import os
-from skyflow.vault._detokenize import getDetokenizeRequestBody, createDetokenizeResponseBody
+from skyflow.vault._detokenize import getDetokenizeRequestBody, createDetokenizeResponseBody, getBulkDetokenizeRequestBody
 from skyflow.errors._skyflow_errors import SkyflowError, SkyflowErrorCodes, SkyflowErrorMessages
 from skyflow.vault._client import Client, Configuration
 from skyflow.service_account import generate_bearer_token
-from skyflow.vault._config import RedactionType
+from skyflow.vault._config import DetokenizeOptions, RedactionType
 from dotenv import dotenv_values
 import warnings
 
@@ -115,20 +115,46 @@ class TestDetokenize(unittest.TestCase):
     def testResponseBodySuccess(self):
         response = {"records": [{"token": "abc", "value": "secret"}]}
         self.add_mock_response(response, 200)
-        res, partial = createDetokenizeResponseBody(self.mocked_futures)
+        res, partial = createDetokenizeResponseBody(self.data, self.mocked_futures, DetokenizeOptions())
         self.assertEqual(partial, False)
-        self.assertEqual(res, {"records": response["records"], "errors": []})
+        self.assertIn("records", res)
+        self.assertNotIn("errors", res)
+        self.assertEqual(len(res["records"]), 1)
+        self.assertEqual(res, {"records": response["records"]})
 
     def testResponseBodyPartialSuccess(self):
         success_response = {"records": [{"token": "abc", "value": "secret"}]}
         error_response = {"error": {"http_code": 404, "message": "not found"}}
         self.add_mock_response(success_response, 200)
         self.add_mock_response(error_response, 404)
-        res, partial = createDetokenizeResponseBody(self.mocked_futures)
+        
+        detokenizeRecords = {"records": [self.tokenField, self.tokenField]}
+        
+        res, partial = createDetokenizeResponseBody(detokenizeRecords, self.mocked_futures, DetokenizeOptions())
         self.assertTrue(partial)
-        self.assertEqual(res["records"], success_response["records"])
+        
+        records = res["records"]
+        self.assertIsNotNone(records)
+        self.assertEqual(len(records), 1)
+        self.assertEqual(records, success_response["records"])
+        
         errors = res["errors"]
-
+        self.assertIsNotNone(errors)
+        self.assertEqual(len(errors), 1)
+        self.assertEqual(errors[0]["error"]["code"],
+                         error_response["error"]["http_code"])
+        self.assertEqual(
+            errors[0]["error"]["description"], error_response["error"]["message"])
+    
+    def testResponseBodyFailure(self):
+        error_response = {"error": {"http_code": 404, "message": "not found"}}
+        self.add_mock_response(error_response, 404)
+        
+        res, partial = createDetokenizeResponseBody(self.data, self.mocked_futures, DetokenizeOptions())
+        self.assertFalse(partial)
+        
+        self.assertNotIn("records", res)
+        errors = res["errors"]
         self.assertIsNotNone(errors)
         self.assertEqual(len(errors), 1)
         self.assertEqual(errors[0]["error"]["code"],
@@ -136,11 +162,40 @@ class TestDetokenize(unittest.TestCase):
         self.assertEqual(
             errors[0]["error"]["description"], error_response["error"]["message"])
 
+    def testResponseBodySuccessWithContinueOnErrorAsFalse(self):
+        response = {
+            "records": [
+                {"token": "abc", "value": "secret1"},
+                {"token": "def", "value": "secret2"}
+            ]
+        }
+        self.add_mock_response(response, 200)
+        res, partial = createDetokenizeResponseBody(self.data, self.mocked_futures, DetokenizeOptions(False))
+        self.assertEqual(partial, False)
+        self.assertIn("records", res)
+        self.assertNotIn("errors", res)
+        self.assertEqual(len(res["records"]), 2)
+        self.assertEqual(res, {"records": response["records"]})
+
+    def testResponseBodyFailureWithContinueOnErrorAsFalse(self):
+        error_response = {"error": {"http_code": 404, "message": "not found"}}
+        self.add_mock_response(error_response, 404)
+        
+        res, partial = createDetokenizeResponseBody(self.data, self.mocked_futures, DetokenizeOptions(False))
+        self.assertFalse(partial)
+        
+        self.assertNotIn("records", res)
+        errors = res["errors"]
+        self.assertIsNotNone(errors)
+        self.assertEqual(len(errors), 1)
+        self.assertEqual(errors[0]["error"]["code"], error_response["error"]["http_code"])
+        self.assertEqual(errors[0]["error"]["description"], error_response["error"]["message"])
+
     def testResponseNotJson(self):
         response = "not a valid json".encode()
         self.add_mock_response(response, 200, encode=False)
         try:
-            createDetokenizeResponseBody(self.mocked_futures)
+            createDetokenizeResponseBody(self.data, self.mocked_futures, DetokenizeOptions())
         except SkyflowError as error:
             expectedError = SkyflowErrorMessages.RESPONSE_NOT_JSON
             self.assertEqual(error.code, 200)
@@ -182,3 +237,29 @@ class TestDetokenize(unittest.TestCase):
             self.assertTrue(error)
             self.assertEqual(error.code, SkyflowErrorCodes.INVALID_INPUT.value)
             self.assertEqual(error.message, SkyflowErrorMessages.INVALID_REDACTION_TYPE.value % str(type(data["redaction"])))
+            
+    def testGetBulkDetokenizeRequestBody(self):
+        expectedOutput = {
+            "detokenizationParameters": [
+                {
+                    "token": self.testToken,
+                    "redaction": "REDACTED"
+                },
+                {
+                    "token": self.testToken,
+                    "redaction": "REDACTED"
+                },
+            ]
+        } 
+        data = {
+            "token": self.testToken,
+            "redaction": RedactionType.REDACTED
+        }
+        try:
+            requestBody = getBulkDetokenizeRequestBody([data, data])
+            self.assertIn("detokenizationParameters", requestBody)
+            self.assertEqual(len(requestBody["detokenizationParameters"]), 2)
+            self.assertEqual(expectedOutput, requestBody)
+        except SkyflowError as e:
+            self.fail('Should not have thrown an error')
+            

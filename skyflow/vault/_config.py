@@ -30,9 +30,10 @@ class UpsertOption:
         self.column = column
 
 class InsertOptions:
-    def __init__(self, tokens: bool=True,upsert :List[UpsertOption]=None):
+    def __init__(self, tokens: bool=True, upsert :List[UpsertOption]=None, continueOnError:bool=None):
         self.tokens = tokens
         self.upsert = upsert
+        self.continueOnError = continueOnError
 
 class UpdateOptions:
     def __init__(self, tokens: bool=True):
@@ -41,6 +42,10 @@ class UpdateOptions:
 class DeleteOptions:
     def __init__(self, tokens: bool=False):
         self.tokens = tokens
+
+class DetokenizeOptions:
+    def __init__(self, continueOnError: bool=True):
+        self.continueOnError = continueOnError
 
 class RequestMethod(Enum):
     GET = 'GET'
