@@ -446,7 +446,8 @@ class TestInsert(unittest.TestCase):
 
     def testConvertResponseNoTokens(self):
         options = InsertOptions(tokens=False)
-        result = convertResponse(self.mockRequest, self.mockResponse, options)
+        result, partial = convertResponse(self.mockRequest, self.mockResponse, options)
+        self.assertFalse(partial)
         self.assertEqual(len(result["records"]), 1)
         self.assertEqual(result["records"][0]["skyflow_id"], 123)
         self.assertEqual(result["records"][0]["table"], "pii_fields")
@@ -454,8 +455,9 @@ class TestInsert(unittest.TestCase):
 
     def testConvertResponseWithTokens(self):
         options = InsertOptions(tokens=True)
-        result = convertResponse(self.mockRequest, self.mockResponse, options)
-
+        result, partial = convertResponse(self.mockRequest, self.mockResponse, options)
+        self.assertFalse(partial)
+        
         self.assertEqual(len(result["records"]), 1)
         self.assertNotIn("skyflow_id", result["records"][0])
         self.assertEqual(result["records"][0]["table"], "pii_fields")
@@ -470,8 +472,9 @@ class TestInsert(unittest.TestCase):
     
     def testConvertResponseWithContinueoOnErrorSuccess(self):
         options = InsertOptions(tokens=True, continueOnError=True)
-        result = convertResponse(self.mockRequest, self.mockResponseCOESuccess, options)
-
+        result, partial = convertResponse(self.mockRequest, self.mockResponseCOESuccess, options)
+        self.assertFalse(partial)
+        
         self.assertEqual(len(result["records"]), 1)
         self.assertNotIn("errors", result)
         
@@ -491,8 +494,9 @@ class TestInsert(unittest.TestCase):
                 self.mockRequest['records'][0],
             ]
         }
-        result = convertResponse(partialSuccessRequest, self.mockResponseCOEPartialSuccess, options)
-
+        result, partial = convertResponse(partialSuccessRequest, self.mockResponseCOEPartialSuccess, options)
+        self.assertTrue(partial)
+        
         self.assertEqual(len(result["records"]), 1)
         self.assertEqual(len(result["errors"]), 1)
         
@@ -511,7 +515,8 @@ class TestInsert(unittest.TestCase):
     
     def testConvertResponseWithContinueoOnErrorFailure(self):
         options = InsertOptions(tokens=True, continueOnError=True)
-        result = convertResponse(self.mockRequest, self.mockResponseCOEFailure, options)
+        result, partial = convertResponse(self.mockRequest, self.mockResponseCOEFailure, options)
+        self.assertFalse(partial)
 
         self.assertEqual(len(result["errors"]), 1)
         self.assertNotIn("records", result) 

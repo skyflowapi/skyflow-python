@@ -43,6 +43,10 @@ class DeleteOptions:
     def __init__(self, tokens: bool=False):
         self.tokens = tokens
 
+class DetokenizeOptions:
+    def __init__(self, continueOnError: bool=True):
+        self.continueOnError = continueOnError
+
 class RequestMethod(Enum):
     GET = 'GET'
     POST = 'POST'

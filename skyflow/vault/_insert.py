@@ -145,6 +145,7 @@ def convertResponse(request: dict, response: dict, options: InsertOptions):
         return buildResponseWithoutContinueOnError(responseArray, records, options.tokens)
 
 def buildResponseWithContinueOnError(responseArray, records, tokens: bool, requestId):
+    partial = False
     errors = []
     result = []
     for idx, response in enumerate(responseArray):
@@ -161,16 +162,18 @@ def buildResponseWithContinueOnError(responseArray, records, tokens: bool, reque
             else:
                 result.append({'table': table, 'skyflow_id': skyflow_id})
         elif 'error' in body:
+            partial = True
             message = body['error']
             message += ' - request id: ' + requestId
             error = {"code": status, "description": message}
             errors.append({"error": error})
     finalResponse = {"records": result, "errors": errors}
     if len(result) == 0:
+        partial = False
         finalResponse.pop('records')
     elif len(errors) == 0:
         finalResponse.pop('errors')
-    return finalResponse
+    return finalResponse, partial
 
 def buildResponseWithoutContinueOnError(responseArray, records, tokens: bool):
     # recordsSize = len(records)
@@ -184,7 +187,7 @@ def buildResponseWithoutContinueOnError(responseArray, records, tokens: bool):
             result.append({'table': table, 'fields': fieldsDict})
         else:
             result.append({'table': table, 'skyflow_id': skyflow_id})
-    return {'records': result}
+    return {'records': result}, False
 
 def getUpsertColumn(tableName, upsertOptions):
     uniqueColumn:str = ''

@@ -7,6 +7,7 @@ from aiohttp import ClientSession, request
 import json
 from ._config import RedactionType
 from skyflow._utils import InterfaceName, getMetrics
+from skyflow.vault._config import DetokenizeOptions
 
 interface = InterfaceName.DETOKENIZE.value
 
@@ -39,8 +40,14 @@ def getDetokenizeRequestBody(data):
         })
     return requestBody
 
+def getBulkDetokenizeRequestBody(records):
+    bulkRequestBody = {"detokenizationParameters": []}
+    for record in records:
+        requestBody = getDetokenizeRequestBody(record)
+        bulkRequestBody["detokenizationParameters"].append(requestBody["detokenizationParameters"][0])
+    return bulkRequestBody
 
-async def sendDetokenizeRequests(data, url, token):
+async def sendDetokenizeRequests(data, url, token, options: DetokenizeOptions):
 
     tasks = []
 
@@ -53,11 +60,17 @@ async def sendDetokenizeRequests(data, url, token):
         recordsType = str(type(records))
         raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.INVALID_RECORDS_TYPE.value % (
             recordsType), interface=interface)
+    
     validatedRecords = []
-    for record in records:
-        requestBody = getDetokenizeRequestBody(record)
+    if not options.continueOnError:
+        requestBody = getBulkDetokenizeRequestBody(records)
         jsonBody = json.dumps(requestBody)
         validatedRecords.append(jsonBody)
+    else:
+        for record in records:
+            requestBody = getDetokenizeRequestBody(record)
+            jsonBody = json.dumps(requestBody)
+            validatedRecords.append(jsonBody)
     async with ClientSession() as session:
         for record in validatedRecords:
             headers = {
@@ -80,13 +93,13 @@ async def post(url, data, headers, session):
             return (await response.read(), response.status)
 
 
-def createDetokenizeResponseBody(responses):
+def createDetokenizeResponseBody(records, responses, options: DetokenizeOptions):
     result = {
         "records": [],
         "errors": []
     }
     partial = False
-    for response in responses:
+    for index, response in enumerate(responses):
         r = response.result()
         status = r[1]
         try:
@@ -96,16 +109,26 @@ def createDetokenizeResponseBody(responses):
                                SkyflowErrorMessages.RESPONSE_NOT_JSON.value % r[0].decode('utf-8'), interface=interface)
 
         if status == 200:
-            temp = {}
-            temp["token"] = jsonRes["records"][0]["token"]
-            temp["value"] = jsonRes["records"][0]["value"]
-            result["records"].append(temp)
+            for record in jsonRes["records"]:
+                temp = {}
+                temp["token"] = record["token"]
+                temp["value"] = record["value"]
+                result["records"].append(temp)
         else:
             temp = {"error": {}}
+            
+            if options.continueOnError:
+                temp["token"] = records["records"][index]["token"]
+            
             temp["error"]["code"] = jsonRes["error"]["http_code"]
             temp["error"]["description"] = jsonRes["error"]["message"]
             if len(r) > 2 and r[2] != None:
                 temp["error"]["description"] += ' - Request ID: ' + str(r[2])
             result["errors"].append(temp)
             partial = True
+    if len(result["records"]) == 0:
+        partial = False
+        result.pop("records")
+    elif len(result["errors"]) == 0:
+        result.pop("errors")
     return result, partial
