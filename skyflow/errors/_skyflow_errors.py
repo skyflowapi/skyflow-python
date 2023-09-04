@@ -85,6 +85,10 @@ class SkyflowErrorMessages(Enum):
     INVALID_UPSERT_COLUMN_TYPE = "upsert object column key has value of type %s, expected string"
     EMPTY_UPSERT_OPTION_TABLE = "upsert object table value is empty string at index %s, expected non-empty string"
     EMPTY_UPSERT_OPTION_COLUMN = "upsert object column value is empty string at index %s, expected non-empty string"
+    QUERY_KEY_ERROR = "Query key is missing from payload"
+    INVALID_QUERY_TYPE = "Query key has value of type %s, expected string"
+    EMPTY_QUERY = "Query key cannot be empty"
+    INVALID_QUERY_COMMAND = "only SELECT commands are supported, %s command was passed instead"
     SERVER_ERROR = "Server returned errors, check SkyflowError.data for more"
     
     BATCH_INSERT_PARTIAL_SUCCESS = "Insert Operation is partially successful"

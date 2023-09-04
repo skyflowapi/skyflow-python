@@ -8,8 +8,7 @@ import requests
 from ._delete import deleteProcessResponse
 from ._insert import getInsertRequestBody, processResponse, convertResponse
 from ._update import sendUpdateRequests, createUpdateResponseBody
-from ._config import Configuration, DeleteOptions
-from ._config import DetokenizeOptions, InsertOptions, ConnectionConfig, UpdateOptions
+from ._config import Configuration, DeleteOptions, DetokenizeOptions, InsertOptions, ConnectionConfig, UpdateOptions, QueryOptions
 from ._connection import createRequest
 from ._detokenize import sendDetokenizeRequests, createDetokenizeResponseBody
 from ._get_by_id import sendGetByIdRequests, createGetResponseBody
@@ -18,7 +17,7 @@ import asyncio
 from skyflow.errors._skyflow_errors import SkyflowError, SkyflowErrorCodes, SkyflowErrorMessages
 from skyflow._utils import log_info, log_error, InfoMessages, InterfaceName, getMetrics
 from ._token import tokenProviderWrapper
-
+from ._query import getQueryRequestBody, getQueryResponse
 
 class Client:
     def __init__(self, config: Configuration):
@@ -147,6 +146,28 @@ class Client:
         session.close()
         return processResponse(response, interface=interface)
 
+    def query(self, queryInput, options: QueryOptions = QueryOptions()):
+        interface = InterfaceName.QUERY.value
+        log_info(InfoMessages.QUERY_TRIGGERED.value, interface=interface)
+
+        self._checkConfig(interface)
+        
+        jsonBody = getQueryRequestBody(queryInput, options)
+        requestURL = self._get_complete_vault_url() + "/query"
+        self.storedToken = tokenProviderWrapper(
+            self.storedToken, self.tokenProvider, interface)
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer " + self.storedToken,
+            "sky-metadata": json.dumps(getMetrics())
+        }
+        
+        response = requests.post(requestURL, data=jsonBody, headers=headers)
+        result = getQueryResponse(response)
+
+        log_info(InfoMessages.QUERY_SUCCESS.value, interface)
+        return result
+    
     def _checkConfig(self, interface):
         '''
             Performs basic check on the given client config
