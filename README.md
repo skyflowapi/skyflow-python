@@ -22,8 +22,9 @@ This Python SDK is designed to help developers easily implement Skyflow into the
     - [Get By Id](#get-by-id)
       - [Redaction Types](#redaction-types)
     - [Update](#update)
-    - [Invoke Connection](#invoke-connection)
     - [Delete](#delete)
+    - [Invoke Connection](#invoke-connection)
+    - [Query](#query)
   - [Logging](#logging)
   - [Reporting a Vulnerability](#reporting-a-vulnerability)
 
@@ -837,6 +838,58 @@ Sample response:
     "resource": {
         "cvv2": "558"
     }
+}
+```
+
+### Query
+
+To retrieve data with SQL queries, use the `query(queryInput, options)` method. `queryInput` is an object that takes the `query` parameter as follows:
+
+```python
+{
+    query: str # SQL query statement
+}
+```
+
+See [Query your data](https://docs.skyflow.com/query-data/) and [Execute Query](https://docs.skyflow.com/record/#QueryService_ExecuteQuery) for guidelines and restrictions on supported SQL statements, operators, and keywords.
+
+An [example](https://github.com/skyflowapi/skyflow-python/blob/main/samples/query_sample.py) of Query call:
+
+```python
+queryInput = {
+	query: "SELECT * FROM cards WHERE skyflow_id='3ea3861-x107-40w8-la98-106sp08ea83f'"
+}
+
+try:
+    client.query(queryInput)
+except SkyflowError as e:
+    if e.data:
+        print(e.data)
+    else:
+        print(e.message)
+```
+
+Sample Response
+
+```python
+{
+  "records": [
+    {
+      "fields": {
+        "card_number": "XXXXXXXXXXXX1111",
+        "card_pin": "*REDACTED*",
+        "cvv": "",
+        "expiration_date": "*REDACTED*",
+        "expiration_month": "*REDACTED*",
+        "expiration_year": "*REDACTED*",
+        "name": "a***te",
+        "skyflow_id": "3ea3861-x107-40w8-la98-106sp08ea83f",
+        "ssn": "XXX-XX-6789",
+        "zip_code": None
+      },
+      "tokens": None
+    }
+  ]
 }
 ```
 

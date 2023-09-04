@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.13.0] - 2023-09-04
+### Added
+- Added new Query method.
+
 ## [1.12.0] - 2023-09-01
 ### Added
 - Support for Bulk request with Continue on Error in Detokenize Method
