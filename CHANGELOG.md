@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.12.0] - 2023-09-01
+### Added
+- Support for Bulk request with Continue on Error in Detokenize Method
+- Support for Continue on Error in Insert Method
+
+## [1.11.0] - 2023-08-25
+### Added
+- Support for BYOT in Insert method.
+
 ## [1.10.1] - 2023-07-28
 ### Fixed
 - Fixed delete method

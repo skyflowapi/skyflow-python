@@ -148,13 +148,15 @@ All Vault APIs must be invoked using a client instance.
 
 ### Insert data into the vault
 
-To insert data into your vault use the `insert(records: dict, options: InsertOptions)` method. The `records` parameter is a dictionary that requires a `records` key and takes an array of records to insert into the vault. The `options` parameter takes a dictionary of optional parameters for the insertion. This includes an option to return tokenized data and upsert records.
+To insert data into your vault use the `insert(records: dict, options: InsertOptions)` method. The `records` parameter is a dictionary that requires a `records` key and takes an array of records to insert into the vault. The `options` parameter takes a dictionary of optional parameters for the insertion. This includes an option to return tokenized data, upsert records and continue on error.
 
 ```python
 # Optional, indicates whether you return tokens for inserted data. Defaults to 'true'.
 tokens: bool
 # Optional, indicates Upsert support in the vault. 
 upsert: [UpsertOption]  
+# Optional, decides whether to continue if error encountered or not
+continueOnError: bool
 ```
 
 Insert call schema
@@ -166,7 +168,7 @@ from skyflow.errors import SkyflowError
 try:
     # Create an Upsert option.
     upsertOption =  UpsertOption(table="<TABLE_NAME>",column="<UNIQUE_COLUMN>") 
-    options = InsertOptions(tokens=True,upsert=[upsertOption]) 
+    options = InsertOptions(tokens=True, upsert=[upsertOption], continueOnError=False) 
 
     data = {
         "records": [
@@ -219,6 +221,56 @@ Skyflow returns tokens for the record you just inserted.
 }
 ```
 
+**Insert call [example](https://github.com/skyflowapi/skyflow-python/blob/main/samples/insert_with_continue_on_error_sample.py) with continueOnError option**
+
+```python
+client.insert(
+    {
+        "records": [
+            {
+                "table": "cards",
+                "fields": {
+                    "card_number": "4111111111111111",
+                    "full_name": "john doe"
+                }
+            },
+            {
+                "table": "pii_field",
+                "fields": {
+                    "card_number": "4242424242424200"
+                    "full_name": "jane doe"
+                }
+            }
+        ]
+    }, InsertOptions(tokens=True, continueOnError=True)
+)
+```
+
+Sample Response
+
+```json
+{
+  "records": [
+    {
+      "table": "cards",
+      "fields": {
+        "card_number": "f37186-e7e2-466f-91e5-48e2bcbc1",
+        "full_name": "1989cb56-63a-4482-adf-1f74cd1a5"
+      }
+    }
+  ],
+  "errors": [
+    {
+      "error": {
+        "code": 404,
+        "description": "Object Name pii_field was not found for Vault - requestId : id1234"
+      }
+    }
+  ]
+}
+
+```
+
 **Insert call [example](https://github.com/skyflowapi/skyflow-python/blob/main/samples/insert_upsert_sample.py) with `upsert` options**
 
 ```python
@@ -257,7 +309,7 @@ Skyflow returns tokens, with `upsert` support, for the record you just inserted.
 
 ### Detokenize
 
-In order to retrieve data from your vault using tokens that you have previously generated for that data, you can use the detokenize(records: dict) method. The records parameter takes a dictionary that contains the `records` key that takes an array of records to be fetched from the vault as shown below.
+To retrieve tokens from your vault, you can use the `Detokenize(records: dict, options: DetokenizeOptions)` method.The records parameter takes a dictionary that contains the `records` key that takes an array of records to return. The options parameter is a `DetokenizeOptions` object that provides further options, including `continueOnError` operation, for your detokenize call, as shown below:
 
 ```python
 {
@@ -269,7 +321,9 @@ In order to retrieve data from your vault using tokens that you have previously 
   ]
 }
 ```
-Note:  `redaction` defaults to [RedactionType.PLAIN_TEXT](#redaction-types).
+Notes:
+- `redaction` defaults to [RedactionType.PLAIN_TEXT](#redaction-types).
+- `continueOnError` in DetokenizeOptions will default to `True`.
 
 An [example](https://github.com/skyflowapi/skyflow-python/blob/main/samples/detokenize_sample.py) of a detokenize call:
 
@@ -320,6 +374,47 @@ Sample response:
          "description": "Tokens not found for invalid-token"
        }
    }
+  ]
+}
+```
+
+An [example](https://github.com/skyflowapi/skyflow-python/blob/main/samples/detokenize_with_continue_on_error_sample.py) of a detokenize call with continueOnError:
+
+```python
+try:
+    client.detokenize(
+        {
+            "records": [
+                {
+                    "token": "45012507-f72b-4f5c-9bf9-86b133bae719"
+                },
+                {
+                    "token": '1r434532-6f76-4319-bdd3-96281e051051',
+                    "redaction": Skyflow.RedactionType.MASKED
+                }
+            ] 
+        }, DetokenizeOptions(continueOnError=False)
+    )
+except SkyflowError as e:
+    if e.data:
+        print(e.data) # see note below
+    else:
+        print(e)
+```
+
+Sample response:
+
+```python
+{
+  "records": [
+    {
+      "token": "131e70dc-6f76-4319-bdd3-96281e051051",
+      "value": "1990-01-01"
+    },
+    {
+     "token": "1r434532-6f76-4319-bdd3-96281e051051",
+     "value": "xxxxxxer",
+    }
   ]
 }
 ```

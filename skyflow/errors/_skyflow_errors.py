@@ -90,7 +90,10 @@ class SkyflowErrorMessages(Enum):
     EMPTY_QUERY = "Query key cannot be empty"
     INVALID_QUERY_COMMAND = "only SELECT commands are supported, %s command was passed instead"
     SERVER_ERROR = "Server returned errors, check SkyflowError.data for more"
-
+    
+    BATCH_INSERT_PARTIAL_SUCCESS = "Insert Operation is partially successful"
+    BATCH_INSERT_FAILURE = "Insert Operation is unsuccessful"
+    
 class SkyflowError(Exception):
     def __init__(self, code, message="An Error occured", data={}, interface: str = 'Unknown') -> None:
         if type(code) is SkyflowErrorCodes:

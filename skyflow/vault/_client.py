@@ -8,14 +8,14 @@ import requests
 from ._delete import deleteProcessResponse
 from ._insert import getInsertRequestBody, processResponse, convertResponse
 from ._update import sendUpdateRequests, createUpdateResponseBody
-from ._config import Configuration, DeleteOptions, InsertOptions, ConnectionConfig, UpdateOptions, QueryOptions
+from ._config import Configuration, DeleteOptions, DetokenizeOptions, InsertOptions, ConnectionConfig, UpdateOptions, QueryOptions
 from ._connection import createRequest
 from ._detokenize import sendDetokenizeRequests, createDetokenizeResponseBody
 from ._get_by_id import sendGetByIdRequests, createGetResponseBody
 from ._get import sendGetRequests
 import asyncio
 from skyflow.errors._skyflow_errors import SkyflowError, SkyflowErrorCodes, SkyflowErrorMessages
-from skyflow._utils import log_info, InfoMessages, InterfaceName, getMetrics
+from skyflow._utils import log_info, log_error, InfoMessages, InterfaceName, getMetrics
 from ._token import tokenProviderWrapper
 from ._query import getQueryRequestBody, getQueryResponse
 
@@ -60,12 +60,17 @@ class Client:
 
         response = requests.post(requestURL, data=jsonBody, headers=headers)
         processedResponse = processResponse(response)
-        result = convertResponse(records, processedResponse, options.tokens)
-
-        log_info(InfoMessages.INSERT_DATA_SUCCESS.value, interface)
+        result, partial = convertResponse(records, processedResponse, options)
+        # these statements will be covered in Integration Tests
+        if partial:
+            log_error(SkyflowErrorMessages.BATCH_INSERT_PARTIAL_SUCCESS.value, interface)
+        elif 'records' not in result:
+            log_error(SkyflowErrorMessages.BATCH_INSERT_FAILURE.value, interface)
+        else:
+            log_info(InfoMessages.INSERT_DATA_SUCCESS.value, interface)
         return result
 
-    def detokenize(self, records):
+    def detokenize(self, records: dict, options: DetokenizeOptions = DetokenizeOptions()):
         interface = InterfaceName.DETOKENIZE.value
         log_info(InfoMessages.DETOKENIZE_TRIGGERED.value, interface)
 
@@ -74,11 +79,12 @@ class Client:
             self.storedToken, self.tokenProvider, interface)
         url = self._get_complete_vault_url() + '/detokenize'
         responses = asyncio.run(sendDetokenizeRequests(
-            records, url, self.storedToken))
-        result, partial = createDetokenizeResponseBody(responses)
+            records, url, self.storedToken, options))
+        result, partial = createDetokenizeResponseBody(records, responses, options)
         if partial:
-            raise SkyflowError(SkyflowErrorCodes.PARTIAL_SUCCESS,
-                               SkyflowErrorMessages.PARTIAL_SUCCESS, result, interface=interface)
+            raise SkyflowError(SkyflowErrorCodes.PARTIAL_SUCCESS, SkyflowErrorMessages.PARTIAL_SUCCESS, result, interface=interface)
+        elif 'records' not in result:
+            raise SkyflowError(SkyflowErrorCodes.SERVER_ERROR, SkyflowErrorMessages.SERVER_ERROR, result, interface=interface)
         else:
             log_info(InfoMessages.DETOKENIZE_SUCCESS.value, interface)
             return result
