@@ -58,7 +58,6 @@ def getInsertRequestBody(data, options: InsertOptions):
     if options.continueOnError == None:
         requestBody.pop('continueOnError')
     try:
-        print('request body', requestBody)
         jsonBody = json.dumps(requestBody)
     except Exception as e:
         raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.INVALID_JSON.value % (
@@ -92,7 +91,12 @@ def getTableAndFields(record):
 
     return (table, fields)
 
-def validateTokensAndByotMode(record, byot:BYOT):    
+def validateTokensAndByotMode(record, byot:BYOT):
+    
+    if not isinstance(byot, BYOT):
+        byotType = str(type(byot))
+        raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.INVALID_BYOT_TYPE.value % (byotType), interface=interface)
+        
     if byot == BYOT.DISABLE:
         if "tokens" in record:
             raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.TOKENS_PASSED_FOR_BYOT_DISABLE, interface=interface)

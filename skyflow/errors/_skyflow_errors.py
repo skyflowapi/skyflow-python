@@ -94,6 +94,7 @@ class SkyflowErrorMessages(Enum):
     BATCH_INSERT_PARTIAL_SUCCESS = "Insert Operation is partially successful"
     BATCH_INSERT_FAILURE = "Insert Operation is unsuccessful"
     
+    INVALID_BYOT_TYPE = "byot option has value of type %s, expected Skyflow.BYOT"
     NO_TOKENS_IN_INSERT = "Tokens are not passed in records for byot as %s"
     TOKENS_PASSED_FOR_BYOT_DISABLE = "To consider tokens struct pass byot value as ENABLE"
     INSUFFICIENT_TOKENS_PASSED_FOR_BYOT_ENABLE_STRICT = "For byot as ENABLE_STRICT, tokens should be passed for all fields"
