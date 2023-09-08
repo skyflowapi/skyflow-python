@@ -10,7 +10,7 @@ from skyflow.vault._insert import getInsertRequestBody, processResponse, convert
 from skyflow.errors._skyflow_errors import SkyflowError, SkyflowErrorCodes, SkyflowErrorMessages
 from skyflow.service_account import generate_bearer_token
 from skyflow.vault._client import Client
-from skyflow.vault._config import Configuration, InsertOptions, UpsertOption
+from skyflow.vault._config import Configuration, InsertOptions, UpsertOption, BYOT
 
 
 class TestInsert(unittest.TestCase):
@@ -92,6 +92,7 @@ class TestInsert(unittest.TestCase):
         }
         
         self.insertOptions = InsertOptions(tokens=True)
+        self.insertOptions2 = InsertOptions(tokens=True, byot=BYOT.ENABLE)
 
         return super().setUp()
 
@@ -99,7 +100,7 @@ class TestInsert(unittest.TestCase):
         return self.dataPath + file + '.json'
 
     def testGetInsertRequestBodyWithValidBody(self):
-        body = json.loads(getInsertRequestBody(self.data, self.insertOptions))
+        body = json.loads(getInsertRequestBody(self.data, self.insertOptions2))
         expectedOutput = {
             "tableName": "pii_fields",
             "fields": {
@@ -130,7 +131,7 @@ class TestInsert(unittest.TestCase):
         self.assertEqual(body["records"][0], expectedOutput)
 
     def testGetInsertRequestBodyWithValidUpsertOptions(self):
-        body = json.loads(getInsertRequestBody(self.data, InsertOptions(True,[UpsertOption(table='pii_fields',column='column1')])))
+        body = json.loads(getInsertRequestBody(self.data, InsertOptions(True,[UpsertOption(table='pii_fields',column='column1')], byot=BYOT.ENABLE)))
         expectedOutput = {
             "tableName": "pii_fields",
             "fields": {
@@ -226,7 +227,7 @@ class TestInsert(unittest.TestCase):
         }
         ]}
         try:
-            getInsertRequestBody(invalidData, self.insertOptions)
+            getInsertRequestBody(invalidData, self.insertOptions2)
             self.fail('Should have thrown an error')
         except SkyflowError as e:
             self.assertEqual(e.code, SkyflowErrorCodes.INVALID_INPUT.value)
@@ -244,7 +245,7 @@ class TestInsert(unittest.TestCase):
         }
         ]}
         try:
-            getInsertRequestBody(invalidData, self.insertOptions)
+            getInsertRequestBody(invalidData, self.insertOptions2)
             self.fail('Should have thrown an error')
         except SkyflowError as e:
             self.assertEqual(e.code, SkyflowErrorCodes.INVALID_INPUT.value)
@@ -263,7 +264,7 @@ class TestInsert(unittest.TestCase):
         }
         ]}
         try:
-            getInsertRequestBody(invalidData, self.insertOptions)
+            getInsertRequestBody(invalidData, self.insertOptions2)
             self.fail('Should have thrown an error')
         except SkyflowError as e:
             self.assertEqual(e.code, SkyflowErrorCodes.INVALID_INPUT.value)
@@ -290,7 +291,7 @@ class TestInsert(unittest.TestCase):
     #             e.message, SkyflowErrorMessages.MISMATCH_OF_FIELDS_AND_TOKENS.value)
 
     def testGetInsertRequestBodyWithTokensValidBody(self):
-        body = json.loads(getInsertRequestBody(self.data, self.insertOptions))
+        body = json.loads(getInsertRequestBody(self.data, self.insertOptions2))
         expectedOutput = {
             "tableName": "pii_fields",
             "fields": {
@@ -345,7 +346,7 @@ class TestInsert(unittest.TestCase):
 
     def testGetInsertRequestBodyWithContinueOnErrorAsTrue(self):
         try:
-            options = InsertOptions(tokens=True, continueOnError=True)
+            options = InsertOptions(tokens=True, continueOnError=True, byot=BYOT.ENABLE)
             request = getInsertRequestBody(self.data, options)
             self.assertIn('continueOnError', request)
             request = json.loads(request)
@@ -355,7 +356,7 @@ class TestInsert(unittest.TestCase):
     
     def testGetInsertRequestBodyWithContinueOnErrorAsFalse(self):
         try:
-            options = InsertOptions(tokens=True, continueOnError=False)
+            options = InsertOptions(tokens=True, continueOnError=False, byot=BYOT.ENABLE)
             request = getInsertRequestBody(self.data, options)
             # assert 'continueOnError' in request
             self.assertIn('continueOnError', request)
@@ -366,7 +367,7 @@ class TestInsert(unittest.TestCase):
    
     def testGetInsertRequestBodyWithoutContinueOnError(self):
         try:
-            request = getInsertRequestBody(self.data, self.insertOptions)
+            request = getInsertRequestBody(self.data, self.insertOptions2)
             # assert 'continueOnError' not in request
             self.assertNotIn('continueOnError', request)
         except SkyflowError as e:
@@ -582,4 +583,34 @@ class TestInsert(unittest.TestCase):
              self.assertEqual(e.code, SkyflowErrorCodes.INVALID_INPUT.value)
              self.assertEqual(
                 e.message, SkyflowErrorMessages.EMPTY_UPSERT_OPTION_COLUMN.value % 0)
-             
+
+    def testTokensPassedWithByotModeDisable(self):
+        try:
+            options = InsertOptions(byot=BYOT.DISABLE)
+            getInsertRequestBody(self.data, options)
+            self.fail("Should have thrown an error")
+        except SkyflowError as e:
+            self.assertEqual(e.message, SkyflowErrorMessages.TOKENS_PASSED_FOR_BYOT_DISABLE.value)
+
+    def testTokensNotPassedWithByotModeEnable(self):
+        try:
+            getInsertRequestBody(self.data2, self.insertOptions2)
+            self.fail("Should have thrown an error")
+        except SkyflowError as e:
+            self.assertEqual(e.message, SkyflowErrorMessages.NO_TOKENS_IN_INSERT.value % "ENABLE")
+    
+    def testTokensNotPassedWithByotModeEnableStrict(self):
+        try:
+            options = InsertOptions(byot=BYOT.ENABLE_STRICT)
+            getInsertRequestBody(self.data2, options)
+            self.fail("Should have thrown an error")
+        except SkyflowError as e:
+            self.assertEqual(e.message, SkyflowErrorMessages.NO_TOKENS_IN_INSERT.value % "ENABLE_STRICT")
+    
+    def testTokensPassedWithByotModeEnableStrict(self):
+        try:
+            options = InsertOptions(byot=BYOT.ENABLE_STRICT)
+            getInsertRequestBody(self.data, options)
+            self.fail("Should have thrown an error")
+        except SkyflowError as e:
+            self.assertEqual(e.message, SkyflowErrorMessages.INSUFFICIENT_TOKENS_PASSED_FOR_BYOT_ENABLE_STRICT.value)

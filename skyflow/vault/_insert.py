@@ -7,7 +7,7 @@ import requests
 from requests.models import HTTPError
 from skyflow.errors._skyflow_errors import SkyflowError, SkyflowErrorCodes, SkyflowErrorMessages
 from skyflow._utils import InterfaceName
-from skyflow.vault._config import InsertOptions
+from skyflow.vault._config import BYOT, InsertOptions
 
 interface = InterfaceName.INSERT.value
 
@@ -38,7 +38,8 @@ def getInsertRequestBody(data, options: InsertOptions):
             "method": "POST",
             "quorum": True,
         }  
-        if  "tokens" in record:
+        validateTokensAndByotMode(record, options.byot)
+        if "tokens" in record:
             tokens = getTokens(record)
             postPayload["tokens"] =  tokens
         
@@ -51,7 +52,8 @@ def getInsertRequestBody(data, options: InsertOptions):
         requestPayload.append(postPayload)
     requestBody = {
         "records": requestPayload, 
-        "continueOnError": options.continueOnError
+        "continueOnError": options.continueOnError,
+        "byot": options.byot.value
     }
     if options.continueOnError == None:
         requestBody.pop('continueOnError')
@@ -89,6 +91,23 @@ def getTableAndFields(record):
 
     return (table, fields)
 
+def validateTokensAndByotMode(record, byot:BYOT):
+    
+    if not isinstance(byot, BYOT):
+        byotType = str(type(byot))
+        raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.INVALID_BYOT_TYPE.value % (byotType), interface=interface)
+        
+    if byot == BYOT.DISABLE:
+        if "tokens" in record:
+            raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.TOKENS_PASSED_FOR_BYOT_DISABLE, interface=interface)
+    elif "tokens" not in record:
+        raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.NO_TOKENS_IN_INSERT.value % byot.value, interface=interface)
+    elif byot == BYOT.ENABLE_STRICT:
+        tokens = record["tokens"]
+        fields = record["fields"]
+        if len(tokens) != len(fields):
+            raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.INSUFFICIENT_TOKENS_PASSED_FOR_BYOT_ENABLE_STRICT, interface=interface)
+        
 def getTokens(record):
     tokens = record["tokens"]
     if not isinstance(tokens, dict):

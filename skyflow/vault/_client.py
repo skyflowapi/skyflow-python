@@ -61,7 +61,6 @@ class Client:
         response = requests.post(requestURL, data=jsonBody, headers=headers)
         processedResponse = processResponse(response)
         result, partial = convertResponse(records, processedResponse, options)
-        # these statements will be covered in Integration Tests
         if partial:
             log_error(SkyflowErrorMessages.BATCH_INSERT_PARTIAL_SUCCESS.value, interface)
         elif 'records' not in result:
