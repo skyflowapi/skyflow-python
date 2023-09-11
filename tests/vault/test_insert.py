@@ -584,6 +584,14 @@ class TestInsert(unittest.TestCase):
              self.assertEqual(
                 e.message, SkyflowErrorMessages.EMPTY_UPSERT_OPTION_COLUMN.value % 0)
 
+    def testInvalidByotModeTypePassed(self):
+        try:
+            options = InsertOptions(byot='BYOT.DISABLE')
+            getInsertRequestBody(self.data, options)
+            self.fail("Should have thrown an error")
+        except SkyflowError as e:
+            self.assertEqual(e.message, SkyflowErrorMessages.INVALID_BYOT_TYPE.value % (type(options.byot)))
+            
     def testTokensPassedWithByotModeDisable(self):
         try:
             options = InsertOptions(byot=BYOT.DISABLE)

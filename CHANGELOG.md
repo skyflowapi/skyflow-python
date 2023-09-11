@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.14.0] - 2023-09-11
+## Added
+- Support for different BYOT modes in Insert method.
+
 ## [1.13.0] - 2023-09-04
 ### Added
 - Added new Query method.

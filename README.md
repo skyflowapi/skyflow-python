@@ -149,8 +149,9 @@ All Vault APIs must be invoked using a client instance.
 
 ### Insert data into the vault
 
-To insert data into your vault use the `insert(records: dict, options: InsertOptions)` method. The `records` parameter is a dictionary that requires a `records` key and takes an array of records to insert into the vault. The `options` parameter takes a dictionary of optional parameters for the insertion. This includes an option to return tokenized data, upsert records and continue on error.
+To insert data into your vault use the `insert(records: dict, options: InsertOptions)` method. The `records` parameter is a dictionary that requires a `records` key and takes an array of records to insert into the vault. The `options` parameter takes a dictionary of optional parameters for the insertion. The optional parameter includes:
 
+Insert Options
 ```python
 # Optional, indicates whether you return tokens for inserted data. Defaults to 'true'.
 tokens: bool
@@ -158,7 +159,13 @@ tokens: bool
 upsert: [UpsertOption]  
 # Optional, decides whether to continue if error encountered or not
 continueOnError: bool
+# Optional, decides the byot mode
+byot: Skyflow.BYOT
 ```
+
+Notes: 
+- For supported `byot` types, see [Skyflow.BYOT](#byot)
+- `byot` defaults to `BYOT.DISABLE`
 
 Insert call schema
 ```python
@@ -216,13 +223,14 @@ Skyflow returns tokens for the record you just inserted.
             "fields": {
                 "cardNumber": "f3907186-e7e2-466f-91e5-48e12c2bcbc1",
                 "cvv": "1989cb56-63da-4482-a2df-1f74cd0dd1a5",
+                "skyflow_id": "d863633c-8c75-44fc-b2ed-2b58162d1117"
             },
         }
     ]
 }
 ```
 
-**Insert call [example](https://github.com/skyflowapi/skyflow-python/blob/main/samples/insert_with_continue_on_error_sample.py) with continueOnError option**
+**Insert call [example](https://github.com/skyflowapi/skyflow-python/blob/main/samples/insert_with_continue_on_error_sample.py) with `continueOnError` option**
 
 ```python
 client.insert(
@@ -256,7 +264,8 @@ Sample Response
       "table": "cards",
       "fields": {
         "card_number": "f37186-e7e2-466f-91e5-48e2bcbc1",
-        "full_name": "1989cb56-63a-4482-adf-1f74cd1a5"
+        "full_name": "1989cb56-63a-4482-adf-1f74cd1a5",
+        "skyflow_id": "3daf1a7f-bc7f-4fc9-8c56-a6e4e93231e6"
       }
     }
   ],
@@ -264,12 +273,68 @@ Sample Response
     {
       "error": {
         "code": 404,
-        "description": "Object Name pii_field was not found for Vault - requestId : id1234"
+        "description": "Object Name pii_field was not found for Vault - requestId : af4aad11-f276-474d-b626-c75c8b35d49e"
       }
     }
   ]
 }
 
+```
+
+**Insert call [example](https://github.com/skyflowapi/skyflow-python/blob/main/samples/insert_byot_sample.py) with `byot` option**
+
+```python
+client.insert(
+    {
+        "records": [
+            {
+                "table": "cards",
+                "fields": {
+                    "card_number": "4111111111111111",
+                    "full_name": "john doe"
+                },
+                "tokens": {
+                    "card_number": "8486-6981-3757-9998"
+                }
+            },
+            {
+                "table": "cards",
+                "fields": {
+                    "card_number": "4242424242424200"
+                    "full_name": "jane doe"
+                },
+                "tokens": {
+                    "card_number": "9426-6911-3750-7998"
+                }
+            }
+        ]
+    }, InsertOptions(tokens=True, byot=BYOT.ENABLE)
+)
+```
+
+Sample Response:
+
+```json
+{
+  "records": [
+    {
+      "table": "cards",
+      "fields": {
+        "card_number": "8486-6981-3757-9998",
+        "full_name": "1989cb56-63a-4482-adf-1f74cd1a5",
+        "skyflow_id": "3daf1a7f-bc7f-4fc9-8c56-a6e4e93231e6"
+      }
+    },
+    {
+      "table": "cards",
+      "fields": {
+        "card_number": "9426-6911-3750-7998",
+        "full_name": "1041c13c-1a3c-4a09-a556-686d8bba307b",
+        "skyflow_id": "9a567659-fe5c-4ecc-80aa-059a9644138e"
+      }
+    }
+  ],
+}
 ```
 
 **Insert call [example](https://github.com/skyflowapi/skyflow-python/blob/main/samples/insert_upsert_sample.py) with `upsert` options**
@@ -302,11 +367,19 @@ Skyflow returns tokens, with `upsert` support, for the record you just inserted.
             "fields": {
                 "cardNumber": "f3907186-e7e2-466f-91e5-48e12c2bcbc1",
                 "cvv": "1989cb56-63da-4482-a2df-1f74cd0dd1a5",
+                "skyflow_id": "60b32788-12ec-4dd7-9da5-0146c3afbe11"
             },
         }
     ]
 }
 ```
+
+#### BYOT
+There are 3 accepted values in Skyflow.BYOT:
+
+- `DISABLE`
+- `ENABLE`
+- `ENABLE_STRICT`
 
 ### Detokenize
 
