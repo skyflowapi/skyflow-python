@@ -208,7 +208,7 @@ client.insert(
 
 Skyflow returns tokens for the record you just inserted.
 
-```python
+```json
 {
     "records": [
         {
@@ -216,13 +216,15 @@ Skyflow returns tokens for the record you just inserted.
             "fields": {
                 "cardNumber": "f3907186-e7e2-466f-91e5-48e12c2bcbc1",
                 "cvv": "1989cb56-63da-4482-a2df-1f74cd0dd1a5",
+                "skyflow_id": "d863633c-8c75-44fc-b2ed-2b58162d1117"
             },
+            "request_index": 0
         }
     ]
 }
 ```
 
-**Insert call [example](https://github.com/skyflowapi/skyflow-python/blob/main/samples/insert_with_continue_on_error_sample.py) with continueOnError option**
+**Insert call [example](https://github.com/skyflowapi/skyflow-python/blob/main/samples/insert_with_continue_on_error_sample.py) with `continueOnError` option**
 
 ```python
 client.insert(
@@ -256,15 +258,18 @@ Sample Response
       "table": "cards",
       "fields": {
         "card_number": "f37186-e7e2-466f-91e5-48e2bcbc1",
-        "full_name": "1989cb56-63a-4482-adf-1f74cd1a5"
-      }
+        "full_name": "1989cb56-63a-4482-adf-1f74cd1a5",
+        "skyflow_id": "3daf1a7f-bc7f-4fc9-8c56-a6e4e93231e6"
+      },
+      "request_index": 0
     }
   ],
   "errors": [
     {
       "error": {
         "code": 404,
-        "description": "Object Name pii_field was not found for Vault - requestId : id1234"
+        "description": "Object Name pii_field was not found for Vault - requestId : af4aad11-f276-474d-b626-c75c8b35d49e",
+        "request_index": 1
       }
     }
   ]
@@ -294,7 +299,7 @@ client.insert(
 
 Skyflow returns tokens, with `upsert` support, for the record you just inserted.
 
-```python
+```json
 {
     "records": [
         {
@@ -302,7 +307,9 @@ Skyflow returns tokens, with `upsert` support, for the record you just inserted.
             "fields": {
                 "cardNumber": "f3907186-e7e2-466f-91e5-48e12c2bcbc1",
                 "cvv": "1989cb56-63da-4482-a2df-1f74cd0dd1a5",
+                "skyflow_id": "60b32788-12ec-4dd7-9da5-0146c3afbe11"
             },
+            "request_index": 0
         }
     ]
 }
