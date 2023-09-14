@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.13.1] - 2023-09-14
+### Changed
+- Add `request_index` in responses for insert method.
+
 ## [1.13.0] - 2023-09-04
 ### Added
 - Added new Query method.
