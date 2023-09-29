@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.14.0] - 2023-09-29
+## Added
+- Support for different BYOT modes in Insert method.
+
 ## [1.13.1] - 2023-09-14
 ### Changed
 - Add `request_index` in responses for insert method.
