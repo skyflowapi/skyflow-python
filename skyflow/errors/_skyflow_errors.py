@@ -96,7 +96,7 @@ class SkyflowErrorMessages(Enum):
     
     INVALID_BYOT_TYPE = "byot option has value of type %s, expected Skyflow.BYOT"
     NO_TOKENS_IN_INSERT = "Tokens are not passed in records for byot as %s"
-    TOKENS_PASSED_FOR_BYOT_DISABLE = "To consider tokens struct pass byot value as ENABLE"
+    TOKENS_PASSED_FOR_BYOT_DISABLE = "Pass byot parameter with ENABLE for token insertion"
     INSUFFICIENT_TOKENS_PASSED_FOR_BYOT_ENABLE_STRICT = "For byot as ENABLE_STRICT, tokens should be passed for all fields"
     
 class SkyflowError(Exception):

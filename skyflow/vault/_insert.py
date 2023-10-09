@@ -177,14 +177,14 @@ def buildResponseWithContinueOnError(responseArray, records, tokens: bool, reque
             if tokens:
                 fieldsDict = body['records'][0]['tokens']
                 fieldsDict['skyflow_id'] = skyflow_id
-                result.append({'table': table, 'fields': fieldsDict})
+                result.append({'table': table, 'fields': fieldsDict, 'request_index': idx})
             else:
-                result.append({'table': table, 'skyflow_id': skyflow_id})
+                result.append({'table': table, 'skyflow_id': skyflow_id, 'request_index': idx})
         elif 'error' in body:
             partial = True
             message = body['error']
             message += ' - request id: ' + requestId
-            error = {"code": status, "description": message}
+            error = {"code": status, "description": message, "request_index": idx}
             errors.append({"error": error})
     finalResponse = {"records": result, "errors": errors}
     if len(result) == 0:
@@ -203,9 +203,9 @@ def buildResponseWithoutContinueOnError(responseArray, records, tokens: bool):
         if tokens:
             fieldsDict = responseArray[idx]['records'][0]['tokens']
             fieldsDict['skyflow_id'] = skyflow_id
-            result.append({'table': table, 'fields': fieldsDict})
+            result.append({'table': table, 'fields': fieldsDict, 'request_index': idx})
         else:
-            result.append({'table': table, 'skyflow_id': skyflow_id})
+            result.append({'table': table, 'skyflow_id': skyflow_id, 'request_index': idx})
     return {'records': result}, False
 
 def getUpsertColumn(tableName, upsertOptions):

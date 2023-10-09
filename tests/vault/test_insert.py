@@ -452,6 +452,7 @@ class TestInsert(unittest.TestCase):
         self.assertEqual(len(result["records"]), 1)
         self.assertEqual(result["records"][0]["skyflow_id"], 123)
         self.assertEqual(result["records"][0]["table"], "pii_fields")
+        self.assertEqual(result["records"][0]["request_index"], 0)
         self.assertNotIn("tokens", result["records"][0])
 
     def testConvertResponseWithTokens(self):
@@ -465,6 +466,7 @@ class TestInsert(unittest.TestCase):
 
         self.assertIn("fields", result["records"][0])
         self.assertEqual(result["records"][0]["fields"]["skyflow_id"], 123)
+        self.assertEqual(result["records"][0]["request_index"], 0)
 
         self.assertEqual(result["records"][0]["fields"]
                          ["cardNumber"], "card_number_token")
@@ -486,6 +488,29 @@ class TestInsert(unittest.TestCase):
         self.assertEqual(result["records"][0]["fields"]["skyflow_id"], 123)
         self.assertEqual(result["records"][0]["fields"]["cardNumber"], "card_number_token")
         self.assertEqual(result["records"][0]["fields"]["cvv"], "cvv_token")
+
+        self.assertIn("request_index", result["records"][0])
+        self.assertEqual(result["records"][0]["request_index"], 0)
+    
+    def testConvertResponseWithContinueoOnErrorAndNoTokensSuccess(self):
+        options = InsertOptions(tokens=False, continueOnError=True)
+        result, partial = convertResponse(self.mockRequest, self.mockResponseCOESuccess, options)
+        self.assertFalse(partial)
+        
+        self.assertEqual(len(result["records"]), 1)
+        self.assertNotIn("errors", result)
+        
+        self.assertIn("skyflow_id", result["records"][0])
+        self.assertEqual(result["records"][0]["skyflow_id"], 123)
+        
+        self.assertIn("table", result["records"][0])
+        self.assertEqual(result["records"][0]["table"], "pii_fields")
+
+        self.assertNotIn("fields", result["records"][0])
+        self.assertNotIn("tokens", result["records"][0])
+        
+        self.assertIn("request_index", result["records"][0])
+        self.assertEqual(result["records"][0]["request_index"], 0)
     
     def testConvertResponseWithContinueoOnErrorPartialSuccess(self):
         options = InsertOptions(tokens=True, continueOnError=True)
@@ -509,11 +534,17 @@ class TestInsert(unittest.TestCase):
         self.assertEqual(result["records"][0]["fields"]["cardNumber"], "card_number_token")
         self.assertEqual(result["records"][0]["fields"]["cvv"], "cvv_token")
         
+        self.assertIn("request_index", result["records"][0])
+        self.assertEqual(result["records"][0]["request_index"], 0)
+        
         message = self.mockResponseCOEErrorObject['Body']['error'] 
         message += ' - request id: ' + self.mockResponse['requestId']
         self.assertEqual(result["errors"][0]["error"]["code"], 400)
         self.assertEqual(result["errors"][0]["error"]["description"], message)
     
+        self.assertIn("request_index", result["errors"][0]["error"])
+        self.assertEqual(result["errors"][0]["error"]["request_index"], 1)
+        
     def testConvertResponseWithContinueoOnErrorFailure(self):
         options = InsertOptions(tokens=True, continueOnError=True)
         result, partial = convertResponse(self.mockRequest, self.mockResponseCOEFailure, options)
@@ -526,7 +557,9 @@ class TestInsert(unittest.TestCase):
         message += ' - request id: ' + self.mockResponse['requestId']
         self.assertEqual(result["errors"][0]["error"]["code"], 400)
         self.assertEqual(result["errors"][0]["error"]["description"], message)
-
+        self.assertIn("request_index", result["errors"][0]["error"])
+        self.assertEqual(result["errors"][0]["error"]["request_index"], 0)
+        
     def testInsertInvalidToken(self):
         config = Configuration('id', 'url', lambda: 'invalid-token')
         try:
