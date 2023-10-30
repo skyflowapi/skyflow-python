@@ -5,19 +5,21 @@ import unittest
 import os
 
 from skyflow.errors._skyflow_errors import SkyflowError, SkyflowErrorCodes, SkyflowErrorMessages
-from skyflow.vault import Client, Configuration, RedactionType
+from skyflow.vault import Client, Configuration, RedactionType, GetOptions
+from skyflow.vault._get_by_id import encrypt_data
 from skyflow.service_account import generate_bearer_token
 from dotenv import dotenv_values
 import warnings
 import asyncio
 import json
+from cryptography.fernet import Fernet
 
 
 class TestGet(unittest.TestCase):
 
     def setUp(self) -> None:
         self.envValues = dotenv_values(".env")
-        self.dataPath = os.path.join(os.getcwd(), 'tests/vault/data/')
+        self.dataPath = os.path.join(os.getcwd(), 'tests/vault/test_get.py')
         self.event_loop = asyncio.new_event_loop()
         self.mocked_futures = []
 
@@ -68,7 +70,7 @@ class TestGet(unittest.TestCase):
 
     def testGetByIdNoIds(self):
         invalidData = {"records": [
-            {"invalid": "invalid", "table": "pii_fields", "redaction": RedactionType.PLAIN_TEXT}]}
+            {"invalid": "invalid", "table": "newstripe", "redaction": RedactionType.PLAIN_TEXT}]}
         try:
             self.client.get(invalidData)
             self.fail('Should have thrown an error')
@@ -79,7 +81,7 @@ class TestGet(unittest.TestCase):
 
     def testGetByIdInvalidIdsType(self):
         invalidData = {"records": [
-            {"ids": "invalid", "table": "pii_fields", "redaction": "PLAIN_TEXT"}]}
+            {"ids": "invalid", "table": "newstripe", "redaction": "PLAIN_TEXT"}]}
         try:
             self.client.get(invalidData)
             self.fail('Should have thrown an error')
@@ -90,7 +92,7 @@ class TestGet(unittest.TestCase):
 
     def testGetByIdInvalidIdsType2(self):
         invalidData = {"records": [
-            {"ids": ["123", 123], "table": "pii_fields", "redaction": "PLAIN_TEXT"}]}
+            {"ids": ["123", 123], "table": "newstripe", "redaction": "PLAIN_TEXT"}]}
         try:
             self.client.get(invalidData)
             self.fail('Should have thrown an error')
@@ -121,31 +123,9 @@ class TestGet(unittest.TestCase):
             self.assertEqual(
                 e.message, SkyflowErrorMessages.INVALID_TABLE_TYPE.value % (list))
 
-    def testGetByIdNoRedaction(self):
-        invalidData = {"records": [
-            {"ids": ["id1", "id2"], "table": "pii_fields", "invalid": "invalid"}]}
-        try:
-            self.client.get(invalidData)
-            self.fail('Should have thrown an error')
-        except SkyflowError as e:
-            self.assertEqual(e.code, SkyflowErrorCodes.INVALID_INPUT.value)
-            self.assertEqual(
-                e.message, SkyflowErrorMessages.REDACTION_KEY_ERROR.value)
-
-    def testGetByIdInvalidRedactionType(self):
-        invalidData = {"records": [
-            {"ids": ["id1", "id2"], "table": "pii_fields", "redaction": "PLAIN_TEXT"}]}
-        try:
-            self.client.get(invalidData)
-            self.fail('Should have thrown an error')
-        except SkyflowError as e:
-            self.assertEqual(e.code, SkyflowErrorCodes.INVALID_INPUT.value)
-            self.assertEqual(
-                e.message, SkyflowErrorMessages.INVALID_REDACTION_TYPE.value % (str))
-
     def testGetByIdNoColumnName(self):
         invalidData = {"records": [
-            {"table": "pii_fields", "redaction": RedactionType.PLAIN_TEXT}]}
+            {"table": "newstripe", "redaction": RedactionType.PLAIN_TEXT}]}
         try:
             self.client.get(invalidData)
             self.fail('Should have thrown an error')
@@ -153,10 +133,11 @@ class TestGet(unittest.TestCase):
             self.assertEqual(e.code, SkyflowErrorCodes.INVALID_INPUT.value)
             self.assertEqual(
                 e.message, SkyflowErrorMessages.UNIQUE_COLUMN_OR_IDS_KEY_ERROR.value)
-    
+
     def testGetByIdInvalidColumnName(self):
         invalidData = {"records": [
-            {"ids": ["123", "456"],"table": "pii_fields", "redaction": RedactionType.PLAIN_TEXT, "columnName": ["invalid"]}]}
+              {"ids": ["123", "456"], "table": "newstripe", "redaction": RedactionType.PLAIN_TEXT,
+             "columnName": ["invalid"]}]}
         try:
             self.client.get(invalidData)
             self.fail('Should have thrown an error')
@@ -164,10 +145,10 @@ class TestGet(unittest.TestCase):
             self.assertEqual(e.code, SkyflowErrorCodes.INVALID_INPUT.value)
             self.assertEqual(
                 e.message, SkyflowErrorMessages.INVALID_COLUMN_NAME.value % (list))
-    
+
     def testGetByIdNoColumnValues(self):
         invalidData = {"records": [
-            {"table": "pii_fields", "redaction": RedactionType.PLAIN_TEXT, "columnName": "first_name"}]}
+            {"table": "newstripe", "redaction": RedactionType.PLAIN_TEXT, "columnName": "card_number"}]}
         try:
             self.client.get(invalidData)
             self.fail('Should have thrown an error')
@@ -178,11 +159,98 @@ class TestGet(unittest.TestCase):
 
     def testGetByIdInvalidColumnValues(self):
         invalidData = {"records": [
-            {"ids": ["123", "456"], "table": "pii_fields", "redaction": RedactionType.PLAIN_TEXT, "columnName": "first_name", "columnValues": "invalid"}]}
+            {"ids": ["123", "456"], "table": "newstripe", "redaction": RedactionType.PLAIN_TEXT,
+             "columnName": "card_number", "columnValues": "invalid"}]}
         try:
             self.client.get(invalidData)
             self.fail('Should have thrown an error')
         except SkyflowError as e:
             self.assertEqual(e.code, SkyflowErrorCodes.INVALID_INPUT.value)
             self.assertEqual(
-                e.message, SkyflowErrorMessages.INVALID_COLUMN_VALUE.value % (str))
+                e.message, SkyflowErrorMessages.INVALID_COLUMN_VALUE.value % (str) )
+
+
+    def testGetByTokenAndRedaction(self):
+        invalidData = {"records": [
+            {"ids": ["123","456"],
+             "table": "stripe", "redaction": RedactionType.PLAIN_TEXT,}]}
+        options = GetOptions(True)
+        try:
+            self.client.get(invalidData,options=options)
+            self.fail('Should have thrown an error')
+        except SkyflowError as e:
+            self.assertEqual(e.code, SkyflowErrorCodes.INVALID_INPUT.value)
+            self.assertEqual(
+                e.message, SkyflowErrorMessages.REDACTION_WITH_TOKENS_NOT_SUPPORTED.value)
+
+    def testGetByNoOptionAndRedaction(self):
+        invalidData = {"records":[
+            {"ids":["123","456"],"table":"newstripe"}]}
+        options = GetOptions(False)
+        try:
+            self.client.get(invalidData,options=options)
+            self.fail('Should have thrown an error')
+        except SkyflowError as e:
+            self.assertEqual(e.code,SkyflowErrorCodes.INVALID_INPUT.value)
+            self.assertEqual(
+                e.message,SkyflowErrorMessages.REDACTION_KEY_ERROR.value)
+
+    def testGetByOptionAndUniqueColumnRedaction(self):
+        invalidData ={"records":[
+            {"table":"newstripe","columnName":"card_number","columnValues":["456","980"],}
+        ]}
+
+        options = GetOptions(True)
+        try:
+            self.client.get(invalidData, options=options)
+            self.fail('Should have thrown an error')
+        except SkyflowError as e:
+            self.assertEqual(e.code, SkyflowErrorCodes.TOKENS_GET_COLUMN_NOT_SUPPORTED.value)
+            self.assertEqual(
+                e.message, SkyflowErrorMessages.TOKENS_GET_COLUMN_NOT_SUPPORTED.value)
+
+    def testInvalidRedactionTypeWithNoOption(self):
+        invalidData = {"records": [
+            {"ids": ["123","456"],
+             "table": "stripe", "redaction": "invalid_redaction"}]}
+        options = GetOptions(False)
+        try:
+            self.client.get(invalidData, options=options)
+            self.fail('Should have thrown an error')
+        except SkyflowError as e:
+            self.assertEqual(e.code, SkyflowErrorCodes.INVALID_INPUT.value)
+            self.assertEqual(e.message, SkyflowErrorMessages.INVALID_REDACTION_TYPE.value % (str))
+
+    def test_encrypt_data_with_token(self):
+        data = {
+            "records": [
+                {
+                    "fields": {
+                        "ids": ["123","456"],
+                        "table": "stripe",
+                    }
+                }
+            ]
+        }
+        token = "secret_token"
+        encrypted_bytes = encrypt_data(data, token)
+        self.assertIsNotNone(encrypted_bytes)
+
+    def test_encrypt_data_without_token(self):
+        data = {
+            "records": [
+                {
+                    "fields": {
+                        "ids": ["123", "456"],
+                        "table": "stripe",
+                    }
+                }
+            ]
+        }
+        token = None
+        encrypted_data, key = encrypt_data(data, token)
+        self.assertEqual(encrypted_data, data)
+        self.assertIsNone(key)
+
+
+ 
