@@ -4,6 +4,18 @@
 import json
 import types
 import requests
+from skyflow.vault._insert import getInsertRequestBody, processResponse, convertResponse
+from skyflow.vault._update import sendUpdateRequests, createUpdateResponseBody
+from skyflow.vault._config import Configuration, GetOptions
+from skyflow.vault._config import InsertOptions, ConnectionConfig, UpdateOptions
+from skyflow.vault._connection import createRequest
+from skyflow.vault._detokenize import sendDetokenizeRequests, createDetokenizeResponseBody
+from skyflow.vault._get_by_id import sendGetByIdRequests, createGetResponseBody
+from skyflow.vault._get import sendGetRequests
+import asyncio
+from skyflow.errors._skyflow_errors import SkyflowError, SkyflowErrorCodes, SkyflowErrorMessages
+from skyflow._utils import log_info, InfoMessages, InterfaceName, getMetrics
+from skyflow.vault._token import tokenProviderWrapper
 
 from ._delete import deleteProcessResponse
 from ._insert import getInsertRequestBody, processResponse, convertResponse
@@ -88,7 +100,7 @@ class Client:
             log_info(InfoMessages.DETOKENIZE_SUCCESS.value, interface)
             return result
 
-    def get(self, records):
+    def get(self, records, options: GetOptions = GetOptions()):
         interface = InterfaceName.GET.value
         log_info(InfoMessages.GET_TRIGGERED.value, interface)
 
@@ -97,7 +109,7 @@ class Client:
             self.storedToken, self.tokenProvider, interface)
         url = self._get_complete_vault_url()
         responses = asyncio.run(sendGetRequests(
-            records, url, self.storedToken))
+            records, options,url, self.storedToken))
         result, partial = createGetResponseBody(responses)
         if partial:
             raise SkyflowError(SkyflowErrorCodes.PARTIAL_SUCCESS,
