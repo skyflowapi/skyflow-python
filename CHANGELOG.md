@@ -2,6 +2,39 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.14.0] - 2023-09-29
+## Added
+- Support for different BYOT modes in Insert method.
+
+## [1.13.1] - 2023-09-14
+### Changed
+- Add `request_index` in responses for insert method.
+
+## [1.13.0] - 2023-09-04
+### Added
+- Added new Query method.
+
+## [1.12.0] - 2023-09-01
+### Added
+- Support for Bulk request with Continue on Error in Detokenize Method
+- Support for Continue on Error in Insert Method
+
+## [1.11.0] - 2023-08-25
+### Added
+- Support for BYOT in Insert method.
+
+## [1.10.1] - 2023-07-28
+### Fixed
+- Fixed delete method
+
+## [1.10.0] - 2023-07-21
+### Added
+- Added delete method
+
+## [1.9.2] - 2023-06-22
+### Fixed
+- Multiple record error in get method
+
 ## [1.9.1] - 2023-06-07
 ### Fixed
 - Fixed bug in metrics

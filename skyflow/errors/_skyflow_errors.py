@@ -7,6 +7,7 @@ from skyflow._utils import log_error
 
 class SkyflowErrorCodes(Enum):
     INVALID_INPUT = 400
+    INVALID_INDEX = 404
     SERVER_ERROR = 500
     PARTIAL_SUCCESS = 500
     TOKENS_GET_COLUMN_NOT_SUPPORTED = 400
@@ -44,12 +45,21 @@ class SkyflowErrorMessages(Enum):
     INVALID_JSON = "Given %s is invalid JSON"
     INVALID_RECORDS_TYPE = "Records key has value of type %s, expected list"
     INVALID_FIELDS_TYPE = "Fields key has value of type %s, expected dict"
+    INVALID_TOKENS_TYPE = "Tokens key has value of type %s, expected dict"
+    EMPTY_TOKENS_IN_INSERT = "Tokens is empty in records"
+    MISMATCH_OF_FIELDS_AND_TOKENS = "Fields and Tokens object are not matching"
     INVALID_TABLE_TYPE = "Table key has value of type %s, expected string"
+    INVALID_TABLE_TYPE_DELETE = "Table of type string is required at index %s in records array"
     INVALID_IDS_TYPE = "Ids key has value of type %s, expected list"
     INVALID_ID_TYPE = "Id key has value of type %s, expected string"
+    INVALID_ID_TYPE_DELETE = "Id of type string is required at index %s in records array"
     INVALID_REDACTION_TYPE = "Redaction key has value of type %s, expected Skyflow.Redaction"
     INVALID_COLUMN_NAME = "Column name has value of type %s, expected string"
     INVALID_COLUMN_VALUE = "Column values has value of type %s, expected list"
+    EMPTY_RECORDS_IN_DELETE = "records array cannot be empty"
+    EMPTY_ID_IN_DELETE = "Id cannot be empty in records array"
+    EMPTY_TABLE_IN_DELETE = "Table cannot be empty in records array"
+    RECORDS_KEY_NOT_FOUND_DELETE = "records object is required"
 
     INVALID_REQUEST_BODY = "Given request body is not valid"
     INVALID_RESPONSE_BODY = "Given response body is not valid"
@@ -79,8 +89,20 @@ class SkyflowErrorMessages(Enum):
     INVALID_UPSERT_COLUMN_TYPE = "upsert object column key has value of type %s, expected string"
     EMPTY_UPSERT_OPTION_TABLE = "upsert object table value is empty string at index %s, expected non-empty string"
     EMPTY_UPSERT_OPTION_COLUMN = "upsert object column value is empty string at index %s, expected non-empty string"
-
-
+    QUERY_KEY_ERROR = "Query key is missing from payload"
+    INVALID_QUERY_TYPE = "Query key has value of type %s, expected string"
+    EMPTY_QUERY = "Query key cannot be empty"
+    INVALID_QUERY_COMMAND = "only SELECT commands are supported, %s command was passed instead"
+    SERVER_ERROR = "Server returned errors, check SkyflowError.data for more"
+    
+    BATCH_INSERT_PARTIAL_SUCCESS = "Insert Operation is partially successful"
+    BATCH_INSERT_FAILURE = "Insert Operation is unsuccessful"
+    
+    INVALID_BYOT_TYPE = "byot option has value of type %s, expected Skyflow.BYOT"
+    NO_TOKENS_IN_INSERT = "Tokens are not passed in records for byot as %s"
+    TOKENS_PASSED_FOR_BYOT_DISABLE = "Pass byot parameter with ENABLE for token insertion"
+    INSUFFICIENT_TOKENS_PASSED_FOR_BYOT_ENABLE_STRICT = "For byot as ENABLE_STRICT, tokens should be passed for all fields"
+    
 class SkyflowError(Exception):
     def __init__(self, code, message="An Error occured", data={}, interface: str = 'Unknown') -> None:
         if type(code) is SkyflowErrorCodes:

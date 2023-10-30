@@ -24,7 +24,11 @@ class Configuration:
             self.vaultURL = vaultURL or ""
             self.tokenProvider = tokenProvider
 
-
+class BYOT(Enum):
+    DISABLE = "DISABLE"
+    ENABLE = "ENABLE"
+    ENABLE_STRICT = "ENABLE_STRICT"
+    
 class UpsertOption:
     def __init__(self, table: str, column: str):
         self.table = table
@@ -32,20 +36,32 @@ class UpsertOption:
 
 
 class InsertOptions:
-    def __init__(self, tokens: bool = True, upsert: List[UpsertOption] = None):
+    def __init__(self, tokens: bool=True, upsert :List[UpsertOption]=None, continueOnError:bool=None, byot:BYOT=BYOT.DISABLE):
         self.tokens = tokens
         self.upsert = upsert
+        self.continueOnError = continueOnError
+        self.byot = byot
 
 
 class UpdateOptions:
     def __init__(self, tokens: bool = True):
         self.tokens = tokens
 
-
 class GetOptions:
     def __init__(self, tokens: bool = False):
         self.tokens = tokens
 
+class DeleteOptions:
+    def __init__(self, tokens: bool=False):
+        self.tokens = tokens
+        
+class QueryOptions:
+    def __init__(self):
+        pass
+
+class DetokenizeOptions:
+    def __init__(self, continueOnError: bool=True):
+        self.continueOnError = continueOnError
 
 class RequestMethod(Enum):
     GET = 'GET'

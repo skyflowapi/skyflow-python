@@ -7,11 +7,12 @@ import requests
 from requests.models import HTTPError
 from skyflow.errors._skyflow_errors import SkyflowError, SkyflowErrorCodes, SkyflowErrorMessages
 from skyflow._utils import InterfaceName
+from skyflow.vault._config import BYOT, InsertOptions
 
 interface = InterfaceName.INSERT.value
 
 
-def getInsertRequestBody(data, options):
+def getInsertRequestBody(data, options: InsertOptions):
     try:
         records = data["records"]
     except KeyError:
@@ -29,23 +30,33 @@ def getInsertRequestBody(data, options):
         validateUpsertOptions(upsertOptions=upsertOptions)
             
     requestPayload = []
-    insertTokenPayload = []
     for index, record in enumerate(records):
         tableName, fields = getTableAndFields(record)
-        postPayload = {"tableName": tableName, "fields": fields,"method": "POST","quorum": True}
+        postPayload = {
+            "tableName": tableName, 
+            "fields": fields,
+            "method": "POST",
+            "quorum": True,
+        }  
+        validateTokensAndByotMode(record, options.byot)
+        if "tokens" in record:
+            tokens = getTokens(record)
+            postPayload["tokens"] =  tokens
         
         if upsertOptions:
             postPayload["upsert"] = getUpsertColumn(tableName,upsertOptions)
         
-        requestPayload.append(postPayload)
         if options.tokens:
-            insertTokenPayload.append({
-                "method": "GET",
-                "tableName": tableName,
-                "ID": "$responses." + str(index) + ".records.0.skyflow_id",
-                "tokenization": True
-            })
-    requestBody = {"records": requestPayload + insertTokenPayload}
+            postPayload['tokenization'] = True
+
+        requestPayload.append(postPayload)
+    requestBody = {
+        "records": requestPayload, 
+        "continueOnError": options.continueOnError,
+        "byot": options.byot.value
+    }
+    if options.continueOnError == None:
+        requestBody.pop('continueOnError')
     try:
         jsonBody = json.dumps(requestBody)
     except Exception as e:
@@ -80,6 +91,38 @@ def getTableAndFields(record):
 
     return (table, fields)
 
+def validateTokensAndByotMode(record, byot:BYOT):
+    
+    if not isinstance(byot, BYOT):
+        byotType = str(type(byot))
+        raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.INVALID_BYOT_TYPE.value % (byotType), interface=interface)
+        
+    if byot == BYOT.DISABLE:
+        if "tokens" in record:
+            raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.TOKENS_PASSED_FOR_BYOT_DISABLE, interface=interface)
+    elif "tokens" not in record:
+        raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.NO_TOKENS_IN_INSERT.value % byot.value, interface=interface)
+    elif byot == BYOT.ENABLE_STRICT:
+        tokens = record["tokens"]
+        fields = record["fields"]
+        if len(tokens) != len(fields):
+            raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.INSUFFICIENT_TOKENS_PASSED_FOR_BYOT_ENABLE_STRICT, interface=interface)
+        
+def getTokens(record):
+    tokens = record["tokens"]
+    if not isinstance(tokens, dict):
+        tokensType = str(type(tokens))
+        raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.INVALID_TOKENS_TYPE.value % (
+            tokensType), interface=interface)
+    
+    if len(tokens) == 0 :
+        raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.EMPTY_TOKENS_IN_INSERT, interface= interface)
+    
+    fields = record["fields"]
+    for tokenKey in tokens:
+            if tokenKey not in fields:
+                raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.MISMATCH_OF_FIELDS_AND_TOKENS, interface= interface)
+    return tokens
 
 def processResponse(response: requests.Response, interface=interface):
     statusCode = response.status_code
@@ -87,7 +130,11 @@ def processResponse(response: requests.Response, interface=interface):
     try:
         response.raise_for_status()
         try:
-            return json.loads(content)
+            jsonContent = json.loads(content)
+            if 'x-request-id' in response.headers:
+                requestId = response.headers['x-request-id']
+                jsonContent['requestId'] = requestId
+            return jsonContent
         except:
             raise SkyflowError(
                 statusCode, SkyflowErrorMessages.RESPONSE_NOT_JSON.value % content, interface=interface)
@@ -105,21 +152,61 @@ def processResponse(response: requests.Response, interface=interface):
         raise SkyflowError(statusCode, message, interface=interface)
 
 
-def convertResponse(request: dict, response: dict, tokens: bool):
+def convertResponse(request: dict, response: dict, options: InsertOptions):
     responseArray = response['responses']
+    requestId = response['requestId']
     records = request['records']
-    recordsSize = len(records)
+    
+    if options.continueOnError:
+        return buildResponseWithContinueOnError(responseArray, records, options.tokens, requestId)
+    
+    else:
+        return buildResponseWithoutContinueOnError(responseArray, records, options.tokens)
+
+def buildResponseWithContinueOnError(responseArray, records, tokens: bool, requestId):
+    partial = False
+    errors = []
     result = []
-    for idx, _ in enumerate(records):
+    for idx, response in enumerate(responseArray):
+        table = records[idx]['table']
+        body = response['Body']
+        status = response['Status']
+        
+        if 'records' in body:
+            skyflow_id = body['records'][0]['skyflow_id']
+            if tokens:
+                fieldsDict = body['records'][0]['tokens']
+                fieldsDict['skyflow_id'] = skyflow_id
+                result.append({'table': table, 'fields': fieldsDict, 'request_index': idx})
+            else:
+                result.append({'table': table, 'skyflow_id': skyflow_id, 'request_index': idx})
+        elif 'error' in body:
+            partial = True
+            message = body['error']
+            message += ' - request id: ' + requestId
+            error = {"code": status, "description": message, "request_index": idx}
+            errors.append({"error": error})
+    finalResponse = {"records": result, "errors": errors}
+    if len(result) == 0:
+        partial = False
+        finalResponse.pop('records')
+    elif len(errors) == 0:
+        finalResponse.pop('errors')
+    return finalResponse, partial
+
+def buildResponseWithoutContinueOnError(responseArray, records, tokens: bool):
+    # recordsSize = len(records)
+    result = []
+    for idx, _ in enumerate(responseArray):
         table = records[idx]['table']
         skyflow_id = responseArray[idx]['records'][0]['skyflow_id']
         if tokens:
-            fieldsDict = responseArray[recordsSize + idx]['fields']
+            fieldsDict = responseArray[idx]['records'][0]['tokens']
             fieldsDict['skyflow_id'] = skyflow_id
-            result.append({'table': table, 'fields': fieldsDict})
+            result.append({'table': table, 'fields': fieldsDict, 'request_index': idx})
         else:
-            result.append({'table': table, 'skyflow_id': skyflow_id})
-    return {'records': result}
+            result.append({'table': table, 'skyflow_id': skyflow_id, 'request_index': idx})
+    return {'records': result}, False
 
 def getUpsertColumn(tableName, upsertOptions):
     uniqueColumn:str = ''

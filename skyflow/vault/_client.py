@@ -17,6 +17,19 @@ from skyflow.errors._skyflow_errors import SkyflowError, SkyflowErrorCodes, Skyf
 from skyflow._utils import log_info, InfoMessages, InterfaceName, getMetrics
 from skyflow.vault._token import tokenProviderWrapper
 
+from ._delete import deleteProcessResponse
+from ._insert import getInsertRequestBody, processResponse, convertResponse
+from ._update import sendUpdateRequests, createUpdateResponseBody
+from ._config import Configuration, DeleteOptions, DetokenizeOptions, InsertOptions, ConnectionConfig, UpdateOptions, QueryOptions
+from ._connection import createRequest
+from ._detokenize import sendDetokenizeRequests, createDetokenizeResponseBody
+from ._get_by_id import sendGetByIdRequests, createGetResponseBody
+from ._get import sendGetRequests
+import asyncio
+from skyflow.errors._skyflow_errors import SkyflowError, SkyflowErrorCodes, SkyflowErrorMessages
+from skyflow._utils import log_info, log_error, InfoMessages, InterfaceName, getMetrics
+from ._token import tokenProviderWrapper
+from ._query import getQueryRequestBody, getQueryResponse
 
 class Client:
     def __init__(self, config: Configuration):
@@ -59,12 +72,16 @@ class Client:
 
         response = requests.post(requestURL, data=jsonBody, headers=headers)
         processedResponse = processResponse(response)
-        result = convertResponse(records, processedResponse, options.tokens)
-
-        log_info(InfoMessages.INSERT_DATA_SUCCESS.value, interface)
+        result, partial = convertResponse(records, processedResponse, options)
+        if partial:
+            log_error(SkyflowErrorMessages.BATCH_INSERT_PARTIAL_SUCCESS.value, interface)
+        elif 'records' not in result:
+            log_error(SkyflowErrorMessages.BATCH_INSERT_FAILURE.value, interface)
+        else:
+            log_info(InfoMessages.INSERT_DATA_SUCCESS.value, interface)
         return result
 
-    def detokenize(self, records):
+    def detokenize(self, records: dict, options: DetokenizeOptions = DetokenizeOptions()):
         interface = InterfaceName.DETOKENIZE.value
         log_info(InfoMessages.DETOKENIZE_TRIGGERED.value, interface)
 
@@ -73,11 +90,12 @@ class Client:
             self.storedToken, self.tokenProvider, interface)
         url = self._get_complete_vault_url() + '/detokenize'
         responses = asyncio.run(sendDetokenizeRequests(
-            records, url, self.storedToken))
-        result, partial = createDetokenizeResponseBody(responses)
+            records, url, self.storedToken, options))
+        result, partial = createDetokenizeResponseBody(records, responses, options)
         if partial:
-            raise SkyflowError(SkyflowErrorCodes.PARTIAL_SUCCESS,
-                               SkyflowErrorMessages.PARTIAL_SUCCESS, result, interface=interface)
+            raise SkyflowError(SkyflowErrorCodes.PARTIAL_SUCCESS, SkyflowErrorMessages.PARTIAL_SUCCESS, result, interface=interface)
+        elif 'records' not in result:
+            raise SkyflowError(SkyflowErrorCodes.SERVER_ERROR, SkyflowErrorMessages.SERVER_ERROR, result, interface=interface)
         else:
             log_info(InfoMessages.DETOKENIZE_SUCCESS.value, interface)
             return result
@@ -139,6 +157,28 @@ class Client:
         session.close()
         return processResponse(response, interface=interface)
 
+    def query(self, queryInput, options: QueryOptions = QueryOptions()):
+        interface = InterfaceName.QUERY.value
+        log_info(InfoMessages.QUERY_TRIGGERED.value, interface=interface)
+
+        self._checkConfig(interface)
+        
+        jsonBody = getQueryRequestBody(queryInput, options)
+        requestURL = self._get_complete_vault_url() + "/query"
+        self.storedToken = tokenProviderWrapper(
+            self.storedToken, self.tokenProvider, interface)
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer " + self.storedToken,
+            "sky-metadata": json.dumps(getMetrics())
+        }
+        
+        response = requests.post(requestURL, data=jsonBody, headers=headers)
+        result = getQueryResponse(response)
+
+        log_info(InfoMessages.QUERY_SUCCESS.value, interface)
+        return result
+    
     def _checkConfig(self, interface):
         '''
             Performs basic check on the given client config
@@ -172,4 +212,85 @@ class Client:
                                SkyflowErrorMessages.PARTIAL_SUCCESS, result, interface=interface)
         else:
             log_info(InfoMessages.UPDATE_DATA_SUCCESS.value, interface)
+            return result
+
+    def delete(self, records: dict, options: DeleteOptions = DeleteOptions()):
+        interface = InterfaceName.DELETE.value
+        log_info(InfoMessages.DELETE_TRIGGERED.value, interface=interface)
+
+        self._checkConfig(interface)
+
+        self.storedToken = tokenProviderWrapper(
+            self.storedToken, self.tokenProvider, interface)
+        headers = {
+            "Authorization": "Bearer " + self.storedToken,
+            "sky-metadata": json.dumps(getMetrics())
+        }
+        error_list = []
+        result_list = []
+        errors = {}
+        result = {}
+        try:
+            record = records["records"]
+            if not isinstance(record, list):
+                recordsType = str(type(record))
+                raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.INVALID_RECORDS_TYPE.value % (
+                    recordsType), interface=interface)
+            if len(record) == 0:
+                raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT,
+                                   SkyflowErrorMessages.EMPTY_RECORDS_IN_DELETE, interface=interface)
+
+        except KeyError:
+            raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT,
+                               SkyflowErrorMessages.RECORDS_KEY_ERROR, interface=interface)
+        try:
+            for record in records["records"]:
+                id = record["id"]
+                if not isinstance(id, str):
+                    idType = str(type(id))
+                    raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT,
+                                       SkyflowErrorMessages.INVALID_ID_TYPE.value % (idType), interface=interface)
+                if id == "":
+                    raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT,
+                                       SkyflowErrorMessages.EMPTY_ID_IN_DELETE, interface=interface)
+        except KeyError:
+            raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT,
+                               SkyflowErrorMessages.IDS_KEY_ERROR, interface=interface)
+        try:
+            for record in records["records"]:
+                table = record["table"]
+                if not isinstance(table, str):
+                    tableType = str(type(table))
+                    raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT,
+                                       SkyflowErrorMessages.INVALID_TABLE_TYPE.value % (
+                                           tableType), interface=interface)
+                if table == "":
+                    raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT,
+                                       SkyflowErrorMessages.EMPTY_TABLE_IN_DELETE, interface=interface)
+        except KeyError:
+            raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT,
+                               SkyflowErrorMessages.TABLE_KEY_ERROR, interface=interface)
+
+        partial=None
+
+        for record in records["records"]:
+            request_url = self._get_complete_vault_url() + "/" + record["table"] + "/" + record["id"]
+            response = requests.delete(request_url, headers=headers)
+            partial,processed_response = deleteProcessResponse(response, records)
+            if processed_response is not None and processed_response.get('code') == 404:
+                errors.update({'id': record["id"], 'error': processed_response})
+                error_list.append(errors)
+            else:
+                result_list.append(processed_response)
+        if result_list:
+            result.update({'records': result_list})
+        if errors:
+            result.update({'errors': error_list})
+
+        if partial:
+            raise SkyflowError(SkyflowErrorCodes.PARTIAL_SUCCESS,
+                               SkyflowErrorMessages.PARTIAL_SUCCESS, result, interface=interface)
+
+        else:
+            log_info(InfoMessages.DELETE_DATA_SUCCESS.value, interface)
             return result

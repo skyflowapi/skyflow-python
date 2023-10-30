@@ -60,11 +60,13 @@ class InfoMessages(Enum):
     INSERT_DATA_SUCCESS = "Data has been inserted successfully."
     DETOKENIZE_SUCCESS = "Data has been detokenized successfully."
     GET_BY_ID_SUCCESS = "Data fetched from ID successfully."
+    QUERY_SUCCESS = "Query executed successfully."
     BEARER_TOKEN_RECEIVED = "tokenProvider returned token successfully."
     INSERT_TRIGGERED = "Insert method triggered."
     DETOKENIZE_TRIGGERED = "Detokenize method triggered."
     GET_BY_ID_TRIGGERED = "Get by ID triggered."
     INVOKE_CONNECTION_TRIGGERED = "Invoke connection triggered."
+    QUERY_TRIGGERED = "Query method triggered."
     GENERATE_BEARER_TOKEN_TRIGGERED = "Generate bearer token triggered"
     GENERATE_BEARER_TOKEN_SUCCESS = "Generate bearer token returned successfully"
     IS_TOKEN_VALID_TRIGGERED = "isTokenValid() triggered"
@@ -75,6 +77,8 @@ class InfoMessages(Enum):
     UPDATE_DATA_SUCCESS = "Data has been updated successfully"
     GET_TRIGGERED = "Get triggered."
     GET_SUCCESS = "Data fetched successfully."
+    DELETE_TRIGGERED = "Delete triggered."
+    DELETE_DATA_SUCCESS = "Data has been deleted successfully."
 
 
 class InterfaceName(Enum):
@@ -85,10 +89,12 @@ class InterfaceName(Enum):
     GET = "client.get"
     UPDATE = "client.update"
     INVOKE_CONNECTION = "client.invoke_connection"
+    QUERY = "client.query"
     GENERATE_BEARER_TOKEN = "service_account.generate_bearer_token"
 
     IS_TOKEN_VALID = "service_account.isTokenValid"
     IS_EXPIRED = "service_account.is_expired"
+    DELETE = "client.delete"
 
 
 def http_build_query(data):
