@@ -429,9 +429,14 @@ Sample response:
 
 ### Get
 
-To retrieve data using Skyflow IDs or unique column values, use the `get(records: dict)` method. The `records` parameter takes a Dictionary that contains either an array of Skyflow IDs or a unique column name and values.
+To retrieve data using Skyflow IDs or unique column values, use the `get(records: dict,options: GetOptions)` method. The `records` parameter takes a Dictionary that contains either an array of Skyflow IDs or a unique column name and values.The second parameter options is a GetOptions object that retrieves tokens of Skyflow IDs.
 
-Note: You can use either Skyflow IDs  or `unique` values to retrieve records. You can't use both at the same time.
+Note: 
+
+  - You can use either Skyflow IDs  or `unique` values to retrieve records. You can't use both at the same time.
+  - GetOptions parameter applicable only for retrieving tokens using Skyflow ID.
+  - You can't pass GetOptions along with the redaction type.
+  - `tokens` defaults to false.
 
 ```python
 {
@@ -525,42 +530,22 @@ Sample response:
 }
 ```
 
-### Get With Options
-
-To retrieve data using Skyflow IDs or unique column values, use the `get(records: dict,options: GetOptions)` method. The `records` parameter takes a Dictionary that contains either an array of Skyflow IDs.
+The following snippet shows how to use the `get()` method with GetOptions.
 
 ```python
-# options, indicates whether to return all fields in tokenized format. Defaults to 'false'.
-options: GetOptions
-```
+from skyflow.vault import GetOptions
 
-```python
 {
    'records': [
        {
-           'ids': [str], # List of Skyflow IDs.
-           'table': str,  # Name of table holding the data.
-       }
-   ]
-}
-
-```
-Sample usage
-
-The following snippet shows how to use the `get()` method.
-
-```python
-{
-   'records': [
-       {
-           'ids': ["56513264-fc45-41fa-9cb0-d1ad3602bc49","da26de53-95d5-4bdb-99db-8d8c66a35ff9"],
-           'table': cards,
+           'ids': ['56513264-fc45-41fa-9cb0-d1ad3602bc49','da26de53-95d5-4bdb-99db-8d8c66a35ff9'],
+           'table': 'cards',
        }
    ]
 }
  
 try:
-   client.update(records, GetOptions(True))
+   client.get(records, GetOptions(True))
 except SkyflowError as e:
    if e.data:
        print(e.data)
@@ -575,17 +560,17 @@ Sample response:
  'records': [
      {
          'fields': {
-             'card_number': 'gAAAAABlP7XQtYljbTWNsXgyKeRm9d9ZyHSsH46EoVK6wQlS_Wi_zvLy78B3bwT07Nd2OdV8nhbkaqXuy210_zT7K4CfBMOAseVkcaq5Pf75zvb0cAJUiKc=',
-             'cvv': 'gAAAAABlP7XQqAvgj3qbZv53JWgIzaDAtqmDhZikmiNFNNcogH6zKOqDbCZD_pX_ARme3RLETZdgX-zW1e5h311QwTDTahh9RQ==',
-             'skyflow_id': 'gAAAAABlP7XQPX0tL6PMf1nW3sqNSvyMQ7fJkFSIKLGci03vTV5EC8ZIGJhfjIOx7bvZcqreeScjNZQnnUi4k1YEyyQAaqqBoz7EpVGTbUrllp6BUXvKIC8LIj_nBWF-L1XrLd5i7ZXk'
+             'card_number': '4555-5176-5936-1930',
+             'cvv': '6ad5f708-2061-453e-9491-618a1f29a688',
+             'skyflow_id': '56513264-fc45-41fa-9cb0-d1ad3602bc49'
          },
          'table': 'cards'
      },
      {
          'fields': {
-             'card_number': 'gAAAAABlP7aUxdtn5M0hmOhQ_1kxe0QE58JGrbX4oZ8GL24LUapmgxaDFyPtjVnsl7g9-eFbGJHOSLzt5FjNEFi9JTnix_fkOK9lHuJtxwvExdBwf747g-s=',
-             'cvv': 'gAAAAABlP7aUAlbDCrQ8SvSurH1NJjiI0yYXLtRCJeTpuGRGo03eBr8f6gaSL9cYbr9k1UCNm8SMoD2ehpu472897LjfuI6kKw==',
-             'skyflow_id': 'gAAAAABlP7aU8whfXOeZAEtwNmRBDjvHWFmKazJbQ0zxJDwPJJhknXhPSl6FpE0g-j-23XranpxTc3_qsRaTIsM_D_llgrNfXtyVFbB55KEwmd7c1RguFoeXbaCYFOl1XHZIR8rjXvup'
+             'card_number': '8882-7418-2776-6660',
+             'cvv': '25260679-e339-4b33-a5b0-c8b08df77af7',
+             'skyflow_id': 'da26de53-95d5-4bdb-99db-8d8c66a35ff9'
          },
          'table': 'cards'
      }
