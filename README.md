@@ -149,8 +149,9 @@ All Vault APIs must be invoked using a client instance.
 
 ### Insert data into the vault
 
-To insert data into your vault use the `insert(records: dict, options: InsertOptions)` method. The `records` parameter is a dictionary that requires a `records` key and takes an array of records to insert into the vault. The `options` parameter takes a dictionary of optional parameters for the insertion. This includes an option to return tokenized data, upsert records and continue on error.
+To insert data into your vault use the `insert(records: dict, options: InsertOptions)` method. The `records` parameter is a dictionary that requires a `records` key and takes an array of records to insert into the vault. The `options` parameter takes a dictionary of optional parameters for the insertion. The optional parameter includes:
 
+Insert Options
 ```python
 # Optional, indicates whether you return tokens for inserted data. Defaults to 'true'.
 tokens: bool
@@ -158,7 +159,13 @@ tokens: bool
 upsert: [UpsertOption]  
 # Optional, decides whether to continue if error encountered or not
 continueOnError: bool
+# Optional, decides the byot mode
+byot: Skyflow.BYOT
 ```
+
+Notes: 
+- For supported `byot` types, see [Skyflow.BYOT](#byot)
+- `byot` defaults to `BYOT.DISABLE`
 
 Insert call schema
 ```python
@@ -277,6 +284,62 @@ Sample Response
 
 ```
 
+**Insert call [example](https://github.com/skyflowapi/skyflow-python/blob/main/samples/insert_byot_sample.py) with `byot` option**
+
+```python
+client.insert(
+    {
+        "records": [
+            {
+                "table": "cards",
+                "fields": {
+                    "card_number": "4111111111111111",
+                    "full_name": "john doe"
+                },
+                "tokens": {
+                    "card_number": "8486-6981-3757-9998"
+                }
+            },
+            {
+                "table": "cards",
+                "fields": {
+                    "card_number": "4242424242424200"
+                    "full_name": "jane doe"
+                },
+                "tokens": {
+                    "card_number": "9426-6911-3750-7998"
+                }
+            }
+        ]
+    }, InsertOptions(tokens=True, byot=BYOT.ENABLE)
+)
+```
+
+Sample Response:
+
+```json
+{
+  "records": [
+    {
+      "table": "cards",
+      "fields": {
+        "card_number": "8486-6981-3757-9998",
+        "full_name": "1989cb56-63a-4482-adf-1f74cd1a5",
+        "skyflow_id": "3daf1a7f-bc7f-4fc9-8c56-a6e4e93231e6"
+      }
+    },
+    {
+      "table": "cards",
+      "fields": {
+        "card_number": "9426-6911-3750-7998",
+        "full_name": "1041c13c-1a3c-4a09-a556-686d8bba307b",
+        "skyflow_id": "9a567659-fe5c-4ecc-80aa-059a9644138e"
+      }
+    }
+  ],
+}
+```
+
 **Insert call [example](https://github.com/skyflowapi/skyflow-python/blob/main/samples/insert_upsert_sample.py) with `upsert` options**
 
 ```python
@@ -314,6 +377,13 @@ Skyflow returns tokens, with `upsert` support, for the record you just inserted.
     ]
 }
 ```
+
+#### BYOT
+There are 3 accepted values in Skyflow.BYOT:
+
+- `DISABLE`
+- `ENABLE`
+- `ENABLE_STRICT`
 
 ### Detokenize
 
