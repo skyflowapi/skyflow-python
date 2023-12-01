@@ -429,9 +429,14 @@ Sample response:
 
 ### Get
 
-To retrieve data using Skyflow IDs or unique column values, use the `get(records: dict)` method. The `records` parameter takes a Dictionary that contains either an array of Skyflow IDs or a unique column name and values.
+To retrieve data using Skyflow IDs or unique column values, use the `get(records: dict,options: GetOptions)` method. The `records` parameter takes a Dictionary that contains either an array of Skyflow IDs or a unique column name and values.The second parameter options is a GetOptions object that retrieves tokens of Skyflow IDs.
 
-Note: You can use either Skyflow IDs  or `unique` values to retrieve records. You can't use both at the same time.
+Note: 
+
+  - You can use either Skyflow IDs  or `unique` values to retrieve records. You can't use both at the same time.
+  - GetOptions parameter applicable only for retrieving tokens using Skyflow ID.
+  - You can't pass GetOptions along with the redaction type.
+  - `tokens` defaults to false.
 
 ```python
 {
@@ -522,6 +527,55 @@ Sample response:
          'skyflow_ids': ['invalid skyflow id']
      }
  ]
+}
+```
+
+The following snippet shows how to use the `get()` method with GetOptions.
+
+```python
+from skyflow.vault import GetOptions
+
+{
+   'records': [
+       {
+           'ids': ['56513264-fc45-41fa-9cb0-d1ad3602bc49','da26de53-95d5-4bdb-99db-8d8c66a35ff9'],
+           'table': 'cards',
+       }
+   ]
+}
+ 
+try:
+   client.get(records, GetOptions(True))
+except SkyflowError as e:
+   if e.data:
+       print(e.data)
+   else:
+       print(e)
+```
+
+Sample response:
+
+```python
+{
+ 'records': [
+     {
+         'fields': {
+             'card_number': '4555-5176-5936-1930',
+             'cvv': '6ad5f708-2061-453e-9491-618a1f29a688',
+             'skyflow_id': '56513264-fc45-41fa-9cb0-d1ad3602bc49'
+         },
+         'table': 'cards'
+     },
+     {
+         'fields': {
+             'card_number': '8882-7418-2776-6660',
+             'cvv': '25260679-e339-4b33-a5b0-c8b08df77af7',
+             'skyflow_id': 'da26de53-95d5-4bdb-99db-8d8c66a35ff9'
+         },
+         'table': 'cards'
+     }
+ ],
+ 'errors': []
 }
 ```
 

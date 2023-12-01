@@ -3,7 +3,7 @@
 '''
 from skyflow.errors import SkyflowError
 from skyflow.service_account import generate_bearer_token, is_expired
-from skyflow.vault import Client, Configuration, RedactionType
+from skyflow.vault import Client, Configuration, RedactionType, GetOptions
 
 
 # cache token for reuse
@@ -22,6 +22,8 @@ try:
         '<YOUR_VAULT_ID>', '<YOUR_VAULT_URL>', token_provider)
     client = Client(config)
 
+    options = GetOptions(False)
+
     data = {"records": [
         {
             "ids": ["<SKYFLOW_ID1>", "<SKYFLOW_ID2>", "<SKYFLOW_ID3>"],
@@ -37,7 +39,7 @@ try:
         }
     ]}
 
-    response = client.get(data)
+    response = client.get(data,options=options)
     print('Response:', response)
 except SkyflowError as e:
     print('Error Occurred:', e)

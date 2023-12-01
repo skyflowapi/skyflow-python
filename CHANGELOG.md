@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.15.0] - 2023-10-30
+## Added
+- options tokens support for Get method.
+
 ## [1.14.0] - 2023-09-29
 ## Added
 - Support for different BYOT modes in Insert method.
