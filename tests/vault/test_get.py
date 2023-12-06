@@ -4,16 +4,14 @@
 import unittest
 import os
 
-from skyflow.errors._skyflow_errors import SkyflowError, SkyflowErrorCodes, SkyflowErrorMessages
-from skyflow.vault import Client, Configuration, RedactionType, GetOptions
-from skyflow.vault._get_by_id import encrypt_data
-from skyflow.service_account import generate_bearer_token
-from dotenv import dotenv_values
 import warnings
 import asyncio
 import json
-from cryptography.fernet import Fernet
-
+from dotenv import dotenv_values
+from skyflow.service_account import generate_bearer_token
+from skyflow.vault import Client, Configuration, RedactionType, GetOptions
+from skyflow.vault._get import getGetRequestBody
+from skyflow.errors._skyflow_errors import SkyflowError, SkyflowErrorCodes, SkyflowErrorMessages
 
 class TestGet(unittest.TestCase):
 
@@ -169,7 +167,6 @@ class TestGet(unittest.TestCase):
             self.assertEqual(
                 e.message, SkyflowErrorMessages.INVALID_COLUMN_VALUE.value % (str) )
 
-
     def testGetByTokenAndRedaction(self):
         invalidData = {"records": [
             {"ids": ["123","456"],
@@ -184,8 +181,7 @@ class TestGet(unittest.TestCase):
                 e.message, SkyflowErrorMessages.REDACTION_WITH_TOKENS_NOT_SUPPORTED.value)
 
     def testGetByNoOptionAndRedaction(self):
-        invalidData = {"records":[
-            {"ids":["123","456"],"table":"newstripe"}]}
+        invalidData = {"records":[{"ids":["123", "456"], "table":"newstripe"}]}
         options = GetOptions(False)
         try:
             self.client.get(invalidData,options=options)
@@ -196,10 +192,13 @@ class TestGet(unittest.TestCase):
                 e.message,SkyflowErrorMessages.REDACTION_KEY_ERROR.value)
 
     def testGetByOptionAndUniqueColumnRedaction(self):
-        invalidData ={"records":[
-            {"table":"newstripe","columnName":"card_number","columnValues":["456","980"],}
-        ]}
-
+        invalidData ={
+            "records":[{
+                "table":"newstripe",
+                "columnName":"card_number",
+                "columnValues":["456","980"],
+            }]
+        }
         options = GetOptions(True)
         try:
             self.client.get(invalidData, options=options)
@@ -210,9 +209,13 @@ class TestGet(unittest.TestCase):
                 e.message, SkyflowErrorMessages.TOKENS_GET_COLUMN_NOT_SUPPORTED.value)
 
     def testInvalidRedactionTypeWithNoOption(self):
-        invalidData = {"records": [
-            {"ids": ["123","456"],
-             "table": "stripe", "redaction": "invalid_redaction"}]}
+        invalidData = {
+            "records": [{
+                "ids": ["123","456"],
+                "table": "stripe",
+                "redaction": "invalid_redaction"
+            }]
+        }
         options = GetOptions(False)
         try:
             self.client.get(invalidData, options=options)
@@ -221,36 +224,36 @@ class TestGet(unittest.TestCase):
             self.assertEqual(e.code, SkyflowErrorCodes.INVALID_INPUT.value)
             self.assertEqual(e.message, SkyflowErrorMessages.INVALID_REDACTION_TYPE.value % (str))
 
-    def test_encrypt_data_with_token(self):
-        data = {
+    def testBothSkyflowIdsAndColumnDetailsPassed(self):
+        invalidData = {
             "records": [
                 {
-                    "fields": {
-                        "ids": ["123","456"],
-                        "table": "stripe",
-                    }
+                    "ids": ["123", "456"],
+                    "table": "stripe",
+                    "redaction": RedactionType.PLAIN_TEXT,
+                    "columnName": "email",
+                    "columnValues": ["email1@gmail.com", "email2@gmail.co"]
                 }
             ]
         }
-        token = "secret_token"
-        encrypted_bytes = encrypt_data(data, token)
-        self.assertIsNotNone(encrypted_bytes)
-
-    def test_encrypt_data_without_token(self):
-        data = {
-            "records": [
-                {
-                    "fields": {
-                        "ids": ["123", "456"],
-                        "table": "stripe",
-                    }
-                }
-            ]
+        options = GetOptions(False)
+        try:
+            self.client.get(invalidData, options=options)
+            self.fail('Should have thrown an error')
+        except SkyflowError as e:
+            self.assertEqual(e.code, SkyflowErrorCodes.INVALID_INPUT.value)
+            self.assertEqual(e.message, SkyflowErrorMessages.BOTH_IDS_AND_COLUMN_DETAILS_SPECIFIED.value)
+        
+    def testGetRequestBodyReturnsRequestBodyWithIds(self):
+        validData = {
+            "records": [{
+                "ids": ["123", "456"],
+                "table": "stripe",
+            }]
         }
-        token = None
-        encrypted_data, key = encrypt_data(data, token)
-        self.assertEqual(encrypted_data, data)
-        self.assertIsNone(key)
-
-
- 
+        options = GetOptions(True)
+        try:
+            requestBody = getGetRequestBody(validData["records"][0], options)
+            self.assertTrue(requestBody["tokenization"])
+        except SkyflowError as e:
+            self.fail('Should not have thrown an error')
