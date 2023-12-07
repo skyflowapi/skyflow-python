@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.15.1] - 2023-12-07
+## Fixed
+- Not receiving tokens when calling Get with options tokens as true.
+
 ## [1.15.0] - 2023-10-30
 ## Added
 - options tokens support for Get method.
