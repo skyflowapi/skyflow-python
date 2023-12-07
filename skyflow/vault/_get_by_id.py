@@ -7,7 +7,6 @@ from aiohttp import ClientSession
 import json
 from ._config import RedactionType
 from skyflow._utils import InterfaceName, getMetrics
-from cryptography.fernet import Fernet
 
 interface = InterfaceName.GET_BY_ID.value
 
@@ -89,8 +88,8 @@ def createGetResponseBody(responses):
         "records": [],
         "errors": []
     }
+    partial = False
     for response in responses:
-        partial = False
         r = response.result()
         status = r[1]
         try:
