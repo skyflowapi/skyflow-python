@@ -7,30 +7,8 @@ from aiohttp import ClientSession
 import json
 from ._config import RedactionType
 from skyflow._utils import InterfaceName, getMetrics
-from cryptography.fernet import Fernet
 
 interface = InterfaceName.GET_BY_ID.value
-
-def encrypt_data(data, token):
-    if token:
-        key = Fernet.generate_key()
-        fernet = Fernet(key)
-        encrypted_data = data.copy()
-        fields = encrypted_data["records"][0]["fields"]
-        for record in encrypted_data["records"]:
-            fields = record["fields"]
-            for key, value in fields.items():
-                if isinstance(value, str):
-                    encrypted_value = fernet.encrypt(value.encode()).decode()
-                    fields[key] = encrypted_value
-
-        serialized_data = json.dumps(encrypted_data)
-        encrypted_bytes = serialized_data.encode()
-
-        return encrypted_bytes
-    else:
-        return data, None
-
 
 def getGetByIdRequestBody(data):
     try:
@@ -98,28 +76,20 @@ async def sendGetByIdRequests(data, url, token):
         await session.close()
     return tasks
 
-
-async def get(url, headers, params, session, table,token=False):
+async def get(url, headers, params, session, table):
     async with session.get(url + "/" + table, headers=headers, params=params, ssl=False) as response:
         try:
-            response_data = await response.text()
-
-            if token:
-                data = json.loads(response_data)
-                return (encrypt_data(data,token), response.status, table, response.headers['x-request-id'])
-
             return (await response.read(), response.status, table, response.headers['x-request-id'])
         except KeyError:
             return (await response.read(), response.status, table)
-
 
 def createGetResponseBody(responses):
     result = {
         "records": [],
         "errors": []
     }
+    partial = False
     for response in responses:
-        partial = False
         r = response.result()
         status = r[1]
         try:

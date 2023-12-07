@@ -72,6 +72,8 @@ class SkyflowErrorMessages(Enum):
     INVALID_TOKEN_TYPE = "Token key has value of type %s, expected string"
     REDACTION_WITH_TOKENS_NOT_SUPPORTED = "Redaction cannot be used when tokens are true in options"
     TOKENS_GET_COLUMN_NOT_SUPPORTED = "Column_name or column_values cannot be used with tokens in options"
+    BOTH_IDS_AND_COLUMN_DETAILS_SPECIFIED = "Both skyflow ids and column details (name and/or values) are specified in payload"
+
     PARTIAL_SUCCESS = "Server returned errors, check SkyflowError.data for more"
 
     VAULT_ID_INVALID_TYPE = "Expected Vault ID to be str, got %s"

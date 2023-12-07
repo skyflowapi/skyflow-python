@@ -11,8 +11,8 @@ from skyflow.vault._get_by_id import get
 
 interface = InterfaceName.GET.value
 
-
 def getGetRequestBody(data, options: GetOptions):
+    requestBody = {}
     ids = None
     if "ids" in data:
         ids = data["ids"]
@@ -25,6 +25,7 @@ def getGetRequestBody(data, options: GetOptions):
                 idType = str(type(id))
                 raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.INVALID_ID_TYPE.value % (
                     idType), interface=interface)
+        requestBody["skyflow_ids"] = ids
     try:
         table = data["table"]
     except KeyError:
@@ -32,18 +33,20 @@ def getGetRequestBody(data, options: GetOptions):
                            SkyflowErrorMessages.TABLE_KEY_ERROR, interface=interface)
     if not isinstance(table, str):
         tableType = str(type(table))
-
         raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.INVALID_TABLE_TYPE.value % (
             tableType), interface=interface)
+    else:
+        requestBody["tableName"] = table
 
-    if options.tokens and data.get("redaction"):
-        raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT,
-                           SkyflowErrorMessages.REDACTION_WITH_TOKENS_NOT_SUPPORTED, interface=interface)
-    if options.tokens and (data.get('columnName') or data.get('columnValues')):
-        raise SkyflowError(SkyflowErrorCodes.TOKENS_GET_COLUMN_NOT_SUPPORTED,
+    if options.tokens:
+        if data.get("redaction"):
+            raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT,
+                            SkyflowErrorMessages.REDACTION_WITH_TOKENS_NOT_SUPPORTED, interface=interface)
+        if (data.get('columnName') or data.get('columnValues')):
+            raise SkyflowError(SkyflowErrorCodes.TOKENS_GET_COLUMN_NOT_SUPPORTED,
                            SkyflowErrorMessages.TOKENS_GET_COLUMN_NOT_SUPPORTED, interface=interface)
-
-    if not options.tokens:
+        requestBody["tokenization"] = options.tokens
+    else:
         try:
             redaction = data["redaction"]
         except KeyError:
@@ -53,6 +56,8 @@ def getGetRequestBody(data, options: GetOptions):
             redactionType = str(type(redaction))
             raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.INVALID_REDACTION_TYPE.value % (
                 redactionType), interface=interface)
+        else:
+            requestBody["redaction"] = redaction.value
 
         columnName = None
         if "columnName" in data:
@@ -69,13 +74,17 @@ def getGetRequestBody(data, options: GetOptions):
                 columnValuesType = str(type(columnValues))
                 raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.INVALID_COLUMN_VALUE.value % (
                     columnValuesType), interface=interface)
+            else:
+                requestBody["column_name"] = columnName
+                requestBody["column_values"] = columnValues
 
         if (ids is None and (columnName is None or columnValues is None)):
             raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT,
-                               SkyflowErrorMessages.UNIQUE_COLUMN_OR_IDS_KEY_ERROR.value, interface=interface)
-        return ids, table, redaction.value, columnName, columnValues
-    return ids, table, "DEFAULT", None, None
-
+                               SkyflowErrorMessages.UNIQUE_COLUMN_OR_IDS_KEY_ERROR, interface=interface)
+        elif (ids != None and (columnName != None or columnValues != None)):
+            raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT,
+                               SkyflowErrorMessages.BOTH_IDS_AND_COLUMN_DETAILS_SPECIFIED, interface=interface)
+    return requestBody
 
 async def sendGetRequests(data, options: GetOptions, url, token):
     tasks = []
@@ -97,27 +106,22 @@ async def sendGetRequests(data, options: GetOptions, url, token):
 
     validatedRecords = []
     for record in records:
-        ids, table, redaction, columnName, columnValues = getGetRequestBody(record, options)
-        validatedRecords.append((ids, table, redaction, columnName, columnValues))
+        requestBody = getGetRequestBody(record, options)
+        validatedRecords.append(requestBody)
     async with ClientSession() as session:
         for record in validatedRecords:
-            ids, table, redaction, columnName, columnValues = record
             headers = {
                 "Authorization": "Bearer " + token,
                 "sky-metadata": json.dumps(getMetrics())
             }
-            params = {"redaction": redaction}
-
-            if ids is not None:
-                params["skyflow_ids"] = ids
-            if columnName is not None:
-                params["column_name"] = columnName
-                params["column_values"] = columnValues
+            table = record.pop("tableName")
+            params = record
+            if options.tokens:
+                params["tokenization"] = json.dumps(record["tokenization"])
             task = asyncio.ensure_future(
-                get(url, headers, params, session, record[1], options.tokens)
+                get(url, headers, params, session, table)
             )
             tasks.append(task)
         await asyncio.gather(*tasks)
         await session.close()
-
     return tasks

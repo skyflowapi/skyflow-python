@@ -4,32 +4,19 @@
 import json
 import types
 import requests
+import asyncio
 from skyflow.vault._insert import getInsertRequestBody, processResponse, convertResponse
 from skyflow.vault._update import sendUpdateRequests, createUpdateResponseBody
-from skyflow.vault._config import Configuration, GetOptions
-from skyflow.vault._config import InsertOptions, ConnectionConfig, UpdateOptions
+from skyflow.vault._config import Configuration, ConnectionConfig, DeleteOptions, DetokenizeOptions, GetOptions, InsertOptions, UpdateOptions, QueryOptions
 from skyflow.vault._connection import createRequest
 from skyflow.vault._detokenize import sendDetokenizeRequests, createDetokenizeResponseBody
 from skyflow.vault._get_by_id import sendGetByIdRequests, createGetResponseBody
 from skyflow.vault._get import sendGetRequests
-import asyncio
-from skyflow.errors._skyflow_errors import SkyflowError, SkyflowErrorCodes, SkyflowErrorMessages
-from skyflow._utils import log_info, InfoMessages, InterfaceName, getMetrics
-from skyflow.vault._token import tokenProviderWrapper
-
-from ._delete import deleteProcessResponse
-from ._insert import getInsertRequestBody, processResponse, convertResponse
-from ._update import sendUpdateRequests, createUpdateResponseBody
-from ._config import Configuration, DeleteOptions, DetokenizeOptions, InsertOptions, ConnectionConfig, UpdateOptions, QueryOptions
-from ._connection import createRequest
-from ._detokenize import sendDetokenizeRequests, createDetokenizeResponseBody
-from ._get_by_id import sendGetByIdRequests, createGetResponseBody
-from ._get import sendGetRequests
-import asyncio
+from skyflow.vault._delete import deleteProcessResponse
+from skyflow.vault._query import getQueryRequestBody, getQueryResponse
 from skyflow.errors._skyflow_errors import SkyflowError, SkyflowErrorCodes, SkyflowErrorMessages
 from skyflow._utils import log_info, log_error, InfoMessages, InterfaceName, getMetrics
-from ._token import tokenProviderWrapper
-from ._query import getQueryRequestBody, getQueryResponse
+from skyflow.vault._token import tokenProviderWrapper
 
 class Client:
     def __init__(self, config: Configuration):
@@ -109,7 +96,7 @@ class Client:
             self.storedToken, self.tokenProvider, interface)
         url = self._get_complete_vault_url()
         responses = asyncio.run(sendGetRequests(
-            records, options,url, self.storedToken))
+            records, options, url, self.storedToken))
         result, partial = createGetResponseBody(responses)
         if partial:
             raise SkyflowError(SkyflowErrorCodes.PARTIAL_SUCCESS,
