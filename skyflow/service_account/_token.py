@@ -19,11 +19,14 @@ interface = InterfaceName.GENERATE_BEARER_TOKEN
 def generate_bearer_token(credentialsFilePath: str) -> ResponseToken:
     '''
     This function is used to get the access token for skyflow Service Accounts.
-    `credentialsFilePath` is the file path in string of the credentials file that is downloaded after Service Account creation.
+    Gets a bearer token for a service account. `credentialsFilePath` is the file path (as a string) of the credentials file that your browser downloads after creating a service account.
 
-    Response Token is a named tupe with two attributes:
-        1. AccessToken: The access token
-        2. TokenType: The type of access token (eg: Bearer)
+    The response token is a named tuple with two attributes:
+    1. AccessToken: The access token
+    2. TokenType: The type of the token. For example, "Bearer".
+
+    :param credentialsFilePath: File path (as a string) of the credentials file for a service account.
+    :returns: Named tuple with `AccessToken` and `TokenType` attributes.
     '''
 
     log_info(InfoMessages.GENERATE_BEARER_TOKEN_TRIGGERED.value,
@@ -53,11 +56,14 @@ def generate_bearer_token(credentialsFilePath: str) -> ResponseToken:
 def generate_bearer_token_from_creds(credentials: str) -> ResponseToken:
     '''
     This function is used to get the access token for skyflow Service Accounts.
-    `credentials` arg takes the content of the credentials file that is downloaded after Service Account creation.
-
-    Response Token is a named tupe with two attributes:
-        1. AccessToken: The access token
-        2. TokenType: The type of access token (eg: Bearer)
+    Gets a bearer token for a service account. `credentials` is the contents of the credentials file that your browser downloads after creating a service account.
+    
+    The response token is a named tuple with two attributes:
+    1. AccessToken: The access token
+    2. TokenType: The type of the token. For example, "Bearer".
+    
+    :param credentials: Contents of the credentials file for a service account.
+    :returns: Named tuple with `AccessToken` and `TokenType` attributes.
     '''
 
     log_info(InfoMessages.GENERATE_BEARER_TOKEN_TRIGGERED.value,

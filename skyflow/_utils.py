@@ -21,6 +21,9 @@ supported_content_types = {
 
 
 class LogLevel(Enum):
+    '''
+        Supported log levels.
+    '''
     DEBUG = logging.DEBUG
     INFO = logging.INFO
     WARN = logging.WARN
@@ -30,7 +33,9 @@ class LogLevel(Enum):
 
 def set_log_level(logLevel: LogLevel):
     '''
-    Sets the Log Level for the Skyflow python SDK
+        Sets the log level.
+        
+        :param logLevel: Log level to set.
     '''
     skyflowLog.setLevel(logLevel.value)
 

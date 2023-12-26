@@ -6,6 +6,9 @@ from skyflow._utils import log_error
 
 
 class SkyflowErrorCodes(Enum):
+    '''
+    Supported error codes.
+    '''
     INVALID_INPUT = 400
     INVALID_INDEX = 404
     SERVER_ERROR = 500
@@ -106,6 +109,14 @@ class SkyflowErrorMessages(Enum):
     INSUFFICIENT_TOKENS_PASSED_FOR_BYOT_ENABLE_STRICT = "For byot as ENABLE_STRICT, tokens should be passed for all fields"
     
 class SkyflowError(Exception):
+    '''
+    The SkyflowError exception.
+    
+    :param code: Error associated with the exception.
+    :param message: Error describing the exception.
+    :param data: Additional data related to the exception.
+    :param interface: Interface where the exception happened.
+    '''
     def __init__(self, code, message="An Error occured", data={}, interface: str = 'Unknown') -> None:
         if type(code) is SkyflowErrorCodes:
             self.code = code.value
