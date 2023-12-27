@@ -35,8 +35,6 @@ jobs:
         cd skyflow-python/skyflow-python/
         rm -r docs/
         echo "SHORT_SHA=$(git rev-parse --short "$GITHUB_SHA")" >> $GITHUB_ENV
-        cd ../..
-        cd refs/
         ls
         
     - name: Create a branch in skyflow-docs
@@ -55,8 +53,6 @@ jobs:
         git remote set-url --push skyflow-docs https://${ACTOR}:${TOKEN}@github.com/${REPO_OWNER}/${REPO_NAME}.git
         git checkout -b $BRANCH_NAME skyflow-docs/main
         cp -r ../../refs/* src/pages/content/docs/sdks/skyflow-python/
-        cd src/pages/content/docs/sdks/skyflow-python/
-        ls
         
     - name: Push files and raise a PR
       env:
@@ -68,7 +64,7 @@ jobs:
         git config user.name ${{ github.actor }}
         git config user.email ${{ github.actor }}@users.noreply.github.com
         BRANCH_NAME="SDK/python/${{ env.SHORT_SHA }}"
-        git add .
+        git add src/pages/content/docs/sdks/skyflow-python/
         
         # Check if there are changes to commit
         if [[ -n "$(git status --porcelain)" ]]; then
