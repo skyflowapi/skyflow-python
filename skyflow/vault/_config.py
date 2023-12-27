@@ -31,6 +31,9 @@ class Configuration:
             self.tokenProvider = tokenProvider
 
 class BYOT(Enum):
+    '''
+        Supported modes for BYOT
+    '''
     DISABLE = "DISABLE"
     ENABLE = "ENABLE"
     ENABLE_STRICT = "ENABLE_STRICT"
@@ -53,6 +56,8 @@ class InsertOptions:
 
         :param tokens: If `true`, returns tokens for the collected data. Defaults to `false`.
         :param upsert: If specified, upserts data. If not specified, inserts data.
+        :param continueOnError: If `true`, continues performing insertions on parital errors. Defaults to `None`.
+        :param byot: BYOT Mode. Defaults to DISABLE.
     '''
     def __init__(self, tokens: bool=True, upsert :List[UpsertOption]=None, continueOnError:bool=None, byot:BYOT=BYOT.DISABLE):
         self.tokens = tokens
@@ -71,18 +76,36 @@ class UpdateOptions:
         self.tokens = tokens
 
 class GetOptions:
+    '''
+        Configuration for a get operation.
+
+        :param tokens: If `true`, returns tokens for the retrieved data. Defaults to `false`.
+    '''
     def __init__(self, tokens: bool = False):
         self.tokens = tokens
 
 class DeleteOptions:
+    '''
+        Configuration for a delete operation.
+
+        :param tokens: If `true`, returns tokens for the deleted data. Defaults to `false`.
+    '''
     def __init__(self, tokens: bool=False):
         self.tokens = tokens
         
 class QueryOptions:
+    '''
+        Configuration for a query operation.
+    '''
     def __init__(self):
         pass
 
 class DetokenizeOptions:
+    '''
+        Configuration for a detokenize operation.
+
+        :param continueOnError: If `true`, continues performing detokenization on parital errors. Defaults to `true`.
+    '''
     def __init__(self, continueOnError: bool=True):
         self.continueOnError = continueOnError
 

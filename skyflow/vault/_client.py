@@ -85,6 +85,7 @@ class Client:
         Returns values that correspond to the specified tokens.
 
         :param records: Dictionary that contains the `records` key, which is an array of records to fetch from the vault.
+        :param options: Options for detokenization.
         :returns: Tokens to return values for.
         '''
         interface = InterfaceName.DETOKENIZE.value
@@ -110,6 +111,7 @@ class Client:
         Returns records by Skyflow IDs or column values.
 
         :param records: Dictionary that contains either an array of Skyflow IDs or a the name of a unique column and associated values.
+        :param options: Options for retrieving records.
         :returns: Returns the specified records and any errors.
         '''
         interface = InterfaceName.GET.value
@@ -180,6 +182,13 @@ class Client:
         return processResponse(response, interface=interface)
 
     def query(self, queryInput, options: QueryOptions = QueryOptions()):
+        '''
+        Send an SQL query to retrieve Records
+
+        :param queryInput: Dictionary that contains SQL query.
+        :param options: Options for query.
+        :returns: Returns the response from the query.
+        '''
         interface = InterfaceName.QUERY.value
         log_info(InfoMessages.QUERY_TRIGGERED.value, interface=interface)
 
@@ -240,6 +249,13 @@ class Client:
             return result
 
     def delete(self, records: dict, options: DeleteOptions = DeleteOptions()):
+        '''
+        Deletes the record from the vault.
+
+        :param records: Dictionary that contains Skyflow IDs of records.
+        :param options: Options for the Deletion.
+        :returns: Returns the result of the delete operation.
+        '''
         interface = InterfaceName.DELETE.value
         log_info(InfoMessages.DELETE_TRIGGERED.value, interface=interface)
 
