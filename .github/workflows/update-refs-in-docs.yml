@@ -22,7 +22,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install setuptools wheel twine
         pip install docstring-parser
-        pip install aiohttp
+        pip install aiohttp pyjwt
 
     - name: Generate Python SDK references
       run: |
