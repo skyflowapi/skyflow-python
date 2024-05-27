@@ -35,7 +35,7 @@ try:
          "redaction" : "<REDACTION_TYPE>",
          "table": "<TABLE_NAME>",
          "columnName": "<UNIQUE_COLUMN_NAME>",
-         "columnValues": "[<COLUMN_VALUE_1>,<COLUMN_VALUE_2>]",
+         "columnValues": ["<COLUMN_VALUE_1>", "<COLUMN_VALUE_2>"],
         }
     ]}
 
