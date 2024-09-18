@@ -1,4 +1,4 @@
-class ConnectionConfig:
+class InsertRequest:
     #members
     def __init__(self):
         pass

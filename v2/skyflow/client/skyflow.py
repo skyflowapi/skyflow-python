@@ -1,14 +1,11 @@
-from typing import List, Optional
 from v2.skyflow.utils import LogLevel
-from v2.skyflow.vault.config import VaultConfig, CredentialsConfig, ConnectionConfig
-
 
 class Skyflow:
     def __init__(self,
-                 vault_config: List[VaultConfig],
-                 skyflow_credentials: Optional[CredentialsConfig] = None,
-                 connection_config: Optional[List[ConnectionConfig]] = None,
-                 log_level: Optional[LogLevel] = None):
+                 vault_config,
+                 skyflow_credentials = [],
+                 connection_config = [],
+                 log_level = LogLevel.ERROR):
         self.vault_config = vault_config
         self.skyflow_credentials = skyflow_credentials
         self.connection_config = connection_config
@@ -25,35 +22,36 @@ class Skyflow:
             self._skyflow_credentials = None
             self._log_level = None
 
-        def add_vault_config(self, vault_config: VaultConfig):
+        def add_vault_config(self, vault_config):
+            self._vault_config.append(vault_config)
+            return self
+
+        def remove_vault_config(self, vault_id):
             pass
 
-        def remove_vault_config(self, vault_id: str):
+        def update_vault_config(self, vault_config):
             pass
 
-        def update_vault_config(self, vault_config: VaultConfig):
+        def add_connection_config(self, connection_config):
             pass
 
-        def add_connection_config(self, connection_config: ConnectionConfig):
+        def remove_connection_config(self, connection_id):
             pass
 
-        def remove_connection_config(self, connection_id: str):
+        def update_connection_config(self, connection_config):
             pass
 
-        def update_connection_config(self, connection_config: ConnectionConfig):
+        def update_log_level(self, log_level):
             pass
 
-        def update_log_level(self, log_level: LogLevel):
-            pass
-
-        def set_log_level(self, log_level: str):
+        def set_log_level(self, log_level):
             pass
 
         def build(self):
             pass
 
-        def vault(self, vault_id: str):
+        def vault(self, vault_id):
             pass
 
-        def connection(self, connection_id: str):
+        def connection(self, connection_id):
             pass
