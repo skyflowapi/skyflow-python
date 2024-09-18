@@ -33,7 +33,7 @@ pip install skyflow
    this file secure, as You'll need it for each of the samples.
 
 ## The samples
-### [Get data](./get_sample.py)
+### [Get data](get_sample.py)
 
 To retrieve data using Skyflow IDs or unique column values, use the `get(records: dict)` method. The `records` parameter takes a Dictionary that contains either an array of Skyflow IDs or a unique column name and values.
 
@@ -58,7 +58,7 @@ Replace the following values in the sample file:
 ```bash
 python3 get_sample.py
 ```
-### [Get data by ID](./get_by_ids_sample.py)
+### [Get data by ID](get_by_ids_sample.py)
 
 Get data using Skyflow IDs for the desired records.
 
@@ -83,7 +83,7 @@ python3 get_by_ids_sample.py
 ```
 
 
-### [Update data](./update_sample.py)
+### [Update data](update_sample.py)
 
 Update data in the vault.
 
@@ -107,7 +107,7 @@ Replace the following values in the sample file:
 python3 update_sample.py
 ```
 
-### [Insert data](./insert_sample.py)
+### [Insert data](insert_sample.py)
 
 Insert data in the vault.
 
@@ -130,7 +130,7 @@ Replace the following values in the sample file:
 python3 insert_sample.py
 ```
 
-### [Detokenize data](./detokenize_sample.py)
+### [Detokenize data](detokenize_sample.py)
 
 Detokenize a data token from the vault. Make sure the specified token is for
 data that exists in the vault. If you need a valid token, use
@@ -155,7 +155,7 @@ Replace the following values in the sample file:
 python3 detokenize_sample.py
 ```
 
-### [Invoke a connection](./invoke_connection_sample.py)
+### [Invoke a connection](invoke_connection_sample.py)
 
 Skyflow Connections is a gateway service that uses Skyflow's underlying
 tokenization capabilities to securely connect to first-party and third-party
@@ -182,7 +182,7 @@ Replace the following values in the sample file:
 python3 invoke_connection_sample.py
 ```
 
-### [Service account token generation](./sa_token_sample.py)
+### [Service account token generation](sa_token_sample.py)
 
 Generates SA Token using path of credentials file.
 
@@ -196,7 +196,7 @@ Replace `<YOUR_CREDENTIALS_FILE_PATH>` with the relative path to your service ac
 python3 sa_token_sample.py
 ```
 
-### [Generate Bearer Token](./generate_bearer_token_from_creds_sample.py)
+### [Generate Bearer Token](generate_bearer_token_from_creds_sample.py)
 
 Generates SA Token using json content of credentials file.
 
