@@ -1,1 +1,1 @@
-from ._skyflow import Skyflow
+from .skyflow import Skyflow

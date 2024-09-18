@@ -1,2 +1,2 @@
-from _insert import InsertResponse
+from insert import InsertResponse
 from _detokenize import DetokenizeResponse

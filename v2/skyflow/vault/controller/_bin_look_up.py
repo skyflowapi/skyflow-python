@@ -1,4 +1,4 @@
-class BinLookUp:
+class BinLookUpController:
     #members
     def __init__(self):
         pass

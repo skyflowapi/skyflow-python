@@ -1,5 +1,4 @@
 from typing import List, Optional
-from v2.skyflow.management.config import ManagementConfig
 from v2.skyflow.utils import LogLevel
 from v2.skyflow.vault.config import VaultConfig, CredentialsConfig, ConnectionConfig
 
@@ -7,7 +6,7 @@ from v2.skyflow.vault.config import VaultConfig, CredentialsConfig, ConnectionCo
 class Skyflow:
     def __init__(self,
                  vault_config: List[VaultConfig],
-                 skyflow_credentials: Optional[CredentialsConfig],
+                 skyflow_credentials: Optional[CredentialsConfig] = None,
                  connection_config: Optional[List[ConnectionConfig]] = None,
                  log_level: Optional[LogLevel] = None):
         self.vault_config = vault_config
@@ -47,7 +46,7 @@ class Skyflow:
         def update_log_level(self, log_level: LogLevel):
             pass
 
-        def log_level(self, log_level: str):
+        def set_log_level(self, log_level: str):
             pass
 
         def build(self):
