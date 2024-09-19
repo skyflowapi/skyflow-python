@@ -20,7 +20,7 @@ class Skyflow:
             self._vault_config = []
             self._connection_config = []
             self._skyflow_credentials = None
-            self._log_level = None
+            self._log_level = LogLevel.ERROR
 
         def add_vault_config(self, vault_config):
             self._vault_config.append(vault_config)
