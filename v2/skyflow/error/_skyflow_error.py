@@ -1,6 +1,4 @@
-#Skyflow Error Class
-class SkyflowError:
-    #class members
-    #constructor
-    def __init__(self):
-        pass
+class SkyflowError(Exception):
+    def __init__(self, message):
+        super().__init__(message)
+        self.message = message

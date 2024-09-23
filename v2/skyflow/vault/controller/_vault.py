@@ -2,7 +2,8 @@ from v2.skyflow.vault.data import InsertRequest, UpdateRequest, DeleteRequest, G
 from v2.skyflow.vault.tokens import DetokenizeRequest, TokenizeRequest
 
 class Vault:
-    def __init__(self):
+    def __init__(self, credentials):
+        self.credentials = credentials
         pass
 
     def insert(self, request: InsertRequest):

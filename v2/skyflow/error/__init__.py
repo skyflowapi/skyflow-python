@@ -1,1 +1,1 @@
-from _skyflow_error import SkyflowError
+from v2.skyflow.error._skyflow_error import SkyflowError

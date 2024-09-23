@@ -1,1 +1,1 @@
-from _vault import VaultController
+from _vault import Vault
