@@ -1,1 +1,1 @@
-from ._service_account import generate_bearer_token, generate_bearer_token_from_creds
+from ._utils import generate_bearer_token, generate_bearer_token_from_creds
