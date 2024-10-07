@@ -1,6 +1,0 @@
-{
-    "privateKey": "invalid key",
-    "clientID": "Some client ID",
-    "keyID": "Some key ID",
-    "tokenURI": "https://unknown.org"
-}
