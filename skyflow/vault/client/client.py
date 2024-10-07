@@ -4,20 +4,18 @@ from skyflow.utils import get_vault_url, get_credentials
 
 
 class VaultClient:
-    __common_skyflow_credentials = None
-    __log_level = None
     def __init__(self, config):
         self.__config = config
+        self.__common_skyflow_credentials = None
+        self.__log_level = None
         self.__client_configuration = None
         self.__api_client = None
 
-    @staticmethod
-    def set_common_skyflow_credentials(credentials):
-        VaultClient.__common_skyflow_credentials = credentials
+    def set_common_skyflow_credentials(self, credentials):
+        self.__common_skyflow_credentials = credentials
 
-    @staticmethod
-    def set_log_level(log_level):
-        VaultClient.__log_level = log_level
+    def set_log_level(self, log_level):
+        self.__log_level = log_level
 
     def initialize_client_configuration(self):
         credentials  = get_credentials(self.__config.get("credentials"), self.__common_skyflow_credentials)
@@ -60,10 +58,8 @@ class VaultClient:
     def get_config(self):
         return self.__config
 
-    @staticmethod
-    def get_common_skyflow_credentials():
-        return VaultClient.__common_skyflow_credentials
+    def get_common_skyflow_credentials(self):
+        return self.__common_skyflow_credentials
 
-    @staticmethod
-    def get_log_level():
-        return VaultClient.__log_level
+    def get_log_level(self):
+        return self.__log_level

@@ -8,3 +8,4 @@ from ._update_request import UpdateRequest
 from ._update_response import UpdateResponse
 from ._upload_file_request import UploadFileRequest
 from ._query_request import QueryRequest
+from ._query_response import QueryResponse
