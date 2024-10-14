@@ -1,13 +1,10 @@
 from collections import OrderedDict
-
 from skyflow import LogLevel
 from skyflow.error import SkyflowError
 from skyflow.utils.validations import validate_vault_config, validate_connection_config
 from skyflow.vault.client.client import VaultClient
 from skyflow.vault.controller import Vault
 from skyflow.vault.controller import Connection
-from skyflow.vault.manager.vault import VaultManager
-
 
 class Skyflow:
     def __init__(self, builder):
@@ -109,12 +106,9 @@ class Skyflow:
 
         def get_vault_config(self, vault_id):
             if vault_id in self.__vault_configs.keys():
-                vault_config = self.__vault_configs[vault_id]
-                return vault_config.get("vault_client").get_config()
+                vault_config = self.__vault_configs.get(vault_id)
+                return vault_config
             raise SkyflowError(f"Vault config with id {vault_id} not found")
-
-        def get_vault_configs(self):
-            return self.__vault_configs
 
         def add_connection_config(self, config):
             if validate_connection_config(config) and config["connection_id"] not in self.__connection_configs.keys():
@@ -147,23 +141,23 @@ class Skyflow:
 
         def get_connection_config(self, connection_id):
             if connection_id in self.__connection_configs.keys():
-                vault_config = self.__connection_configs[connection_id]
-                return vault_config.get("vault_client").get_config()
+                connection_config = self.__connection_configs[connection_id]
+                return connection_config
             raise SkyflowError(f"Connection config with id {connection_id} not found")
 
         def add_skyflow_credentials(self, credentials):
-            for vault_config in self.__vault_configs:
+            for vault_id, vault_config in self.__vault_configs.items():
                 vault_config.get("vault_client").set_common_skyflow_credentials(credentials)
 
-            for connection_config in self.__connection_configs:
+            for connection_id, connection_config in self.__connection_configs.items():
                 connection_config.get("vault_client").set_common_skyflow_credentials(credentials)
             return self
 
         def set_log_level(self, log_level):
-            for vault_config in self.__vault_configs:
+            for vault_id, vault_config in self.__vault_configs.items():
                 vault_config.get("vault_client").set_log_level(log_level)
 
-            for connection_config in self.__connection_configs:
+            for connection_id, connection_config in self.__connection_configs.items():
                 connection_config.get("vault_client").set_log_level(log_level)
             return self
 

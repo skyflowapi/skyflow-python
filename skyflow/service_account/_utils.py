@@ -1,7 +1,6 @@
 import json
 import datetime
-from math import expm1
-
+import time
 import jwt
 from skyflow.error import SkyflowError
 from skyflow.generated.rest.models import V1GetAuthTokenRequest
@@ -140,7 +139,14 @@ def generate_signed_data_tokens(credentials_file_path, options):
     except Exception:
         raise SkyflowError("Invalid file path")
 
-    return get_signed_tokens(credentials, options)
+    return get_signed_tokens(credentials_file_path, options)
 
 def generate_signed_data_tokens_from_creds(credentials, options):
     return get_signed_tokens(credentials, options)
+
+def get_signed_data_token_response_object(signed_token, actual_token):
+    response_object = {
+        "token": actual_token,
+        "signed_token": signed_token
+    }
+    return response_object
