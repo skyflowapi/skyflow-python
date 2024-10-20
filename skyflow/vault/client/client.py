@@ -1,6 +1,6 @@
 from skyflow.generated.rest import Configuration, RecordsApi, ApiClient, TokensApi, QueryApi
 from skyflow.service_account import generate_bearer_token, generate_bearer_token_from_creds
-from skyflow.utils import get_vault_url, get_credentials
+from skyflow.utils import get_vault_url, get_credentials, SkyflowMessages, log_info
 
 
 class VaultClient:
@@ -10,12 +10,14 @@ class VaultClient:
         self.__log_level = None
         self.__client_configuration = None
         self.__api_client = None
+        self.__logger = None
 
     def set_common_skyflow_credentials(self, credentials):
         self.__common_skyflow_credentials = credentials
 
-    def set_log_level(self, log_level):
+    def set_logger(self, log_level, logger):
         self.__log_level = log_level
+        self.__logger = logger
 
     def initialize_client_configuration(self):
         credentials  = get_credentials(self.__config.get("credentials"), self.__common_skyflow_credentials)
@@ -41,16 +43,31 @@ class VaultClient:
         return self.__config.get("vault_id")
 
     def get_bearer_token(self, credentials):
-        if 'token' in credentials:
+        interface = SkyflowMessages.InterfaceName.GENERATE_BEARER_TOKEN.value
+        if 'api_key' in credentials:
+            return credentials.get('api_key')
+        elif 'token' in credentials:
             return credentials.get("token")
         elif 'path' in credentials:
             credentials = self.__config.get("credentials")
-            roles = self.__config.get("roles") if "roles" in self.__config else None
-            return generate_bearer_token(credentials.get("path"), roles)
+            options = {
+                "role_ids": self.__config.get("roles"),
+                "ctx": self.__config.get("ctx")
+            }
+            log_info(self.__logger, SkyflowMessages.Info.GENERATE_BEARER_TOKEN_TRIGGERED, interface)
+            token, _ = generate_bearer_token(credentials.get("path"), options, self.__logger)
+            log_info(self.__logger, SkyflowMessages.Info.GENERATE_BEARER_TOKEN_SUCCESS, interface)
+            return token
         else:
             credentials = self.__config.get("credentials")
-            roles = self.__config.get("roles") if "roles" in self.__config else None
-            return generate_bearer_token_from_creds(credentials.get("credentials_string"), roles)
+            options = {
+                "role_ids": self.__config.get("roles"),
+                "ctx": self.__config.get("ctx")
+            }
+            log_info(self.__logger, SkyflowMessages.Info.GENERATE_BEARER_TOKEN_TRIGGERED, interface)
+            token, _ = generate_bearer_token_from_creds(credentials.get("credentials_string"), options, self.__logger)
+            log_info(self.__logger, SkyflowMessages.Info.GENERATE_BEARER_TOKEN_SUCCESS, interface)
+            return token
 
     def update_config(self, config):
         self.__config.update(config)
@@ -63,3 +80,6 @@ class VaultClient:
 
     def get_log_level(self):
         return self.__log_level
+
+    def get_logger(self):
+        return self.__logger

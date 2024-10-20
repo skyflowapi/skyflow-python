@@ -1,14 +1,12 @@
 class InvokeConnectionResponse:
-    def __init__(self, fields, error):
-        self.fields = fields
-        self.error = error
+    def __init__(self, response = None):
+        self.response = response
 
     def __repr__(self):
-        return f"ConnectionResponse({self.fields}, errors={self.error})"
+        return f"ConnectionResponse({self.response})"
 
     def __str__(self):
         return self.__repr__()
 
-    @classmethod
-    def parse_invoke_connection_response(cls, response):
-        return response
+    def parse_invoke_connection_response(self, response):
+        self.response = response

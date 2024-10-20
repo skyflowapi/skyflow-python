@@ -5,9 +5,11 @@ import jwt
 from skyflow.error import SkyflowError
 from skyflow.generated.rest.models import V1GetAuthTokenRequest
 from skyflow.service_account.client.auth_client import AuthClient
-from skyflow.utils import get_base_url, format_scope
+from skyflow.utils import get_base_url, format_scope, SkyflowMessages, log_error
 
-def is_expired(token):
+invalid_input_error_code = SkyflowMessages.ErrorCodes.INVALID_INPUT.value
+
+def is_expired(token, logger = None):
     if len(token) == 0:
         return True
 
@@ -18,54 +20,54 @@ def is_expired(token):
             return False
     except jwt.ExpiredSignatureError:
         return True
-    except Exception as e:
-        SkyflowError("Invalid token")
+    except Exception:
+        log_error(SkyflowMessages.Error.JWT_DECODE_ERROR.value, invalid_input_error_code, logger = logger)
         return True
     pass
 
-def generate_bearer_token(credentials_file_path, options = None):
+def generate_bearer_token(credentials_file_path, options = None, logger = None):
     try:
         credentials_file =open(credentials_file_path, 'r')
     except Exception:
-        raise SkyflowError("Invalid file path")
+        raise SkyflowError(SkyflowMessages.Error.INVALID_CREDENTIAL_FILE_PATH.value, invalid_input_error_code, logger = logger, logger_method=log_error)
 
     try:
         credentials = json.load(credentials_file)
     except Exception:
-        raise SkyflowError("Error in json parsing")
+        raise SkyflowError(SkyflowMessages.Error.FILE_INVALID_JSON.value.format(credentials_file_path), invalid_input_error_code, logger = logger, logger_method=log_error)
 
     finally:
         credentials_file.close()
-    result = get_service_account_token(credentials, options)
+    result = get_service_account_token(credentials, options, logger)
     return result
 
-def generate_bearer_token_from_creds(credentials, options = None):
+def generate_bearer_token_from_creds(credentials, options = None, logger = None):
     try:
         json_credentials = json.loads(credentials.replace('\n', '\\n'))
     except Exception as e:
-        raise SkyflowError(e)
-    result = get_service_account_token(json_credentials, options)
+        raise SkyflowError(SkyflowMessages.Error.FILE_INVALID_JSON.value, invalid_input_error_code, logger = logger, logger_method=log_error)
+    result = get_service_account_token(json_credentials, options, logger)
     return result
 
-def get_service_account_token(credentials, options):
+def get_service_account_token(credentials, options, logger):
     try:
         private_key = credentials["privateKey"]
     except:
-        raise SkyflowError("privateKey not found")
+        raise SkyflowError(SkyflowMessages.Error.MISSING_PRIVATE_KEY.value, invalid_input_error_code, logger = logger, logger_method=log_error)
     try:
         client_id = credentials["clientID"]
     except:
-        raise SkyflowError("clientID not found")
+        raise SkyflowError(SkyflowMessages.Error.MISSING_CLIENT_ID.value, invalid_input_error_code, logger = logger, logger_method=log_error)
     try:
         key_id = credentials["keyID"]
     except:
-        raise SkyflowError("keyID not found")
+        raise SkyflowError(SkyflowMessages.Error.MISSING_KEY_ID.value, invalid_input_error_code, logger = logger, logger_method=log_error)
     try:
         token_uri = credentials["tokenURI"]
     except:
-        raise SkyflowError("tokenURI not found")
+        raise SkyflowError(SkyflowMessages.Error.MISSING_TOKEN_URI.value, invalid_input_error_code, logger = logger, logger_method=log_error)
 
-    signed_token = get_signed_jwt(options, client_id, key_id, token_uri, private_key)
+    signed_token = get_signed_jwt(options, client_id, key_id, token_uri, private_key, logger)
     base_url = get_base_url(token_uri)
     auth_client = AuthClient(base_url)
     auth_api = auth_client.get_auth_api()
@@ -80,7 +82,7 @@ def get_service_account_token(credentials, options):
     response = auth_api.authentication_service_get_auth_token(request)
     return response.access_token, response.token_type
 
-def get_signed_jwt(options, client_id, key_id, token_uri, private_key):
+def get_signed_jwt(options, client_id, key_id, token_uri, private_key, logger):
     payload = {
         "iss": client_id,
         "key": key_id,
@@ -93,7 +95,7 @@ def get_signed_jwt(options, client_id, key_id, token_uri, private_key):
     try:
         return jwt.encode(payload=payload, key=private_key, algorithm="RS256")
     except Exception as e:
-        raise SkyflowError("")
+        raise SkyflowError(SkyflowMessages.Error.JWT_INVALID_FORMAT.value, invalid_input_error_code, logger = logger, logger_method=log_error)
 
 
 
@@ -102,7 +104,7 @@ def get_signed_tokens(credentials, options):
         try:
             credentials_obj = json.loads(credentials)
         except:
-            raise  SkyflowError("Invalid JSON")
+            raise  ValueError("Invalid JSON")
 
         expiry_time = time.time() + options.get("time_to_live", 60)
         prefix = "signed_token_"
@@ -130,16 +132,16 @@ def get_signed_tokens(credentials, options):
         return response_array
 
     except Exception as e:
-        raise SkyflowError(str(e))
+        raise ValueError(str(e))
 
 
-def generate_signed_data_tokens(credentials_file_path, options):
+def generate_signed_data_tokens(credentials_file_path, options, logger = None):
     try:
         credentials_file =open(credentials_file_path, 'r')
     except Exception:
-        raise SkyflowError("Invalid file path")
+        raise SkyflowError(SkyflowMessages.Error.INVALID_CREDENTIAL_FILE_PATH.value, invalid_input_error_code, logger = logger, logger_method=log_error)
 
-    return get_signed_tokens(credentials_file_path, options)
+    return get_signed_tokens(credentials_file, options)
 
 def generate_signed_data_tokens_from_creds(credentials, options):
     return get_signed_tokens(credentials, options)
