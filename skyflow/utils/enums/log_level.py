@@ -1,8 +1,8 @@
 from enum import Enum
 
 class LogLevel(Enum):
-    WARN = 'WARN'
-    INFO = 'INFO'
-    DEBUG = 'DEBUG'
-    ERROR = 'ERROR'
-    OFF = 'OFF'
+    DEBUG = 1
+    INFO = 2
+    WARN = 3
+    ERROR = 4
+    OFF = 5
