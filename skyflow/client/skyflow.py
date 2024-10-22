@@ -1,7 +1,8 @@
 from collections import OrderedDict
 from skyflow import LogLevel
 from skyflow.error import SkyflowError
-from skyflow.utils import Logger, log_info, SkyflowMessages, log_error
+from skyflow.utils import SkyflowMessages
+from skyflow.utils.logger import log_info, Logger, log_error
 from skyflow.utils.validations import validate_vault_config, validate_connection_config, validate_update_vault_config, \
     validate_update_connection_config, validate_credentials, validate_log_level
 from skyflow.vault.client.client import VaultClient
@@ -81,10 +82,24 @@ class Skyflow:
             self.__connection_configs = OrderedDict()
             self.__connection_list = list()
             self.__skyflow_credentials = None
-            self.__log_level = LogLevel.OFF
-            self.__logger = Logger(LogLevel.OFF)
+            self.__log_level = LogLevel.ERROR
+            self.__logger = Logger(LogLevel.ERROR)
 
         def add_vault_config(self, config):
+            vault_id = config.get("vault_id")
+            if not isinstance(vault_id, str) or not vault_id:
+                raise SkyflowError(
+                    SkyflowMessages.Error.INVALID_VAULT_ID.value,
+                    SkyflowMessages.ErrorCodes.INVALID_INPUT.value,
+                    logger=self.__logger
+                )
+            if vault_id in [vault.get("vault_id") for vault in self.__vault_list]:
+                raise SkyflowError(
+                    SkyflowMessages.Error.VAULT_ID_ALREADY_EXISTS.value,
+                    SkyflowMessages.ErrorCodes.INVALID_INPUT.value,
+                    logger=self.__logger
+                )
+
             self.__vault_list.append(config)
             return self
 
@@ -103,12 +118,29 @@ class Skyflow:
             vault_config.get("vault_client").update_config(config)
 
         def get_vault_config(self, vault_id):
-            if vault_id in self.__vault_configs.keys():
-                vault_config = self.__vault_configs.get(vault_id)
-                return vault_config
-            raise SkyflowError(SkyflowMessages.Error.VAULT_ID_NOT_IN_CONFIG_LIST.value.format(vault_id), SkyflowMessages.ErrorCodes.INVALID_INPUT.value, logger = self.__logger, logger_method=log_error)
+            if vault_id is None:
+                if self.__vault_configs:
+                    return next(iter(self.__vault_configs.values()))
+                raise SkyflowError(SkyflowMessages.Error.EMPTY_VAULT_CONFIGS.value, SkyflowMessages.ErrorCodes.INVALID_INPUT.value, logger = self.__logger)
+
+            if vault_id in self.__vault_configs:
+                return self.__vault_configs.get(vault_id)
+            raise SkyflowError(SkyflowMessages.Error.VAULT_ID_NOT_IN_CONFIG_LIST.value.format(vault_id), SkyflowMessages.ErrorCodes.INVALID_INPUT.value, logger = self.__logger)
 
         def add_connection_config(self, config):
+            connection_id = config.get("connection_id")
+            if not isinstance(connection_id, str) or not connection_id:
+                raise SkyflowError(
+                    SkyflowMessages.Error.INVALID_CONNECTION_ID.value,
+                    SkyflowMessages.ErrorCodes.INVALID_INPUT.value,
+                    logger = self.__logger
+                )
+            if connection_id in [connection.get("connection_id") for connection in self.__connection_list]:
+                raise SkyflowError(
+                    SkyflowMessages.Error.CONNECTION_ID_ALREADY_EXISTS.value,
+                    SkyflowMessages.ErrorCodes.INVALID_INPUT.value,
+                    logger=self.__logger
+                )
             self.__connection_list.append(config)
             return self
 
@@ -127,10 +159,14 @@ class Skyflow:
             connection_config.get("vault_client").update_config(config)
 
         def get_connection_config(self, connection_id):
-            if connection_id in self.__connection_configs.keys():
-                connection_config = self.__connection_configs[connection_id]
-                return connection_config
-            raise SkyflowError(SkyflowMessages.Error.CONNECTION_ID_NOT_IN_CONFIG_LIST.value.format(connection_id), SkyflowMessages.ErrorCodes.INVALID_INPUT.value, logger = self.__logger, logger_method=log_error)
+            if connection_id is None:
+                if self.__connection_configs:
+                    return next(iter(self.__connection_configs.values()))
+                return SkyflowError(SkyflowMessages.Error.EMPTY_CONNECTION_CONFIGS, SkyflowMessages.ErrorCodes.INVALID_INPUT.value, logger = self.__logger)
+
+            if connection_id in self.__connection_configs:
+                return self.__connection_configs.get(connection_id)
+            raise SkyflowError(SkyflowMessages.Error.CONNECTION_ID_NOT_IN_CONFIG_LIST.value.format(connection_id), SkyflowMessages.ErrorCodes.INVALID_INPUT.value, logger = self.__logger)
 
         def add_skyflow_credentials(self, credentials):
             self.__skyflow_credentials = credentials

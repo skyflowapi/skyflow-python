@@ -5,7 +5,9 @@ import jwt
 from skyflow.error import SkyflowError
 from skyflow.generated.rest.models import V1GetAuthTokenRequest
 from skyflow.service_account.client.auth_client import AuthClient
-from skyflow.utils import get_base_url, format_scope, SkyflowMessages, log_error
+from skyflow.utils.logger import log_error
+from skyflow.utils import get_base_url, format_scope, SkyflowMessages
+
 
 invalid_input_error_code = SkyflowMessages.ErrorCodes.INVALID_INPUT.value
 
@@ -25,16 +27,26 @@ def is_expired(token, logger = None):
         return True
     pass
 
+import re
+
+def validate_api_key(api_key: str) -> bool:
+    if len(api_key) != 42:
+        return False
+    api_key_pattern = re.compile(r'^sky-[a-zA-Z0-9]{5}-[a-fA-F0-9]{32}$')
+
+    return bool(api_key_pattern.match(api_key))
+
+
 def generate_bearer_token(credentials_file_path, options = None, logger = None):
     try:
         credentials_file =open(credentials_file_path, 'r')
     except Exception:
-        raise SkyflowError(SkyflowMessages.Error.INVALID_CREDENTIAL_FILE_PATH.value, invalid_input_error_code, logger = logger, logger_method=log_error)
+        raise SkyflowError(SkyflowMessages.Error.INVALID_CREDENTIAL_FILE_PATH.value, invalid_input_error_code, logger = logger)
 
     try:
         credentials = json.load(credentials_file)
     except Exception:
-        raise SkyflowError(SkyflowMessages.Error.FILE_INVALID_JSON.value.format(credentials_file_path), invalid_input_error_code, logger = logger, logger_method=log_error)
+        raise SkyflowError(SkyflowMessages.Error.FILE_INVALID_JSON.value.format(credentials_file_path), invalid_input_error_code, logger = logger)
 
     finally:
         credentials_file.close()
@@ -42,10 +54,11 @@ def generate_bearer_token(credentials_file_path, options = None, logger = None):
     return result
 
 def generate_bearer_token_from_creds(credentials, options = None, logger = None):
+    credentials = credentials.strip()
     try:
         json_credentials = json.loads(credentials.replace('\n', '\\n'))
-    except Exception as e:
-        raise SkyflowError(SkyflowMessages.Error.FILE_INVALID_JSON.value, invalid_input_error_code, logger = logger, logger_method=log_error)
+    except Exception:
+        raise SkyflowError(SkyflowMessages.Error.INVALID_CREDENTIALS_STRING.value, invalid_input_error_code, logger = logger)
     result = get_service_account_token(json_credentials, options, logger)
     return result
 
@@ -53,19 +66,19 @@ def get_service_account_token(credentials, options, logger):
     try:
         private_key = credentials["privateKey"]
     except:
-        raise SkyflowError(SkyflowMessages.Error.MISSING_PRIVATE_KEY.value, invalid_input_error_code, logger = logger, logger_method=log_error)
+        raise SkyflowError(SkyflowMessages.Error.MISSING_PRIVATE_KEY.value, invalid_input_error_code, logger = logger)
     try:
         client_id = credentials["clientID"]
     except:
-        raise SkyflowError(SkyflowMessages.Error.MISSING_CLIENT_ID.value, invalid_input_error_code, logger = logger, logger_method=log_error)
+        raise SkyflowError(SkyflowMessages.Error.MISSING_CLIENT_ID.value, invalid_input_error_code, logger = logger)
     try:
         key_id = credentials["keyID"]
     except:
-        raise SkyflowError(SkyflowMessages.Error.MISSING_KEY_ID.value, invalid_input_error_code, logger = logger, logger_method=log_error)
+        raise SkyflowError(SkyflowMessages.Error.MISSING_KEY_ID.value, invalid_input_error_code, logger = logger)
     try:
         token_uri = credentials["tokenURI"]
     except:
-        raise SkyflowError(SkyflowMessages.Error.MISSING_TOKEN_URI.value, invalid_input_error_code, logger = logger, logger_method=log_error)
+        raise SkyflowError(SkyflowMessages.Error.MISSING_TOKEN_URI.value, invalid_input_error_code, logger = logger)
 
     signed_token = get_signed_jwt(options, client_id, key_id, token_uri, private_key, logger)
     base_url = get_base_url(token_uri)
@@ -73,7 +86,7 @@ def get_service_account_token(credentials, options, logger):
     auth_api = auth_client.get_auth_api()
 
     formatted_scope = None
-    if "role_ids" in options:
+    if options and "role_ids" in options:
         formatted_scope = format_scope(options.get("role_ids"))
 
     request = V1GetAuthTokenRequest(assertion = signed_token,
@@ -90,12 +103,12 @@ def get_signed_jwt(options, client_id, key_id, token_uri, private_key, logger):
         "sub": client_id,
         "exp": datetime.datetime.utcnow() + datetime.timedelta(minutes=60)
     }
-    if "ctx" in options:
+    if options and "ctx" in options:
         payload["ctx"] = options.get("ctx")
     try:
         return jwt.encode(payload=payload, key=private_key, algorithm="RS256")
-    except Exception as e:
-        raise SkyflowError(SkyflowMessages.Error.JWT_INVALID_FORMAT.value, invalid_input_error_code, logger = logger, logger_method=log_error)
+    except Exception:
+        raise SkyflowError(SkyflowMessages.Error.JWT_INVALID_FORMAT.value, invalid_input_error_code, logger = logger)
 
 
 
@@ -139,7 +152,7 @@ def generate_signed_data_tokens(credentials_file_path, options, logger = None):
     try:
         credentials_file =open(credentials_file_path, 'r')
     except Exception:
-        raise SkyflowError(SkyflowMessages.Error.INVALID_CREDENTIAL_FILE_PATH.value, invalid_input_error_code, logger = logger, logger_method=log_error)
+        raise SkyflowError(SkyflowMessages.Error.INVALID_CREDENTIAL_FILE_PATH.value, invalid_input_error_code, logger = logger)
 
     return get_signed_tokens(credentials_file, options)
 

@@ -1,6 +1,3 @@
-from skyflow.utils.enums import Redaction, OrderBy
-
-
 class GetRequest:
     def __init__(self,
                  table,

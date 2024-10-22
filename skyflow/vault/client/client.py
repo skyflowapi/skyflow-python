@@ -1,6 +1,7 @@
 from skyflow.generated.rest import Configuration, RecordsApi, ApiClient, TokensApi, QueryApi
 from skyflow.service_account import generate_bearer_token, generate_bearer_token_from_creds
-from skyflow.utils import get_vault_url, get_credentials, SkyflowMessages, log_info
+from skyflow.utils import get_vault_url, get_credentials, SkyflowMessages
+from skyflow.utils.logger import log_info
 
 
 class VaultClient:
@@ -11,6 +12,8 @@ class VaultClient:
         self.__client_configuration = None
         self.__api_client = None
         self.__logger = None
+        self.__is_config_updated = False
+        self.__bearer_token = None
 
     def set_common_skyflow_credentials(self, credentials):
         self.__common_skyflow_credentials = credentials
@@ -20,11 +23,13 @@ class VaultClient:
         self.__logger = logger
 
     def initialize_client_configuration(self):
-        credentials  = get_credentials(self.__config.get("credentials"), self.__common_skyflow_credentials)
-        bearer_token = self.get_bearer_token(credentials)
+        credentials  = get_credentials(self.__config.get("credentials"), self.__common_skyflow_credentials, logger = self.__logger)
+        token = self.get_bearer_token(credentials)
         vault_url = get_vault_url(self.__config.get("cluster_id"),
-                                  self.__config.get("env"))
-        self.__client_configuration = Configuration(host=vault_url, access_token=bearer_token)
+                                  self.__config.get("env"),
+                                  self.__config.get("vault_id"),
+                                  logger = self.__logger)
+        self.__client_configuration = Configuration(host=vault_url, access_token=token)
         self.initialize_api_client(self.__client_configuration)
 
     def initialize_api_client(self, config):
@@ -48,29 +53,36 @@ class VaultClient:
             return credentials.get('api_key')
         elif 'token' in credentials:
             return credentials.get("token")
-        elif 'path' in credentials:
-            credentials = self.__config.get("credentials")
-            options = {
-                "role_ids": self.__config.get("roles"),
-                "ctx": self.__config.get("ctx")
-            }
-            log_info(self.__logger, SkyflowMessages.Info.GENERATE_BEARER_TOKEN_TRIGGERED, interface)
-            token, _ = generate_bearer_token(credentials.get("path"), options, self.__logger)
-            log_info(self.__logger, SkyflowMessages.Info.GENERATE_BEARER_TOKEN_SUCCESS, interface)
-            return token
-        else:
-            credentials = self.__config.get("credentials")
-            options = {
-                "role_ids": self.__config.get("roles"),
-                "ctx": self.__config.get("ctx")
-            }
-            log_info(self.__logger, SkyflowMessages.Info.GENERATE_BEARER_TOKEN_TRIGGERED, interface)
-            token, _ = generate_bearer_token_from_creds(credentials.get("credentials_string"), options, self.__logger)
-            log_info(self.__logger, SkyflowMessages.Info.GENERATE_BEARER_TOKEN_SUCCESS, interface)
-            return token
+
+        options = {
+            "role_ids": self.__config.get("roles"),
+            "ctx": self.__config.get("ctx")
+        }
+
+        log_info(SkyflowMessages.Info.GENERATE_BEARER_TOKEN_TRIGGERED, interface, self.__logger)
+
+        if self.__bearer_token is None or self.__is_config_updated:
+            if 'path' in credentials:
+                path = credentials.get("path")
+                self.__bearer_token, _ = generate_bearer_token(
+                    path,
+                    options,
+                    self.__logger
+                )
+            else:
+                credentials_string = credentials.get('credentials_string')
+                self.__bearer_token, _ = generate_bearer_token_from_creds(
+                    credentials_string,
+                    options,
+                    self.__logger
+                )
+            self.__is_config_updated = False
+        log_info(SkyflowMessages.Info.GENERATE_BEARER_TOKEN_SUCCESS, interface, self.__logger)
+        return self.__bearer_token
 
     def update_config(self, config):
         self.__config.update(config)
+        self.__is_config_updated = True
 
     def get_config(self):
         return self.__config

@@ -1,6 +1,5 @@
 import logging
-from .enums.log_level import LogLevel
-
+from ..enums.log_level import LogLevel
 
 class Logger:
     def __init__(self, level=LogLevel.ERROR):

@@ -1,6 +1,6 @@
 from enum import Enum
 
-class BatchMethod(Enum):
+class Method(Enum):
     GET = "GET"
     POST = "POST"
     PUT = "PUT"

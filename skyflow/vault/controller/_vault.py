@@ -2,13 +2,14 @@ from skyflow.generated.rest import V1FieldRecords, RecordServiceInsertRecordBody
     V1DetokenizePayload, V1TokenizeRecordRequest, V1TokenizePayload, QueryServiceExecuteQueryBody, \
     RecordServiceBulkDeleteRecordBody, RecordServiceUpdateRecordBody, RecordServiceBatchOperationBody, V1BatchRecord, \
     BatchRecordMethod
-from skyflow.generated.rest.exceptions import BadRequestException
-from skyflow.utils import log_info, SkyflowMessages, parse_insert_response, \
+from skyflow.generated.rest.exceptions import BadRequestException, UnauthorizedException
+from skyflow.utils import SkyflowMessages, parse_insert_response, \
     handle_exception, parse_update_record_response, parse_delete_response, parse_detokenize_response, \
     parse_tokenize_response, parse_query_response, parse_get_response
+from skyflow.utils.logger import log_info
 from skyflow.utils.validations import validate_insert_request, validate_delete_request, validate_query_request, \
     validate_get_request, validate_update_request, validate_detokenize_request, validate_tokenize_request
-from skyflow.vault.data import InsertRequest, UpdateRequest, DeleteRequest, GetRequest, QueryRequest, GetResponse
+from skyflow.vault.data import InsertRequest, UpdateRequest, DeleteRequest, GetRequest, QueryRequest
 from skyflow.vault.tokens import DetokenizeRequest, TokenizeRequest
 
 class Vault:
@@ -30,6 +31,7 @@ class Vault:
                 table_name=table_name,
                 method=BatchRecordMethod.POST,
                 tokenization=return_tokens,
+                upsert=upsert
             )
             if token is not None:
                 batch_record.tokens = token
@@ -48,7 +50,7 @@ class Vault:
             body = RecordServiceBatchOperationBody(
                 records=records_list,
                 continue_on_error=request.continue_on_error,
-                byot=request.token_strict
+                byot=request.token_strict.value
             )
             return body
         else:
@@ -86,6 +88,8 @@ class Vault:
 
         except BadRequestException as e:
             handle_exception(e, self.__vault_client.get_logger())
+        except UnauthorizedException as e:
+            handle_exception(e, self.__vault_client.get_logger())
 
     def update(self, request: UpdateRequest):
         interface = SkyflowMessages.InterfaceName.UPDATE
@@ -109,6 +113,8 @@ class Vault:
             return update_response
         except Exception as e:
             handle_exception(e, self.__vault_client.get_logger())
+        except UnauthorizedException as e:
+            handle_exception(e, self.__vault_client.get_logger())
 
     def delete(self, request: DeleteRequest):
         interface = SkyflowMessages.InterfaceName.DELETE.value
@@ -128,6 +134,8 @@ class Vault:
             delete_response = parse_delete_response(api_response)
             return delete_response
         except Exception as e:
+            handle_exception(e, self.__vault_client.get_logger())
+        except UnauthorizedException as e:
             handle_exception(e, self.__vault_client.get_logger())
 
     def get(self, request: GetRequest):
@@ -156,6 +164,8 @@ class Vault:
             return get_response
         except Exception as e:
             handle_exception(e, self.__vault_client.get_logger())
+        except UnauthorizedException as e:
+            handle_exception(e, self.__vault_client.get_logger())
 
     def query(self, request: QueryRequest):
         interface = SkyflowMessages.InterfaceName.QUERY.value
@@ -173,6 +183,8 @@ class Vault:
             query_response = parse_query_response(api_response)
             return query_response
         except Exception as e:
+            handle_exception(e, self.__vault_client.get_logger())
+        except UnauthorizedException as e:
             handle_exception(e, self.__vault_client.get_logger())
 
     def detokenize(self, request: DetokenizeRequest):
@@ -197,6 +209,8 @@ class Vault:
             return detokenize_response
         except Exception as e:
             handle_exception(e, self.__vault_client.get_logger())
+        except UnauthorizedException as e:
+            handle_exception(e, self.__vault_client.get_logger())
 
     def tokenize(self, request: TokenizeRequest):
         validate_tokenize_request(self.__vault_client.get_logger(), request)
@@ -216,4 +230,6 @@ class Vault:
             tokenize_response = parse_tokenize_response(api_response)
             return tokenize_response
         except Exception as e:
+            handle_exception(e, self.__vault_client.get_logger())
+        except UnauthorizedException as e:
             handle_exception(e, self.__vault_client.get_logger())

@@ -12,5 +12,5 @@ from ._validations import (
     validate_update_request,
     validate_detokenize_request,
     validate_tokenize_request,
-    validate_invoke_connection_params
+    validate_invoke_connection_params,
 )

@@ -1,4 +1,4 @@
-from .enums import LogLevel
+from ..enums import LogLevel
 from . import Logger
 
 

@@ -7,6 +7,3 @@ class InvokeConnectionResponse:
 
     def __str__(self):
         return self.__repr__()
-
-    def parse_invoke_connection_response(self, response):
-        self.response = response
