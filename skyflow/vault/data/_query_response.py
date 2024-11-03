@@ -1,5 +1,3 @@
-from skyflow.generated.rest import V1GetQueryResponse
-
 class QueryResponse:
     def __init__(self):
         self.fields = []

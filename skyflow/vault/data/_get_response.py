@@ -1,6 +1,3 @@
-from skyflow.generated.rest import V1BulkGetRecordResponse
-
-
 class GetResponse:
     def __init__(self, data=None, error = None):
         self.data = data if data else []

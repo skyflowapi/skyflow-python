@@ -6,10 +6,11 @@ from requests.models import HTTPError
 import requests
 import platform
 import sys
+import re
 from skyflow.error import SkyflowError
 from skyflow.generated.rest import V1UpdateRecordResponse, V1BulkDeleteRecordResponse, \
     V1DetokenizeResponse, V1TokenizeResponse, V1GetQueryResponse, V1BulkGetRecordResponse
-from skyflow.utils.logger import log_error
+from skyflow.utils.logger import log_error, log_error_log
 
 from . import SkyflowMessages, SDK_VERSION
 from .enums import Env, ContentType, EnvUrls
@@ -27,21 +28,29 @@ def get_credentials(config_level_creds = None, common_skyflow_creds = None, logg
     if common_skyflow_creds:
         return common_skyflow_creds
     if env_skyflow_credentials:
+        env_skyflow_credentials.strip()
         try:
-            env_creds = json.loads(env_skyflow_credentials)
+            env_creds = json.loads(env_skyflow_credentials.replace('\n', '\\n'))
             return env_creds
         except json.JSONDecodeError:
-            raise SkyflowError(SkyflowMessages.Error.INVALID_JSON_FORMAT.value, invalid_input_error_code, logger = logger)
+            raise SkyflowError(SkyflowMessages.Error.INVALID_JSON_FORMAT_IN_CREDENTIALS_ENV.value, invalid_input_error_code)
     else:
-        raise SkyflowError(SkyflowMessages.Error.INVALID_CREDENTIALS.value, invalid_input_error_code, logger = logger)
+        raise SkyflowError(SkyflowMessages.Error.INVALID_CREDENTIALS.value, invalid_input_error_code)
 
+def validate_api_key(api_key: str, logger = None) -> bool:
+    if len(api_key) != 42:
+        log_error_log(SkyflowMessages.ErrorLogs.INVALID_API_KEY.value, logger = logger)
+        return False
+    api_key_pattern = re.compile(r'^sky-[a-zA-Z0-9]{5}-[a-fA-F0-9]{32}$')
+
+    return bool(api_key_pattern.match(api_key))
 
 def get_vault_url(cluster_id, env,vault_id, logger = None):
     if not cluster_id or not isinstance(cluster_id, str) or not cluster_id.strip():
-        raise SkyflowError(SkyflowMessages.Error.INVALID_CLUSTER_ID.value.format(vault_id), invalid_input_error_code, logger = logger)
+        raise SkyflowError(SkyflowMessages.Error.INVALID_CLUSTER_ID.value.format(vault_id), invalid_input_error_code)
 
     if env not in Env:
-        raise SkyflowError(SkyflowMessages.Error.INVALID_ENV.value.format(vault_id), invalid_input_error_code, logger = logger)
+        raise SkyflowError(SkyflowMessages.Error.INVALID_ENV.value.format(vault_id), invalid_input_error_code)
 
     base_url = EnvUrls[env.name].value
     protocol = "https" if env != Env.PROD else "http"
@@ -73,9 +82,9 @@ def construct_invoke_connection_request(request, connection_url, logger) -> Prep
             header = to_lowercase_keys(json.loads(
                 json.dumps(request.request_headers)))
         else:
-            raise SkyflowError(SkyflowMessages.Error.INVALID_REQUEST_BODY.value, invalid_input_error_code, logger = logger)
+            raise SkyflowError(SkyflowMessages.Error.INVALID_REQUEST_HEADERS.value, invalid_input_error_code)
     except Exception:
-        raise SkyflowError(SkyflowMessages.Error.INVALID_REQUEST_HEADERS.value, invalid_input_error_code, logger = logger)
+        raise SkyflowError(SkyflowMessages.Error.INVALID_REQUEST_HEADERS.value, invalid_input_error_code)
 
     if not 'Content-Type'.lower() in header:
         header['content-type'] = ContentType.JSON.value
@@ -86,9 +95,9 @@ def construct_invoke_connection_request(request, connection_url, logger) -> Prep
                 request.body, header["content-type"]
             )
         else:
-            raise SkyflowError(SkyflowMessages.Error.INVALID_REQUEST_HEADERS.value, invalid_input_error_code, logger = logger)
+            raise SkyflowError(SkyflowMessages.Error.INVALID_REQUEST_BODY.value, invalid_input_error_code)
     except Exception as e:
-        raise SkyflowError( SkyflowMessages.Error.INVALID_REQUEST_HEADERS.value, invalid_input_error_code, logger = logger)
+        raise SkyflowError( SkyflowMessages.Error.INVALID_REQUEST_BODY.value, invalid_input_error_code)
 
     validate_invoke_connection_params(logger, request.query_params, request.path_params)
 
@@ -102,7 +111,7 @@ def construct_invoke_connection_request(request, connection_url, logger) -> Prep
             files = files
         ).prepare()
     except requests.exceptions.InvalidURL:
-        raise SkyflowError(SkyflowMessages.Error.INVALID_URL.value.format(connection_url), invalid_input_error_code, logger = logger)
+        raise SkyflowError(SkyflowMessages.Error.INVALID_URL.value.format(connection_url), invalid_input_error_code)
 
 
 def http_build_query(data):
@@ -313,7 +322,9 @@ def parse_invoke_connection_response(api_response: requests.Response):
     invoke_connection_response = InvokeConnectionResponse()
 
     status_code = api_response.status_code
-    content = api_response.content.decode('utf-8')
+    content = api_response.content
+    if isinstance(content, bytes):
+        content = content.decode('utf-8')
     try:
         api_response.raise_for_status()
         try:
