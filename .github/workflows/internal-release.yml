@@ -11,6 +11,9 @@ on:
       - "skyflow/version.py"
     branches:
       - release/*
+  pull_request:
+    branches:
+      - release/*
 
 jobs:
   build-and-deploy:
@@ -51,10 +54,10 @@ jobs:
         run: |
           python setup.py sdist bdist_wheel
 
-      - name: Publish to JFrog Artifactory
-        env:
-          TWINE_USERNAME: ${{ secrets.JFROG_USERNAME }}
-          TWINE_PASSWORD: ${{ secrets.JFROG_PASSWORD }}
-        run: |
-          twine upload --repository-url https://prekarilabs.jfrog.io/prekarilabs/api/pypi/skyflow-python/ dist/*
+      # - name: Publish to JFrog Artifactory
+      #   env:
+      #     TWINE_USERNAME: ${{ secrets.JFROG_USERNAME }}
+      #     TWINE_PASSWORD: ${{ secrets.JFROG_PASSWORD }}
+      #   run: |
+      #     twine upload --repository-url https://prekarilabs.jfrog.io/prekarilabs/api/pypi/skyflow-python/ dist/*
 
