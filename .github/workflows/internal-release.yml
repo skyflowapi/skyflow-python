@@ -40,7 +40,7 @@ jobs:
         run: |
           cat ./ci-scripts/bump_version.sh
           chmod +x ./ci-scripts/bump_version.sh
-          ./ci-scripts/bump_version.sh "${{ steps.previoustag.outputs.tag }}" "$(git rev-parse --short "$GITHUB_SHA")"
+          ./ci-scripts/bump_version.sh "${{   steps.previoustag.outputs.tag }}" "$(git rev-parse --short "$GITHUB_SHA")"
 
       - name: Commit changes
         run: |
@@ -48,8 +48,8 @@ jobs:
           git config user.email ${{ github.actor }}@users.noreply.github.com
           git add setup.py
           git add skyflow/version.py
-          git commit -m "[AUTOMATED] Public Release - ${{ steps.previoustag.outputs.tag }}"
-          git push origin
+          git commit -m "[AUTOMATED] Private Release ${{ steps.previoustag.outputs.tag }}-dev+$(git rev-parse --short $GITHUB_SHA)"
+          git push origin ${{ github.ref_name }} -f
 
       - name: Build the package
         run: |
