@@ -21,6 +21,12 @@ jobs:
           token: ${{ secrets.PAT_ACTIONS }}
           ref: ${{ github.ref_name }}
           fetch-depth: 0
+      - name: Print checked-out branch
+        run: |
+          echo "Checked-out branch: $(git rev-parse --abbrev-ref HEAD)"
+          echo "GitHub ref name: ${{ github.ref_name }}"
+          echo "GitHub head ref: ${{ github.head_ref }}"
+
       - uses: actions/setup-python@v2
       - name: Install dependencies
         run: |
