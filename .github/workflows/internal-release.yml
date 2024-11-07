@@ -60,7 +60,6 @@ jobs:
           echo "repository: https://prekarilabs.jfrog.io/prekarilabs/api/pypi/skyflow-python/" >> ~/.pypirc
           echo "username: ${{ secrets.JFROG_USERNAME }}" >> ~/.pypirc
           echo "password: ${{ secrets.JFROG_PASSWORD }}" >> ~/.pypirc
-          cat .pypirc
 
       - name: Build and Publish to JFrog Artifactory
         run: |
