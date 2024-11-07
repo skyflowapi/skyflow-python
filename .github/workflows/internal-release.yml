@@ -50,25 +50,34 @@ jobs:
           git push origin ${{ github.ref_name }} -f
 
 
-      - name: Create .pypirc file
-        run: |
-          echo "[distutils]" > ~/.pypirc
-          echo "index-servers =" >> ~/.pypirc
-          echo "    private-repository" >> ~/.pypirc
-          echo "" >> ~/.pypirc
-          echo "[private-repository]" >> ~/.pypirc
-          echo "repository: https://prekarilabs.jfrog.io/prekarilabs/api/pypi/skyflow-python/" >> ~/.pypirc
-          echo "username: ${{ secrets.JFROG_USERNAME }}" >> ~/.pypirc
-          echo "password: "${{ secrets.JFROG_PASSWORD }}"" >> ~/.pypirc
+      # - name: Create .pypirc file
+      #   run: |
+      #     echo "[distutils]" > ~/.pypirc
+      #     echo "index-servers =" >> ~/.pypirc
+      #     echo "    private-repository" >> ~/.pypirc
+      #     echo "" >> ~/.pypirc
+      #     echo "[private-repository]" >> ~/.pypirc
+      #     echo "repository: https://prekarilabs.jfrog.io/prekarilabs/api/pypi/skyflow-python/" >> ~/.pypirc
+      #     echo "username: ${{ secrets.JFROG_USERNAME }}" >> ~/.pypirc
+      #     echo "password: "${{ secrets.JFROG_PASSWORD }}"" >> ~/.pypirc
+
+      # - name: Build and Publish to JFrog Artifactory
+      #   run: |
+      #     # Build source distribution and wheel
+      #     python setup.py sdist bdist_wheel
+          
+      #     # Upload using Twine
+      #     twine upload --repository-url https://prekarilabs.jfrog.io/prekarilabs/api/pypi/skyflow-python/ dist/*
+
 
       - name: Build and Publish to JFrog Artifactory
+        env:
+          TWINE_USERNAME: ${{ secrets.JFROG_USERNAME }}
+          TWINE_PASSWORD: ${{ secrets.JFROG_PASSWORD }}
         run: |
-          # Build source distribution and wheel
+          echo "UserName: ${{ secrets.JFROG_USERNAME }}"
           python setup.py sdist bdist_wheel
-          
-          # Upload using Twine
-          twine upload --repository-url https://prekarilabs.jfrog.io/prekarilabs/api/pypi/skyflow-python/ dist/*
-
+          twine upload --repository-url https://prekarilabs.jfrog.io/artifactory/api/pypi/skyflow-python/ dist/*
 
 
           
