@@ -11,9 +11,6 @@ on:
       - "skyflow/version.py"
     branches:
       - release/*
-  pull_request:
-    branches:
-      - release/*
 
 jobs:
   build-and-deploy:
