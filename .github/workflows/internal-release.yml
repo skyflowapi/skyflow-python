@@ -35,9 +35,17 @@ jobs:
 
       - name: Bump Version
         run: |
-          cat ./ci-scripts/bump_version.sh
-          chmod +x ./ci-scripts/bump_version.sh
-          ./ci-scripts/bump_version.sh "${{ steps.previoustag.outputs.tag }}" "$(git rev-parse --short "$GITHUB_SHA")"
+          VERSION="${{ steps.previoustag.outputs.tag }}"
+          SEMVER="$VERSION"
+          SHA=$(git rev-parse --short "${GITHUB_SHA}")
+
+          echo "Bumping package version to $VERSION-dev+$SHA"
+          sed -E "s/current_version = .+/current_version = '$SEMVER-dev+$SHA'/g" setup.py > tempfile && cat tempfile > setup.py && rm -f tempfile
+          sed -E "s/SDK_VERSION = .+/SDK_VERSION = '$SEMVER-dev+$SHA'/g" skyflow/version.py > tempfile && cat tempfile > skyflow/version.py && rm -f tempfile
+
+          echo "--------------------------"
+          echo "Done, Package now at $VERSION-dev+$SHA"
+
 
       - name: Commit changes
         run: |
