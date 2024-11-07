@@ -41,8 +41,8 @@ jobs:
 
       - name: Bump Version
         run: |
-          chmod +x ./scripts/bump_version.sh
-          ./scripts/bump_version.sh "${{ steps.previoustag.outputs.tag }}" "$(git rev-parse --short "$GITHUB_SHA")"
+          chmod +x ./ci-scripts/bump_version.sh
+          ./ci-scripts/bump_version.sh "${{ steps.previoustag.outputs.tag }}" "$(git rev-parse --short "$GITHUB_SHA")"
 
 
       - name: Commit changes
