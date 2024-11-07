@@ -19,7 +19,7 @@ jobs:
       - uses: actions/checkout@v2
         with:
           token: ${{ secrets.PAT_ACTIONS }}
-          ref: main
+          ref: ${{ github.ref_name }}
           fetch-depth: 0
       - uses: actions/setup-python@v2
       - name: Install dependencies
@@ -35,16 +35,8 @@ jobs:
 
       - name: Bump Version
         run: |
-          VERSION="${{ steps.previoustag.outputs.tag }}"
-          SEMVER="$VERSION"
-          SHA=$(git rev-parse --short "${GITHUB_SHA}")
-
-          echo "Bumping package version to $VERSION-dev+$SHA"
-          sed -E "s/current_version = .+/current_version = '$SEMVER-dev+$SHA'/g" setup.py > tempfile && cat tempfile > setup.py && rm -f tempfile
-          sed -E "s/SDK_VERSION = .+/SDK_VERSION = '$SEMVER-dev+$SHA'/g" skyflow/version.py > tempfile && cat tempfile > skyflow/version.py && rm -f tempfile
-
-          echo "--------------------------"
-          echo "Done, Package now at $VERSION-dev+$SHA"
+          chmod +x ./scripts/bump_version.sh
+          ./scripts/bump_version.sh "${{ steps.previoustag.outputs.tag }}" "$(git rev-parse --short "$GITHUB_SHA")"
 
 
       - name: Commit changes
