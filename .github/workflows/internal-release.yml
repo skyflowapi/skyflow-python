@@ -50,20 +50,35 @@ jobs:
           git push origin ${{ github.ref_name }} -f
 
 
-      - name: Create .pypirc file
+      # - name: Create .pypirc file
+      #   run: |
+      #     echo "[distutils]" > ~/.pypirc
+      #     echo "index-servers =" >> ~/.pypirc
+      #     echo "    local" >> ~/.pypirc
+      #     echo "" >> ~/.pypirc
+      #     echo "[local]" >> ~/.pypirc
+      #     echo "repository: https://prekarilabs.jfrog.io/prekarilabs/api/pypi/skyflow-python/" >> ~/.pypirc
+      #     echo "username: ${{ secrets.JFROG_USERNAME }}" >> ~/.pypirc
+      #     echo "password: ${{ secrets.JFROG_PASSWORD }}" >> ~/.pypirc
+
+
+      # - name: Build and Publish to JFrog Artifactory
+      #   run: |
+      #     python setup.py sdist bdist_wheel
+      #     twine upload -r local dist/*
+
+      - name: Debug credentials
         run: |
-          echo "[distutils]" > ~/.pypirc
-          echo "index-servers =" >> ~/.pypirc
-          echo "    local" >> ~/.pypirc
-          echo "" >> ~/.pypirc
-          echo "[local]" >> ~/.pypirc
-          echo "repository: https://prekarilabs.jfrog.io/prekarilabs/api/pypi/skyflow-python/" >> ~/.pypirc
-          echo "username: ${{ secrets.JFROG_USERNAME }}" >> ~/.pypirc
-          echo "password: ${{ secrets.JFROG_PASSWORD }}" >> ~/.pypirc
+          echo "Username: ${TWINE_USERNAME}"
+          echo "Password is set: ${TWINE_PASSWORD:+yes}"
 
 
       - name: Build and Publish to JFrog Artifactory
+        env:
+          TWINE_USERNAME: ${{ secrets.JFROG_USERNAME }}
+          TWINE_PASSWORD: ${{ secrets.JFROG_PASSWORD }}
         run: |
           python setup.py sdist bdist_wheel
-          twine upload -r local dist/*
+          twine upload --repository-url https://prekarilabs.jfrog.io/artifactory/api/pypi/skyflow-python/ dist/*
+
 
