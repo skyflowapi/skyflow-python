@@ -52,18 +52,23 @@ jobs:
 
       - name: Create .pypirc file
         run: |
-          echo "[distutils]" > .pypirc
-          echo "index-servers =" >> .pypirc
-          echo "    private-repository" >> .pypirc
-          echo "" >> .pypirc
-          echo "[private-repository]" >> .pypirc
-          echo "repository: https://prekarilabs.jfrog.io/prekarilabs/api/pypi/skyflow-python/" >> .pypirc
-          echo "username: ${{ secrets.JFROG_USERNAME }}" >> .pypirc
+          echo "[distutils]" > ~/.pypirc
+          echo "index-servers =" >> ~/.pypirc
+          echo "    private-repository" >> ~/.pypirc
+          echo "" >> ~/.pypirc
+          echo "[private-repository]" >> ~/.pypirc
+          echo "repository: https://prekarilabs.jfrog.io/prekarilabs/api/pypi/skyflow-python/" >> ~/.pypirc
+          echo "username: ${{ secrets.JFROG_USERNAME }}" >> ~/.pypirc
+          echo "password: ${{ secrets.JFROG_PASSWORD }}" >> ~/.pypirc
 
       - name: Build and Publish to JFrog Artifactory
         run: |
+          # Build source distribution and wheel
           python setup.py sdist bdist_wheel
-          python setup.py sdist upload -r private-repository
+          
+          # Upload using Twine
+          twine upload --repository-url https://prekarilabs.jfrog.io/prekarilabs/api/pypi/skyflow-python/ dist/*
+
 
 
           
