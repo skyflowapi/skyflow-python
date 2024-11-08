@@ -7,6 +7,6 @@ on:
 
 jobs:
   test:
-    uses: ./shared-tests.yml
+    uses: ./shared-tests.yml@${{ github.head_ref || github.ref_name }}
     with:
       python-version: '3.7'
