@@ -18,6 +18,6 @@ jobs:
           error: 'One of your your commit messages is not matching the format with JIRA ID Ex: ( SDK-123 commit message )'
 
   test:
-    uses: ./shared-tests.yml@${{ github.head_ref || github.ref_name }}
+    uses: ./shared-tests.yml@main
     with:
       python-version: '3.7'
