@@ -14,7 +14,7 @@ on:
 
 jobs:
   build-and-deploy:
-    uses: ./shared-build-and-deploy.yml@main
+    uses: ./.github/workflows/shared-build-and-deploy.yml@main
     with:
       ref: ${{ github.ref_name }}
       artifactory-username: ${{ secrets.JFROG_USERNAME }}

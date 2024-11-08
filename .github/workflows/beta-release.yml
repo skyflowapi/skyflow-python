@@ -11,7 +11,7 @@ on:
 
 jobs:
   build-and-deploy:
-    uses: ./shared-build-and-deploy.yml@main
+    uses: ./.github/workflows/shared-build-and-deploy.yml@main
     with:
       ref: main
       pypi-token: ${{ secrets.PYPI_PUBLISH_TOKEN }}

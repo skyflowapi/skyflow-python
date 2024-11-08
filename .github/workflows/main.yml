@@ -7,6 +7,6 @@ on:
 
 jobs:
   test:
-    uses: ./shared-tests.yml@main
+    uses: ./.github/workflows/shared-tests.yml@main
     with:
       python-version: '3.7'
