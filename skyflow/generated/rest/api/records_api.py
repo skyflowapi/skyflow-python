@@ -1045,6 +1045,7 @@ class RecordsApi:
 
         _response_types_map: Dict[str, Optional[str]] = {
             '200': "V1BatchOperationResponse",
+            '207': "V1BatchOperationResponse",
             '404': "object",
         }
         response_data = self.api_client.call_api(

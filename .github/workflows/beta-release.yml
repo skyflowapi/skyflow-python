@@ -1,8 +1,9 @@
-name: Public Release
+# .github/workflows/beta-release.yml
+name: Public Beta Release
 
 on:
   push:
-    tags: "*.*.*"
+    tags: '*.*.*b*'
     paths-ignore:
       - "setup.py"
       - "*.yml"
