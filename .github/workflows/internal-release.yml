@@ -77,7 +77,7 @@ jobs:
         run: |
           echo "UserName: ${{ secrets.JFROG_USERNAME }}"
           python setup.py sdist bdist_wheel
-          twine upload --repository-url https://prekarilabs.jfrog.io/artifactory/api/pypi/skyflow-python/ dist/*
+          twine upload --repository-url https://prekarilabs.jfrog.io/artifactory/skyflow-python/ dist/*
 
 
           
