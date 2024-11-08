@@ -1,0 +1,19 @@
+# .github/workflows/beta-release.yml
+name: Public Beta Release
+
+on:
+  push:
+    tags: '*.*.*b*'
+    paths-ignore:
+      - "setup.py"
+      - "*.yml"
+      - "*.md"
+      - "skyflow/utils/_version.py"
+
+jobs:
+  build-and-deploy:
+    uses: ./shared-build-and-deploy.yml
+    with:
+      ref: main
+      pypi-token: ${{ secrets.PYPI_PUBLISH_TOKEN }}
+      is-internal: false

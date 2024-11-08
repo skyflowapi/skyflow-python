@@ -1,57 +1,61 @@
 import os
 import json
-from urllib.parse import urlparse
 import urllib.parse
+from requests.sessions import PreparedRequest
+from requests.models import HTTPError
 import requests
+import platform
+import sys
+import re
 from skyflow.error import SkyflowError
-from skyflow.generated.rest import RedactionEnumREDACTION, V1FieldRecords
-from skyflow.utils.enums import Env, ContentType
-import skyflow.generated.rest as vault_client
+from skyflow.generated.rest import V1UpdateRecordResponse, V1BulkDeleteRecordResponse, \
+    V1DetokenizeResponse, V1TokenizeResponse, V1GetQueryResponse, V1BulkGetRecordResponse
+from skyflow.utils.logger import log_error, log_error_log
 
-def get_credentials(config_level_creds = None, common_skyflow_creds = None):
+from . import SkyflowMessages, SDK_VERSION
+from .enums import Env, ContentType, EnvUrls
+from skyflow.vault.data import InsertResponse, UpdateResponse, DeleteResponse, QueryResponse, GetResponse
+from .validations import validate_invoke_connection_params
+from ..vault.connection import InvokeConnectionResponse
+from ..vault.tokens import DetokenizeResponse, TokenizeResponse
+
+invalid_input_error_code = SkyflowMessages.ErrorCodes.INVALID_INPUT.value
+
+def get_credentials(config_level_creds = None, common_skyflow_creds = None, logger = None):
     env_skyflow_credentials = os.getenv("SKYFLOW_CREDENTIALS")
     if config_level_creds:
         return config_level_creds
     if common_skyflow_creds:
         return common_skyflow_creds
     if env_skyflow_credentials:
-        return env_skyflow_credentials
+        env_skyflow_credentials.strip()
+        try:
+            env_creds = json.loads(env_skyflow_credentials.replace('\n', '\\n'))
+            return env_creds
+        except json.JSONDecodeError:
+            raise SkyflowError(SkyflowMessages.Error.INVALID_JSON_FORMAT_IN_CREDENTIALS_ENV.value, invalid_input_error_code)
     else:
-        raise Exception("Invalid Credentials")
-    pass
+        raise SkyflowError(SkyflowMessages.Error.INVALID_CREDENTIALS.value, invalid_input_error_code)
 
+def validate_api_key(api_key: str, logger = None) -> bool:
+    if len(api_key) != 42:
+        log_error_log(SkyflowMessages.ErrorLogs.INVALID_API_KEY.value, logger = logger)
+        return False
+    api_key_pattern = re.compile(r'^sky-[a-zA-Z0-9]{5}-[a-fA-F0-9]{32}$')
 
-def get_vault_url(cluster_id, env):
-    if env == Env.PROD:
-        return f"http://{cluster_id}.vault.skyflowapis.com"
-    elif env == Env.SANDBOX:
-        return f"https://{cluster_id}.vault.skyflowapis-preview.com"
-    elif env == Env.DEV:
-        return f"https://{cluster_id}.vault.skyflowapis.dev"
-    else:
-        return f"https://{cluster_id}.vault.skyflowapis.com"
+    return bool(api_key_pattern.match(api_key))
 
-def get_client_configuration(vault_url, bearer_token):
-        return vault_client.Configuration(
-            host=vault_url,
-            api_key_prefix="Bearer",
-            api_key=bearer_token
-        )
+def get_vault_url(cluster_id, env,vault_id, logger = None):
+    if not cluster_id or not isinstance(cluster_id, str) or not cluster_id.strip():
+        raise SkyflowError(SkyflowMessages.Error.INVALID_CLUSTER_ID.value.format(vault_id), invalid_input_error_code)
 
-def get_base_url(url):
-    parsed_url = urlparse(url)
-    base_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
-    return base_url
+    if env not in Env:
+        raise SkyflowError(SkyflowMessages.Error.INVALID_ENV.value.format(vault_id), invalid_input_error_code)
 
-def format_scope(scopes):
-    if not scopes:
-        return None
-    return " ".join([f"role:{scope}" for scope in scopes])
+    base_url = EnvUrls[env.name].value
+    protocol = "https" if env != Env.PROD else "http"
 
-
-def get_redaction_type(redaction_type):
-    if redaction_type == "plain-text":
-        return RedactionEnumREDACTION.PLAIN_TEXT
+    return f"{protocol}://{cluster_id}.{base_url}"
 
 def parse_path_params(url, path_params):
     result = url
@@ -60,10 +64,30 @@ def parse_path_params(url, path_params):
 
     return result
 
-def construct_invoke_connection_request(request, connection_url):
-    url = parse_path_params(connection_url.rstrip('/'), connection_url.pathParams)
-    header = dict()
-    header['content-type'] = ContentType.JSON
+def to_lowercase_keys(dict):
+    """
+        convert keys of dictionary to lowercase
+    """
+    result = {}
+    for key, value in dict.items():
+        result[key.lower()] = value
+
+    return result
+
+def construct_invoke_connection_request(request, connection_url, logger) -> PreparedRequest:
+    url = parse_path_params(connection_url.rstrip('/'), request.path_params)
+
+    try:
+        if isinstance(request.request_headers, dict):
+            header = to_lowercase_keys(json.loads(
+                json.dumps(request.request_headers)))
+        else:
+            raise SkyflowError(SkyflowMessages.Error.INVALID_REQUEST_HEADERS.value, invalid_input_error_code)
+    except Exception:
+        raise SkyflowError(SkyflowMessages.Error.INVALID_REQUEST_HEADERS.value, invalid_input_error_code)
+
+    if not 'Content-Type'.lower() in header:
+        header['content-type'] = ContentType.JSON.value
 
     try:
         if isinstance(request.body, dict):
@@ -71,35 +95,37 @@ def construct_invoke_connection_request(request, connection_url):
                 request.body, header["content-type"]
             )
         else:
-            raise SyntaxError("Given response body is not valid")
+            raise SkyflowError(SkyflowMessages.Error.INVALID_REQUEST_BODY.value, invalid_input_error_code)
     except Exception as e:
-        raise SyntaxError("Given request body is not valid")
+        raise SkyflowError( SkyflowMessages.Error.INVALID_REQUEST_BODY.value, invalid_input_error_code)
+
+    validate_invoke_connection_params(logger, request.query_params, request.path_params)
 
     try:
         return requests.Request(
-            method = request.method,
+            method = request.method.value,
             url = url,
             data = json_data,
             headers = header,
-            params = request.params,
+            params = request.query_params,
             files = files
         ).prepare()
     except requests.exceptions.InvalidURL:
-        raise SkyflowError("Invalid URL")
+        raise SkyflowError(SkyflowMessages.Error.INVALID_URL.value.format(connection_url), invalid_input_error_code)
 
 
 def http_build_query(data):
-    '''
+    """
         Creates a form urlencoded string from python dictionary
         urllib.urlencode() doesn't encode it in a php-esque way, this function helps in that
-    '''
+    """
 
     return urllib.parse.urlencode(r_urlencode(list(), dict(), data))
 
 def r_urlencode(parents, pairs, data):
-    '''
+    """
         convert the python dict recursively into a php style associative dictionary
-    '''
+    """
     if isinstance(data, list) or isinstance(data, tuple):
         for i in range(len(data)):
             parents.append(i)
@@ -116,9 +142,9 @@ def r_urlencode(parents, pairs, data):
     return pairs
 
 def render_key(parents):
-    '''
+    """
         renders the nested dictionary key as an associative array (php style dict)
-    '''
+    """
     depth, out_str = 0, ''
     for x in parents:
         s = "[%s]" if depth > 0 or isinstance(x, int) else "%s"
@@ -127,17 +153,240 @@ def render_key(parents):
     return out_str
 
 def get_data_from_content_type(data, content_type):
-    '''
+    """
         Get request data according to content type
-    '''
+    """
     converted_data = data
     files = {}
-    if content_type == ContentType.URLENCODED:
+    if content_type == ContentType.URLENCODED.value:
         converted_data = http_build_query(data)
-    elif content_type == ContentType.FORMDATA:
+    elif content_type == ContentType.FORMDATA.value:
         converted_data = r_urlencode(list(), dict(), data)
         files = {(None, None)}
-    elif content_type == ContentType.JSON:
+    elif content_type == ContentType.JSON.value:
         converted_data = json.dumps(data)
 
     return converted_data, files
+
+
+def get_metrics():
+    """ fetch metrics
+    """
+    sdk_name_version = "skyflow-python@" + SDK_VERSION
+
+    try:
+        sdk_client_device_model = platform.node()
+    except Exception:
+        sdk_client_device_model = ""
+
+    try:
+        sdk_client_os_details = sys.platform
+    except Exception:
+        sdk_client_os_details = ""
+
+    try:
+        sdk_runtime_details = sys.version
+    except Exception:
+        sdk_runtime_details = ""
+
+    details_dic = {
+        'sdk_name_version': sdk_name_version,
+        'sdk_client_device_model': sdk_client_device_model,
+        'sdk_client_os_details': sdk_client_os_details,
+        'sdk_runtime_details': "Python " + sdk_runtime_details,
+    }
+    return details_dic
+
+
+def parse_insert_response(api_response, continue_on_error):
+    inserted_fields = []
+    errors = []
+    insert_response = InsertResponse()
+    if continue_on_error:
+        for idx, response in enumerate(api_response.responses):
+            if response['Status'] == 200:
+                body = response['Body']
+                if 'records' in body:
+                    for record in body['records']:
+                        inserted_field = {
+                            'skyflow_id': record['skyflow_id'],
+                            'request_index': idx
+                        }
+
+                        if 'tokens' in record:
+                            inserted_field.update(record['tokens'])
+                        inserted_fields.append(inserted_field)
+            elif response['Status'] == 400:
+                error = {
+                    'request_index': idx,
+                    'error': response['Body']['error']
+                }
+                errors.append(error)
+
+            insert_response.inserted_fields = inserted_fields
+            insert_response.error_data = errors
+
+    else:
+        for record in api_response.records:
+            field_data = {
+                'skyflow_id': record.skyflow_id
+            }
+
+            if record.tokens:
+                field_data.update(record.tokens)
+
+            inserted_fields.append(field_data)
+        insert_response.inserted_fields = inserted_fields
+
+    return insert_response
+
+def parse_update_record_response(api_response: V1UpdateRecordResponse):
+    update_response = UpdateResponse()
+    updated_field = dict()
+    updated_field['skyflow_id'] = api_response.skyflow_id
+    if api_response.tokens is not None:
+        updated_field.update(api_response.tokens)
+
+    update_response.updated_field = updated_field
+
+    return update_response
+
+def parse_delete_response(api_response: V1BulkDeleteRecordResponse):
+    delete_response = DeleteResponse()
+    deleted_ids = api_response.record_id_response
+    delete_response.deleted_ids = deleted_ids
+    delete_response.error = []
+    return delete_response
+
+
+def parse_get_response(api_response: V1BulkGetRecordResponse):
+    get_response = GetResponse()
+    data = []
+    error = []
+    for record in api_response.records:
+        field_data = {field: value for field, value in record.fields.items()}
+        data.append(field_data)
+
+    get_response.data = data
+    get_response.error = error
+
+    return get_response
+
+def parse_detokenize_response(api_response: V1DetokenizeResponse):
+    detokenized_fields = []
+    errors = []
+
+    for record in api_response.records:
+        if record.error:
+            errors.append({
+                "token": record.token,
+                "error": record.error
+            })
+        else:
+            value_type = record.value_type.value if record.value_type else None
+            detokenized_fields.append({
+                "token": record.token,
+                "value": record.value,
+                "type": value_type
+            })
+
+    detokenized_fields = detokenized_fields
+    errors = errors
+    detokenize_response = DetokenizeResponse()
+    detokenize_response.detokenized_fields = detokenized_fields
+    detokenize_response.errors = errors
+
+    return detokenize_response
+
+def parse_tokenize_response(api_response: V1TokenizeResponse):
+    tokenize_response = TokenizeResponse()
+    tokenized_fields = [{"token": record.token} for record in api_response.records]
+
+    tokenize_response.tokenized_fields = tokenized_fields
+
+    return tokenize_response
+
+def parse_query_response(api_response: V1GetQueryResponse):
+    query_response = QueryResponse()
+    fields = []
+    for record in api_response.records:
+        field_object = {
+            **record.fields,
+            "tokenized_data": {}
+        }
+        fields.append(field_object)
+    query_response.fields = fields
+    return query_response
+
+def parse_invoke_connection_response(api_response: requests.Response):
+    invoke_connection_response = InvokeConnectionResponse()
+
+    status_code = api_response.status_code
+    content = api_response.content
+    if isinstance(content, bytes):
+        content = content.decode('utf-8')
+    try:
+        api_response.raise_for_status()
+        try:
+            json_content = json.loads(content)
+            if 'x-request-id' in api_response.headers:
+                request_id = api_response.headers['x-request-id']
+                json_content['request_id'] = request_id
+
+            invoke_connection_response.response = json_content
+            return invoke_connection_response
+        except:
+            raise SkyflowError(SkyflowMessages.Error.RESPONSE_NOT_JSON.value.format(content), status_code)
+    except HTTPError:
+        message = SkyflowMessages.Error.API_ERROR.value.format(status_code)
+        if api_response and api_response.content:
+            try:
+                error_response = json.loads(content)
+                if isinstance(error_response.get('error'), dict) and 'message' in error_response['error']:
+                    message = error_response['error']['message']
+            except json.JSONDecodeError:
+                message = SkyflowMessages.Error.RESPONSE_NOT_JSON.value.format(content)
+
+        if 'x-request-id' in api_response.headers:
+            message += ' - request id: ' + api_response.headers['x-request-id']
+
+        raise SkyflowError(message, status_code)
+
+
+def log_and_reject_error(description, status_code, request_id, http_status=None, grpc_code=None, details=None, logger = None):
+    log_error(description, status_code, request_id, grpc_code, http_status, details, logger= logger)
+
+def handle_exception(error, logger):
+    request_id = error.headers.get('x-request-id', 'unknown-request-id')
+    content_type = error.headers.get('content-type')
+    data = error.body
+
+    if content_type:
+        if 'application/json' in content_type:
+            handle_json_error(error, data, request_id, logger)
+        elif 'text/plain' in content_type:
+            handle_text_error(error, data, request_id, logger)
+        else:
+            handle_generic_error(error, request_id, logger)
+    else:
+        handle_generic_error(error, request_id, logger)
+
+def handle_json_error(err, data, request_id, logger):
+    try:
+        description = json.loads(data)
+        status_code = description.get('error', {}).get('http_code', 500)  # Default to 500 if not found
+        http_status = description.get('error', {}).get('http_status')
+        grpc_code = description.get('error', {}).get('grpc_code')
+        details = description.get('error', {}).get('details')
+
+        description_message = description.get('error', {}).get('message', "An unknown error occurred.")
+        log_and_reject_error(description_message, status_code, request_id, http_status, grpc_code, details, logger = logger)
+    except json.JSONDecodeError:
+        log_and_reject_error("Invalid JSON response received.", err, request_id, logger = logger)
+
+def handle_text_error(err, data, request_id, logger):
+    log_and_reject_error(data, err.status, request_id, logger =  logger)
+
+def handle_generic_error(err, request_id, logger):
+    description = "An error occurred."
+    log_and_reject_error(description, err.status, request_id, logger = logger)
