@@ -1,6 +1,4 @@
-from skyflow.generated.rest import V1BYOT
 from skyflow.utils.enums import TokenStrict
-
 
 class InsertRequest:
     def __init__(self,

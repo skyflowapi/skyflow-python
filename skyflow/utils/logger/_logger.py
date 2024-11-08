@@ -1,18 +1,26 @@
 import logging
 from ..enums.log_level import LogLevel
 
+
 class Logger:
     def __init__(self, level=LogLevel.ERROR):
         self.current_level = level
         self.logger = logging.getLogger('skyflow-python')
         self.logger.propagate = False  # Prevent logs from being handled by parent loggers
+
+        # Remove any existing handlers to avoid duplicates or inherited handlers
+        if self.logger.hasHandlers():
+            self.logger.handlers.clear()
+
         self.set_log_level(level)
 
-        if not self.logger.hasHandlers():
-            handler = logging.StreamHandler()
-            formatter = logging.Formatter('%(levelname)s - %(message)s')
-            handler.setFormatter(formatter)
-            self.logger.addHandler(handler)
+        handler = logging.StreamHandler()
+
+        # Create a formatter that only includes the message without any prefixes
+        formatter = logging.Formatter('%(message)s')
+        handler.setFormatter(formatter)
+
+        self.logger.addHandler(handler)
 
     def set_log_level(self, level):
         self.current_level = level

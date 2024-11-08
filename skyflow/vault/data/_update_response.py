@@ -1,5 +1,3 @@
-from skyflow.generated.rest import V1UpdateRecordResponse
-
 class UpdateResponse:
     def __init__(self, updated_field = None, error=None):
         self.updated_field = updated_field

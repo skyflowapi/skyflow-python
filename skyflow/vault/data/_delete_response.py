@@ -1,6 +1,3 @@
-from skyflow.generated.rest import V1BulkDeleteRecordResponse
-
-
 class DeleteResponse:
     def __init__(self, deleted_ids = None, error = None):
         self.deleted_ids = deleted_ids

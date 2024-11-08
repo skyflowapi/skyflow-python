@@ -13,23 +13,22 @@ class Connection:
         self.__vault_client = vault_client
 
     def invoke(self, request: InvokeConnectionRequest):
-        interface = SkyflowMessages.InterfaceName.INVOKE_CONNECTION.value
-        log_info(SkyflowMessages.Info.INVOKE_CONNECTION_TRIGGERED, interface, self.__vault_client.get_logger())
-
         session = requests.Session()
 
         config = self.__vault_client.get_config()
         bearer_token = self.__vault_client.get_bearer_token(config.get("credentials"))
 
         connection_url = config.get("connection_url")
+        log_info(SkyflowMessages.Info.VALIDATING_INVOKE_CONNECTION_REQUEST.value, self.__vault_client.get_logger())
         invoke_connection_request = construct_invoke_connection_request(request, connection_url, self.__vault_client.get_logger())
+        log_info(SkyflowMessages.Info.INVOKE_CONNECTION_REQUEST_RESOLVED.value, self.__vault_client.get_logger())
 
         if not 'X-Skyflow-Authorization'.lower() in invoke_connection_request.headers:
             invoke_connection_request.headers['x-skyflow-authorization'] = bearer_token
 
         invoke_connection_request.headers['sky-metadata'] = json.dumps(get_metrics())
 
-        log_info(SkyflowMessages.Info.INVOKE_CONNECTION_TRIGGERED, interface, self.__vault_client.get_logger())
+        log_info(SkyflowMessages.Info.INVOKE_CONNECTION_TRIGGERED, self.__vault_client.get_logger())
 
         try:
             response = session.send(invoke_connection_request)
@@ -38,4 +37,4 @@ class Connection:
             return invoke_connection_response
         except Exception as e:
             print(e)
-            raise SkyflowError(SkyflowMessages.Error.INVOKE_CONNECTION_FAILED.value, SkyflowMessages.ErrorCodes.SERVER_ERROR, logger = self.__vault_client.get_logger())
+            raise SkyflowError(SkyflowMessages.Error.INVOKE_CONNECTION_FAILED.value, SkyflowMessages.ErrorCodes.SERVER_ERROR.value)

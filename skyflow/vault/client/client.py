@@ -1,5 +1,5 @@
 from skyflow.generated.rest import Configuration, RecordsApi, ApiClient, TokensApi, QueryApi
-from skyflow.service_account import generate_bearer_token, generate_bearer_token_from_creds
+from skyflow.service_account import generate_bearer_token, generate_bearer_token_from_creds, is_expired
 from skyflow.utils import get_vault_url, get_credentials, SkyflowMessages
 from skyflow.utils.logger import log_info
 
@@ -48,7 +48,6 @@ class VaultClient:
         return self.__config.get("vault_id")
 
     def get_bearer_token(self, credentials):
-        interface = SkyflowMessages.InterfaceName.GENERATE_BEARER_TOKEN.value
         if 'api_key' in credentials:
             return credentials.get('api_key')
         elif 'token' in credentials:
@@ -59,7 +58,7 @@ class VaultClient:
             "ctx": self.__config.get("ctx")
         }
 
-        log_info(SkyflowMessages.Info.GENERATE_BEARER_TOKEN_TRIGGERED, interface, self.__logger)
+        log_info(SkyflowMessages.Info.GENERATE_BEARER_TOKEN_TRIGGERED, self.__logger)
 
         if self.__bearer_token is None or self.__is_config_updated:
             if 'path' in credentials:
@@ -71,13 +70,19 @@ class VaultClient:
                 )
             else:
                 credentials_string = credentials.get('credentials_string')
+                log_info(SkyflowMessages.Info.GENERATE_BEARER_TOKEN_FROM_CREDENTIALS_STRING_TRIGGERED.value, self.__logger)
                 self.__bearer_token, _ = generate_bearer_token_from_creds(
                     credentials_string,
                     options,
                     self.__logger
                 )
             self.__is_config_updated = False
-        log_info(SkyflowMessages.Info.GENERATE_BEARER_TOKEN_SUCCESS, interface, self.__logger)
+
+        if is_expired(self.__bearer_token):
+            self.__is_config_updated = True
+            raise SyntaxError(SkyflowMessages.Error.EXPIRED_TOKEN.value, SkyflowMessages.ErrorCodes.INVALID_INPUT.value)
+
+        log_info(SkyflowMessages.Info.REUSE_BEARER_TOKEN.value, self.__logger)
         return self.__bearer_token
 
     def update_config(self, config):

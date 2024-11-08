@@ -1,5 +1,3 @@
-from skyflow.generated.rest import V1DetokenizeResponse
-
 class DetokenizeResponse:
     def __init__(self, detokenized_fields = None, errors = None):
         self.detokenized_fields = detokenized_fields

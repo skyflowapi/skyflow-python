@@ -1,6 +1,3 @@
-from skyflow.generated.rest import V1InsertRecordResponse, V1BatchOperationResponse
-
-
 class InsertResponse:
     def __init__(self, inserted_fields = None, error_data = None):
         self.inserted_fields = inserted_fields
