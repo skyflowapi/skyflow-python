@@ -3,7 +3,7 @@ import time
 import jwt
 import json
 from unittest.mock import patch
-
+import os
 from skyflow.error import SkyflowError
 from skyflow.service_account import is_expired, generate_bearer_token, \
     generate_bearer_token_from_creds
@@ -44,13 +44,15 @@ class TestServiceAccountUtils(unittest.TestCase):
 
     @patch("json.load", side_effect=json.JSONDecodeError("Expecting value", "", 0))
     def test_generate_bearer_token_invalid_json(self, mock_json_load):
+        creds_path = os.path.join(os.path.dirname(__file__), "valid_credentials.json")
         with self.assertRaises(SkyflowError) as context:
-            generate_bearer_token("./valid_credentials.json")
-        self.assertEqual(context.exception.message, SkyflowMessages.Error.FILE_INVALID_JSON.value.format("valid_credentials.json"))
+            generate_bearer_token(creds_path)
+        self.assertEqual(context.exception.message, SkyflowMessages.Error.FILE_INVALID_JSON.value.format(creds_path))
 
     @patch("skyflow.service_account._utils.get_service_account_token")
     def test_generate_bearer_token_valid_file_path(self, mock_generate_bearer_token):
-        generate_bearer_token("./valid_credentials.json")
+        creds_path = os.path.join(os.path.dirname(__file__), "valid_credentials.json")
+        generate_bearer_token(creds_path)
         mock_generate_bearer_token.assert_called_once()
 
     @patch("skyflow.service_account._utils.get_service_account_token")
