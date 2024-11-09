@@ -6,3 +6,4 @@ typing-extensions >= 4.7.1
 DateTime~=5.5
 PyJWT~=2.9.0
 requests~=2.32.3
+coverage
