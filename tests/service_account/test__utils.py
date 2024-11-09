@@ -106,8 +106,9 @@ class TestServiceAccountUtils(unittest.TestCase):
         self.assertEqual(response["signed_token"], signed_token)
 
     def test_generate_signed_data_tokens_from_file_path(self):
+        creds_path = os.path.join(os.path.dirname(__file__), "valid_credentials.json")
         options = {"data_tokens": ["token1", "token2"], "ctx": 'ctx'}
-        result = generate_signed_data_tokens('valid_credentials.json', options)
+        result = generate_signed_data_tokens(creds_path, options)
         self.assertEqual(len(result), 2)
 
     def test_generate_signed_data_tokens_from_invalid_file_path(self):
