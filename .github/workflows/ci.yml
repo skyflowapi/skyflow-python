@@ -20,4 +20,4 @@ jobs:
   test:
     uses: ./.github/workflows/shared-tests.yml
     with:
-      python-version: '3.7'
+      python-version: '3.8'
