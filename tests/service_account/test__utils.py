@@ -45,12 +45,12 @@ class TestServiceAccountUtils(unittest.TestCase):
     @patch("json.load", side_effect=json.JSONDecodeError("Expecting value", "", 0))
     def test_generate_bearer_token_invalid_json(self, mock_json_load):
         with self.assertRaises(SkyflowError) as context:
-            generate_bearer_token("valid_credentials.json")
+            generate_bearer_token("./valid_credentials.json")
         self.assertEqual(context.exception.message, SkyflowMessages.Error.FILE_INVALID_JSON.value.format("valid_credentials.json"))
 
     @patch("skyflow.service_account._utils.get_service_account_token")
     def test_generate_bearer_token_valid_file_path(self, mock_generate_bearer_token):
-        generate_bearer_token("valid_credentials.json")
+        generate_bearer_token("./valid_credentials.json")
         mock_generate_bearer_token.assert_called_once()
 
     @patch("skyflow.service_account._utils.get_service_account_token")
