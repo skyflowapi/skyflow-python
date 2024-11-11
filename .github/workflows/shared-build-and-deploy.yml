@@ -7,18 +7,7 @@ on:
         description: 'Git reference to use (e.g., main or branch name)'
         required: true
         type: string
-      pypi-token:
-        description: 'PyPI token for publishing'
-        required: false
-        type: string
-      artifactory-username:
-        description: 'Artifactory username for internal release'
-        required: false
-        type: string
-      artifactory-password:
-        description: 'Artifactory password for internal release'
-        required: false
-        type: string
+
       is-internal:
         description: 'Flag for internal release'
         required: true
@@ -77,14 +66,14 @@ jobs:
         if: ${{ !inputs.is-internal }}
         env:
           TWINE_USERNAME: __token__
-          TWINE_PASSWORD: ${{ inputs.pypi-token }}
+          TWINE_PASSWORD: ${{ secrets.PYPI_PUBLISH_TOKEN }}
         run: |
           twine upload dist/*
 
       - name: Publish to JFrog Artifactory
         if: ${{ inputs.is-internal }}
         env:
-          TWINE_USERNAME: ${{ inputs.artifactory-username }}
-          TWINE_PASSWORD: ${{ inputs.artifactory-password }}
+          TWINE_USERNAME: ${{ secrets.JFROG_USERNAME }}
+          TWINE_PASSWORD: ${{ secrets.JFROG_PASSWORD }}
         run: |
           twine upload --repository-url https://prekarilabs.jfrog.io/artifactory/api/pypi/skyflow-python/ dist/*
