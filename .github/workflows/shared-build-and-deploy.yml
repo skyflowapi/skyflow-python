@@ -62,24 +62,20 @@ jobs:
             git push origin
           fi
 
-
-
-      - name: Build the package
-        run: |
-          python setup.py sdist bdist_wheel
-
-      - name: Publish Package
+      - name: Build and Publish Package
         if: ${{ !inputs.is-internal }}
         env:
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.PYPI_PUBLISH_TOKEN }}
         run: |
+          python setup.py sdist bdist_wheel
           twine upload dist/*
 
-      - name: Publish to JFrog Artifactory
+      - name: Build and Publish to JFrog Artifactory
         if: ${{ inputs.is-internal }}
         env:
           TWINE_USERNAME: ${{ secrets.JFROG_USERNAME }}
           TWINE_PASSWORD: ${{ secrets.JFROG_PASSWORD }}
         run: |
+          python setup.py sdist bdist_wheel
           twine upload --repository-url https://prekarilabs.jfrog.io/artifactory/api/pypi/skyflow-python/ dist/*
