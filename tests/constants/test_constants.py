@@ -7,32 +7,32 @@ VALID_VAULT_CONFIG = {
     "vault_id": "d3dd9bbb7abc4c779b72f32cb7ee5d14",
     "cluster_id": "sb.area51",
     "env": Env.DEV,
-    "credentials": {"path": "/path/to/credentials.json"}
+    "credentials": {"path": "/path/to/valid_credentials.json"}
 }
 
 INVALID_VAULT_CONFIG = {
     "cluster_id": "sb.area51",  # Missing vault_id
     "env": Env.DEV,
-    "credentials": {"path": "/path/to/credentials.json"}
+    "credentials": {"path": "/path/to/valid_credentials.json"}
 }
 
 
 VALID_CONNECTION_CONFIG = {
     "connection_id": "ef34fc6b0b914ad59a1754c06f10b24c",
     "connection_url": "https://sb.area51.gateway.skyflowapis.dev/v1/gateway/inboundRoutes/ef34fc6b0b914ad59a1754c06f10b24c/test",
-    "credentials": {"path": "/path/to/credentials.json"}
+    "credentials": {"path": "/path/to/valid_credentials.json"}
 }
 
 INVALID_CONNECTION_CONFIG = {
     "connection_url": "https://sb.area51.gateway.skyflowapis.dev/v1/gateway/inboundRoutes/ef34fc6b0b914ad59a1754c06f10b24c/test",
     # Missing connection_id
-    "credentials": {"path": "/path/to/credentials.json"}
+    "credentials": {"path": "/path/to/valid_credentials.json"}
 }
 
 VALID_LOG_LEVEL = LogLevel.INFO
 INVALID_LOG_LEVEL = "INVALID_LOG_LEVEL"
 VALID_CREDENTIALS = {
-    "path": "/path/to/credentials.json"
+    "path": "/path/to/valid_credentials.json"
 }
 
 # service account constants

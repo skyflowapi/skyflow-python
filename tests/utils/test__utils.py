@@ -198,7 +198,7 @@ class TestUtils(unittest.TestCase):
         ]
         self.assertEqual(result.inserted_fields, expected_inserted_fields)
 
-        self.assertEqual(result.error_data, None)
+        self.assertEqual(result.error_data, [])
 
     def test_parse_update_record_response(self):
         api_response = Mock()

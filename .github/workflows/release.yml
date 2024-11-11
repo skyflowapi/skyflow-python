@@ -15,3 +15,4 @@ jobs:
     with:
       ref: main
       is-internal: false
+    secrets: inherit

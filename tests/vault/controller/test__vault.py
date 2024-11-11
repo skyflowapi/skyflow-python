@@ -3,7 +3,7 @@ from unittest.mock import Mock, patch
 
 from skyflow.generated.rest import RecordServiceBatchOperationBody, V1BatchRecord, RecordServiceInsertRecordBody, \
     V1FieldRecords, RecordServiceUpdateRecordBody, RecordServiceBulkDeleteRecordBody, QueryServiceExecuteQueryBody, \
-    V1DetokenizeRecordRequest, V1DetokenizePayload, V1TokenizePayload, V1TokenizeRecordRequest
+    V1DetokenizeRecordRequest, V1DetokenizePayload, V1TokenizePayload, V1TokenizeRecordRequest, RedactionEnumREDACTION
 from skyflow.utils.enums import TokenStrict, Redaction
 from skyflow.vault.controller import Vault
 from skyflow.vault.data import InsertRequest, InsertResponse, UpdateResponse, UpdateRequest, DeleteResponse, \
@@ -135,7 +135,7 @@ class TestVault(unittest.TestCase):
 
         # Assert that the result matches the expected InsertResponse
         self.assertEqual(result.inserted_fields, expected_inserted_fields)
-        self.assertIsNone(result.error_data)  # No errors expected
+        self.assertEqual(result.error_data, [])  # No errors expected
 
     @patch("skyflow.vault.controller._vault.validate_update_request")
     @patch("skyflow.vault.controller._vault.parse_update_record_response")
@@ -351,14 +351,14 @@ class TestVault(unittest.TestCase):
     def test_detokenize_successful(self, mock_parse_response, mock_validate):
         request = DetokenizeRequest(
             tokens=["token1", "token2"],
-            redaction_type=Redaction.PLAIN_TEXT,
+            redaction_type="plain-text",
             continue_on_error=False
         )
 
         # Expected payload as a V1DetokenizePayload instance
         tokens_list = [
-            V1DetokenizeRecordRequest(token="token1", redaction=Redaction.PLAIN_TEXT.value),
-            V1DetokenizeRecordRequest(token="token2", redaction=Redaction.PLAIN_TEXT.value)
+            V1DetokenizeRecordRequest(token="token1", redaction=RedactionEnumREDACTION.PLAIN_TEXT),
+            V1DetokenizeRecordRequest(token="token2", redaction=RedactionEnumREDACTION.PLAIN_TEXT)
         ]
         expected_payload = V1DetokenizePayload(
             detokenization_parameters=tokens_list,
