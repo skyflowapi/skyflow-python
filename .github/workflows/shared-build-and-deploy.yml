@@ -50,9 +50,10 @@ jobs:
           git config user.email "${{ github.actor }}@users.noreply.github.com"
           git add setup.py
           git add skyflow/utils/_version.py
-          
+
           if [ "${{ inputs.is-internal }}" = "true" ]; then
-            COMMIT_MESSAGE="[AUTOMATED] Private Release ${{ steps.previoustag.outputs.tag }}-dev$(git rev-parse --short $GITHUB_SHA)"
+            VERSION="${{ steps.previoustag.outputs.tag }}.dev0+$(git rev-parse --short $GITHUB_SHA)"
+            COMMIT_MESSAGE="[AUTOMATED] Private Release $VERSION"
             git commit -m "$COMMIT_MESSAGE"
             git push origin ${{ github.ref_name }} -f
           else
@@ -60,6 +61,7 @@ jobs:
             git commit -m "$COMMIT_MESSAGE"
             git push origin
           fi
+
 
 
       - name: Build the package
