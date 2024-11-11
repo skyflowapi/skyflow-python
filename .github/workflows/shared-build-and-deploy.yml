@@ -52,7 +52,7 @@ jobs:
           git add skyflow/utils/_version.py
           
           if [ "${{ inputs.is-internal }}" = "true" ]; then
-            COMMIT_MESSAGE="[AUTOMATED] Private Release ${{ steps.previoustag.outputs.tag }}-dev-$(git rev-parse --short $GITHUB_SHA)"
+            COMMIT_MESSAGE="[AUTOMATED] Private Release ${{ steps.previoustag.outputs.tag }}-dev$(git rev-parse --short $GITHUB_SHA)"
             git commit -m "$COMMIT_MESSAGE"
             git push origin ${{ github.ref_name }} -f
           else
