@@ -450,7 +450,7 @@ def validate_update_request(logger, request):
     except Exception:
         log_error_log(SkyflowMessages.ErrorLogs.SKYFLOW_ID_IS_REQUIRED.value.format("UPDATE"), logger=logger)
 
-    if skyflow_id.strip():
+    if not skyflow_id.strip():
         log_error_log(SkyflowMessages.ErrorLogs.EMPTY_SKYFLOW_ID.value.format("UPDATE"), logger = logger)
 
     if not isinstance(request.table, str):
