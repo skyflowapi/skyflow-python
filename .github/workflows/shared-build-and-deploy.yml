@@ -83,7 +83,7 @@ jobs:
         if: ${{ inputs.is-internal }}
         env:
           TWINE_USERNAME: ${{ inputs.jfrog-username }}
-          TWINE_PASSWORD: $${{ inputs.jfrog-password }}
+          TWINE_PASSWORD: ${{ inputs.jfrog-password }}
         run: |
           # Check if TWINE_USERNAME and TWINE_PASSWORD are empty
           if [ -z "$TWINE_USERNAME" ]; then

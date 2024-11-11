@@ -17,6 +17,8 @@ jobs:
     uses: ./.github/workflows/shared-build-and-deploy.yml
     with:
       ref: ${{ github.ref_name }}
+      is-internal: true
+    secrets:
       jfrog-username: ${{ secrets.JFROG_USERNAME }}
       jfrog-password: ${{ secrets.JFROG_PASSWORD }}
-      is-internal: true
+      
