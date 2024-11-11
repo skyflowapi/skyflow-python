@@ -19,7 +19,6 @@ jobs:
     steps:
       - uses: actions/checkout@v2
         with:
-          token: ${{ secrets.PAT_ACTIONS }}
           ref: ${{ inputs.ref }}
           fetch-depth: 0
 
