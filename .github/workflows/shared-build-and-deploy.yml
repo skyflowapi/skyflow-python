@@ -13,6 +13,14 @@ on:
         required: true
         type: boolean
 
+      jfrog-username:
+        required: false
+        type: string
+      
+      jfrog-password:
+        required: false
+        type: string
+
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
@@ -74,8 +82,8 @@ jobs:
       - name: Build and Publish to JFrog Artifactory
         if: ${{ inputs.is-internal }}
         env:
-          TWINE_USERNAME: ${{ secrets.JFROG_USERNAME }}
-          TWINE_PASSWORD: ${{ secrets.JFROG_PASSWORD }}
+          TWINE_USERNAME: ${{ inputs.jfrog-username }}
+          TWINE_PASSWORD: $${{ inputs.jfrog-password }}
         run: |
           # Check if TWINE_USERNAME and TWINE_PASSWORD are empty
           if [ -z "$TWINE_USERNAME" ]; then
