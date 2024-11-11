@@ -45,17 +45,16 @@ jobs:
           fi
 
       - name: Commit changes
+        env:
+          GIT_COMMIT_MESSAGE: |
+            ${{ inputs.is-internal && '[AUTOMATED] Private Release' || '[AUTOMATED] Public Release' }} - ${{ steps.previoustag.outputs.tag }}${{ inputs.is-internal && "-dev-" + github.sha.slice(0, 7) || '' }}
         run: |
-          git config user.name ${{ github.actor }}
-          git config user.email ${{ github.actor }}@users.noreply.github.com
+          git config user.name "${{ github.actor }}"
+          git config user.email "${{ github.actor }}@users.noreply.github.com"
           git add setup.py
           git add skyflow/utils/_version.py
-          if ${{ inputs.is-internal }}; then
-            git commit -m "[AUTOMATED] Private Release ${{ steps.previoustag.outputs.tag }}-dev-$(git rev-parse --short $GITHUB_SHA)"
-            git push origin ${{ github.ref_name }} -f
-          else
-            git commit -m "[AUTOMATED] Public Release - ${{ steps.previoustag.outputs.tag }}"
-            git push origin
+          git commit -m "${GIT_COMMIT_MESSAGE}"
+          git push origin ${{ github.ref_name }} -f
 
       - name: Build the package
         run: |
