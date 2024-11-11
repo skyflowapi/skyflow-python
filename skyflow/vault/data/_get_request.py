@@ -4,7 +4,7 @@ from skyflow.utils.enums import Redaction
 class GetRequest:
     def __init__(self,
                  table,
-                 ids,
+                 ids = None,
                  redaction_type = "plain-text",
                  return_tokens = False,
                  fields = None,

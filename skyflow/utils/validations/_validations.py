@@ -164,10 +164,11 @@ def validate_vault_config(logger, config):
     )
 
     # Validate credentials (dict, not empty)
-    if "credentials" not in config:
+    if "credentials" in config and not config.get("credentials"):
         raise SkyflowError(SkyflowMessages.Error.EMPTY_CREDENTIALS.value.format("vault", vault_id), invalid_input_error_code)
 
-    validate_credentials(logger, config.get("credentials"), "vault", vault_id)
+    if "credentials" in config and config.get("credentials"):
+        validate_credentials(logger, config.get("credentials"), "vault", vault_id)
 
     # Validate env (optional, should be one of LogLevel values)
     if "env" in config and config.get("env") not in Env:
@@ -381,9 +382,11 @@ def validate_get_request(logger, request):
         log_error_log(SkyflowMessages.ErrorLogs.EMPTY_IDS.value.format("GET"), logger=logger)
         raise SkyflowError(SkyflowMessages.Error.INVALID_IDS_TYPE.value.format(type(skyflow_ids)), invalid_input_error_code)
 
-    for index, skyflow_id in enumerate(skyflow_ids):
-        if skyflow_id is None or skyflow_id == "":
-            log_error_log(SkyflowMessages.ErrorLogs.EMPTY_OR_NULL_ID_IN_IDS.value.format("GET", index), logger=logger)
+    if skyflow_ids:
+        for index, skyflow_id in enumerate(skyflow_ids):
+            if skyflow_id is None or skyflow_id == "":
+                log_error_log(SkyflowMessages.ErrorLogs.EMPTY_OR_NULL_ID_IN_IDS.value.format("GET", index),
+                              logger=logger)
 
     if not isinstance(request.return_tokens, bool):
         raise SkyflowError(SkyflowMessages.Error.INVALID_RETURN_TOKENS_TYPE.value, invalid_input_error_code)
