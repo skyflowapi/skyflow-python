@@ -10,7 +10,6 @@ then
 
     echo --------------------------
     echo "Done, Package now at $1"
-
 else
     # Use dev version with commit SHA
     DEV_VERSION="${SEMVER}.dev0+$(echo $2 | tr -dc '0-9a-f')"
