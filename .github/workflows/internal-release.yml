@@ -17,9 +17,4 @@ jobs:
     uses: ./.github/workflows/shared-build-and-deploy.yml
     with:
       ref: ${{ github.ref_name }}
-      artifactory-username: ${{ secrets.JFROG_USERNAME }}
-      artifactory-password: ${{ secrets.JFROG_PASSWORD }}
       is-internal: true
-    secrets:
-      JFROG_USERNAME: ${{ secrets.JFROG_USERNAME }}
-      JFROG_PASSWORD: ${{ secrets.JFROG_PASSWORD }}

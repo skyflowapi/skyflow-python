@@ -14,5 +14,4 @@ jobs:
     uses: ./.github/workflows/shared-build-and-deploy.yml
     with:
       ref: main
-      pypi-token: ${{ secrets.PYPI_PUBLISH_TOKEN }}
       is-internal: false
