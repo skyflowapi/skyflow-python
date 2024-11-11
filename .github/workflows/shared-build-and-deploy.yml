@@ -1,0 +1,90 @@
+name: Shared Build and Deploy
+
+on:
+  workflow_call:
+    inputs:
+      ref:
+        description: 'Git reference to use (e.g., main or branch name)'
+        required: true
+        type: string
+      pypi-token:
+        description: 'PyPI token for publishing'
+        required: false
+        type: string
+      artifactory-username:
+        description: 'Artifactory username for internal release'
+        required: false
+        type: string
+      artifactory-password:
+        description: 'Artifactory password for internal release'
+        required: false
+        type: string
+      is-internal:
+        description: 'Flag for internal release'
+        required: true
+        type: boolean
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          token: ${{ secrets.PAT_ACTIONS }}
+          ref: ${{ inputs.ref }}
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v2
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install setuptools wheel twine
+
+      - name: Get Previous tag
+        id: previoustag
+        uses: WyriHaximus/github-action-get-previous-tag@v1
+        with:
+          fallback: 1.0.0
+
+      - name: Bump Version
+        run: |
+          chmod +x ./ci-scripts/bump_version.sh
+          if ${{ inputs.is-internal }}; then
+            ./ci-scripts/bump_version.sh "${{ steps.previoustag.outputs.tag }}" "$(git rev-parse --short "$GITHUB_SHA")"
+          else
+            ./ci-scripts/bump_version.sh "${{ steps.previoustag.outputs.tag }}"
+          fi
+
+      - name: Commit changes
+        run: |
+          git config user.name ${{ github.actor }}
+          git config user.email ${{ github.actor }}@users.noreply.github.com
+          git add setup.py
+          git add skyflow/version.py
+          if ${{ inputs.is-internal }}; then
+            git commit -m "[AUTOMATED] Private Release ${{ steps.previoustag.outputs.tag }}-dev+$(git rev-parse --short $GITHUB_SHA)"
+            git push origin ${{ github.ref_name }} -f
+          else
+            git commit -m "[AUTOMATED] Public Release - ${{ steps.previoustag.outputs.tag }}"
+            git push origin
+
+      - name: Build the package
+        run: |
+          python setup.py sdist bdist_wheel
+
+      - name: Publish Package
+        if: ${{ !inputs.is-internal }}
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ inputs.pypi-token }}
+        run: |
+          twine upload dist/*
+
+      - name: Publish to JFrog Artifactory
+        if: ${{ inputs.is-internal }}
+        env:
+          TWINE_USERNAME: ${{ inputs.artifactory-username }}
+          TWINE_PASSWORD: ${{ inputs.artifactory-password }}
+        run: |
+          twine upload --repository-url https://prekarilabs.jfrog.io/artifactory/api/pypi/skyflow-python/ dist/*
