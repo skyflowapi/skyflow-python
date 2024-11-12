@@ -21,8 +21,11 @@ class Vault:
     def __initialize(self):
         self.__vault_client.initialize_client_configuration()
 
-    def __build_bulk_field_records(self, values):
-        return [V1FieldRecords(fields=record) for record in values]
+    def __build_bulk_field_records(self, values, tokens=None):
+        if tokens is None:
+            return [V1FieldRecords(fields=record) for record in values]
+        else:
+            return [V1FieldRecords(fields=record, tokens=token) for record, token in zip(values, tokens)]
 
     def __build_batch_field_records(self, values, tokens, table_name, return_tokens, upsert):
         batch_record_list = []
@@ -33,7 +36,8 @@ class Vault:
                 table_name=table_name,
                 method=BatchRecordMethod.POST,
                 tokenization=return_tokens,
-                upsert=upsert
+                upsert=upsert,
+                tokens=token
             )
             if token is not None:
                 batch_record.tokens = token
@@ -56,12 +60,13 @@ class Vault:
             )
             return body
         else:
-            records_list = self.__build_bulk_field_records(request.values)
+            records_list = self.__build_bulk_field_records(request.values, request.tokens)
             return RecordServiceInsertRecordBody(
                 records=records_list,
                 tokenization=request.return_tokens,
                 upsert=request.upsert,
-                homogeneous=request.homogeneous
+                homogeneous=request.homogeneous,
+                byot=request.token_strict.value
             )
 
     def insert(self, request: InsertRequest):
