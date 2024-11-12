@@ -177,4 +177,4 @@ def get_signed_data_token_response_object(signed_token, actual_token):
         "token": actual_token,
         "signed_token": signed_token
     }
-    return response_object
+    return response_object.get("token"), response_object.get("signed_token")

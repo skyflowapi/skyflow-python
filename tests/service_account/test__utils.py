@@ -97,13 +97,12 @@ class TestServiceAccountUtils(unittest.TestCase):
             get_signed_jwt({}, "client_id", "key_id", "token_uri", "private_key", None)
         self.assertEqual(context.exception.message, SkyflowMessages.Error.JWT_INVALID_FORMAT.value)
 
-
     def test_get_signed_data_token_response_object(self):
         token = "sample_token"
         signed_token = "signed_sample_token"
         response = get_signed_data_token_response_object(signed_token, token)
-        self.assertEqual(response["token"], token)
-        self.assertEqual(response["signed_token"], signed_token)
+        self.assertEqual(response[0], token)
+        self.assertEqual(response[1], signed_token)
 
     def test_generate_signed_data_tokens_from_file_path(self):
         creds_path = os.path.join(os.path.dirname(__file__), "valid_credentials.json")
