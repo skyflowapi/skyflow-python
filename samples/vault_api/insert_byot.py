@@ -1,5 +1,6 @@
 from skyflow import Env
 from skyflow import Skyflow, LogLevel
+from skyflow.utils.enums import TokenStrict
 from skyflow.vault.data import GetRequest, InsertRequest
 from skyflow.vault.tokens import DetokenizeRequest
 
@@ -37,7 +38,7 @@ insert_request = InsertRequest(
     table_name='TABLE_NAME',
     values = insert_data,
     continue_on_error=False, # if continue on error is set true we will return request_index for errors
-    token_strict=True, # token strict / byot is enabled,
+    token_strict=TokenStrict.ENABLE, # token strict / byot is enabled,
     tokens = [
         { "card_number": 'CARD_NUMBER1', "card_cvv": 'CVV1' },
         { "card_number": 'CARD_NUMBER2', "card_cvv": 'CVV2' },
