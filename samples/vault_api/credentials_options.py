@@ -1,14 +1,22 @@
+import json
 from skyflow import Skyflow, LogLevel
 from skyflow import Env
 from skyflow.vault.data import DeleteRequest
 
-skyflow_credentials_string = '{"clientID":"<YOUR_CLIENT_ID>","clientName":"<YOUR_CLIENT_NAME>","tokenURI":"<YOUR_TOKEN_URI>","keyID":"<YOUR_KEY_ID>","privateKey":"<YOUR_PRIVATE_KEY>"}'
+skyflow_credentials = {
+    "clientID":"<YOUR_CLIENT_ID>",
+    "clientName":"<YOUR_CLIENT_NAME>",
+    "tokenURI":"<YOUR_TOKEN_URI>",
+    "keyID":"<YOUR_KEY_ID>",
+    "privateKey":"<YOUR_PRIVATE_KEY>"
+}
+credentials_string = json.dumps(skyflow_credentials)
 
 credentials = {
         "token": "BEARER_TOKEN", # bearer token
         # api_key: "API_KEY", # API_KEY
         # path: "PATH", # path to credentials file
-        # credentials_string: "CREDENTIAL_STRING", # credentials as string
+        # credentials_string: credentials_string, # credentials as string
 }
 
 skyflow_client = (

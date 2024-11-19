@@ -1,13 +1,22 @@
+import json
 from skyflow import Skyflow, LogLevel
 from skyflow import Env
 from skyflow.vault.data import DeleteRequest
 
 # To generate Bearer Token from credentials string.
-skyflow_credentials_string = '{"clientID":"<YOUR_CLIENT_ID>","clientName":"<YOUR_CLIENT_NAME>","tokenURI":"<YOUR_TOKEN_URI>","keyID":"<YOUR_KEY_ID>","privateKey":"<YOUR_PRIVATE_KEY>"}'
+skyflow_credentials = {
+    "clientID":"<YOUR_CLIENT_ID>",
+    "clientName":"<YOUR_CLIENT_NAME>",
+    "tokenURI":"<YOUR_TOKEN_URI>",
+    "keyID":"<YOUR_KEY_ID>",
+    "privateKey":"<YOUR_PRIVATE_KEY>"
+}
+credentials_string = json.dumps(skyflow_credentials)
 
 # please pass one of api_key, token, credentials_string & path as credentials
 credentials = {
-    "token": "<BEARER_TOKEN>"
+    "token": "<BEARER_TOKEN>",
+    #"credentials_string": credentials_string
 }
 
 

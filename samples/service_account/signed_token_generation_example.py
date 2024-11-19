@@ -1,10 +1,17 @@
+import json
 from skyflow.service_account import is_expired, generate_signed_data_tokens, generate_signed_data_tokens_from_creds
 
 file_path = 'CREDENTIALS_FILE_PATH'
 bearer_token = ''
 
-skyflow_credentials_string = '{"clientID":"<YOUR_CLIENT_ID>","clientName":"<YOUR_CLIENT_NAME>","tokenURI":"<YOUR_TOKEN_URI>","keyID":"<YOUR_KEY_ID>","privateKey":"<YOUR_PRIVATE_KEY>"}'
-
+skyflow_credentials = {
+    "clientID":"<YOUR_CLIENT_ID>",
+    "clientName":"<YOUR_CLIENT_NAME>",
+    "tokenURI":"<YOUR_TOKEN_URI>",
+    "keyID":"<YOUR_KEY_ID>",
+    "privateKey":"<YOUR_PRIVATE_KEY>"
+}
+credentials_string = json.dumps(skyflow_credentials)
 
 
 options = {
@@ -23,5 +30,5 @@ if is_expired(bearer_token):
 # Generate bearer token from credentials string
 if is_expired(bearer_token):
     actual_token, signed_token = generate_signed_data_tokens_from_creds(
-        "<CREDENTIALS_STRING>", options
+        credentials_string, options
     )
