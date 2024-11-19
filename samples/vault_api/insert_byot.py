@@ -1,5 +1,6 @@
 from skyflow import Env
 from skyflow import Skyflow, LogLevel
+from skyflow.error import SkyflowError
 from skyflow.utils.enums import TokenStrict
 from skyflow.vault.data import GetRequest, InsertRequest
 from skyflow.vault.tokens import DetokenizeRequest
@@ -28,23 +29,27 @@ skyflow_client = (
     .build()
 )
 
-# sample data
-insert_data = [
-    { "card_number": 'CARD_NUMBER1', "card_cvv": 'CVV1' },
-    { "card_number": 'CARD_NUMBER2', "card_cvv": 'CVV2' },
-]
+#Initialize Client
 
-insert_request = InsertRequest(
-    table_name='TABLE_NAME',
-    values = insert_data,
-    continue_on_error=False, # if continue on error is set true we will return request_index for errors
-    token_strict=TokenStrict.ENABLE, # token strict / byot is enabled,
-    tokens = [
-        { "card_number": 'CARD_NUMBER1', "card_cvv": 'CVV1' },
-        { "card_number": 'CARD_NUMBER2', "card_cvv": 'CVV2' },
-    ],
-)
+try:
+    insert_data = [
+        {"<FIELD_NAME1>": '<VALUE1>'},
+        {"<FIELD_NAME2>": '<VALUE2>'}
+    ]
 
-response = skyflow_client.vault('VAULT_ID').insert(insert_request)
+    token_data = [
+        {"<FIELD_NAME1>": '<TOKEN1>'},
+        {"<FIELD_NAME2>": '<TOKEN2>'}
+    ]
 
-print(response)
+    insert_request = InsertRequest(
+        table_name='<TABLE_NAME>',
+        values=insert_data,
+        token_strict=TokenStrict.ENABLE,  # token strict is enabled,
+        tokens=token_data,
+    )
+
+    response = skyflow_client.vault('VAULT_ID').insert(insert_request)
+    print("Response:", response)
+except SkyflowError as e:
+    print("Error Occurred:", e)

@@ -5,7 +5,7 @@ class GetRequest:
     def __init__(self,
                  table,
                  ids = None,
-                 redaction_type = "plain-text",
+                 redaction_type = None,
                  return_tokens = False,
                  fields = None,
                  offset  = None,

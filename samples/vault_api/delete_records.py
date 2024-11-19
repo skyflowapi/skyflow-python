@@ -35,12 +35,11 @@ primary_delete_ids = [
 ]
 
 delete_request = DeleteRequest(
-    table='TABLE_NAME',
+    table='<TABLE_NAME>',
     ids = primary_delete_ids
 )
 
-# will return first Vault ID
-response = client.vault().delete(delete_request)
+response = client.vault('<VAULT_ID>').delete(delete_request)
 
 print(response)
 

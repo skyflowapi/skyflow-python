@@ -29,8 +29,7 @@ skyflow_client = (
 
 # sample data
 insert_data = [
-    { "card_number": 'CARD_NUMBER1', "card_cvv": 'CVV1' },
-    { "card_number": 'CARD_NUMBER2', "card_cvv": 'CVV2' },
+    { "<FIELD>": '<VALUE>', "<FIELD>": '<VALUE>' },
 ]
 
 insert_request = InsertRequest(

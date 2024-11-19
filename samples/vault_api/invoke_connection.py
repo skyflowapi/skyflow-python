@@ -34,19 +34,27 @@ skyflow_client = (
     .build()
 )
 
+
 body = {
     "KEY1": "VALUE1",
     "KEY2": "VALUE2"
 }
-
 headers = {
-'Content-Type': 'application/json'
+    "KEY1": "VALUE1"
+}
+path_params = {
+    "KEY1": "VALUE1"
+}
+query_params = {
+    "KEY1": "VALUE1"
 }
 
 invoke_connection_request = InvokeConnectionRequest(
     method=Method.POST,
     body=body,
-    request_headers = headers
+    request_headers = headers, # optional
+    path_params = path_params, # optional
+    query_params=query_params # optional
 )
 # will return the first connection
 response = skyflow_client.connection().invoke(invoke_connection_request)
