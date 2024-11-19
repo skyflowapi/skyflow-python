@@ -10,9 +10,9 @@ skyflow_credentials_string = '{"clientID":"<YOUR_CLIENT_ID>","clientName":"<YOUR
 # please pass one of api_key, token, credentials_string & path as credentials
 credentials = {
         "token": "BEARER_TOKEN", # bearer token
-        # api_key: "API_KEY", //API_KEY
-        # path: "PATH", //path to credentials file
-        # credentials_string: "CREDENTIAL_STRING", // credentials as string
+        # api_key: "API_KEY", # API_KEY
+        # path: "PATH", # path to credentials file
+        # credentials_string: "CREDENTIAL_STRING", # credentials as string
 }
 
 client = (

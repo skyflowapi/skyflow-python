@@ -2,8 +2,7 @@ from skyflow import Env
 from skyflow import Skyflow, LogLevel
 from skyflow.error import SkyflowError
 from skyflow.utils.enums import TokenStrict
-from skyflow.vault.data import GetRequest, InsertRequest
-from skyflow.vault.tokens import DetokenizeRequest
+from skyflow.vault.data import InsertRequest
 
 # To generate Bearer Token from credentials string.
 skyflow_credentials_string = '{"clientID":"<YOUR_CLIENT_ID>","clientName":"<YOUR_CLIENT_NAME>","tokenURI":"<YOUR_TOKEN_URI>","keyID":"<YOUR_KEY_ID>","privateKey":"<YOUR_PRIVATE_KEY>"}'
@@ -11,9 +10,9 @@ skyflow_credentials_string = '{"clientID":"<YOUR_CLIENT_ID>","clientName":"<YOUR
 # please pass one of api_key, token, credentials_string & path as credentials
 credentials = {
         "token": "BEARER_TOKEN", # bearer token
-        # api_key: "API_KEY", //API_KEY
-        # path: "PATH", //path to credentials file
-        # credentials_string: skyflow_credentials_string, // credentials as string
+        # api_key: "API_KEY", # API_KEY
+        # path: "PATH", # path to credentials file
+        # credentials_string: skyflow_credentials_string, # credentials as string
 }
 
 skyflow_client = (
