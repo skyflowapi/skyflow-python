@@ -55,5 +55,3 @@ response = skyflow_client.vault('VAULT_ID2').delete(delete_request)
 
 # remove vault on the fly
 skyflow_client.remove_vault_config("VAULT_ID")
-
-

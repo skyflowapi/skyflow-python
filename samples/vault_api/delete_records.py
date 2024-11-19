@@ -10,9 +10,9 @@ skyflow_credentials_string = '{"clientID":"<YOUR_CLIENT_ID>","clientName":"<YOUR
 # please pass one of api_key, token, credentials_string & path as credentials
 credentials = {
         "token": "BEARER_TOKEN", # bearer token
-        # api_key: "API_KEY", //API_KEY
-        # path: "PATH", //path to credentials file
-        # credentials_string: "CREDENTIAL_STRING", // credentials as string
+        # api_key: "API_KEY", # API_KEY
+        # path: "PATH", # path to credentials file
+        # credentials_string: "CREDENTIAL_STRING", # credentials as string
 }
 
 client = (
@@ -35,14 +35,10 @@ primary_delete_ids = [
 ]
 
 delete_request = DeleteRequest(
-    table='TABLE_NAME',
+    table='<TABLE_NAME>',
     ids = primary_delete_ids
 )
 
-# will return first Vault ID
-response = client.vault().delete(delete_request)
+response = client.vault('<VAULT_ID>').delete(delete_request)
 
 print(response)
-
-
-

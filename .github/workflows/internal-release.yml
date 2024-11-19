@@ -9,7 +9,7 @@ on:
       - "*.yml"
       - "*.md"
       - "skyflow/utils/_version.py"
-      - "samples/*"
+      - "samples/**"
     branches:
       - release/*
 

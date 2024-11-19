@@ -101,6 +101,7 @@ class TokensApi:
 
         _response_types_map: Dict[str, Optional[str]] = {
             '200': "V1DetokenizeResponse",
+            '207': "V1DetokenizeResponse",
             '404': "object",
         }
         response_data = self.api_client.call_api(

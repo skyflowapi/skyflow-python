@@ -20,4 +20,3 @@ if is_expired(bearer_token):
     bearer_token, token_type = generate_bearer_token_from_creds(skyflow_credentials_string)
 
     print(bearer_token, token_type)
-

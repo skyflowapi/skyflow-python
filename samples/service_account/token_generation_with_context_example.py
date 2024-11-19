@@ -8,8 +8,9 @@ skyflow_credentials_string = '{"clientID":"<YOUR_CLIENT_ID>","clientName":"<YOUR
 
 # Generate bearer token from credentials file path
 options = {
-    "role_ids": ["ROLE_ID1", "ROLE_ID2"]
+    "ctx": "<CONTEXT_ID>"
 }
+
 if is_expired(bearer_token):
     bearer_token, token_type = generate_bearer_token(
         "<YOUR_CREDENTIALS_FILE_PATH>", options
@@ -23,4 +24,3 @@ if is_expired(bearer_token):
     bearer_token, token_type = generate_bearer_token_from_creds(skyflow_credentials_string, options)
 
     print(bearer_token, token_type)
-
