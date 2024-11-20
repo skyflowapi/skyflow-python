@@ -4,7 +4,7 @@ class GetResponse:
         self.error = error
 
     def __repr__(self):
-        return f"GetResponse(data={self.data}, error={self.error})"
+        return f"GetResponse(data={self.data}, errors={self.error})"
 
     def __str__(self):
         return self.__repr__()

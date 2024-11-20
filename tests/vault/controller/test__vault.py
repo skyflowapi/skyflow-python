@@ -4,7 +4,7 @@ from unittest.mock import Mock, patch
 from skyflow.generated.rest import RecordServiceBatchOperationBody, V1BatchRecord, RecordServiceInsertRecordBody, \
     V1FieldRecords, RecordServiceUpdateRecordBody, RecordServiceBulkDeleteRecordBody, QueryServiceExecuteQueryBody, \
     V1DetokenizeRecordRequest, V1DetokenizePayload, V1TokenizePayload, V1TokenizeRecordRequest, RedactionEnumREDACTION
-from skyflow.utils.enums import TokenStrict, Redaction
+from skyflow.utils.enums import TokenStrict
 from skyflow.vault.controller import Vault
 from skyflow.vault.data import InsertRequest, InsertResponse, UpdateResponse, UpdateRequest, DeleteResponse, \
     DeleteRequest, GetRequest, GetResponse, QueryRequest, QueryResponse
@@ -406,7 +406,7 @@ class TestVault(unittest.TestCase):
 
         # Mock request with tokenization parameters
         request = TokenizeRequest(
-            tokenize_parameters=[
+            values=[
                 {"value": "value1", "column_group": "group1"},
                 {"value": "value2", "column_group": "group2"}
             ]

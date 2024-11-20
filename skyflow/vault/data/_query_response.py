@@ -4,7 +4,7 @@ class QueryResponse:
         self.error = []
 
     def __repr__(self):
-        return f"QueryResponse(fields={self.fields}, error={self.error})"
+        return f"QueryResponse(fields={self.fields}, errors={self.error})"
 
     def __str__(self):
         return self.__repr__()

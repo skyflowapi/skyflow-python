@@ -49,7 +49,7 @@ skyflow_client = (
 # sample data
 tokenize_values = [{"<VALUE_FIELD>": "<VALUE>", "<COLUMN_GROUP_FIELD>": "<VALUE>"}]
 
-tokenize_request = TokenizeRequest(tokenize_parameters=tokenize_values)
+tokenize_request = TokenizeRequest(values=tokenize_values)
 
 response = skyflow_client.vault("VAULT_ID").tokenize(tokenize_request)
 

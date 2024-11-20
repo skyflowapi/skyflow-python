@@ -6,7 +6,7 @@ class InsertResponse:
         self.error_data = error_data
 
     def __repr__(self):
-        return f"InsertResponse(inserted_fields={self.inserted_fields}, error={self.error_data})"
+        return f"InsertResponse(inserted_fields={self.inserted_fields}, errors={self.error_data})"
 
     def __str__(self):
         return self.__repr__()

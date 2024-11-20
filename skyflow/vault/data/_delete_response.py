@@ -4,7 +4,7 @@ class DeleteResponse:
         self.error = error
 
     def __repr__(self):
-        return f"DeleteResponse(deleted_ids={self.deleted_ids}, error={self.error})"
+        return f"DeleteResponse(deleted_ids={self.deleted_ids}, errors={self.error})"
 
     def __str__(self):
         return self.__repr__()
