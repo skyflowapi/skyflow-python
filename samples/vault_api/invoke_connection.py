@@ -55,7 +55,7 @@ query_params = {'KEY1': 'VALUE1'}
 invoke_connection_request = InvokeConnectionRequest(
     method=Method.POST,
     body=body,
-    request_headers=headers,  # optional
+    headers=headers,  # optional
     path_params=path_params,  # optional
     query_params=query_params,  # optional
 )

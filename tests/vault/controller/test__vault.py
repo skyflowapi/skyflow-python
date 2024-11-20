@@ -66,7 +66,7 @@ class TestVault(unittest.TestCase):
         expected_errors = [
             {'request_index': 1, 'error': 'Insert error for record 2'}
         ]
-        expected_response = InsertResponse(inserted_fields=expected_inserted_fields, error_data=expected_errors)
+        expected_response = InsertResponse(inserted_fields=expected_inserted_fields, errors=expected_errors)
 
         # Set the return value for the parse response
         mock_parse_response.return_value = expected_response
@@ -83,7 +83,7 @@ class TestVault(unittest.TestCase):
 
         # Assert that the result matches the expected InsertResponse
         self.assertEqual(result.inserted_fields, expected_inserted_fields)
-        self.assertEqual(result.error_data, expected_errors)
+        self.assertEqual(result.errors, expected_errors)
 
     @patch("skyflow.vault.controller._vault.validate_insert_request")
     @patch("skyflow.vault.controller._vault.parse_insert_response")
@@ -135,7 +135,7 @@ class TestVault(unittest.TestCase):
 
         # Assert that the result matches the expected InsertResponse
         self.assertEqual(result.inserted_fields, expected_inserted_fields)
-        self.assertEqual(result.error_data, [])  # No errors expected
+        self.assertEqual(result.errors, [])  # No errors expected
 
     @patch("skyflow.vault.controller._vault.validate_update_request")
     @patch("skyflow.vault.controller._vault.parse_update_record_response")
@@ -190,7 +190,7 @@ class TestVault(unittest.TestCase):
 
         # Check that the result matches the expected UpdateResponse
         self.assertEqual(result.updated_field, expected_updated_field)
-        self.assertEqual(result.error, [])  # No errors expected
+        self.assertEqual(result.errors, [])  # No errors expected
 
     @patch("skyflow.vault.controller._vault.validate_delete_request")
     @patch("skyflow.vault.controller._vault.parse_delete_response")
@@ -212,7 +212,7 @@ class TestVault(unittest.TestCase):
 
         # Expected parsed response
         expected_deleted_ids = ["12345", "67890"]
-        expected_response = DeleteResponse(deleted_ids=expected_deleted_ids, error=[])
+        expected_response = DeleteResponse(deleted_ids=expected_deleted_ids, errors=[])
 
         # Set the return value for the parse response
         mock_parse_response.return_value = expected_response
@@ -233,7 +233,7 @@ class TestVault(unittest.TestCase):
 
         # Check that the result matches the expected DeleteResponse
         self.assertEqual(result.deleted_ids, expected_deleted_ids)
-        self.assertEqual(result.error, [])  # No errors expected
+        self.assertEqual(result.errors, [])  # No errors expected
 
     @patch("skyflow.vault.controller._vault.validate_get_request")
     @patch("skyflow.vault.controller._vault.parse_get_response")
@@ -278,7 +278,7 @@ class TestVault(unittest.TestCase):
             {"field1": "value1", "field2": "value2"},
             {"field1": "value3", "field2": "value4"}
         ]
-        expected_response = GetResponse(data=expected_data, error=[])
+        expected_response = GetResponse(data=expected_data, errors=[])
 
         # Set the return value for parse_get_response
         mock_parse_response.return_value = expected_response
@@ -298,7 +298,7 @@ class TestVault(unittest.TestCase):
 
         # Check that the result matches the expected GetResponse
         self.assertEqual(result.data, expected_data)
-        self.assertEqual(result.error, [])  # No errors expected
+        self.assertEqual(result.errors, [])  # No errors expected
 
     @patch("skyflow.vault.controller._vault.validate_query_request")
     @patch("skyflow.vault.controller._vault.parse_query_response")
@@ -344,7 +344,7 @@ class TestVault(unittest.TestCase):
 
         # Check that the result matches the expected QueryResponse
         self.assertEqual(result.fields, expected_fields)
-        self.assertEqual(result.error, [])  # No errors expected
+        self.assertEqual(result.errors, [])  # No errors expected
 
     @patch("skyflow.vault.controller._vault.validate_detokenize_request")
     @patch("skyflow.vault.controller._vault.parse_detokenize_response")
@@ -406,7 +406,7 @@ class TestVault(unittest.TestCase):
 
         # Mock request with tokenization parameters
         request = TokenizeRequest(
-            tokenize_parameters=[
+            values=[
                 {"value": "value1", "column_group": "group1"},
                 {"value": "value2", "column_group": "group2"}
             ]

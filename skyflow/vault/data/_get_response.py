@@ -1,10 +1,10 @@
 class GetResponse:
-    def __init__(self, data=None, error = None):
+    def __init__(self, data=None, errors = None):
         self.data = data if data else []
-        self.error = error
+        self.errors = errors
 
     def __repr__(self):
-        return f"GetResponse(data={self.data}, error={self.error})"
+        return f"GetResponse(data={self.data}, errors={self.errors})"
 
     def __str__(self):
         return self.__repr__()

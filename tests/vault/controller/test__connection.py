@@ -1,5 +1,5 @@
 import unittest
-from unittest.mock import Mock, patch, call
+from unittest.mock import Mock, patch
 
 from skyflow.error import SkyflowError
 from skyflow.utils import SkyflowMessages
@@ -31,7 +31,7 @@ class TestConnection(unittest.TestCase):
             method=Method.POST,
             body=VALID_BODY,
             path_params=VALID_PATH_PARAMS,
-            request_headers=VALID_HEADERS,
+            headers=VALID_HEADERS,
             query_params=VALID_QUERY_PARAMS
         )
 
@@ -48,7 +48,7 @@ class TestConnection(unittest.TestCase):
             method="POST",
             body=VALID_BODY,
             path_params=VALID_PATH_PARAMS,
-            request_headers=INVALID_HEADERS,
+            headers=INVALID_HEADERS,
             query_params=VALID_QUERY_PARAMS
         )
 
@@ -62,7 +62,7 @@ class TestConnection(unittest.TestCase):
             method="POST",
             body=INVALID_BODY,
             path_params=VALID_PATH_PARAMS,
-            request_headers=VALID_HEADERS,
+            headers=VALID_HEADERS,
             query_params=VALID_QUERY_PARAMS
         )
 
@@ -81,7 +81,7 @@ class TestConnection(unittest.TestCase):
             method=Method.POST,
             body=VALID_BODY,
             path_params=VALID_PATH_PARAMS,
-            request_headers=VALID_HEADERS,
+            headers=VALID_HEADERS,
             query_params=VALID_QUERY_PARAMS
         )
 

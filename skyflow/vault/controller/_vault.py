@@ -240,7 +240,7 @@ class Vault:
 
         records_list = [
             V1TokenizeRecordRequest(value=item["value"], column_group=item["column_group"])
-            for item in request.tokenize_parameters
+            for item in request.values
         ]
         payload = V1TokenizePayload(tokenization_parameters=records_list)
         tokens_api = self.__vault_client.get_tokens_api()
