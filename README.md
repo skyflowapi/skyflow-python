@@ -655,7 +655,7 @@ To tokenize data, use the `tokenize` method. The `TokenizeRequest` class is util
 from skyflow.vault.tokens import TokenizeRequest
 
 tokenize_request = TokenizeRequest(
-    tokenize_parameters=[{
+    values=[{
         'value': '<VALUE>',
         'column_group': '<COLUMN_GROUP>'
     }]
@@ -1024,7 +1024,7 @@ query_params = {
 invoke_connection_request = InvokeConnectionRequest(
     method=Method.POST,
     body=body,
-    request_headers = headers, # optional
+    headers = headers, # optional
     path_params = path_params, # optional
     query_params=query_params # optional
 )
