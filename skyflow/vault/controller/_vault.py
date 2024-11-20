@@ -83,7 +83,6 @@ class Vault:
             if request.continue_on_error:
                 api_response = records_api.record_service_batch_operation(self.__vault_client.get_vault_id(),
                                                                           insert_body)
-                print("respomse: ", api_response)
 
             else:
                 api_response = records_api.record_service_insert_record(self.__vault_client.get_vault_id(),
@@ -163,7 +162,7 @@ class Vault:
                 self.__vault_client.get_vault_id(),
                 object_name=request.table,
                 skyflow_ids=request.ids,
-                redaction=request.redaction_type,
+                redaction = request.redaction_type.value if request.redaction_type is not None else None,
                 tokenization=request.return_tokens,
                 fields=request.fields,
                 offset=request.offset,
@@ -211,7 +210,7 @@ class Vault:
         log_info(SkyflowMessages.Info.DETOKENIZE_REQUEST_RESOLVED.value, self.__vault_client.get_logger())
         self.__initialize()
         tokens_list = [
-            V1DetokenizeRecordRequest(token=token, redaction=request.redaction_type)
+            V1DetokenizeRecordRequest(token=token, redaction=request.redaction_type.value)
             for token in request.tokens
         ]
         payload = V1DetokenizePayload(detokenization_parameters=tokens_list, continue_on_error=request.continue_on_error)

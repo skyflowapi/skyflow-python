@@ -1,6 +1,3 @@
-from skyflow.utils.enums import Redaction
-
-
 class GetRequest:
     def __init__(self,
                  table,
@@ -15,7 +12,7 @@ class GetRequest:
                  column_values = None):
         self.table = table
         self.ids = ids
-        self.redaction_type = Redaction.to_redaction_enum(redaction_type)
+        self.redaction_type = redaction_type
         self.return_tokens = return_tokens
         self.fields = fields
         self.offset = offset
