@@ -42,7 +42,7 @@ skyflow_client = (
 # sample data
 update_data = {
     'id': '<SKYFLOW_ID>',
-    'card_number': '9999999999999999'
+    '<FIELD1>': '<VALUE1>'
 }
 
 update_request = UpdateRequest(

@@ -40,7 +40,7 @@ skyflow_client = (
 )
 
 # sample query
-query = 'select * from TABLE_NAME limit 1'
+query = '<QUERY>'
 
 
 query_request = QueryRequest(

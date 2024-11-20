@@ -42,8 +42,8 @@ skyflow_client = (
 # tokenize only supports value and column_group
 # sample data
 tokenize_values = [{
-    'value': '4111111111111111',
-    'column_group': 'card_number_cg'
+    '<VALUE_FIELD>': '<VALUE>',
+    '<COLUMN_GROUP_FIELD>': '<VALUE>'
 }]
 
 tokenize_request = TokenizeRequest(

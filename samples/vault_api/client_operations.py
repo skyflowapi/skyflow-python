@@ -56,7 +56,7 @@ skyflow_client.update_vault_config({
 
 delete_request = DeleteRequest(
     table='<TABLE_NAME>',
-    ids = ['77e093f8-3ace-4295-8683-bb6745d6178e', 'bf5989cc-79e8-4b2f-ad71-cb20b0a76091']
+    ids = ['<SKYFLOW_ID1>', '<SKYFLOW_ID2>']
 )
 
 # perform delete call if you don't specify vault() it will return the first valid vault
