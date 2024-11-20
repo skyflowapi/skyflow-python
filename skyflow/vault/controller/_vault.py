@@ -30,7 +30,7 @@ class Vault:
     def __build_batch_field_records(self, values, tokens, table_name, return_tokens, upsert):
         batch_record_list = []
         for i, value in enumerate(values):
-            token = tokens[i] if tokens is not None else None
+            token = tokens[i] if tokens is not None and i < len(tokens) else None
             batch_record = V1BatchRecord(
                 fields=value,
                 table_name=table_name,
@@ -83,6 +83,7 @@ class Vault:
             if request.continue_on_error:
                 api_response = records_api.record_service_batch_operation(self.__vault_client.get_vault_id(),
                                                                           insert_body)
+                print("respomse: ", api_response)
 
             else:
                 api_response = records_api.record_service_insert_record(self.__vault_client.get_vault_id(),
