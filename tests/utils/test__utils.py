@@ -93,7 +93,7 @@ class TestUtils(unittest.TestCase):
     def test_construct_invoke_connection_request_valid(self):
         mock_connection_request = Mock()
         mock_connection_request.path_params = {"param1": "value1"}
-        mock_connection_request.request_headers = {"Content-Type": ContentType.JSON.value}
+        mock_connection_request.headers = {"Content-Type": ContentType.JSON.value}
         mock_connection_request.body = {"key": "value"}
         mock_connection_request.method.value = "POST"
         mock_connection_request.query_params = {"query": "test"}
@@ -115,7 +115,7 @@ class TestUtils(unittest.TestCase):
     def test_construct_invoke_connection_request_with_invalid_headers(self):
         mock_connection_request = Mock()
         mock_connection_request.path_params = {"param1": "value1"}
-        mock_connection_request.request_headers = []
+        mock_connection_request.headers = []
         mock_connection_request.body = {"key": "value"}
         mock_connection_request.method.value = "POST"
         mock_connection_request.query_params = {"query": "test"}
@@ -130,7 +130,7 @@ class TestUtils(unittest.TestCase):
     def test_construct_invoke_connection_request_with_invalid_request_body(self):
         mock_connection_request = Mock()
         mock_connection_request.path_params = {"param1": "value1"}
-        mock_connection_request.request_headers = {"Content-Type": ContentType.JSON.value}
+        mock_connection_request.headers = {"Content-Type": ContentType.JSON.value}
         mock_connection_request.body = []
         mock_connection_request.method.value = "POST"
         mock_connection_request.query_params = {"query": "test"}
@@ -144,7 +144,7 @@ class TestUtils(unittest.TestCase):
     def test_construct_invoke_connection_request_with_url_encoded_content_type(self):
         mock_connection_request = Mock()
         mock_connection_request.path_params = {"param1": "value1"}
-        mock_connection_request.request_headers = {"Content-Type": ContentType.URLENCODED.value}
+        mock_connection_request.headers = {"Content-Type": ContentType.URLENCODED.value}
         mock_connection_request.body = {"key": "value"}
         mock_connection_request.method.value = "POST"
         mock_connection_request.query_params = {"query": "test"}
@@ -158,7 +158,7 @@ class TestUtils(unittest.TestCase):
     def test_construct_invoke_connection_request_with_form_date_content_type(self):
         mock_connection_request = Mock()
         mock_connection_request.path_params = {"param1": "value1"}
-        mock_connection_request.request_headers = {"Content-Type": ContentType.FORMDATA.value}
+        mock_connection_request.headers = {"Content-Type": ContentType.FORMDATA.value}
         mock_connection_request.body = {
             "name": (None, "John Doe")
         }
@@ -179,7 +179,7 @@ class TestUtils(unittest.TestCase):
         ]
         result = parse_insert_response(api_response, continue_on_error=True)
         self.assertEqual(len(result.inserted_fields), 1)
-        self.assertEqual(len(result.error_data), 1)
+        self.assertEqual(len(result.errors), 1)
 
     def test_parse_insert_response_continue_on_error_false(self):
         mock_api_response = Mock()
@@ -198,7 +198,7 @@ class TestUtils(unittest.TestCase):
         ]
         self.assertEqual(result.inserted_fields, expected_inserted_fields)
 
-        self.assertEqual(result.error_data, [])
+        self.assertEqual(result.errors, [])
 
     def test_parse_update_record_response(self):
         api_response = Mock()
@@ -219,7 +219,7 @@ class TestUtils(unittest.TestCase):
         expected_deleted_ids = ["id_1", "id_2", "id_3"]
         self.assertEqual(result.deleted_ids, expected_deleted_ids)
 
-        self.assertEqual(result.error, [])
+        self.assertEqual(result.errors, [])
 
     def test_parse_get_response_successful(self):
         mock_api_response = Mock()
@@ -238,7 +238,7 @@ class TestUtils(unittest.TestCase):
         ]
         self.assertEqual(result.data, expected_data)
 
-        self.assertEqual(result.error, [])
+        self.assertEqual(result.errors, [])
 
     def test_parse_detokenize_response_with_mixed_records(self):
         mock_api_response = Mock()
