@@ -23,4 +23,3 @@ class GetRequest:
         self.download_url = download_url
         self.column_name = column_name
         self.column_values = column_values
-

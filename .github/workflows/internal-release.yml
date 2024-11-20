@@ -20,5 +20,3 @@ jobs:
       ref: ${{ github.ref_name }}
       is-internal: true
     secrets: inherit
-
-      
