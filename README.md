@@ -442,7 +442,7 @@ InsertResponse(
                 'card_number': '5479-4229-4622-1393'
             }
         ],
-    error=[]
+    errors=[]
 )
 ```
 
@@ -484,11 +484,12 @@ InsertResponse(
                 'card_number': '5479-4229-4622-1393'
             }
         ],
-    error=
+    errors=
         [
           {
               'request_index': 1,
-               'error': 'Insert failed. Column card_numbe is invalid. Specify a valid column.'}
+              'error': 'Insert failed. Column card_numbe is invalid. Specify a valid column.'
+          }
         ]
 )
 
@@ -529,7 +530,7 @@ InsertResponse(
                 'name': '3f27b3d7-6bf0-432a-acf9-789c0470e2da'
             }
         ],
-    error=[]
+    errors=[]
 )
 ```
 
@@ -539,6 +540,7 @@ To retrieve tokens from your vault, you can use the `detokenize` method. The `De
 
 ```python
 from skyflow.error import SkyflowError
+from skyflow.utils.enums import RedactionType
 from skyflow.vault.tokens import DetokenizeRequest
 
 try:
@@ -547,7 +549,7 @@ try:
     detokenize_request = DetokenizeRequest(
         tokens=detokenize_data,
         continue_on_error=False,  # optional
-        redaction_type='plain-text'  # optional
+        redaction_type=RedactionType.PLAIN_TEXT  # optional
     )
 
     response = skyflow_client.vault('<VAULT_ID>').detokenize(detokenize_request)
@@ -557,13 +559,14 @@ except SkyflowError as e:
 
 ```
 Notes:
-- `redaction` defaults to `plain-text`.
+- `redaction_type` defaults to `RedactionType.PLAIN_TEXT`.
 - `continue_on_error` default valus is `False`.
 
 An [example](https://github.com/skyflowapi/skyflow-python/blob/SK-1749-readme/samples/vault_api/detokenize_records.py) of a detokenize call:
 
 ```python
 from skyflow.error import SkyflowError
+from skyflow.utils.enums import RedactionType
 from skyflow.vault.tokens import DetokenizeRequest
 
 try:
@@ -572,7 +575,7 @@ try:
     detokenize_request = DetokenizeRequest(
         tokens=detokenize_data,
         continue_on_error=False,  # optional
-        redaction_type='plain-text'  # optional
+        redaction_type=RedactionType.PLAIN_TEXT  # optional
     )
 
     response = skyflow_client.vault('<VAULT_ID>').detokenize(detokenize_request)
@@ -599,6 +602,7 @@ An example of a detokenize call with continue_on_error:
 
 ```python
 from skyflow.error import SkyflowError
+from skyflow.utils.enums import RedactionType
 from skyflow.vault.tokens import DetokenizeRequest
 
 try:
@@ -607,7 +611,7 @@ try:
     detokenize_request = DetokenizeRequest(
         tokens=detokenize_data,
         continue_on_error=True,  # optional
-        redaction_type='plain-text'  # optional
+        redaction_type=RedactionType.PLAIN_TEXT  # optional
     )
 
     response = skyflow_client.vault('<VAULT_ID>').detokenize(detokenize_request)
@@ -699,13 +703,14 @@ To retrieve data using Skyflow IDs or unique column values, use the `get` method
 
 ```python
 from skyflow.error import SkyflowError
+from skyflow.utils.enums import RedactionType
 from skyflow.vault.data import GetRequest
 
 GetRequest(
     table = '<TABLE_NAME>',
     ids = ['SKYFLOW_ID1>', 'SKYFLOW_ID2>'],
     return_tokens = True,
-    redaction_type='plain-text'
+    redaction_type=RedactionType.PLAIN_TEXT
 )
 
 # or
@@ -714,7 +719,7 @@ GetRequest(
     table = '<TABLE_NAME>',
     column_name='<COLUMN_NAME>',
     column_values=['COLUMN_VALUE1>', 'COLUMN_VALUE2>'],
-    redaction_type='plain-text'
+    redaction_type=RedactionType.PLAIN_TEXT
 )
 ```
 Sample usage
@@ -725,6 +730,7 @@ The following snippet shows how to use the `get` method using column names and c
 
 ```python
 from skyflow.error import SkyflowError
+from skyflow.utils.enums import RedactionType
 from skyflow.vault.data import GetRequest
 
 try:
@@ -736,7 +742,7 @@ try:
         table='table1',
         column_name="card_number", # It must be configured as unique in the schema. 
         column_values=column_values,
-        redaction_type='plain-text'
+        redaction_type=RedactionType.PLAIN_TEXT
     )
 
     response = skyflow_client.vault('<VAULT_ID>').get(get_request)
@@ -756,7 +762,7 @@ GetResponse(
             'skyflow_id': '4f7af9f9-09e0-4f47-af8e-04c9b1ee1968'
         }
     ],
-    error=[]
+    errors=[]
 )
 
 ```
@@ -765,13 +771,14 @@ GetResponse(
 
 ```python
 from skyflow.error import SkyflowError
+from skyflow.utils.enums import RedactionType
 from skyflow.vault.data import GetRequest
 
 GetRequest(
     table = '<TABLE_NAME>',
     ids = ['SKYFLOW_ID1>', 'SKYFLOW_ID2>'],
     return_tokens = True,
-    redaction_type='plain-text'
+    redaction_type=RedactionType.PLAIN_TEXT
 )
 ```
 
@@ -787,13 +794,14 @@ An [example](https://github.com/skyflowapi/skyflow-python/blob/SK-1749-readme/sa
 
 ```python
 from skyflow.error import SkyflowError
+from skyflow.utils.enums import RedactionType
 from skyflow.vault.data import GetRequest
 
 try:
     get_request = GetRequest(
         table='table1',
         ids=['aea64577-12b1-4682-aad5-a183194c3f3d', 'b385c565-86eb-4af2-b959-8376f9b0754b'],
-        redaction_type="plain-text"
+        redaction_type=RedactionType.PLAIN_TEXT
     )
 
     response = client.vault('<VAULT_ID>').get(get_request)
@@ -816,7 +824,7 @@ GetResponse(
             'skyflow_id': 'b385c565-86eb-4af2-b959-8376f9b0754b'
         }
     ],
-    error=[]
+    errors=[]
 )
 
 ```
@@ -856,7 +864,7 @@ GetResponse(
             'skyflow_id': 'b385c565-86eb-4af2-b959-8376f9b0754b'
         }
     ],
-    error=[]
+    errors=[]
 )
 ```
 
@@ -919,7 +927,7 @@ UpdateResponse(
         'skyflow_id': '3b80c76a-c0d7-4c02-be00-b4128cb0f315',
         'card_number': '4131-1751-0217-8491'
     },
-    error=[]
+    errors=[]
 )
 
 ```
@@ -929,7 +937,7 @@ UpdateResponse(
 ```python
 UpdateResponse(
     updated_field={'skyflow_id': '3b80c76a-c0d7-4c02-be00-b4128cb0f315'},
-    error=[]
+    errors=[]
 )
 
 ```
@@ -986,7 +994,7 @@ DeleteResponse(
         '77e093f8-3ace-4295-8683-bb6745d6178e',
         'bf5989cc-79e8-4b2f-ad71-cb20b0a76091'
     ],
-    error=[]
+    errors=[]
 )
 
 ```
@@ -1139,7 +1147,7 @@ QueryResponse(
             },
         }
     ],
-    error=[]
+    errors=[]
 )
 ```
 
