@@ -878,7 +878,7 @@ from skyflow.vault.data import UpdateRequest
 
 try:
     update_data = {
-        'id': '<SKYFLOW_ID>',
+        'skyflow_id': '<SKYFLOW_ID>',
         '<FIELD1>': '<VALUE1>'
     }
 
@@ -902,7 +902,7 @@ from skyflow.vault.data import UpdateRequest
 
 try:
     update_data = {
-        'id': '3b80c76a-c0d7-4c02-be00-b4128cb0f315',
+        'skyflow_id': '3b80c76a-c0d7-4c02-be00-b4128cb0f315',
         'card_number': '4111111111117777'
     }
 
@@ -1133,18 +1133,10 @@ Sample Response
 QueryResponse(
     fields=[
         {
-            "fields": {
-                "card_number": "XXXXXXXXXXXX1111",
-                "card_pin": "*REDACTED*",
-                "cvv": "",
-                "expiration_date": "*REDACTED*",
-                "expiration_month": "*REDACTED*",
-                "expiration_year": "*REDACTED*",
-                "name": "a***te",
-                "skyflow_id": "3ea3861-x107-40w8-la98-106sp08ea83f",
-                "ssn": "XXX-XX-6789",
-                "zip_code": None
-            },
+            'card_number': 'XXXXXXXXXXXX1112',
+            'name': 'S***ar',
+            'skyflow_id': '4f7af9f9-09e0-4f47-af8e-04c9b1ee1968',
+            'tokenized_data': {}
         }
     ],
     errors=[]
