@@ -424,7 +424,7 @@ try:
         return_tokens=True  # returns tokens
     )
 
-    response = client.vault('d3dd9bbb7abc4c779b72f32cb7ee5d14').insert(insert_request)
+    response = client.vault('<VAULT_ID>').insert(insert_request)
     print("Response:", response)
 except SkyflowError as e:
     print("Error Occurred:", e)
@@ -465,7 +465,7 @@ try:
         continue_on_error=True
     )
 
-    response = client.vault('d3dd9bbb7abc4c779b72f32cb7ee5d14').insert(insert_request)
+    response = client.vault('<VAULT_ID>').insert(insert_request)
     print('Response:', response)
 except SkyflowError as e:
     print('Error Occurred:', e)
@@ -512,7 +512,7 @@ try:
         upsert="name"  # unique column name
     )
 
-    response = client.vault('d3dd9bbb7abc4c779b72f32cb7ee5d14').insert(insert_request)
+    response = client.vault('<VAULT_ID>').insert(insert_request)
     print('Response:', response)
 except SkyflowError as e:
     print('Error Occurred:', e)
@@ -575,7 +575,7 @@ try:
         redaction_type='plain-text'  # optional
     )
 
-    response = skyflow_client.vault('d3dd9bbb7abc4c779b72f32cb7ee5d14').detokenize(detokenize_request)
+    response = skyflow_client.vault('<VAULT_ID>').detokenize(detokenize_request)
     print('Response:', response)
 except SkyflowError as e:
     print('Error Occurred:', e)
@@ -610,7 +610,7 @@ try:
         redaction_type='plain-text'  # optional
     )
 
-    response = skyflow_client.vault('d3dd9bbb7abc4c779b72f32cb7ee5d14').detokenize(detokenize_request)
+    response = skyflow_client.vault('<VAULT_ID>').detokenize(detokenize_request)
     print('Response:', response)
 except SkyflowError as e:
     print('Error Occurred:', e)
@@ -674,7 +674,7 @@ try:
         }]
     )
 
-    response = client.vault('d3dd9bbb7abc4c779b72f32cb7ee5d14').tokenize(tokenize_request)
+    response = client.vault('<VAULT_ID>').tokenize(tokenize_request)
     print(response)
 except SyntaxError as e:
     print('Error Occurred: ', e)
@@ -739,7 +739,7 @@ try:
         redaction_type='plain-text'
     )
 
-    response = skyflow_client.vault('d3dd9bbb7abc4c779b72f32cb7ee5d14').get(get_request)
+    response = skyflow_client.vault('<VAULT_ID>').get(get_request)
     print('Response:', response)
 except SkyflowError as e:
     print('Error Occurred:', e)
@@ -796,7 +796,7 @@ try:
         redaction_type="plain-text"
     )
 
-    response = client.vault('d3dd9bbb7abc4c779b72f32cb7ee5d14').get(get_request)
+    response = client.vault('<VAULT_ID>').get(get_request)
     print('Response:', response)
 except SkyflowError as e:
     print('Error Occurred:', e)
@@ -835,7 +835,7 @@ try:
         return_tokens=True
     )
     
-    response = client.vault('d3dd9bbb7abc4c779b72f32cb7ee5d14').get(get_request)
+    response = client.vault('<VAULT_ID>').get(get_request)
     print('Response:', response)
 except SkyflowError as e:
     print('Error Occurred:', e)
@@ -903,7 +903,7 @@ try:
         data=update_data
     )
 
-    response = skyflow_client.vault('d3dd9bbb7abc4c779b72f32cb7ee5d14').update(update_request)
+    response = skyflow_client.vault('<VAULT_ID>').update(update_request)
     print('Response:', response)
 except SkyflowError as e:
     print('Error Occurred:', e)
@@ -971,7 +971,7 @@ try:
         ids=delete_ids
     )
 
-    response = client.vault('d3dd9bbb7abc4c779b72f32cb7ee5d14').delete(delete_request)
+    response = client.vault('<VAULT_ID>').delete(delete_request)
     print('Response:', response)
 except SkyflowError as e:
     print('Error Occurred:', e)
@@ -1106,12 +1106,12 @@ An [example](https://github.com/skyflowapi/skyflow-python/blob/SK-1749-readme/sa
 from skyflow.error import SkyflowError
 from skyflow.vault.data import QueryRequest
 
-queryInput = {
-	query: "SELECT * FROM cards WHERE skyflow_id='3ea3861-x107-40w8-la98-106sp08ea83f'"
-}
+query_request = QueryRequest(
+    query= "SELECT * FROM cards WHERE skyflow_id='3ea3861-x107-40w8-la98-106sp08ea83f'"
+)
 
 try:
-    client.query(queryInput)
+    skyflow_client.vault('<VAULT_ID>').query(query_request)
 except SkyflowError as e:
     if e.data:
         print(e.data)
