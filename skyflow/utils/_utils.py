@@ -78,9 +78,9 @@ def construct_invoke_connection_request(request, connection_url, logger) -> Prep
     url = parse_path_params(connection_url.rstrip('/'), request.path_params)
 
     try:
-        if isinstance(request.request_headers, dict):
+        if isinstance(request.headers, dict):
             header = to_lowercase_keys(json.loads(
-                json.dumps(request.request_headers)))
+                json.dumps(request.headers)))
         else:
             raise SkyflowError(SkyflowMessages.Error.INVALID_REQUEST_HEADERS.value, invalid_input_error_code)
     except Exception:
@@ -224,7 +224,7 @@ def parse_insert_response(api_response, continue_on_error):
                 errors.append(error)
 
             insert_response.inserted_fields = inserted_fields
-            insert_response.error_data = errors
+            insert_response.errors = errors
 
     else:
         for record in api_response.records:
@@ -255,20 +255,20 @@ def parse_delete_response(api_response: V1BulkDeleteRecordResponse):
     delete_response = DeleteResponse()
     deleted_ids = api_response.record_id_response
     delete_response.deleted_ids = deleted_ids
-    delete_response.error = []
+    delete_response.errors = []
     return delete_response
 
 
 def parse_get_response(api_response: V1BulkGetRecordResponse):
     get_response = GetResponse()
     data = []
-    error = []
+    errors = []
     for record in api_response.records:
         field_data = {field: value for field, value in record.fields.items()}
         data.append(field_data)
 
     get_response.data = data
-    get_response.error = error
+    get_response.errors = errors
 
     return get_response
 
