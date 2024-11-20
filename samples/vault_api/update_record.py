@@ -46,7 +46,7 @@ skyflow_client = (
 )
 
 # sample data
-update_data = {'id': '<SKYFLOW_ID>', '<FIELD1>': '<VALUE1>'}
+update_data = {'skyflow_id': '<SKYFLOW_ID>', '<FIELD1>': '<VALUE1>'}
 
 update_request = UpdateRequest(table='TABLE_NAME', data=update_data)
 
