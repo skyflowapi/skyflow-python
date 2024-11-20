@@ -4,7 +4,7 @@ class TokenizeResponse:
 
 
     def __repr__(self):
-        return f"InsertResponse(tokenized_fields={self.tokenized_fields})"
+        return f"TokenizeResponse(tokenized_fields={self.tokenized_fields})"
 
     def __str__(self):
         return self.__repr__()

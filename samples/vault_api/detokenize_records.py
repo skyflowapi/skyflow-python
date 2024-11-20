@@ -1,6 +1,7 @@
 import json
 from skyflow import Env
 from skyflow import Skyflow, LogLevel
+from skyflow.utils.enums import RedactionType
 from skyflow.vault.tokens import DetokenizeRequest
 
 # To generate Bearer Token from credentials string.
@@ -43,6 +44,7 @@ detokenize_data = ['TOKEN1', 'TOKEN2', 'TOKEN3']
 
 detokenize_request = DetokenizeRequest(
     tokens=detokenize_data,
+    redaction_type = RedactionType.PLAIN_TEXT
 )
 
 response = client.vault('VAULT_ID').detokenize(detokenize_request)

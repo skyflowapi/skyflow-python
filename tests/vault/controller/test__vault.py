@@ -4,7 +4,7 @@ from unittest.mock import Mock, patch
 from skyflow.generated.rest import RecordServiceBatchOperationBody, V1BatchRecord, RecordServiceInsertRecordBody, \
     V1FieldRecords, RecordServiceUpdateRecordBody, RecordServiceBulkDeleteRecordBody, QueryServiceExecuteQueryBody, \
     V1DetokenizeRecordRequest, V1DetokenizePayload, V1TokenizePayload, V1TokenizeRecordRequest, RedactionEnumREDACTION
-from skyflow.utils.enums import TokenStrict
+from skyflow.utils.enums import TokenStrict, RedactionType
 from skyflow.vault.controller import Vault
 from skyflow.vault.data import InsertRequest, InsertResponse, UpdateResponse, UpdateRequest, DeleteResponse, \
     DeleteRequest, GetRequest, GetResponse, QueryRequest, QueryResponse
@@ -244,7 +244,7 @@ class TestVault(unittest.TestCase):
         request = GetRequest(
             table=TABLE_NAME,
             ids=["12345", "67890"],
-            redaction_type="PLAIN_TEXT",
+            redaction_type=RedactionType.PLAIN_TEXT,
             return_tokens=True,
             fields=["field1", "field2"],
             offset="0",
@@ -256,7 +256,7 @@ class TestVault(unittest.TestCase):
         expected_payload = {
             "object_name": request.table,
             "skyflow_ids": request.ids,
-            "redaction": request.redaction_type,
+            "redaction": request.redaction_type.value,
             "tokenization": request.return_tokens,
             "fields": request.fields,
             "offset": request.offset,
@@ -351,7 +351,7 @@ class TestVault(unittest.TestCase):
     def test_detokenize_successful(self, mock_parse_response, mock_validate):
         request = DetokenizeRequest(
             tokens=["token1", "token2"],
-            redaction_type="plain-text",
+            redaction_type=RedactionType.PLAIN_TEXT,
             continue_on_error=False
         )
 

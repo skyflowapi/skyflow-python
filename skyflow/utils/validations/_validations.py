@@ -1,9 +1,7 @@
 import json
 import re
-
-from skyflow.generated.rest import RedactionEnumREDACTION
 from skyflow.service_account import is_expired
-from skyflow.utils.enums import LogLevel, TokenStrict, Redaction, Env
+from skyflow.utils.enums import LogLevel, TokenStrict, Env, RedactionType
 from skyflow.error import SkyflowError
 from skyflow.utils import SkyflowMessages
 from skyflow.utils.logger import log_info, log_error_log
@@ -391,7 +389,7 @@ def validate_get_request(logger, request):
     if not isinstance(request.return_tokens, bool):
         raise SkyflowError(SkyflowMessages.Error.INVALID_RETURN_TOKENS_TYPE.value, invalid_input_error_code)
 
-    if redaction_type is not None and not isinstance(redaction_type, RedactionEnumREDACTION):
+    if redaction_type is not None and not isinstance(redaction_type, RedactionType):
         raise SkyflowError(SkyflowMessages.Error.INVALID_REDACTION_TYPE.value.format(type(redaction_type)), invalid_input_error_code)
 
     if fields is not None and (not isinstance(fields, list) or not fields):
@@ -505,7 +503,7 @@ def validate_update_request(logger, request):
         raise SkyflowError(SkyflowMessages.Error.IDS_KEY_ERROR.value, invalid_input_error_code)
 
 def validate_detokenize_request(logger, request):
-    if not isinstance(request.redaction_type, RedactionEnumREDACTION):
+    if not isinstance(request.redaction_type, RedactionType):
         raise SkyflowError(SkyflowMessages.Error.INVALID_REDACTION_TYPE.value.format(type(request.redaction_type)), invalid_input_error_code)
 
     if not isinstance(request.continue_on_error, bool):
