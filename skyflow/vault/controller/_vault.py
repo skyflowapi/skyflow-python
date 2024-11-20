@@ -103,7 +103,7 @@ class Vault:
         validate_update_request(self.__vault_client.get_logger(), request)
         log_info(SkyflowMessages.Info.UPDATE_REQUEST_RESOLVED.value, self.__vault_client.get_logger())
         self.__initialize()
-        field = {key: value for key, value in request.data.items() if key != "id"}
+        field = {key: value for key, value in request.data.items() if key != "skyflow_id"}
         record = V1FieldRecords(fields=field, tokens = request.tokens)
         payload = RecordServiceUpdateRecordBody(record=record, tokenization=request.return_tokens, byot=request.token_strict.value)
 
@@ -113,7 +113,7 @@ class Vault:
             api_response = records_api.record_service_update_record(
                 self.__vault_client.get_vault_id(),
                 request.table,
-                request.data.get("id"),
+                request.data.get("skyflow_id"),
                 payload
             )
             log_info(SkyflowMessages.Info.UPDATE_SUCCESS.value, self.__vault_client.get_logger())

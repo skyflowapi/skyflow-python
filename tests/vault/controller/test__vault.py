@@ -145,7 +145,7 @@ class TestVault(unittest.TestCase):
         # Mock request
         request = UpdateRequest(
             table=TABLE_NAME,
-            data={"id": "12345", "field": "new_value"},
+            data={"skyflow_id": "12345", "field": "new_value"},
             tokens=None,
             return_tokens=True,
             token_strict=TokenStrict.DISABLE
@@ -183,7 +183,7 @@ class TestVault(unittest.TestCase):
         records_api.record_service_update_record.assert_called_once_with(
             VAULT_ID,
             request.table,
-            request.data["id"],
+            request.data["skyflow_id"],
             expected_payload
         )
         mock_parse_response.assert_called_once_with(mock_api_response)
