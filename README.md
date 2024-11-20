@@ -18,6 +18,7 @@ This Python SDK is designed to help developers easily implement Skyflow into the
   - [Vault APIs](#vault-apis)
     - [Insert data into the vault](#insert-data-into-the-vault)
     - [Detokenize](#detokenize)
+    - [Tokenize](#tokenize)
     - [Get](#get)
     - [Get By Id](#get-by-id)
       - [Redaction Types](#redaction-types)
