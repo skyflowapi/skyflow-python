@@ -650,7 +650,7 @@ DetokenizeResponse(
 
 ### Tokenize
 
-To tokenize data, use the `tokenize` method. The `TokenizeRequest` class is utilized to create a tokenize request. In this request, you specify the `tokenize_parameters` parameter, which is a list of dictionaries. Each dictionary contains two keys: `value` and `column_group`.
+To tokenize data, use the `tokenize` method. The `TokenizeRequest` class is utilized to create a tokenize request. In this request, you specify the `values` parameter, which is a list of dictionaries. Each dictionary contains two keys: `value` and `column_group`.
 
 ```python
 from skyflow.vault.tokens import TokenizeRequest
