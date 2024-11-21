@@ -441,10 +441,10 @@ def validate_get_request(logger, request):
 
 def validate_update_request(logger, request):
     skyflow_id = ""
-    field = {key: value for key, value in request.data.items() if key != "id"}
+    field = {key: value for key, value in request.data.items() if key != "skyflow_id"}
 
     try:
-        skyflow_id = request.data.get("id")
+        skyflow_id = request.data.get("skyflow_id")
     except Exception:
         log_error_log(SkyflowMessages.ErrorLogs.SKYFLOW_ID_IS_REQUIRED.value.format("UPDATE"), logger=logger)
 
@@ -498,9 +498,6 @@ def validate_update_request(logger, request):
             raise SkyflowError(
                 SkyflowMessages.Error.INSUFFICIENT_TOKENS_PASSED_FOR_TOKEN_STRICT_ENABLE_STRICT.value,
                 invalid_input_error_code)
-
-    if 'id' not in request.data:
-        raise SkyflowError(SkyflowMessages.Error.IDS_KEY_ERROR.value, invalid_input_error_code)
 
 def validate_detokenize_request(logger, request):
     if not isinstance(request.redaction_type, RedactionType):
