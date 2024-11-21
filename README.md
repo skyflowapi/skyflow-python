@@ -1,12 +1,13 @@
 # Skyflow-python
 
 ---
+
 ## Description
+
 This Python SDK is designed to help developers easily implement Skyflow into their python backend.
 
-
-
 ## Table of Contents
+
 - [Skyflow-python](#skyflow-python)
   - [Description](#description)
   - [Table of Contents](#table-of-contents)
@@ -28,7 +29,6 @@ This Python SDK is designed to help developers easily implement Skyflow into the
     - [Query](#query)
   - [Logging](#logging)
   - [Reporting a Vulnerability](#reporting-a-vulnerability)
-
 
 ## Features
 
@@ -70,7 +70,7 @@ token_type = ''
 def token_provider():
     global bearer_token
     global token_type
-    
+
     if is_expired(bearer_token):
         bearer_token, token_type = generate_bearer_toke('<YOUR_CREDENTIALS_FILE_PATH>')
     return bearer_token, token_type
@@ -83,7 +83,6 @@ except SkyflowError as e:
     print(e)
 
 ```
-
 
 [Example using credentials string](https://github.com/skyflowapi/skyflow-python/blob/SK-1749-readme/samples/service_account/token_generation_example.py):
 
@@ -137,7 +136,7 @@ options = {
 def token_provider():
     global bearer_token
     global token_type
-    
+
     if is_expired(bearer_token):
         bearer_token, token_type = generate_bearer_token('<YOUR_CREDENTIALS_FILE_PATH>', options)
     return bearer_token, token_type
@@ -150,7 +149,6 @@ except SkyflowError as e:
     print(e)
 
 ```
-
 
 [Example using credentials string](https://github.com/skyflowapi/skyflow-python/blob/SK-1749-readme/samples/service_account/scoped_token_generation_example.py):
 
@@ -207,7 +205,7 @@ options = {
 def token_provider():
     global bearer_token
     global token_type
-    
+
     if is_expired(bearer_token):
         bearer_token, token_type = generate_bearer_token('<YOUR_CREDENTIALS_FILE_PATH>', options)
     return bearer_token, token_type
@@ -220,7 +218,6 @@ except SkyflowError as e:
     print(e)
 
 ```
-
 
 [Example using credentials string](https://github.com/skyflowapi/skyflow-python/blob/SK-1749-readme/samples/service_account/token_generation_with_context_example.py):
 
@@ -279,7 +276,7 @@ options = {
 def token_provider():
     global bearer_token
     global token_type
-    
+
     if is_expired(bearer_token):
         bearer_token, token_type = generate_bearer_token('<YOUR_CREDENTIALS_FILE_PATH>', options)
     return bearer_token, token_type
@@ -292,7 +289,6 @@ except SkyflowError as e:
     print(e)
 
 ```
-
 
 [Example using credentials string](https://github.com/skyflowapi/skyflow-python/blob/SK-1749-readme/samples/service_account/signed_token_generation_example.py):
 
@@ -374,9 +370,10 @@ client = (
     .build()
 )
 ```
-Notes:
-- If both Skyflow common credentials and individual credentials at the configuration level are provided, the individual credentials at the configuration level will take priority.
 
+Notes:
+
+- If both Skyflow common credentials and individual credentials at the configuration level are provided, the individual credentials at the configuration level will take priority.
 
 All Vault APIs must be invoked using a client instance.
 
@@ -385,6 +382,7 @@ All Vault APIs must be invoked using a client instance.
 To insert data into your vault, use the `insert` method. The `InsertRequest` class is used to create an insert request, which contains the values to be inserted in the form of a dictionary of records. Additionally, you can provide options in the insert request, such as returning tokenized data, upserting records, and continuing on error.
 
 Insert call schema
+
 ```python
 #Initialize Client
 from skyflow.error import SkyflowError
@@ -398,8 +396,8 @@ try:
 
 
     insert_request = InsertRequest(
-        table_name='<TABLE_NAME>',
-        values=insert_data,
+        table_name = '<TABLE_NAME>',
+        values = insert_data,
     )
 
     response = skyflow_client.vault('VAULT_ID').insert(insert_request)
@@ -420,9 +418,9 @@ try:
     ]
 
     insert_request = InsertRequest(
-        table_name='table1',
-        values=insert_data,
-        return_tokens=True  # returns tokens
+        table_name = 'table1',
+        values = insert_data,
+        return_tokens = True  # returns tokens
     )
 
     response = client.vault('<VAULT_ID>').insert(insert_request)
@@ -460,10 +458,10 @@ try:
     ]
 
     insert_request = InsertRequest(
-        table_name='table1',
-        values=insert_data,
-        return_tokens=True,  # returns tokens
-        continue_on_error=True
+        table_name = 'table1',
+        values = insert_data,
+        return_tokens = True,  # returns tokens
+        continue_on_error = True
     )
 
     response = client.vault('<VAULT_ID>').insert(insert_request)
@@ -508,10 +506,10 @@ try:
     ]
 
     insert_request = InsertRequest(
-        table_name='table1',
-        values=insert_data,
-        return_tokens=True,  # returns tokens
-        upsert="name"  # unique column name
+        table_name = 'table1',
+        values = insert_data,
+        return_tokens = True,  # returns tokens
+        upsert = "name"  # unique column name
     )
 
     response = client.vault('<VAULT_ID>').insert(insert_request)
@@ -548,9 +546,9 @@ try:
     detokenize_data = ['<TOKEN1>', '<TOKEN2>', '<TOKEN3>']
 
     detokenize_request = DetokenizeRequest(
-        tokens=detokenize_data,
-        continue_on_error=False,  # optional
-        redaction_type=RedactionType.PLAIN_TEXT  # optional
+        tokens =d etokenize_data,
+        continue_on_error = False,  # optional
+        redaction_type = RedactionType.PLAIN_TEXT  # optional
     )
 
     response = skyflow_client.vault('<VAULT_ID>').detokenize(detokenize_request)
@@ -559,7 +557,9 @@ except SkyflowError as e:
     print('Error Occurred:', e)
 
 ```
+
 Notes:
+
 - `redaction_type` defaults to `RedactionType.PLAIN_TEXT`.
 - `continue_on_error` default valus is `False`.
 
@@ -574,9 +574,9 @@ try:
     detokenize_data = ['9738-1683-0486-1480', '6184-6357-8409-6668', '4914-9088-2814-3840']
 
     detokenize_request = DetokenizeRequest(
-        tokens=detokenize_data,
-        continue_on_error=False,  # optional
-        redaction_type=RedactionType.PLAIN_TEXT  # optional
+        tokens = detokenize_data,
+        continue_on_error = False,  # optional
+        redaction_type = RedactionType.PLAIN_TEXT  # optional
     )
 
     response = skyflow_client.vault('<VAULT_ID>').detokenize(detokenize_request)
@@ -591,10 +591,10 @@ Sample response:
 ```python
 DetokenizeResponse(
     detokenized_fields=[
-        {'token': '9738-1683-0486-1480', 'value': '4111111111111115', 'type': 'STRING'}, 
-        {'token': '6184-6357-8409-6668', 'value': '4111111111111119', 'type': 'STRING'}, 
+        {'token': '9738-1683-0486-1480', 'value': '4111111111111115', 'type': 'STRING'},
+        {'token': '6184-6357-8409-6668', 'value': '4111111111111119', 'type': 'STRING'},
         {'token': '4914-9088-2814-3840', 'value': '4111111111111118', 'type': 'STRING'}
-    ], 
+    ],
     errors=[]
 )
 ```
@@ -610,9 +610,9 @@ try:
     detokenize_data = ['9738-1683-0486-1480', '6184-6357-8409-6668', '4914-9088-2814-384']
 
     detokenize_request = DetokenizeRequest(
-        tokens=detokenize_data,
-        continue_on_error=True,  # optional
-        redaction_type=RedactionType.PLAIN_TEXT  # optional
+        tokens = detokenize_data,
+        continue_on_error = True,  # optional
+        redaction_type = RedactionType.PLAIN_TEXT  # optional
     )
 
     response = skyflow_client.vault('<VAULT_ID>').detokenize(detokenize_request)
@@ -656,7 +656,7 @@ To tokenize data, use the `tokenize` method. The `TokenizeRequest` class is util
 from skyflow.vault.tokens import TokenizeRequest
 
 tokenize_request = TokenizeRequest(
-    values=[{
+    values = [{
         'value': '<VALUE>',
         'column_group': '<COLUMN_GROUP>'
     }]
@@ -673,7 +673,7 @@ from skyflow.vault.tokens import TokenizeRequest
 
 try:
     tokenize_request = TokenizeRequest(
-        tokenize_parameters=[{
+        values = [{
             "value": '4111111111111111',
             "column_group": "card_number_cg"
         }]
@@ -711,18 +711,19 @@ GetRequest(
     table = '<TABLE_NAME>',
     ids = ['SKYFLOW_ID1>', 'SKYFLOW_ID2>'],
     return_tokens = True,
-    redaction_type=RedactionType.PLAIN_TEXT
+    redaction_type = RedactionType.PLAIN_TEXT
 )
 
 # or
 
 GetRequest(
     table = '<TABLE_NAME>',
-    column_name='<COLUMN_NAME>',
-    column_values=['COLUMN_VALUE1>', 'COLUMN_VALUE2>'],
-    redaction_type=RedactionType.PLAIN_TEXT
+    column_name ='<COLUMN_NAME>',
+    column_values = ['COLUMN_VALUE1>', 'COLUMN_VALUE2>'],
+    redaction_type = RedactionType.PLAIN_TEXT
 )
 ```
+
 Sample usage
 
 ### Get By Column Name and Column Values
@@ -740,10 +741,10 @@ try:
     ]
 
     get_request = GetRequest(
-        table='table1',
-        column_name="card_number", # It must be configured as unique in the schema. 
-        column_values=column_values,
-        redaction_type=RedactionType.PLAIN_TEXT
+        table = 'table1',
+        column_name = 'card_number', # It must be configured as unique in the schema.
+        column_values = column_values,
+        redaction_type = RedactionType.PLAIN_TEXT
     )
 
     response = skyflow_client.vault('<VAULT_ID>').get(get_request)
@@ -779,11 +780,12 @@ GetRequest(
     table = '<TABLE_NAME>',
     ids = ['SKYFLOW_ID1>', 'SKYFLOW_ID2>'],
     return_tokens = True,
-    redaction_type=RedactionType.PLAIN_TEXT
+    redaction_type = RedactionType.PLAIN_TEXT
 )
 ```
 
 #### Redaction Types
+
 There are 4 accepted values in Skyflow.RedactionTypes:
 
 - `PLAIN_TEXT`
@@ -800,9 +802,9 @@ from skyflow.vault.data import GetRequest
 
 try:
     get_request = GetRequest(
-        table='table1',
-        ids=['aea64577-12b1-4682-aad5-a183194c3f3d', 'b385c565-86eb-4af2-b959-8376f9b0754b'],
-        redaction_type=RedactionType.PLAIN_TEXT
+        table = 'table1',
+        ids = ['aea64577-12b1-4682-aad5-a183194c3f3d', 'b385c565-86eb-4af2-b959-8376f9b0754b'],
+        redaction_type = RedactionType.PLAIN_TEXT
     )
 
     response = client.vault('<VAULT_ID>').get(get_request)
@@ -830,7 +832,6 @@ GetResponse(
 
 ```
 
-
 The following snippet shows how to use the `get()` method with return_tokens true.
 
 ```python
@@ -839,11 +840,11 @@ from skyflow.vault.data import GetRequest
 
 try:
     get_request = GetRequest(
-        table='table1',
-        ids=['aea64577-12b1-4682-aad5-a183194c3f3d', 'b385c565-86eb-4af2-b959-8376f9b0754b'],
-        return_tokens=True
+        table = 'table1',
+        ids = ['aea64577-12b1-4682-aad5-a183194c3f3d', 'b385c565-86eb-4af2-b959-8376f9b0754b'],
+        return_tokens = True
     )
-    
+
     response = client.vault('<VAULT_ID>').get(get_request)
     print('Response:', response)
 except SkyflowError as e:
@@ -893,6 +894,7 @@ try:
 except SkyflowError as e:
     print('Error Occurred:', e)
 ```
+
 Sample usage
 
 The following snippet shows how to use the `update()` method. For details, see [update_record.py](https://github.com/skyflowapi/skyflow-python/blob/SK-1749-readme/samples/vault_api/update_record.py),
@@ -908,8 +910,8 @@ try:
     }
 
     update_request = UpdateRequest(
-        table='table1',
-        data=update_data
+        table = 'table1',
+        data = update_data
     )
 
     response = skyflow_client.vault('<VAULT_ID>').update(update_request)
@@ -958,7 +960,7 @@ primary_delete_ids = [
 ]
 
 delete_request = DeleteRequest(
-    table='<TABLE_NAME>',
+    table = '<TABLE_NAME>',
     ids = primary_delete_ids
 )
 ```
@@ -1023,11 +1025,11 @@ query_params = {
 }
 
 invoke_connection_request = InvokeConnectionRequest(
-    method=Method.POST,
-    body=body,
+    method = Method.POST,
+    body = body,
     headers = headers, # optional
     path_params = path_params, # optional
-    query_params=query_params # optional
+    query_params = query_params # optional
 )
 ```
 
@@ -1071,7 +1073,7 @@ invoke_connection_request = InvokeConnectionRequest(
         'card_number': '4337-1696-5866-0865',
         'ssn': '524-41-4248'
     },
-    request_headers = {
+    headers = {
         'Content-Type': 'application/json'
     }
 )
@@ -1116,7 +1118,7 @@ from skyflow.error import SkyflowError
 from skyflow.vault.data import QueryRequest
 
 query_request = QueryRequest(
-    query= "SELECT * FROM cards WHERE skyflow_id='3ea3861-x107-40w8-la98-106sp08ea83f'"
+    query = "SELECT * FROM cards WHERE skyflow_id='3ea3861-x107-40w8-la98-106sp08ea83f'"
 )
 
 try:
