@@ -8,3 +8,4 @@ PyJWT~=2.9.0
 requests~=2.32.3
 coverage
 cryptography
+python-dotenv~=1.0.1

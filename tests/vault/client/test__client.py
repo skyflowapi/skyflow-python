@@ -26,7 +26,7 @@ class TestVaultClient(unittest.TestCase):
     @patch("skyflow.vault.client.client.VaultClient.initialize_api_client")
     def test_initialize_client_configuration(self, mock_init_api_client, mock_config, mock_get_vault_url,
                                              mock_get_credentials):
-        mock_get_credentials.return_value = CREDENTIALS_WITH_API_KEY
+        mock_get_credentials.return_value = (CREDENTIALS_WITH_API_KEY, False)
         mock_get_vault_url.return_value = "https://test-vault-url.com"
 
         self.vault_client.initialize_client_configuration()
@@ -68,7 +68,7 @@ class TestVaultClient(unittest.TestCase):
     @patch("skyflow.vault.client.client.log_info")
     def test_get_bearer_token_with_api_key(self, mock_log_info, mock_generate_bearer_token,
                                            mock_generate_bearer_token_from_creds):
-        token = self.vault_client.get_bearer_token(CREDENTIALS_WITH_API_KEY)
+        token = self.vault_client.get_bearer_token(CREDENTIALS_WITH_API_KEY, False)
         self.assertEqual(token, CREDENTIALS_WITH_API_KEY["api_key"])
 
     def test_update_config(self):

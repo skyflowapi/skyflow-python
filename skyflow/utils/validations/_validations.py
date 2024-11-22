@@ -202,7 +202,7 @@ def validate_update_vault_config(logger, config):
     return True
 
 def validate_connection_config(logger, config):
-    log_info(SkyflowMessages.Info.VALIDATE_CONNECTION_CONFIG.value, logger)
+    log_info(SkyflowMessages.Info.VALIDATING_CONNECTION_CONFIG.value, logger)
     validate_keys(logger, config, valid_connection_config_keys)
 
     validate_required_field(

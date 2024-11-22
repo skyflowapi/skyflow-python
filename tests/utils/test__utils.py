@@ -19,26 +19,21 @@ from tests.constants.test_constants import VALID_CREDENTIALS_STRING, INVALID_JSO
 
 
 class TestUtils(unittest.TestCase):
-    # def test_get_credentials_empty_credentials(self):
-    #     with self.assertRaises(SkyflowError) as context:
-    #         get_credentials()
-    #     self.assertIn(context.exception.message, SkyflowMessages.Error.INVALID_CREDENTIALS.value)
 
     @patch.dict(os.environ, {"SKYFLOW_CREDENTIALS": VALID_CREDENTIALS_STRING})
     def test_get_credentials_env_variable(self):
-        creds = get_credentials()
+        creds, _ = get_credentials()
         VALID_CREDENTIALS_STRING.strip()
-        print(type(creds))
         self.assertEqual(creds, json.loads(VALID_CREDENTIALS_STRING.replace('\n', '\\n')))
 
     def test_get_credentials_with_config_level_creds(self):
         test_creds = {"authToken": "test_token"}
-        creds = get_credentials(config_level_creds=test_creds)
+        creds, _ = get_credentials(config_level_creds=test_creds)
         self.assertEqual(creds, test_creds)
 
     def test_get_credentials_with_common_creds(self):
         test_creds = {"authToken": "test_token"}
-        creds = get_credentials(common_skyflow_creds=test_creds)
+        creds, _ = get_credentials(common_skyflow_creds=test_creds)
         self.assertEqual(creds, test_creds)
 
     @patch.dict(os.environ, {"SKYFLOW_CREDENTIALS": INVALID_JSON_FORMAT})

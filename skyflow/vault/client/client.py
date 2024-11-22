@@ -1,3 +1,4 @@
+import json
 from skyflow.generated.rest import Configuration, RecordsApi, ApiClient, TokensApi, QueryApi
 from skyflow.service_account import generate_bearer_token, generate_bearer_token_from_creds, is_expired
 from skyflow.utils import get_vault_url, get_credentials, SkyflowMessages
@@ -23,8 +24,8 @@ class VaultClient:
         self.__logger = logger
 
     def initialize_client_configuration(self):
-        credentials  = get_credentials(self.__config.get("credentials"), self.__common_skyflow_credentials, logger = self.__logger)
-        token = self.get_bearer_token(credentials)
+        credentials, env_creds  = get_credentials(self.__config.get("credentials"), self.__common_skyflow_credentials, logger = self.__logger)
+        token = self.get_bearer_token(credentials, env_creds)
         vault_url = get_vault_url(self.__config.get("cluster_id"),
                                   self.__config.get("env"),
                                   self.__config.get("vault_id"),
@@ -47,7 +48,7 @@ class VaultClient:
     def get_vault_id(self):
         return self.__config.get("vault_id")
 
-    def get_bearer_token(self, credentials):
+    def get_bearer_token(self, credentials, env_creds):
         if 'api_key' in credentials:
             return credentials.get('api_key')
         elif 'token' in credentials:
@@ -58,10 +59,16 @@ class VaultClient:
             "ctx": self.__config.get("ctx")
         }
 
-        log_info(SkyflowMessages.Info.GENERATE_BEARER_TOKEN_TRIGGERED, self.__logger)
-
         if self.__bearer_token is None or self.__is_config_updated:
-            if 'path' in credentials:
+            if env_creds:
+                log_info(SkyflowMessages.Info.GENERATE_BEARER_TOKEN_FROM_CREDENTIALS_STRING_TRIGGERED.value,
+                         self.__logger)
+                self.__bearer_token, _ = generate_bearer_token_from_creds(
+                    json.dumps(credentials),
+                    options,
+                    self.__logger
+                )
+            elif 'path' in credentials:
                 path = credentials.get("path")
                 self.__bearer_token, _ = generate_bearer_token(
                     path,
