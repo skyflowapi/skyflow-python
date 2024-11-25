@@ -15,32 +15,27 @@ from skyflow.utils.enums import EnvUrls, Env, ContentType
 from skyflow.vault.connection import InvokeConnectionResponse
 from skyflow.vault.data import InsertResponse, DeleteResponse, GetResponse, QueryResponse
 from skyflow.vault.tokens import DetokenizeResponse, TokenizeResponse
-from tests.constants.test_constants import VALID_CREDENTIALS_STRING, INVALID_JSON_FORMAT, TEST_ERROR_MESSAGE
+from tests.constants.test_constants import VALID_CREDENTIALS_STRING, INVALID_JSON_FORMAT, TEST_ERROR_MESSAGE, \
+    VALID_ENV_CREDENTIALS
 
 
 class TestUtils(unittest.TestCase):
 
-    @patch.dict(os.environ, {"SKYFLOW_CREDENTIALS": VALID_CREDENTIALS_STRING})
+    @patch.dict(os.environ, {"SKYFLOW_CREDENTIALS": json.dumps(VALID_ENV_CREDENTIALS)})
     def test_get_credentials_env_variable(self):
-        creds, _ = get_credentials()
-        VALID_CREDENTIALS_STRING.strip()
-        self.assertEqual(creds, json.loads(VALID_CREDENTIALS_STRING.replace('\n', '\\n')))
+        credentials = get_credentials()
+        credentials_string = credentials.get('credentials_string')
+        self.assertEqual(credentials_string, json.dumps(VALID_ENV_CREDENTIALS).replace('\n', '\\n'))
 
     def test_get_credentials_with_config_level_creds(self):
         test_creds = {"authToken": "test_token"}
-        creds, _ = get_credentials(config_level_creds=test_creds)
+        creds = get_credentials(config_level_creds=test_creds)
         self.assertEqual(creds, test_creds)
 
     def test_get_credentials_with_common_creds(self):
         test_creds = {"authToken": "test_token"}
-        creds, _ = get_credentials(common_skyflow_creds=test_creds)
+        creds = get_credentials(common_skyflow_creds=test_creds)
         self.assertEqual(creds, test_creds)
-
-    @patch.dict(os.environ, {"SKYFLOW_CREDENTIALS": INVALID_JSON_FORMAT})
-    def test_get_credentials_invalid_json_format(self):
-        with self.assertRaises(SkyflowError) as context:
-            get_credentials()
-        self.assertIn(context.exception.message, SkyflowMessages.Error.INVALID_JSON_FORMAT_IN_CREDENTIALS_ENV.value)
 
     def test_get_vault_url_valid(self):
         valid_cluster_id = "testCluster"

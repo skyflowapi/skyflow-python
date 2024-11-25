@@ -28,14 +28,16 @@ def get_credentials(config_level_creds = None, common_skyflow_creds = None, logg
         load_dotenv(dotenv_path)
     env_skyflow_credentials = os.getenv("SKYFLOW_CREDENTIALS")
     if config_level_creds:
-        return config_level_creds, False
+        return config_level_creds
     if common_skyflow_creds:
-        return common_skyflow_creds, False
+        return common_skyflow_creds
     if env_skyflow_credentials:
         env_skyflow_credentials.strip()
         try:
-            env_creds = json.loads(env_skyflow_credentials.replace('\n', '\\n'))
-            return env_creds, True
+            env_creds = env_skyflow_credentials.replace('\n', '\\n')
+            return {
+                'credentials_string': env_creds
+            }
         except json.JSONDecodeError:
             raise SkyflowError(SkyflowMessages.Error.INVALID_JSON_FORMAT_IN_CREDENTIALS_ENV.value, invalid_input_error_code)
     else:
