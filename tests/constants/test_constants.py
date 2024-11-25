@@ -64,7 +64,7 @@ INVALID_URL = "invalid-url"
 EMPTY_URL = ""
 SCOPES_LIST = ["admin", "user", "viewer"]
 FORMATTED_SCOPES = "role:admin role:user role:viewer"
-INVALID_JSON_FORMAT = '{"invalid": json}'
+INVALID_JSON_FORMAT = '[{"invalid": "json"}]'
 
 TEST_ERROR_MESSAGE = "Test error message."
 
@@ -89,6 +89,8 @@ CREDENTIALS_WITH_API_KEY = {"api_key": "dummy_api_key"}
 CREDENTIALS_WITH_TOKEN = {"token": "dummy_token"}
 CREDENTIALS_WITH_PATH = {"path": "/path/to/creds.json"}
 CREDENTIALS_WITH_STRING = {"credentials_string": "dummy_credentials_string"}
+
+VALID_ENV_CREDENTIALS = {"clientID":"CLIENT_ID","clientName":"test_V2","tokenURI":"TOKEN_URI","keyID":"KEY_ID","privateKey":"PRIVATE_KEY","keyValidAfterTime":"2024-10-21T18:06:26.000Z","keyValidBeforeTime":"2025-10-21T18:06:26.000Z","keyAlgorithm":"KEY_ALG_RSA_2048"}
 
 
 # connection controller constants

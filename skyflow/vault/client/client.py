@@ -1,3 +1,4 @@
+import json
 from skyflow.generated.rest import Configuration, RecordsApi, ApiClient, TokensApi, QueryApi
 from skyflow.service_account import generate_bearer_token, generate_bearer_token_from_creds, is_expired
 from skyflow.utils import get_vault_url, get_credentials, SkyflowMessages
@@ -23,7 +24,7 @@ class VaultClient:
         self.__logger = logger
 
     def initialize_client_configuration(self):
-        credentials  = get_credentials(self.__config.get("credentials"), self.__common_skyflow_credentials, logger = self.__logger)
+        credentials = get_credentials(self.__config.get("credentials"), self.__common_skyflow_credentials, logger = self.__logger)
         token = self.get_bearer_token(credentials)
         vault_url = get_vault_url(self.__config.get("cluster_id"),
                                   self.__config.get("env"),
@@ -58,8 +59,6 @@ class VaultClient:
             "ctx": self.__config.get("ctx")
         }
 
-        log_info(SkyflowMessages.Info.GENERATE_BEARER_TOKEN_TRIGGERED, self.__logger)
-
         if self.__bearer_token is None or self.__is_config_updated:
             if 'path' in credentials:
                 path = credentials.get("path")
@@ -77,12 +76,13 @@ class VaultClient:
                     self.__logger
                 )
             self.__is_config_updated = False
+        else:
+            log_info(SkyflowMessages.Info.REUSE_BEARER_TOKEN.value, self.__logger)
 
         if is_expired(self.__bearer_token):
             self.__is_config_updated = True
             raise SyntaxError(SkyflowMessages.Error.EXPIRED_TOKEN.value, SkyflowMessages.ErrorCodes.INVALID_INPUT.value)
 
-        log_info(SkyflowMessages.Info.REUSE_BEARER_TOKEN.value, self.__logger)
         return self.__bearer_token
 
     def update_config(self, config):
