@@ -29,7 +29,7 @@ jobs:
             exit 1
           fi
           
-          echo "$SERVICE_ACCOUNT_CREDS" > ./tests/service-account/valid_credentials.json
+          echo "$SERVICE_ACCOUNT_CREDS" > ./tests/service_account/valid_credentials.json
           
           STRING_FORMAT=$(echo $SERVICE_ACCOUNT_CREDS | jq -c .)
           DICT_FORMAT=$(echo $SERVICE_ACCOUNT_CREDS | jq .)
