@@ -22,7 +22,7 @@ jobs:
 
       - name: Process and Update Test Constants
         run: |
-          echo "${{ secrets.VALID_SKYFLOW_CREDS_TEST }}" > ./tests/service-account/valid_credentials.json
+          echo "${{ secrets.VALID_SKYFLOW_CREDS_TEST }}" > ./tests/service_account/valid_credentials.json
           STRING_FORMAT=$(echo "${{ secrets.VALID_SKYFLOW_CREDS_TEST }}" | jq -c .)
           DICT_FORMAT=$(echo "${{ secrets.VALID_SKYFLOW_CREDS_TEST }}" | jq .)
           sed -i "s|VALID_CREDENTIALS_STRING = .*|VALID_CREDENTIALS_STRING = '$STRING_FORMAT'|" ./tests/constants/test_constants.py
