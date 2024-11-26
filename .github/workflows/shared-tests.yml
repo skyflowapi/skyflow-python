@@ -1,0 +1,41 @@
+name: Shared Test Steps
+
+on:
+  workflow_call:
+    inputs:
+      python-version:
+        description: 'Python version to use'
+        required: true
+        type: string
+
+jobs:
+  run-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+        with:
+          python-version: ${{ inputs.python-version }}
+
+      - name: create-json
+        id: create-json
+        uses: jsdaniell/create-json@1.1.2
+        with:
+          name: "credentials.json"
+          json: ${{ secrets.VALID_SKYFLOW_CREDS_TEST }}
+      
+      - name: 'Run Tests'
+        run: |
+          pip install -r requirements.txt
+          python -m coverage run --source=skyflow --omit=skyflow/generated/*,skyflow/utils/validations/*,skyflow/vault/data/*,skyflow/vault/tokens/*,skyflow/vault/connection/*,skyflow/error/*,skyflow/utils/enums/*,skyflow/vault/controller/_audit.py,skyflow/vault/controller/_bin_look_up.py -m unittest discover
+
+      - name: coverage
+        run: coverage xml -o test-coverage.xml
+
+      - name: Codecov
+        uses: codecov/codecov-action@v2.1.0
+        with:
+          token: ${{ secrets.CODECOV_REPO_UPLOAD_TOKEN }}
+          files: test-coverage.xml
+          name: codecov-skyflow-python
+          verbose: true
