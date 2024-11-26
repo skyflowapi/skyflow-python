@@ -54,7 +54,7 @@ class Vault:
             body = RecordServiceBatchOperationBody(
                 records=records_list,
                 continue_on_error=request.continue_on_error,
-                byot=request.token_strict.value
+                byot=request.token_mode.value
             )
             return body
         else:
@@ -64,7 +64,7 @@ class Vault:
                 tokenization=request.return_tokens,
                 upsert=request.upsert,
                 homogeneous=request.homogeneous,
-                byot=request.token_strict.value
+                byot=request.token_mode.value
             )
 
     def insert(self, request: InsertRequest):
@@ -103,7 +103,7 @@ class Vault:
         self.__initialize()
         field = {key: value for key, value in request.data.items() if key != "skyflow_id"}
         record = V1FieldRecords(fields=field, tokens = request.tokens)
-        payload = RecordServiceUpdateRecordBody(record=record, tokenization=request.return_tokens, byot=request.token_strict.value)
+        payload = RecordServiceUpdateRecordBody(record=record, tokenization=request.return_tokens, byot=request.token_mode.value)
 
         records_api = self.__vault_client.get_records_api()
         try:

@@ -1,7 +1,7 @@
 import json
 import re
 from skyflow.service_account import is_expired
-from skyflow.utils.enums import LogLevel, TokenStrict, Env, RedactionType
+from skyflow.utils.enums import LogLevel, Env, RedactionType, TokenMode
 from skyflow.error import SkyflowError
 from skyflow.utils import SkyflowMessages
 from skyflow.utils.logger import log_info, log_error_log
@@ -286,9 +286,9 @@ def validate_insert_request(logger, request):
         log_error_log(SkyflowMessages.ErrorLogs.HOMOGENOUS_NOT_SUPPORTED_WITH_UPSERT.value.format("INSERT"), logger = logger)
         raise SkyflowError(SkyflowMessages.Error.HOMOGENOUS_NOT_SUPPORTED_WITH_UPSERT.value.format("INSERT"), invalid_input_error_code)
 
-    if request.token_strict is not None:
-        if not isinstance(request.token_strict, TokenStrict):
-            raise SkyflowError(SkyflowMessages.Error.INVALID_TOKEN_STRICT_TYPE.value, invalid_input_error_code)
+    if request.token_mode is not None:
+        if not isinstance(request.token_mode, TokenMode):
+            raise SkyflowError(SkyflowMessages.Error.INVALID_TOKEN_MODE_TYPE.value, invalid_input_error_code)
 
     if not isinstance(request.return_tokens, bool):
         raise SkyflowError(SkyflowMessages.Error.INVALID_RETURN_TOKENS_TYPE.value, invalid_input_error_code)
@@ -311,21 +311,21 @@ def validate_insert_request(logger, request):
             log_error_log(SkyflowMessages.ErrorLogs.EMPTY_TOKENS.value("INSERT"), logger = logger)
             raise SkyflowError(SkyflowMessages.Error.INVALID_TYPE_OF_DATA_IN_INSERT.value, invalid_input_error_code)
 
-    if request.token_strict == TokenStrict.ENABLE and not request.tokens:
-        raise SkyflowError(SkyflowMessages.Error.NO_TOKENS_IN_INSERT.value.format(request.token_strict), invalid_input_error_code)
+    if request.token_mode == TokenMode.ENABLE and not request.tokens:
+        raise SkyflowError(SkyflowMessages.Error.NO_TOKENS_IN_INSERT.value.format(request.token_mode), invalid_input_error_code)
 
-    if request.token_strict == TokenStrict.DISABLE and request.tokens:
-        raise SkyflowError(SkyflowMessages.Error.TOKENS_PASSED_FOR_TOKEN_STRICT_DISABLE.value, invalid_input_error_code)
+    if request.token_mode == TokenMode.DISABLE and request.tokens:
+        raise SkyflowError(SkyflowMessages.Error.TOKENS_PASSED_FOR_TOKEN_MODE_DISABLE.value, invalid_input_error_code)
 
-    if request.token_strict == TokenStrict.ENABLE_STRICT:
+    if request.token_mode == TokenMode.ENABLE_STRICT:
         if len(request.values) != len(request.tokens):
             log_error_log(SkyflowMessages.ErrorLogs.INSUFFICIENT_TOKENS_PASSED_FOR_BYOT_ENABLE_STRICT.value.format("INSERT"), logger = logger)
-            raise SkyflowError(SkyflowMessages.Error.INSUFFICIENT_TOKENS_PASSED_FOR_TOKEN_STRICT_ENABLE_STRICT.value, invalid_input_error_code)
+            raise SkyflowError(SkyflowMessages.Error.INSUFFICIENT_TOKENS_PASSED_FOR_TOKEN_MODE_ENABLE_STRICT.value, invalid_input_error_code)
 
         for v, t in zip(request.values, request.tokens):
             if set(v.keys()) != set(t.keys()):
                 log_error_log(SkyflowMessages.ErrorLogs.MISMATCH_OF_FIELDS_AND_TOKENS.value.format("INSERT"), logger=logger)
-                raise SkyflowError(SkyflowMessages.Error.INSUFFICIENT_TOKENS_PASSED_FOR_TOKEN_STRICT_ENABLE_STRICT.value, invalid_input_error_code)
+                raise SkyflowError(SkyflowMessages.Error.INSUFFICIENT_TOKENS_PASSED_FOR_TOKEN_MODE_ENABLE_STRICT.value, invalid_input_error_code)
 
 def validate_delete_request(logger, request):
     if not isinstance(request.table, str):
@@ -467,28 +467,28 @@ def validate_update_request(logger, request):
     if not len(request.data.items()):
         raise SkyflowError(SkyflowMessages.Error.UPDATE_FIELD_KEY_ERROR.value, invalid_input_error_code)
 
-    if request.token_strict is not None:
-        if not isinstance(request.token_strict, TokenStrict):
-            raise SkyflowError(SkyflowMessages.Error.INVALID_TOKEN_STRICT_TYPE.value, invalid_input_error_code)
+    if request.token_mode is not None:
+        if not isinstance(request.token_mode, TokenMode):
+            raise SkyflowError(SkyflowMessages.Error.INVALID_TOKEN_MODE_TYPE.value, invalid_input_error_code)
 
     if request.tokens:
         if not isinstance(request.tokens, dict) or not request.tokens:
             log_error_log(SkyflowMessages.ErrorLogs.EMPTY_TOKENS.value.format("UPDATE"), logger=logger)
             raise SkyflowError(SkyflowMessages.Error.INVALID_TYPE_OF_DATA_IN_INSERT.value, invalid_input_error_code)
 
-    if request.token_strict == TokenStrict.ENABLE and not request.tokens:
-        raise SkyflowError(SkyflowMessages.Error.NO_TOKENS_IN_INSERT.value.format(request.token_Strict),
+    if request.token_mode == TokenMode.ENABLE and not request.tokens:
+        raise SkyflowError(SkyflowMessages.Error.NO_TOKENS_IN_INSERT.value.format(request.token_mode),
                            invalid_input_error_code)
 
-    if request.token_strict == TokenStrict.DISABLE and request.tokens:
-        raise SkyflowError(SkyflowMessages.Error.TOKENS_PASSED_FOR_TOKEN_STRICT_DISABLE.value, invalid_input_error_code)
+    if request.token_mode == TokenMode.DISABLE and request.tokens:
+        raise SkyflowError(SkyflowMessages.Error.TOKENS_PASSED_FOR_TOKEN_MODE_DISABLE.value, invalid_input_error_code)
 
-    if request.token_strict == TokenStrict.ENABLE_STRICT:
+    if request.token_mode == TokenMode.ENABLE_STRICT:
         if len(field) != len(request.tokens):
             log_error_log(
                 SkyflowMessages.ErrorLogs.INSUFFICIENT_TOKENS_PASSED_FOR_BYOT_ENABLE_STRICT.value.format("UPDATE"),
                 logger=logger)
-            raise SkyflowError(SkyflowMessages.Error.INSUFFICIENT_TOKENS_PASSED_FOR_TOKEN_STRICT_ENABLE_STRICT.value,
+            raise SkyflowError(SkyflowMessages.Error.INSUFFICIENT_TOKENS_PASSED_FOR_TOKEN_MODE_ENABLE_STRICT.value,
                                invalid_input_error_code)
 
         if set(field.keys()) != set(request.tokens.keys()):
@@ -496,7 +496,7 @@ def validate_update_request(logger, request):
                 SkyflowMessages.ErrorLogs.INSUFFICIENT_TOKENS_PASSED_FOR_BYOT_ENABLE_STRICT.value.format("UPDATE"),
                 logger=logger)
             raise SkyflowError(
-                SkyflowMessages.Error.INSUFFICIENT_TOKENS_PASSED_FOR_TOKEN_STRICT_ENABLE_STRICT.value,
+                SkyflowMessages.Error.INSUFFICIENT_TOKENS_PASSED_FOR_TOKEN_MODE_ENABLE_STRICT.value,
                 invalid_input_error_code)
 
 def validate_detokenize_request(logger, request):

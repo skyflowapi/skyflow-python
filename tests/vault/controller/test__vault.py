@@ -4,7 +4,7 @@ from unittest.mock import Mock, patch
 from skyflow.generated.rest import RecordServiceBatchOperationBody, V1BatchRecord, RecordServiceInsertRecordBody, \
     V1FieldRecords, RecordServiceUpdateRecordBody, RecordServiceBulkDeleteRecordBody, QueryServiceExecuteQueryBody, \
     V1DetokenizeRecordRequest, V1DetokenizePayload, V1TokenizePayload, V1TokenizeRecordRequest, RedactionEnumREDACTION
-from skyflow.utils.enums import TokenStrict, RedactionType
+from skyflow.utils.enums import RedactionType, TokenMode
 from skyflow.vault.controller import Vault
 from skyflow.vault.data import InsertRequest, InsertResponse, UpdateResponse, UpdateRequest, DeleteResponse, \
     DeleteRequest, GetRequest, GetResponse, QueryRequest, QueryResponse
@@ -148,7 +148,7 @@ class TestVault(unittest.TestCase):
             data={"skyflow_id": "12345", "field": "new_value"},
             tokens=None,
             return_tokens=True,
-            token_strict=TokenStrict.DISABLE
+            token_mode=TokenMode.DISABLE
         )
 
         # Expected payload
@@ -158,7 +158,7 @@ class TestVault(unittest.TestCase):
                 tokens=request.tokens
             ),
             tokenization=request.return_tokens,
-            byot=request.token_strict.value
+            byot=request.token_mode.value
         )
 
         # Mock API response

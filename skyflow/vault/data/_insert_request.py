@@ -1,4 +1,4 @@
-from skyflow.utils.enums import TokenStrict
+from skyflow.utils.enums import TokenMode
 
 class InsertRequest:
     def __init__(self,
@@ -7,7 +7,7 @@ class InsertRequest:
                  tokens = None,
                  upsert = None,
                  homogeneous = False,
-                 token_strict = TokenStrict.DISABLE,
+                 token_mode = TokenMode.DISABLE,
                  return_tokens = True,
                  continue_on_error = False):
         self.table_name = table_name
@@ -15,7 +15,7 @@ class InsertRequest:
         self.tokens = tokens
         self.upsert = upsert
         self.homogeneous = homogeneous
-        self.token_strict = token_strict
+        self.token_mode = token_mode
         self.return_tokens = return_tokens
         self.continue_on_error = continue_on_error
 
