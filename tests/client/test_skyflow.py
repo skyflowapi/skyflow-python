@@ -78,7 +78,7 @@ class TestSkyflow(unittest.TestCase):
         self.builder.add_vault_config(VALID_VAULT_CONFIG)
         self.builder.build()
         updated_config = VALID_VAULT_CONFIG.copy()
-        updated_config["cluster_id"] = "sb.area52"
+        updated_config["cluster_id"] = "test.cluster"
         self.builder.update_vault_config(updated_config)
         mock_validate.assert_called_once()
 
@@ -233,12 +233,12 @@ class TestSkyflow(unittest.TestCase):
     def test_skyflow_client_add_remove_vault_config(self, mock_validate_vault_config):
         skyflow_client = self.builder.add_vault_config(VALID_VAULT_CONFIG).build()
         new_config = VALID_VAULT_CONFIG.copy()
-        new_config['vault_id'] = "d3dd9bbb7abc4c779b72f32cb7ee5d12"
+        new_config['vault_id'] = "VAULT_ID"
         skyflow_client.add_vault_config(new_config)
 
         assert mock_validate_vault_config.call_count == 2
 
-        self.assertEqual("d3dd9bbb7abc4c779b72f32cb7ee5d12",
+        self.assertEqual("VAULT_ID",
                          skyflow_client.get_vault_config(new_config['vault_id']).get("vault_id"))
 
         skyflow_client.remove_vault_config(new_config['vault_id'])
@@ -264,13 +264,13 @@ class TestSkyflow(unittest.TestCase):
     def test_skyflow_client_add_remove_connection_config(self, mock_validate_connection_config):
         skyflow_client = self.builder.add_connection_config(VALID_CONNECTION_CONFIG).build()
         new_config = VALID_CONNECTION_CONFIG.copy()
-        new_config['connection_id'] = "ef34fc6b0b914ad59a1754c06f10b243"
+        new_config['connection_id'] = "CONNECTION_ID"
         skyflow_client.add_connection_config(new_config)
 
         assert mock_validate_connection_config.call_count == 2
-        self.assertEqual("ef34fc6b0b914ad59a1754c06f10b243", skyflow_client.get_connection_config(new_config['connection_id']).get("connection_id"))
+        self.assertEqual("CONNECTION_ID", skyflow_client.get_connection_config(new_config['connection_id']).get("connection_id"))
 
-        skyflow_client.remove_connection_config("ef34fc6b0b914ad59a1754c06f10b243")
+        skyflow_client.remove_connection_config("CONNECTION_ID")
         with self.assertRaises(SkyflowError) as context:
             skyflow_client.get_connection_config(new_config['connection_id']).get("connection_id")
 

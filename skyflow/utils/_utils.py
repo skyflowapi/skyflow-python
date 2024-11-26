@@ -71,9 +71,6 @@ def parse_path_params(url, path_params):
     return result
 
 def to_lowercase_keys(dict):
-    """
-        convert keys of dictionary to lowercase
-    """
     result = {}
     for key, value in dict.items():
         result[key.lower()] = value
@@ -121,17 +118,9 @@ def construct_invoke_connection_request(request, connection_url, logger) -> Prep
 
 
 def http_build_query(data):
-    """
-        Creates a form urlencoded string from python dictionary
-        urllib.urlencode() doesn't encode it in a php-esque way, this function helps in that
-    """
-
     return urllib.parse.urlencode(r_urlencode(list(), dict(), data))
 
 def r_urlencode(parents, pairs, data):
-    """
-        convert the python dict recursively into a php style associative dictionary
-    """
     if isinstance(data, list) or isinstance(data, tuple):
         for i in range(len(data)):
             parents.append(i)
@@ -148,9 +137,6 @@ def r_urlencode(parents, pairs, data):
     return pairs
 
 def render_key(parents):
-    """
-        renders the nested dictionary key as an associative array (php style dict)
-    """
     depth, out_str = 0, ''
     for x in parents:
         s = "[%s]" if depth > 0 or isinstance(x, int) else "%s"
@@ -159,9 +145,6 @@ def render_key(parents):
     return out_str
 
 def get_data_from_content_type(data, content_type):
-    """
-        Get request data according to content type
-    """
     converted_data = data
     files = {}
     if content_type == ContentType.URLENCODED.value:
@@ -176,8 +159,6 @@ def get_data_from_content_type(data, content_type):
 
 
 def get_metrics():
-    """ fetch metrics
-    """
     sdk_name_version = "skyflow-python@" + SDK_VERSION
 
     try:
