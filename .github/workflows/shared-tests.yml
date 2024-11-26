@@ -22,7 +22,7 @@ jobs:
 
       - name: Create valid_creds.json
         run: |
-          SERVICE_ACCOUNT_CREDS='${{ secrets.VALID_SKYFLOW_CREDS_TEST }}'
+          SERVICE_ACCOUNT_CREDS="{{ secrets.VALID_SKYFLOW_CREDS_TEST }}"
           
           if ! echo "$SERVICE_ACCOUNT_CREDS" | jq . >/dev/null 2>&1; then
             echo "Invalid JSON in VALID_SKYFLOW_CREDS_TEST" >&2
