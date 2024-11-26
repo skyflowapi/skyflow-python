@@ -1,5 +1,11 @@
 from skyflow import LogLevel
 from skyflow import  Env
+import os
+import json
+
+creds_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "credentials.json")
+with open(creds_path, 'r') as file:
+    credentials = json.load(file)
 
 #client initialization constants
 
@@ -37,9 +43,9 @@ VALID_CREDENTIALS = {
 
 # service account constants
 
-VALID_CREDENTIALS_STRING = ''
+VALID_CREDENTIALS_STRING = json.dumps(credentials)
 
-VALID_SERVICE_ACCOUNT_CREDS = {}
+VALID_SERVICE_ACCOUNT_CREDS = credentials
 
 CREDENTIALS_WITHOUT_CLIENT_ID = {
     'privateKey': 'private_key'

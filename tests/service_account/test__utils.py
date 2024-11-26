@@ -51,7 +51,7 @@ class TestServiceAccountUtils(unittest.TestCase):
 
     @patch("skyflow.service_account._utils.get_service_account_token")
     def test_generate_bearer_token_valid_file_path(self, mock_generate_bearer_token):
-        creds_path = os.path.join(os.path.dirname(__file__), "valid_credentials.json")
+        creds_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "credentials.json")
         generate_bearer_token(creds_path)
         mock_generate_bearer_token.assert_called_once()
 
@@ -105,7 +105,7 @@ class TestServiceAccountUtils(unittest.TestCase):
         self.assertEqual(response[1], signed_token)
 
     def test_generate_signed_data_tokens_from_file_path(self):
-        creds_path = os.path.join(os.path.dirname(__file__), "valid_credentials.json")
+        creds_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "credentials.json")
         options = {"data_tokens": ["token1", "token2"], "ctx": 'ctx'}
         result = generate_signed_data_tokens(creds_path, options)
         self.assertEqual(len(result), 2)
@@ -115,12 +115,6 @@ class TestServiceAccountUtils(unittest.TestCase):
         with self.assertRaises(SkyflowError) as context:
             result = generate_signed_data_tokens('credentials1.json', options)
         self.assertEqual(context.exception.message, SkyflowMessages.Error.INVALID_CREDENTIAL_FILE_PATH.value)
-
-    # def test_generate_signed_data_tokens_from_valid_file_path_with_invalid_credentials(self):
-    #     options = {"data_tokens": ["token1", "token2"]}
-    #     with self.assertRaises(SkyflowError) as context:
-    #         result = generate_signed_data_tokens("invalid_creds.json", options)
-    #     self.assertEqual(context.exception.message, SkyflowMessages.Error.FILE_INVALID_JSON.value.format("invalid_creds.json"))
 
     def test_generate_signed_data_tokens_from_creds(self):
         options = {"data_tokens": ["token1", "token2"]}

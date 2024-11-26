@@ -20,21 +20,13 @@ jobs:
       - name: Install jq
         run: sudo apt-get update && sudo apt-get install -y jq
 
-      - name: Process and Update Test Constants
-        run: |
-          CREDS="${{ secrets.VALID_SKYFLOW_CREDS_TEST }}"
-          CREDS=$(echo "$CREDS" | sed 's/\\n/\n/g')
-
-          echo "$CREDS" > ./tests/service_account/valid_credentials.json
-
-          STRING_FORMAT=$(echo "$CREDS" | jq -c .)
-          DICT_FORMAT=$(echo "$CREDS" | jq .)
-
-          sed -i "s|VALID_CREDENTIALS_STRING = .*|VALID_CREDENTIALS_STRING = '$STRING_FORMAT'|" ./tests/constants/test_constants.py
-          sed -i "s|VALID_SERVICE_ACCOUNT_CREDS = .*|VALID_SERVICE_ACCOUNT_CREDS = $DICT_FORMAT|" ./tests/constants/test_constants.py
-        shell: bash
+      - name: create-json
+        id: create-json
+        uses: jsdaniell/create-json@1.1.2
+        with:
+          name: "credentials.json"
+          json: ${{ secrets.VALID_SKYFLOW_CREDS_TEST }}
       
-
       - name: 'Run Tests'
         run: |
           pip install -r requirements.txt
