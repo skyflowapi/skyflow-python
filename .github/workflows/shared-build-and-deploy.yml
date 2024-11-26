@@ -1,0 +1,84 @@
+name: Shared Build and Deploy
+
+on:
+  workflow_call:
+    inputs:
+      ref:
+        description: 'Git reference to use (e.g., main or branch name)'
+        required: true
+        type: string
+
+      is-internal:
+        description: 'Flag for internal release'
+        required: true
+        type: boolean
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          ref: ${{ inputs.ref }}
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v2
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install setuptools wheel twine
+
+      - name: Get Previous tag
+        id: previoustag
+        uses: WyriHaximus/github-action-get-previous-tag@v1
+        with:
+          fallback: 1.0.0
+
+      - name: Bump Version
+        run: |
+          chmod +x ./ci-scripts/bump_version.sh
+          if ${{ inputs.is-internal }}; then
+            ./ci-scripts/bump_version.sh "${{ steps.previoustag.outputs.tag }}" "$(git rev-parse --short "$GITHUB_SHA")"
+          else
+            ./ci-scripts/bump_version.sh "${{ steps.previoustag.outputs.tag }}"
+          fi
+
+      - name: Commit changes
+        run: |
+          git config user.name "${{ github.actor }}"
+          git config user.email "${{ github.actor }}@users.noreply.github.com"
+          git add setup.py
+          git add skyflow/utils/_version.py
+
+          if [ "${{ inputs.is-internal }}" = "true" ]; then
+            VERSION="${{ steps.previoustag.outputs.tag }}.dev0+$(git rev-parse --short $GITHUB_SHA)"
+            COMMIT_MESSAGE="[AUTOMATED] Private Release $VERSION"
+            git commit -m "$COMMIT_MESSAGE"
+            git push origin ${{ github.ref_name }} -f
+          else
+            COMMIT_MESSAGE="[AUTOMATED] Public Release - ${{ steps.previoustag.outputs.tag }}"
+            git commit -m "$COMMIT_MESSAGE"
+            git push origin
+          fi
+
+      - name: Build and Publish Package
+        if: ${{ !inputs.is-internal }}
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_PUBLISH_TOKEN }}
+        run: |
+          python setup.py sdist bdist_wheel
+          twine upload dist/*
+
+      - name: Build and Publish to JFrog Artifactory
+        if: ${{ inputs.is-internal }}
+        env:
+          TWINE_USERNAME: ${{ secrets.JFROG_USERNAME }}
+          TWINE_PASSWORD: ${{ secrets.JFROG_PASSWORD }}
+        run: |
+          python setup.py sdist bdist_wheel
+          twine upload --repository-url https://prekarilabs.jfrog.io/artifactory/api/pypi/skyflow-python/ dist/*
+
+
+        
