@@ -31,13 +31,13 @@ def perform_secure_data_insertion_with_byot():
         }
 
         credentials = {
-            'token': '<TOKEN>'  # Bearer token for authentication
+            'token': '<YOUR_TOKEN>'  # Bearer token for authentication
         }
 
         # Step 2: Configure Vault
         primary_vault_config = {
-            'vault_id': '<VAULT_ID1>',      # primary vault
-            'cluster_id': '<CLUSTER_ID1>',  # Cluster ID from your vault URL
+            'vault_id': '<YOUR_VAULT_ID1>',      # primary vault
+            'cluster_id': '<YOUR_CLUSTER_ID1>',  # Cluster ID from your vault URL
             'env': Env.PROD,                # Deployment environment (PROD by default)
             'credentials': credentials      # Authentication method
         }
@@ -59,7 +59,7 @@ def perform_secure_data_insertion_with_byot():
             },
         ]
 
-        table_name = '<YOUR_TABLE_NAME>'
+        table_name = '<SENSITIVE_DATA_TABLE>'
 
         #  Step 5: BYOT Configuration
         tokens = [

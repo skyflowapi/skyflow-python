@@ -30,7 +30,7 @@ def perform_secure_column_retrieval():
         }
 
         credentials = {
-            'path': '<PATH_TO_CREDENTIALS_JSON>'  # Path to credentials file
+            'path': '<PATH_TO_YOUR_CREDENTIALS_JSON>'  # Path to credentials file
         }
 
         # Step 2: Configure Vault
@@ -55,7 +55,7 @@ def perform_secure_column_retrieval():
             '<VALUE1>', # Example Unique Column value 1
             '<VALUE2>'  # Example Unique Column value 2
         ]
-        table_name = '<TABLE_NAME>'   # Replace with your actual table name
+        table_name = '<SENSITIVE_DATA_TABLE>'   # Replace with your actual table name
         column_name = '<COLUMN_NAME>' # Column name configured as unique in the schema
 
         # Step 5: Create Get Column Request

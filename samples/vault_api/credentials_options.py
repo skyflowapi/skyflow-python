@@ -25,14 +25,14 @@ def perform_secure_data_deletion():
 
         # Step 2: Configure Vaults
         primary_vault_config = {
-            'vault_id': '<VAULT_ID1>',  # primary vault
-            'cluster_id': '<CLUSTER_ID1>',  # Cluster ID from your vault URL
+            'vault_id': '<YOUR_VAULT_ID1>',  # primary vault
+            'cluster_id': '<YOUR_CLUSTER_ID1>',  # Cluster ID from your vault URL
             'env': Env.PROD,  # Deployment environment (PROD by default)
         }
 
         secondary_vault_config = {
-            'vault_id': 'VAULT_ID2',  # Secondary vault
-            'cluster_id': 'CLUSTER_ID2',  # Cluster ID from your vault URL
+            'vault_id': 'YOUR_SECONDARY_VAULT_ID',  # Secondary vault
+            'cluster_id': 'YOUR_SECONDARY_CLUSTER_ID',  # Cluster ID from your vault URL
             'env': Env.PROD,  # Deployment environment
             'credentials': credentials
         }
@@ -49,7 +49,7 @@ def perform_secure_data_deletion():
         # Step 4: Prepare Delete Request for Primary Vault
         primary_delete_ids = ['<SKYFLOW_ID1>', '<SKYFLOW_ID2>']
 
-        primary_table_name = '<PRIMARY_TABLE_NAME>'  # Replace with actual table name
+        primary_table_name = '<SENSITIVE_DATA_TABLE>'  # Replace with actual table name
 
         primary_delete_request = DeleteRequest(
             table=primary_table_name,
@@ -57,7 +57,7 @@ def perform_secure_data_deletion():
         )
 
         # Perform Delete Operation for Primary Vault
-        primary_delete_response = skyflow_client.vault('<VAULT_ID>').delete(primary_delete_request)
+        primary_delete_response = skyflow_client.vault('<YOUR_VAULT_ID>').delete(primary_delete_request)
 
         # Handle Successful Response
         print('Primary Vault Deletion Successful:', primary_delete_response)
@@ -65,7 +65,7 @@ def perform_secure_data_deletion():
         # Step 5: Prepare Delete Request for Secondary Vault
         secondary_delete_ids = ['<SKYFLOW_ID1>', '<SKYFLOW_ID2>']
 
-        secondary_table_name = '<SECONDARY_TABLE_NAME>'  # Replace with actual table name
+        secondary_table_name = '<SECONDARY_SENSITIVE_DATA_TABLE>'  # Replace with actual table name
 
         secondary_delete_request = DeleteRequest(
             table=secondary_table_name,
@@ -73,7 +73,7 @@ def perform_secure_data_deletion():
         )
 
         # Perform Delete Operation for Secondary Vault
-        secondary_delete_response = skyflow_client.vault('<SECONDARY_VAULT_ID>').delete(secondary_delete_request)
+        secondary_delete_response = skyflow_client.vault('<YOUR_SECONDARY_VAULT_ID>').delete(secondary_delete_request)
 
         #  Handle Successful Response
         print('Secondary Vault Deletion Successful:', secondary_delete_response)

@@ -20,13 +20,13 @@ def perform_secure_data_retrieval():
         }
 
         credentials = {
-            'path': '<PATH_TO_CREDENTIALS_JSON>'  # Path to credentials file
+            'path': '<PATH_TO_YOUR_CREDENTIALS_JSON>'  # Path to credentials file
         }
 
         # Step 2: Configure Vault
         primary_vault_config = {
-            'vault_id': '<VAULT_ID1>',  # primary vault
-            'cluster_id': '<CLUSTER_ID1>',  # Cluster ID from your vault URL
+            'vault_id': '<YOUR_VAULT_ID1>',  # primary vault
+            'cluster_id': '<YOUR_CLUSTER_ID1>',  # Cluster ID from your vault URL
             'env': Env.PROD,  # Deployment environment (PROD by default)
             'credentials': credentials  # Authentication method
         }

@@ -17,13 +17,13 @@ def perform_secure_data_deletion():
     try:
         # Step 1: Configure Bearer Token Credentials
         credentials = {
-            'token': '<BEARER_TOKEN>', # Bearer token
+            'token': '<YOUR_BEARER_TOKEN>', # Bearer token
         }
 
         # Step 2: Configure vault
         primary_vault_config = {
-            'vault_id': '<VAULT_ID1>',  # primary vault
-            'cluster_id': '<CLUSTER_ID1>',  # Cluster ID from your vault URL
+            'vault_id': '<YOUR_VAULT_ID1>',  # primary vault
+            'cluster_id': '<YOUR_CLUSTER_ID1>',  # Cluster ID from your vault URL
             'env': Env.PROD,  # Deployment environment (PROD by default)
             'credentials': credentials,  # Authentication method
         }
@@ -41,8 +41,8 @@ def perform_secure_data_deletion():
         # Step 4: Add Secondary Vault Configuration
 
         secondary_vault_config = {
-            'vault_id': 'VAULT_ID2',  # Secondary vault
-            'cluster_id': 'CLUSTER_ID2',  # Cluster ID from your vault URL
+            'vault_id': 'YOUR_VAULT_ID2',  # Secondary vault
+            'cluster_id': 'YOUR_CLUSTER_ID2',  # Cluster ID from your vault URL
             'env': Env.PROD,  # Deployment environment
             # If credentials aren't specified, Skyflow credentials will be used
         }
@@ -52,8 +52,8 @@ def perform_secure_data_deletion():
 
         # Step 5: Update Vault Configuration
         updated_vault_config = {
-            'vault_id': 'VAULT_ID2', # Vault ID and cluster ID are unique
-            'cluster_id': 'CLUSTER_ID2', # Cluster ID from your vault URL
+            'vault_id': 'YOUR_VAULT_ID2', # Vault ID and cluster ID are unique
+            'cluster_id': 'YOUR_CLUSTER_ID2', # Cluster ID from your vault URL
             'credentials': credentials,  # Update credentials
         }
 
@@ -63,7 +63,7 @@ def perform_secure_data_deletion():
         # Step 6: Prepare Delete Request
         delete_ids = ['<SKYFLOW_ID1>', '<SKYFLOW_ID2>']
 
-        table_name = '<TABLE_NAME>' # Replace with actual table name
+        table_name = '<SENSITIVE_DATA_TABLE>' # Replace with actual table name
 
         delete_request = DeleteRequest(
             table=table_name,
@@ -71,7 +71,7 @@ def perform_secure_data_deletion():
         )
 
         # Step 7: Perform Secure Deletion on Secondary Vault
-        response = skyflow_client.vault('VAULT_ID2').delete(delete_request)
+        response = skyflow_client.vault('YOUR_VAULT_ID2').delete(delete_request)
 
         # Handle Successful Response
         print('Delete successful: ', response)

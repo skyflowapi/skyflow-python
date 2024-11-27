@@ -35,8 +35,8 @@ def perform_delete():
 
         # Step 2: Configure Vault
         primary_vault_config = {
-            'vault_id': '<VAULT_ID1>',        # primary vault
-            'cluster_id': '<CLUSTER_ID1>',    # Cluster ID from your vault URL
+            'vault_id': '<YOUR_VAULT_ID1>',        # primary vault
+            'cluster_id': '<YOUR_CLUSTER_ID1>',    # Cluster ID from your vault URL
             'env': Env.PROD,                  # Deployment environment (PROD by default)
             'credentials': credentials        # Authentication method
         }
