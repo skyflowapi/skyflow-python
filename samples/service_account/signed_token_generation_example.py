@@ -24,15 +24,36 @@ options = {
     'time_to_live': 90,  # in seconds
 }
 
-# Generate bearer token from credentials file path
-if is_expired(bearer_token):
-    actual_token, signed_token = generate_signed_data_tokens(
-        '<YOUR_CREDENTIALS_FILE_PATH>', options
-    )
+def get_signed_bearer_token_from_file_path():
+    # Generate signed bearer token from credentials file path.
+    global bearer_token
+
+    try:
+        if not is_expired(bearer_token):
+            return bearer_token
+        else:
+            data_token, signed_data_token = generate_signed_data_tokens(file_path, options)
+            return data_token, signed_data_token
+
+    except Exception as e:
+        print(f'Error generating token from file path: {str(e)}')
 
 
-# Generate bearer token from credentials string
-if is_expired(bearer_token):
-    actual_token, signed_token = generate_signed_data_tokens_from_creds(
-        credentials_string, options
-    )
+def get_signed_bearer_token_from_credentials_string():
+    # Generate signed bearer token from credentials string.
+    global bearer_token
+
+    try:
+        if not is_expired(bearer_token):
+            return bearer_token
+        else:
+            data_token, signed_data_token = generate_signed_data_tokens_from_creds(credentials_string, options)
+            return data_token, signed_data_token
+
+    except Exception as e:
+        print(f'Error generating token from credentials string: {str(e)}')
+
+
+print(get_signed_bearer_token_from_file_path())
+
+print(get_signed_bearer_token_from_credentials_string())

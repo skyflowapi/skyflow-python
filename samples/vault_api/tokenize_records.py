@@ -1,56 +1,80 @@
 import json
+from skyflow.error import SkyflowError
 from skyflow import Env
 from skyflow import Skyflow, LogLevel
 from skyflow.vault.tokens import TokenizeRequest
 
-# To generate Bearer Token from credentials string.
-skyflow_credentials = {
-    "clientID": "<YOUR_CLIENT_ID>",
-    "clientName": "<YOUR_CLIENT_NAME>",
-    "tokenURI": "<YOUR_TOKEN_URI>",
-    "keyID": "<YOUR_KEY_ID>",
-    "privateKey": "<YOUR_PRIVATE_KEY>",
-}
-credentials_string = json.dumps(skyflow_credentials)
-# please pass one of api_key, token, credentials_string & path as credentials
+"""
+ * Skyflow Tokenization Example
+ * 
+ * This example demonstrates how to:
+ * 1. Configure Skyflow client credentials
+ * 2. Set up vault configuration
+ * 3. Tokenize sensitive data
+ * 4. Handle response and errors
+"""
 
-credentials = {
-    "token": "BEARER_TOKEN",  # bearer token
-    # api_key: 'API_KEY', # API_KEY
-    # path: 'PATH', # path to credentials file
-    # credentials_string: credentials_string, # credentials as string
-}
-
-skyflow_client = (
-    Skyflow.builder()
-    .add_vault_config(
-        {
-            "vault_id": "VAULT_ID",  # primary vault
-            "cluster_id": "CLUSTER_ID",  # ID from your vault URL Eg https://{clusterId}.vault.skyflowapis.com
-            "env": Env.PROD,  # Env by default it is set to PROD
-            "credentials": credentials,  # individual credentials
+def execute_tokenization():
+    try:
+        # Step 1: Configure Credentials
+        cred = {
+            'clientID': '<YOUR_CLIENT_ID>',  # Client identifier
+            'clientName': '<YOUR_CLIENT_NAME>',  # Client name
+            'tokenURI': '<YOUR_TOKEN_URI>',  # Token URI
+            'keyID': '<YOUR_KEY_ID>',  # Key identifier
+            'privateKey': '<YOUR_PRIVATE_KEY>',  # Private key for authentication
         }
-    )
-    .add_connection_config(
-        {
-            "connection_id": "CONNECTION_ID",
-            "connection_url": "CONNECTION_URL",
-            "credentials": credentials,
+
+        skyflow_credentials = {
+            'credentials_string': json.dumps(cred)
         }
-    )
-    .add_skyflow_credentials(
-        credentials
-    )  # skyflow credentials will be used if no individual credentials are passed
-    .set_log_level(LogLevel.INFO)  # set log level by default it is set to ERROR
-    .build()
-)
 
-# tokenize only supports value and column_group
-# sample data
-tokenize_values = [{"<VALUE_FIELD>": "<VALUE>", "<COLUMN_GROUP_FIELD>": "<VALUE>"}]
+        credentials = {
+            'api_key': '<SKYFLOW_API_KEY>'  # Using API Key authentication
+        }
 
-tokenize_request = TokenizeRequest(values=tokenize_values)
+        # Step 2: Configure Vault
+        primary_vault_config = {
+            'vault_id': '<VAULT_ID1>',  # primary vault
+            'cluster_id': '<CLUSTER_ID1>',  # Cluster ID from your vault URL
+            'env': Env.PROD,  # Deployment environment (PROD by default)
+            'credentials': credentials  # Authentication method
+        }
 
-response = skyflow_client.vault("VAULT_ID").tokenize(tokenize_request)
+        # Step 3: Configure & Initialize Skyflow Client
+        skyflow_client = (
+            Skyflow.builder()
+            .add_vault_config(primary_vault_config)
+            .add_skyflow_credentials(skyflow_credentials)  # Used if no individual credentials are passed
+            .set_log_level(LogLevel.ERROR)  # Logging verbosity
+            .build()
+        )
 
-print(response)
+        # Step 4: Prepare Tokenization Data
+        tokenize_values = [
+            {'value': '<VALUE1>', 'column_group': '<COLUMN_GROUP>'},
+            {'value': '<VALUE2>', 'column_group': '<COLUMN_GROUP>'},
+        ]
+
+        tokenize_request = TokenizeRequest(
+            values=tokenize_values
+        )
+
+        # Step 5: Execute Tokenization
+        response = skyflow_client.vault(primary_vault_config.get('vault_id')).tokenize(tokenize_request)
+
+        # Handle Successful Response
+        print('Tokenization Result:', response)
+
+    except SkyflowError as error:
+        # Comprehensive Error Handling
+        print('Skyflow Specific Error: ', {
+            'code': error.http_code,
+            'message': error.message,
+            'details': error.details
+        })
+    except Exception as error:
+        print('Unexpected Error:', error)
+
+# Invoke the tokenization function
+execute_tokenization()

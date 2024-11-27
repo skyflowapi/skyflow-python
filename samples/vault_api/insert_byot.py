@@ -2,59 +2,98 @@ import json
 from skyflow import Env
 from skyflow import Skyflow, LogLevel
 from skyflow.error import SkyflowError
-from skyflow.utils.enums import TokenStrict
+from skyflow.utils.enums import TokenMode
 from skyflow.vault.data import InsertRequest
 
-# To generate Bearer Token from credentials string.
-skyflow_credentials = {
-    'clientID': '<YOUR_CLIENT_ID>',
-    'clientName': '<YOUR_CLIENT_NAME>',
-    'tokenURI': '<YOUR_TOKEN_URI>',
-    'keyID': '<YOUR_KEY_ID>',
-    'privateKey': '<YOUR_PRIVATE_KEY>',
-}
-credentials_string = json.dumps(skyflow_credentials)
+"""
+ * Skyflow Insert with BYOT Example
+ * 
+ * This example demonstrates:
+ * 1. Configuring Skyflow client credentials
+ * 2. Setting up vault configuration
+ * 3. Utilizing Bring Your Own Token (BYOT) during insertion
+ * 4. Handling responses and errors
+"""
 
-# please pass one of api_key, token, credentials_string & path as credentials
-credentials = {
-    'token': 'BEARER_TOKEN',  # bearer token
-    # api_key: 'API_KEY', # API_KEY
-    # path: 'PATH', # path to credentials file
-    # credentials_string: credentials_string, # credentials as string
-}
-
-skyflow_client = (
-    Skyflow.builder()
-    .add_vault_config(
-        {
-            'vault_id': 'VAULT_ID',  # primary vault
-            'cluster_id': 'CLUSTER_ID',  # ID from your vault URL Eg https://{clusterId}.vault.skyflowapis.com
-            'env': Env.PROD,  # Env by default it is set to PROD
-            'credentials': credentials,  # individual credentials
+def perform_secure_data_insertion_with_byot():
+    try:
+        # Step 1: Configure Credentials
+        cred = {
+            'clientID': '<YOUR_CLIENT_ID>',  # Client identifier
+            'clientName': '<YOUR_CLIENT_NAME>',  # Client name
+            'tokenURI': '<YOUR_TOKEN_URI>',  # Token URI
+            'keyID': '<YOUR_KEY_ID>',  # Key identifier
+            'privateKey': '<YOUR_PRIVATE_KEY>',  # Private key for authentication
         }
-    )
-    .add_skyflow_credentials(
-        credentials
-    )  # skyflow credentials will be used if no individual credentials are passed
-    .set_log_level(LogLevel.INFO)  # set log level by default it is set to ERROR
-    .build()
-)
 
-# Initialize Client
+        skyflow_credentials = {
+            'credentials_string': json.dumps(cred)  # Token credentials
+        }
 
-try:
-    insert_data = [{'<FIELD_NAME1>': '<VALUE1>'}, {'<FIELD_NAME2>': '<VALUE2>'}]
+        credentials = {
+            'token': '<TOKEN>'  # Bearer token for authentication
+        }
 
-    token_data = [{'<FIELD_NAME1>': '<TOKEN1>'}, {'<FIELD_NAME2>': '<TOKEN2>'}]
+        # Step 2: Configure Vault
+        primary_vault_config = {
+            'vault_id': '<VAULT_ID1>',      # primary vault
+            'cluster_id': '<CLUSTER_ID1>',  # Cluster ID from your vault URL
+            'env': Env.PROD,                # Deployment environment (PROD by default)
+            'credentials': credentials      # Authentication method
+        }
 
-    insert_request = InsertRequest(
-        table_name='<TABLE_NAME>',
-        values=insert_data,
-        token_strict=TokenStrict.ENABLE,  # token strict is enabled,
-        tokens=token_data,
-    )
+        # Step 3: Configure & Initialize Skyflow Client
+        skyflow_client = (
+            Skyflow.builder()
+            .add_vault_config(primary_vault_config)
+            .add_skyflow_credentials(skyflow_credentials)  # Used if no individual credentials are passed
+            .set_log_level(LogLevel.ERROR)  # Logging verbosity
+            .build()
+        )
 
-    response = skyflow_client.vault('VAULT_ID').insert(insert_request)
-    print('Response:', response)
-except SkyflowError as e:
-    print('Error Occurred:', e)
+        # Step 4: Prepare Insertion Data
+        insert_data = [
+            {
+                'card_number': '<VALUE1>',
+                'cvv': '<VALUE2>',
+            },
+        ]
+
+        table_name = '<YOUR_TABLE_NAME>'
+
+        #  Step 5: BYOT Configuration
+        tokens = [
+            {
+                'card_number': '<TOKEN1>',
+                'cvv': '<TOKEN2>',
+            },
+        ]
+
+        insert_request = InsertRequest(
+            table_name=table_name,
+            values=insert_data,
+            token_mode=TokenMode.ENABLE,  # Enable Bring Your Own Token (BYOT)
+            tokens=tokens,                # Specify tokens to use for BYOT
+            return_tokens=True,           # Optionally get tokens for inserted data
+            continue_on_error=True        # Optionally continue on partial errors
+        )
+
+        # Step 6: Perform Secure Insertion
+        response = skyflow_client.vault(primary_vault_config.get('vault_id')).insert(insert_request)
+
+        # Handle Successful Response
+        print('Insertion Successful: ', response)
+
+    except SkyflowError as error:
+        # Comprehensive Error Handling
+        print('Skyflow Specific Error: ', {
+            'code': error.http_code,
+            'message': error.message,
+            'details': error.details
+        })
+    except Exception as error:
+        print('Unexpected Error:', error)
+
+
+# Invoke the secure data insertion function
+perform_secure_data_insertion_with_byot()

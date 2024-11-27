@@ -1,69 +1,94 @@
-import json
+from skyflow.error import SkyflowError
 from skyflow import Skyflow, LogLevel
 from skyflow import Env
 from skyflow.vault.data import DeleteRequest
 
-skyflow_credentials = {
-    'clientID': '<YOUR_CLIENT_ID>',
-    'clientName': '<YOUR_CLIENT_NAME>',
-    'tokenURI': '<YOUR_TOKEN_URI>',
-    'keyID': '<YOUR_KEY_ID>',
-    'privateKey': '<YOUR_PRIVATE_KEY>',
-}
-credentials_string = json.dumps(skyflow_credentials)
+"""
+Skyflow Secure Data Deletion Example
 
-credentials = {
-    'token': 'BEARER_TOKEN',  # bearer token
-    # api_key: 'API_KEY', # API_KEY
-    # path: 'PATH', # path to credentials file
-    # credentials_string: credentials_string, # credentials as string
-}
+This example demonstrates how to:
+    1. Configure Skyflow client credentials
+    2. Set up vault configuration
+    3. Create and perform delete requests
+    4. Handle response and errors
+"""
 
-skyflow_client = (
-    Skyflow.builder()
-    .add_vault_config(
-        {
+def perform_secure_data_deletion():
+    try:
+        # Step 1: Configure Bearer Token Credentials
+        credentials = {
+            'token': '<BEARER_TOKEN>',  # bearer token
+            # api_key: 'API_KEY', # API_KEY
+            # path: 'PATH', # path to credentials file
+            # credentials_string: 'your_credentials_string', # Credentials as string
+        }
+
+        # Step 2: Configure Vaults
+        primary_vault_config = {
             'vault_id': '<VAULT_ID1>',  # primary vault
-            'cluster_id': '<CLUSTER_ID1>',  # ID from your vault URL Eg https://{clusterId}.vault.skyflowapis.com
-            'env': Env.PROD,  # Env by default it is set to PROD
+            'cluster_id': '<CLUSTER_ID1>',  # Cluster ID from your vault URL
+            'env': Env.PROD,  # Deployment environment (PROD by default)
         }
-    )
-    .add_vault_config(
-        {
-            'vault_id': '<VAULT_ID2>',
-            'cluster_id': '<CLUSTER_ID2>',  # ID from your vault URL Eg https://{clusterId}.vault.skyflowapis.com
-            'env': Env.PROD,  # Env by default it is set to PROD
-            'credentials': credentials,
+
+        secondary_vault_config = {
+            'vault_id': 'VAULT_ID2',  # Secondary vault
+            'cluster_id': 'CLUSTER_ID2',  # Cluster ID from your vault URL
+            'env': Env.PROD,  # Deployment environment
+            'credentials': credentials
         }
-    )
-    .add_skyflow_credentials(
-        credentials
-    )  # skyflow credentials will be used if no individual credentials are passed
-    .set_log_level(LogLevel.ERROR)  # set log level by default it is set to ERROR
-    .build()
-)
 
-primary_delete_ids = [
-    'SKYFLOW_ID1',
-    'SKYFLOW_ID2',
-    'SKYFLOW_ID3',
-]
+        # Step 3: Configure & Initialize Skyflow Client
+        skyflow_client = (
+            Skyflow.builder()
+            .add_vault_config(primary_vault_config)
+            .add_vault_config(secondary_vault_config)
+            .set_log_level(LogLevel.ERROR)  # Logging verbosity
+            .build()
+        )
 
-# perform operations
+        # Step 4: Prepare Delete Request for Primary Vault
+        primary_delete_ids = ['<SKYFLOW_ID1>', '<SKYFLOW_ID2>']
 
-primary_delete_request = DeleteRequest(table='<TABLE_NAME>', ids=primary_delete_ids)
+        primary_table_name = '<PRIMARY_TABLE_NAME>'  # Replace with actual table name
 
-# VAULT_ID1 will use credentials if you don't specify individual credentials at config level
-response = skyflow_client.vault('VAULT_ID2').delete(primary_delete_request)
+        primary_delete_request = DeleteRequest(
+            table=primary_table_name,
+            ids=primary_delete_ids
+        )
+
+        # Perform Delete Operation for Primary Vault
+        primary_delete_response = skyflow_client.vault('<VAULT_ID>').delete(primary_delete_request)
+
+        # Handle Successful Response
+        print('Primary Vault Deletion Successful:', primary_delete_response)
+
+        # Step 5: Prepare Delete Request for Secondary Vault
+        secondary_delete_ids = ['<SKYFLOW_ID1>', '<SKYFLOW_ID2>']
+
+        secondary_table_name = '<SECONDARY_TABLE_NAME>'  # Replace with actual table name
+
+        secondary_delete_request = DeleteRequest(
+            table=secondary_table_name,
+            ids=secondary_delete_ids
+        )
+
+        # Perform Delete Operation for Secondary Vault
+        secondary_delete_response = skyflow_client.vault('<SECONDARY_VAULT_ID>').delete(secondary_delete_request)
+
+        #  Handle Successful Response
+        print('Secondary Vault Deletion Successful:', secondary_delete_response)
 
 
-secondary_delete_ids = [
-    'SKYFLOW_ID1',
-    'SKYFLOW_ID2',
-    'SKYFLOW_ID3',
-]
+    except SkyflowError as error:
+        # Comprehensive Error Handling
+        print('Skyflow Specific Error: ', {
+            'code': error.http_code,
+            'message': error.message,
+            'details': error.details
+        })
+    except Exception as error:
+        print('Unexpected Error:', error)
 
-secondary_delete_request = DeleteRequest(table='TABLE_NAME', ids=secondary_delete_ids)
 
-# VAULT_ID2 will use individual credentials at config level
-response = skyflow_client.vault('VAULT_ID2').delete(primary_delete_request)
+# Invoke the secure data deletion function
+perform_secure_data_deletion()

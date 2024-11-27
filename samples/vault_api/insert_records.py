@@ -1,54 +1,73 @@
-import json
+from skyflow.error import SkyflowError
 from skyflow import Env
 from skyflow import Skyflow, LogLevel
 from skyflow.vault.data import InsertRequest
 
-# To generate Bearer Token from credentials string.
-skyflow_credentials = {
-    'clientID': '<YOUR_CLIENT_ID>',
-    'clientName': '<YOUR_CLIENT_NAME>',
-    'tokenURI': '<YOUR_TOKEN_URI>',
-    'keyID': '<YOUR_KEY_ID>',
-    'privateKey': '<YOUR_PRIVATE_KEY>',
-}
-credentials_string = json.dumps(skyflow_credentials)
-# please pass one of api_key, token, credentials_string & path as credentials
-credentials = {
-    'token': 'BEARER_TOKEN',  # bearer token
-    # api_key: 'API_KEY', # API_KEY
-    # path: 'PATH', # path to credentials file
-    # credentials_string: credentials_string, # credentials as string
-}
-
-skyflow_client = (
-    Skyflow.builder()
-    .add_vault_config(
-        {
-            'vault_id': 'VAULT_ID',  # primary vault
-            'cluster_id': 'CLUSTER_ID',  # ID from your vault URL Eg https://{clusterId}.vault.skyflowapis.com
-            'env': Env.PROD,  # Env by default it is set to PROD
-            'credentials': credentials,  # individual credentials
+"""
+ * Skyflow Secure Data Insertion Example
+ * 
+ * This example demonstrates how to:
+ * 1. Configure Skyflow client credentials
+ * 2. Set up vault configuration
+ * 3. Create an insert request
+ * 4. Handle response and errors
+"""
+def perform_secure_data_insertion():
+    try:
+        # Step 1: Configure Credentials
+        credentials = {
+            'api_key': '<SKYFLOW_API_KEY>' # Using API Key authentication
         }
-    )
-    .add_skyflow_credentials(
-        credentials
-    )  # skyflow credentials will be used if no individual credentials are passed
-    .set_log_level(LogLevel.INFO)  # set log level by default it is set to ERROR
-    .build()
-)
 
-# sample data
-insert_data = [
-    {'<FIELD>': '<VALUE>', '<FIELD>': '<VALUE>'},
-]
+        # Step 2: Configure Vault
+        primary_vault_config = {
+            'vault_id': '<VAULT_ID1>',  # primary vault
+            'cluster_id': '<CLUSTER_ID1>',  # Cluster ID from your vault URL
+            'env': Env.PROD,  # Deployment environment (PROD by default)
+            'credentials': credentials  # Authentication method
+        }
 
-insert_request = InsertRequest(
-    table_name='TABLE_NAME',
-    values=insert_data,
-    continue_on_error=False,  # if continue on error is set true we will return request_index for errors
-    return_tokens=True,
-)
+        # Step 3: Configure & Initialize Skyflow Client
+        skyflow_client = (
+            Skyflow.builder()
+            .add_vault_config(primary_vault_config)
+            .set_log_level(LogLevel.ERROR)  # Logging verbosity
+            .build()
+        )
 
-response = skyflow_client.vault('VAULT_ID').insert(insert_request)
+        # Step 4: Prepare Insertion Data
+        insert_data = [
+            {
+                'card_number': '<VALUE1>',
+                'cvv': '<VALUE2>',
+            },
+        ]
 
-print(response)
+        table_name = '<YOUR_TABLE_NAME>' # Replace with your actual table name
+
+        # Step 5: Create Insert Request
+        insert_request = InsertRequest(
+            table_name=table_name,
+            values=insert_data,
+            return_tokens=True, # Optional: Get tokens for inserted data
+            continue_on_error=True # Optional: Continue on partial errors
+        )
+
+        # Step 6: Perform Secure Insertion
+        response = skyflow_client.vault(primary_vault_config.get('vault_id')).insert(insert_request)
+
+        # Handle Successful Response
+        print('Insertion Successful: ', response)
+
+    except SkyflowError as error:
+        # Comprehensive Error Handling
+        print('Skyflow Specific Error: ', {
+            'code': error.http_code,
+            'message': error.message,
+            'details': error.details
+        })
+    except Exception as error:
+        print('Unexpected Error:', error)
+
+# Invoke the secure data insertion function
+perform_secure_data_insertion()
