@@ -1,65 +1,85 @@
-import json
+from skyflow.error import SkyflowError
 from skyflow import Env
 from skyflow import Skyflow, LogLevel
-from skyflow.utils.enums import Method
+from skyflow.utils.enums import RequestMethod
 from skyflow.vault.connection import InvokeConnectionRequest
 
-# To generate Bearer Token from credentials string.
-skyflow_credentials = {
-    'clientID': '<YOUR_CLIENT_ID>',
-    'clientName': '<YOUR_CLIENT_NAME>',
-    'tokenURI': '<YOUR_TOKEN_URI>',
-    'keyID': '<YOUR_KEY_ID>',
-    'privateKey': '<YOUR_PRIVATE_KEY>',
-}
-credentials_string = json.dumps(skyflow_credentials)
-# please pass one of api_key, token, credentials_string & path as credentials
+"""
+ * Skyflow Connection Invocation Example
+ * 
+ * This example demonstrates how to:
+ * 1. Configure Skyflow client credentials
+ * 2. Set up vault and connection configurations
+ * 3. Invoke a connection
+ * 4. Handle response and errors
+"""
 
-credentials = {
-    'token': 'BEARER_TOKEN',  # bearer token
-    # api_key: 'API_KEY', # API_KEY
-    # path: 'PATH', # path to credentials file
-    # credentials_string: credentials_string, # credentials as string
-}
-
-skyflow_client = (
-    Skyflow.builder()
-    .add_vault_config(
-        {
-            'vault_id': 'VAULT_ID',  # primary vault
-            'cluster_id': 'CLUSTER_ID',  # ID from your vault URL Eg https://{clusterId}.vault.skyflowapis.com
-            'env': Env.PROD,  # Env by default it is set to PROD
-            'credentials': credentials,  # individual credentials
+def invoke_skyflow_connection():
+    try:
+        # Step 1: Configure Credentials
+        credentials = {
+            'api_key': '<YOUR_SKYFLOW_API_KEY>'  # Using API Key authentication
         }
-    )
-    .add_connection_config(
-        {
-            'connection_id': 'CONNECTION_ID',
-            'connection_url': 'CONNECTION_URL',
-            'credentials': credentials,
+
+        # Step 2: Configure Vault
+        primary_vault_config = {
+            'vault_id': '<YOUR_VAULT_ID1>',  # primary vault
+            'cluster_id': '<YOUR_CLUSTER_ID1>',  # Cluster ID from your vault URL
+            'env': Env.PROD,  # Deployment environment (PROD by default)
+            'credentials': credentials  # Authentication method
         }
-    )
-    .add_skyflow_credentials(
-        credentials
-    )  # skyflow credentials will be used if no individual credentials are passed
-    .set_log_level(LogLevel.INFO)  # set log level by default it is set to ERROR
-    .build()
-)
+
+        # Step 3: Configure Connection
+        primary_connection_config = {
+            'connection_id': '<YOUR_CONNECTION_ID>',   # Unique connection identifier
+            'connection_url': '<YOUR_CONNECTION_URL>', # Connection url
+            'credentials': credentials            # Connection-specific credentials
+        }
+
+        # Step 4: Configure & Initialize Skyflow Client
+        skyflow_client = (
+            Skyflow.builder()
+            .add_vault_config(primary_vault_config)
+            .add_connection_config(primary_connection_config)
+            .set_log_level(LogLevel.ERROR)  # Logging verbosity
+            .build()
+        )
+
+        # Step 5: Prepare Connection Request
+        request_body = {
+            '<KEY1>': '<VALUE1>', # Replace with actual key-value pairs
+            '<KEY2>': '<VALUE2>'
+        }
+
+        request_headers = {
+            'Content-Type': 'application/json'
+        }
+
+        request_method = RequestMethod.POST
+
+        # Step 6: Create Invoke Connection Request
+        invoke_connection_request = InvokeConnectionRequest(
+            method=request_method,
+            body=request_body,
+            headers=request_headers
+        )
+
+        # Step 7: Invoke Connection
+        response = skyflow_client.connection().invoke(invoke_connection_request)
+
+        # Handle Successful Response
+        print('Connection invocation successful: ', response)
+
+    except SkyflowError as error:
+        # Comprehensive Error Handling
+        print('Skyflow Specific Error: ', {
+            'code': error.http_code,
+            'message': error.message,
+            'details': error.details
+        })
+    except Exception as error:
+        print('Unexpected Error:', error)
 
 
-body = {'KEY1': 'VALUE1', 'KEY2': 'VALUE2'}
-headers = {'KEY1': 'VALUE1'}
-path_params = {'KEY1': 'VALUE1'}
-query_params = {'KEY1': 'VALUE1'}
-
-invoke_connection_request = InvokeConnectionRequest(
-    method=Method.POST,
-    body=body,
-    headers=headers,  # optional
-    path_params=path_params,  # optional
-    query_params=query_params,  # optional
-)
-# will return the first connection
-response = skyflow_client.connection().invoke(invoke_connection_request)
-
-print(response)
+# Invoke the connection function
+invoke_skyflow_connection()

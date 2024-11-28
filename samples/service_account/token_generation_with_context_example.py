@@ -8,6 +8,7 @@ from skyflow.service_account import (
 file_path = 'CREDENTIALS_FILE_PATH'
 bearer_token = ''
 
+# To generate Bearer Token from credentials string.
 skyflow_credentials = {
     'clientID': '<YOUR_CLIENT_ID>',
     'clientName': '<YOUR_CLIENT_NAME>',
@@ -17,21 +18,38 @@ skyflow_credentials = {
 }
 credentials_string = json.dumps(skyflow_credentials)
 
-# Generate bearer token from credentials file path
 options = {'ctx': '<CONTEXT_ID>'}
 
-if is_expired(bearer_token):
-    bearer_token, token_type = generate_bearer_token(
-        '<YOUR_CREDENTIALS_FILE_PATH>', options
-    )
+def get_bearer_token_with_context_from_file_path():
+    # Generate bearer token with context from credentials file path.
+    global bearer_token
 
-    print(bearer_token, token_type)
+    try:
+        if not is_expired(bearer_token):
+            return bearer_token
+        else:
+            token, _ = generate_bearer_token(file_path, options)
+            bearer_token = token
+            return bearer_token
+
+    except Exception as e:
+        print(f'Error generating token from file path: {str(e)}')
 
 
-# Generate bearer token from credentials string
-if is_expired(bearer_token):
-    bearer_token, token_type = generate_bearer_token_from_creds(
-        credentials_string, options
-    )
+def get_bearer_token_with_context_from_credentials_string():
+    # Generate bearer token with context from credentials string.
+    global bearer_token
+    try:
+        if not is_expired(bearer_token):
+            return bearer_token
+        else:
+            token, _ = generate_bearer_token_from_creds(credentials_string, options)
+            bearer_token = token
+            return bearer_token
+    except Exception as e:
+        print(f"Error generating token from credentials string: {str(e)}")
 
-    print(bearer_token, token_type)
+
+print(get_bearer_token_with_context_from_file_path())
+
+print(get_bearer_token_with_context_from_credentials_string())

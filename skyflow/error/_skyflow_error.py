@@ -9,5 +9,10 @@ class SkyflowError(Exception):
                  http_status = None,
                  details = None):
         self.message = message
+        self.http_code = http_code
+        self.grpc_code = grpc_code
+        self.http_status = http_status
+        self.details = details
+        self.request_id = request_id
         log_error(message, http_code, request_id, grpc_code, http_status, details)
         super().__init__()
