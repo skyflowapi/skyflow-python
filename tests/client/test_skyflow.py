@@ -69,8 +69,9 @@ class TestSkyflow(unittest.TestCase):
     def test_remove_vault_config_invalid(self, mock_log_error):
         self.builder.add_vault_config(VALID_VAULT_CONFIG)
         self.builder.build()
-        self.builder.remove_vault_config("invalid_id")
-        mock_log_error.assert_called_once()
+        with self.assertRaises(SkyflowError) as context:
+            self.builder.remove_vault_config("invalid_id")
+        self.assertEqual(context.exception.message, SkyflowMessages.Error.INVALID_VAULT_ID.value)
 
 
     @patch('skyflow.vault.client.client.VaultClient.update_config')
@@ -157,8 +158,9 @@ class TestSkyflow(unittest.TestCase):
     def test_remove_connection_config_invalid(self, mock_log_error):
         self.builder.add_connection_config(VALID_CONNECTION_CONFIG)
         self.builder.build()
-        self.builder.remove_connection_config("invalid_id")
-        mock_log_error.assert_called_once()
+        with self.assertRaises(SkyflowError) as context:
+            self.builder.remove_connection_config("invalid_id")
+        self.assertEqual(context.exception.message, SkyflowMessages.Error.INVALID_CONNECTION_ID.value)
 
     @patch('skyflow.vault.client.client.VaultClient.update_config')
     def test_update_connection_config_valid(self, mock_validate):
