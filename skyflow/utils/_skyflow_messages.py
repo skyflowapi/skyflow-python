@@ -120,12 +120,12 @@ class SkyflowMessages:
         INVALID_TOKENS_LIST_VALUE = f"{error_prefix} Validation error. The 'tokens' key has a value of type {{}}. Specify 'tokens' as a list."
         EMPTY_TOKENS_LIST_VALUE = f"{error_prefix} Validation error. Tokens are empty in detokenize payload. Specify at lease one token"
 
-        INVALID_TOKENIZE_PARAMETERS = f"{error_prefix} Validation error. The 'tokenize_parameters' key has a value of type {{}}. Specify 'tokenize_parameters' as a list."
-        EMPTY_TOKENIZE_PARAMETERS = f"{error_prefix} Validation error. Tokenize parameters are empty in tokenize payload. Specify at least one parameter."
-        INVALID_TOKENIZE_PARAMETER = f"{error_prefix} Validation error. Tokenize parameter at index {{}} has a value of type {{}}. Specify as a dictionary."
-        EMPTY_TOKENIZE_PARAMETER_VALUE = f"{error_prefix} Validation error. Tokenize parameter value at index {{}} is empty. Specify a valid value."
-        EMPTY_TOKENIZE_PARAMETER_COLUMN_GROUP = f"{error_prefix} Validation error. Tokenize parameter column group at index {{}} is empty. Specify a valid column group."
-        INVALID_TOKENIZE_PARAMETER_KEY = f"{error_prefix} Validation error. Tokenize parameter key at index {{}} is invalid. Specify a valid key value."
+        INVALID_TOKENIZE_PARAMETERS = f"{error_prefix} Validation error. The 'values' key has a value of type {{}}. Specify 'tokenize_parameters' as a list."
+        EMPTY_TOKENIZE_PARAMETERS = f"{error_prefix} Validation error. Tokenize values are empty in tokenize payload. Specify at least one parameter."
+        INVALID_TOKENIZE_PARAMETER = f"{error_prefix} Validation error. Tokenize value at index {{}} has a value of type {{}}. Specify as a dictionary."
+        EMPTY_TOKENIZE_PARAMETER_VALUE = f"{error_prefix} Validation error. Tokenize value at index {{}} is empty. Specify a valid value."
+        EMPTY_TOKENIZE_PARAMETER_COLUMN_GROUP = f"{error_prefix} Validation error. Tokenize column group at index {{}} is empty. Specify a valid column group."
+        INVALID_TOKENIZE_PARAMETER_KEY = f"{error_prefix} Validation error. Tokenize value key at index {{}} is invalid. Specify a valid key value."
 
         INVALID_REQUEST_BODY = f"{error_prefix} Validation error. Invalid request body. Specify the request body as an object."
         INVALID_REQUEST_HEADERS = f"{error_prefix} Validation error. Invalid request headers. Specify the request as an object."

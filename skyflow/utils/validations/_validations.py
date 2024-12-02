@@ -515,7 +515,7 @@ def validate_detokenize_request(logger, request):
         raise SkyflowError(SkyflowMessages.Error.INVALID_TOKENS_LIST_VALUE.value(type(request.tokens)), invalid_input_error_code)
 
 def validate_tokenize_request(logger, request):
-    parameters = request.tokenize_parameters
+    parameters = request.values
     if not isinstance(parameters, list):
         raise SkyflowError(SkyflowMessages.Error.INVALID_TOKENIZE_PARAMETERS.value.format(type(parameters)), invalid_input_error_code)
 
