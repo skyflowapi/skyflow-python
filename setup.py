@@ -6,7 +6,7 @@ import sys
 
 if sys.version_info < (3, 7):
     raise RuntimeError("skyflow requires Python 3.7+")
-current_version = '1.15.1.dev0+f911aa5'
+current_version = '1.15.1.dev0+9c43c17'
 
 setup(
     name='skyflow',
