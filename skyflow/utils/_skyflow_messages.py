@@ -284,6 +284,8 @@ class SkyflowMessages:
         UPDATE = "UPDATE"
         DELETE = "DELETE"
 
+    class HttpStatus(Enum):
+        BAD_REQUEST = "Bad Request"
 
     class Warning(Enum):
         WARNING_MESSAGE = "WARNING MESSAGE"

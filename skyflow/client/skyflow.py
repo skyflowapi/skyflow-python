@@ -99,9 +99,8 @@ class Skyflow:
             if vault_id in self.__vault_configs.keys():
                 self.__vault_configs.pop(vault_id)
             else:
-                log_error(SkyflowMessages.Error.INVALID_VAULT_ID.value,
-                          SkyflowMessages.ErrorCodes.INVALID_INPUT.value,
-                          logger = self.__logger)
+                raise SkyflowError(SkyflowMessages.Error.INVALID_VAULT_ID.value,
+                          SkyflowMessages.ErrorCodes.INVALID_INPUT.value)
 
         def update_vault_config(self, config):
             validate_update_vault_config(self.__logger, config)
@@ -141,9 +140,8 @@ class Skyflow:
             if connection_id in self.__connection_configs.keys():
                 self.__connection_configs.pop(connection_id)
             else:
-                log_error(SkyflowMessages.Error.INVALID_CONNECTION_ID.value,
-                          SkyflowMessages.ErrorCodes.INVALID_INPUT.value,
-                          logger = self.__logger)
+                raise SkyflowError(SkyflowMessages.Error.INVALID_CONNECTION_ID.value,
+                          SkyflowMessages.ErrorCodes.INVALID_INPUT.value)
 
         def update_connection_config(self, config):
             validate_update_connection_config(self.__logger, config)

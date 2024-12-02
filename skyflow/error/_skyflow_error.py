@@ -1,3 +1,4 @@
+from skyflow.utils import SkyflowMessages
 from skyflow.utils.logger import log_error
 
 class SkyflowError(Exception):
@@ -11,7 +12,7 @@ class SkyflowError(Exception):
         self.message = message
         self.http_code = http_code
         self.grpc_code = grpc_code
-        self.http_status = http_status
+        self.http_status = http_status if http_status else SkyflowMessages.HttpStatus.BAD_REQUEST.value
         self.details = details
         self.request_id = request_id
         log_error(message, http_code, request_id, grpc_code, http_status, details)

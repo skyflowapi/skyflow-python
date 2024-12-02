@@ -341,7 +341,7 @@ def parse_invoke_connection_response(api_response: requests.Response):
 
 
 def log_and_reject_error(description, status_code, request_id, http_status=None, grpc_code=None, details=None, logger = None):
-    log_error(description, status_code, request_id, grpc_code, http_status, details, logger= logger)
+    raise SkyflowError(description, status_code, request_id, grpc_code, http_status, details)
 
 def handle_exception(error, logger):
     request_id = error.headers.get('x-request-id', 'unknown-request-id')

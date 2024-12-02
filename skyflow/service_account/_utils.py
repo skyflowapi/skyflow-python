@@ -27,7 +27,7 @@ def is_expired(token, logger = None):
     except jwt.ExpiredSignatureError:
         return True
     except Exception:
-        log_error(SkyflowMessages.Error.JWT_DECODE_ERROR.value, invalid_input_error_code, logger = logger)
+        log_error_log(SkyflowMessages.Error.JWT_DECODE_ERROR.value, invalid_input_error_code)
         return True
 
 def generate_bearer_token(credentials_file_path, options = None, logger = None):
