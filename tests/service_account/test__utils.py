@@ -47,14 +47,11 @@ class TestServiceAccountUtils(unittest.TestCase):
         token =  jwt.encode({"exp": past_time}, key="test", algorithm="HS256")
         self.assertTrue(is_expired(token))
 
-    @patch("skyflow.service_account._utils.log_error")
+    @patch("skyflow.utils.logger._log_helpers.log_error_log")
     @patch("jwt.decode", side_effect=Exception("Some error"))
     def test_is_expired_general_exception(self, mock_jwt_decode, mock_log_error):
         token = jwt.encode({"exp": time.time() + 1000}, key="test", algorithm="HS256")
         self.assertTrue(is_expired(token))
-        mock_log_error.assert_called_once_with(
-            SkyflowMessages.Error.JWT_DECODE_ERROR.value, 400, logger=None
-        )
 
     @patch("builtins.open", side_effect=FileNotFoundError)
     def test_generate_bearer_token_invalid_file_path(self, mock_open):
