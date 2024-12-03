@@ -8,6 +8,7 @@ import requests
 import platform
 import sys
 import re
+from urllib.parse import quote
 from skyflow.error import SkyflowError
 from skyflow.generated.rest import V1UpdateRecordResponse, V1BulkDeleteRecordResponse, \
     V1DetokenizeResponse, V1TokenizeResponse, V1GetQueryResponse, V1BulkGetRecordResponse
@@ -377,3 +378,11 @@ def handle_text_error(err, data, request_id, logger):
 def handle_generic_error(err, request_id, logger):
     description = "An error occurred."
     log_and_reject_error(description, err.status, request_id, logger = logger)
+
+
+def encode_column_values(get_request):
+    encoded_column_values = list()
+    for column in get_request.column_values:
+        encoded_column_values.append(quote(column))
+
+    return encoded_column_values

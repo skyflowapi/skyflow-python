@@ -5,7 +5,7 @@ from skyflow.generated.rest import V1FieldRecords, RecordServiceInsertRecordBody
 from skyflow.generated.rest.exceptions import BadRequestException, UnauthorizedException
 from skyflow.utils import SkyflowMessages, parse_insert_response, \
     handle_exception, parse_update_record_response, parse_delete_response, parse_detokenize_response, \
-    parse_tokenize_response, parse_query_response, parse_get_response
+    parse_tokenize_response, parse_query_response, parse_get_response, encode_column_values
 from skyflow.utils.logger import log_info, log_error_log
 from skyflow.utils.validations import validate_insert_request, validate_delete_request, validate_query_request, \
     validate_get_request, validate_update_request, validate_detokenize_request, validate_tokenize_request
@@ -23,7 +23,17 @@ class Vault:
         if tokens is None:
             return [V1FieldRecords(fields=record) for record in values]
         else:
-            return [V1FieldRecords(fields=record, tokens=token) for record, token in zip(values, tokens)]
+            bulk_record_list = []
+            for i, value in enumerate(values):
+                token = tokens[i] if tokens is not None and i < len(tokens) else None
+                bulk_record = V1FieldRecords(
+                    fields=value,
+                    tokens=token
+                )
+                if token is not None:
+                    bulk_record.tokens = token
+                bulk_record_list.append(bulk_record)
+            return bulk_record_list
 
     def __build_batch_field_records(self, values, tokens, table_name, return_tokens, upsert):
         batch_record_list = []
@@ -151,6 +161,7 @@ class Vault:
     def get(self, request: GetRequest):
         log_info(SkyflowMessages.Info.VALIDATE_GET_REQUEST.value, self.__vault_client.get_logger())
         validate_get_request(self.__vault_client.get_logger(), request)
+        request.column_values = encode_column_values(request)
         log_info(SkyflowMessages.Info.GET_REQUEST_RESOLVED.value, self.__vault_client.get_logger())
         self.__initialize()
         records_api = self.__vault_client.get_records_api()
