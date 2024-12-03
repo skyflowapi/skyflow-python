@@ -161,7 +161,8 @@ class Vault:
     def get(self, request: GetRequest):
         log_info(SkyflowMessages.Info.VALIDATE_GET_REQUEST.value, self.__vault_client.get_logger())
         validate_get_request(self.__vault_client.get_logger(), request)
-        request.column_values = encode_column_values(request)
+        if request.column_values:
+            request.column_values = encode_column_values(request)
         log_info(SkyflowMessages.Info.GET_REQUEST_RESOLVED.value, self.__vault_client.get_logger())
         self.__initialize()
         records_api = self.__vault_client.get_records_api()
