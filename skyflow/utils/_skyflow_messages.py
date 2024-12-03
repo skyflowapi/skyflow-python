@@ -132,6 +132,7 @@ class SkyflowMessages:
         INVALID_URL = f"{error_prefix} Validation error. Connection url {{}} is invalid. Specify a valid connection url."
         INVALID_PATH_PARAMS = f"{error_prefix} Validation error. Path parameters aren't valid. Specify valid path parameters."
         INVALID_QUERY_PARAMS = f"{error_prefix} Validation error. Query parameters aren't valid. Specify valid query parameters."
+        INVALID_REQUEST_METHOD = f"{error_prefix} Validation error. Invalid request method. Specify the request method as enum RequestMethod"
 
         MISSING_PRIVATE_KEY = f"{error_prefix} Initialization failed. Unable to read private key in credentials. Verify your private key."
         MISSING_CLIENT_ID = f"{error_prefix} Initialization failed. Unable to read client ID in credentials. Verify your client ID."

@@ -125,6 +125,11 @@ class TestSkyflow(unittest.TestCase):
         self.builder.build()
         mock_validate_vault_config.assert_called_once_with(self.builder._Builder__logger, VALID_VAULT_CONFIG)
 
+    def test_get_log_level(self):
+        builder = self.builder.set_log_level(LogLevel.ERROR)
+        client = self.builder.build()
+        self.assertEqual(LogLevel.ERROR, client.get_log_level())
+
     def test_add_connection_config_valid(self):
         result = self.builder.add_connection_config(VALID_CONNECTION_CONFIG)
 

@@ -1,9 +1,8 @@
 import json
-
 import requests
-from skyflow.error import SkyflowError
+from skyflow.generated.rest.exceptions import UnauthorizedException
 from skyflow.utils import construct_invoke_connection_request, SkyflowMessages, get_metrics, \
-    parse_invoke_connection_response
+    parse_invoke_connection_response, handle_exception
 from skyflow.utils.logger import log_info
 from skyflow.vault.connection import InvokeConnectionRequest
 
@@ -35,6 +34,8 @@ class Connection:
             session.close()
             invoke_connection_response = parse_invoke_connection_response(response)
             return invoke_connection_response
+
         except Exception as e:
-            print(e)
-            raise SkyflowError(SkyflowMessages.Error.INVOKE_CONNECTION_FAILED.value, SkyflowMessages.ErrorCodes.SERVER_ERROR.value)
+            handle_exception(e, self.__vault_client.get_logger())
+        except UnauthorizedException as e:
+            handle_exception(e, self.__vault_client.get_logger())

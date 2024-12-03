@@ -57,6 +57,9 @@ class Skyflow:
         self.__builder._Builder__set_log_level(log_level)
         return self
 
+    def get_log_level(self):
+        return self.__builder._Builder__log_level
+
     def update_log_level(self, log_level):
         self.__builder._Builder__set_log_level(log_level)
 

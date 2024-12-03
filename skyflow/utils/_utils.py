@@ -105,6 +105,12 @@ def construct_invoke_connection_request(request, connection_url, logger) -> Prep
 
     validate_invoke_connection_params(logger, request.query_params, request.path_params)
 
+    if not hasattr(request.method, 'value'):
+        raise SkyflowError(SkyflowMessages.Error.INVALID_REQUEST_METHOD.value, invalid_input_error_code)
+
+    if not request.method.value:
+        raise SkyflowError(SkyflowMessages.Error.INVALID_REQUEST_METHOD.value, invalid_input_error_code)
+
     try:
         return requests.Request(
             method = request.method.value,
@@ -114,7 +120,7 @@ def construct_invoke_connection_request(request, connection_url, logger) -> Prep
             params = request.query_params,
             files = files
         ).prepare()
-    except requests.exceptions.InvalidURL:
+    except Exception:
         raise SkyflowError(SkyflowMessages.Error.INVALID_URL.value.format(connection_url), invalid_input_error_code)
 
 
