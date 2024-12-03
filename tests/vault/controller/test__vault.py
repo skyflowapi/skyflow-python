@@ -1,6 +1,5 @@
 import unittest
 from unittest.mock import Mock, patch
-
 from skyflow.generated.rest import RecordServiceBatchOperationBody, V1BatchRecord, RecordServiceInsertRecordBody, \
     V1FieldRecords, RecordServiceUpdateRecordBody, RecordServiceBulkDeleteRecordBody, QueryServiceExecuteQueryBody, \
     V1DetokenizeRecordRequest, V1DetokenizePayload, V1TokenizePayload, V1TokenizeRecordRequest, RedactionEnumREDACTION
@@ -106,6 +105,58 @@ class TestVault(unittest.TestCase):
         expected_body = RecordServiceInsertRecordBody(
             records=[
                 V1FieldRecords(fields={"field": "value"})
+            ],
+            tokenization=True,
+            upsert=None,
+            homogeneous=True
+        )
+
+        # Mock API response for a successful insert
+        mock_api_response = Mock()
+        mock_api_response.records = [{"skyflow_id": "id1", "tokens": {"token_field": "token_val1"}}]
+
+        # Expected parsed response
+        expected_inserted_fields = [{'skyflow_id': 'id1', 'token_field': 'token_val1'}]
+        expected_response = InsertResponse(inserted_fields=expected_inserted_fields)
+
+        # Set the return value for the parse response
+        mock_parse_response.return_value = expected_response
+        records_api = self.vault_client.get_records_api.return_value
+        records_api.record_service_insert_record.return_value = mock_api_response
+
+        # Call the insert function
+        result = self.vault.insert(request)
+
+        # Assertions
+        mock_validate.assert_called_once_with(self.vault_client.get_logger(), request)
+        records_api.record_service_insert_record.assert_called_once_with(VAULT_ID, TABLE_NAME,
+                                                                         expected_body)
+        mock_parse_response.assert_called_once_with(mock_api_response, False)
+
+        # Assert that the result matches the expected InsertResponse
+        self.assertEqual(result.inserted_fields, expected_inserted_fields)
+        self.assertEqual(result.errors, [])  # No errors expected
+
+    @patch("skyflow.vault.controller._vault.validate_insert_request")
+    @patch("skyflow.vault.controller._vault.parse_insert_response")
+    def test_insert_with_continue_on_error_false_when_tokens_are_not_none(self, mock_parse_response, mock_validate):
+        """Test insert functionality when continue_on_error is False, ensuring a single bulk insert."""
+
+        # Mock request with continue_on_error set to False
+        request = InsertRequest(
+            table_name=TABLE_NAME,
+            values=[{"field": "value"}],
+            tokens=[{"token_field": "token_val1"}],
+            return_tokens=True,
+            upsert=None,
+            homogeneous=True,
+            continue_on_error=False
+        )
+
+        # Expected API request body based on InsertRequest parameters
+        expected_body = RecordServiceInsertRecordBody(
+            records=[
+                V1FieldRecords(fields={"field": "value"}, tokens={"token_field": "token_val1"})
             ],
             tokenization=True,
             upsert=None,
@@ -250,7 +301,8 @@ class TestVault(unittest.TestCase):
             fields=["field1", "field2"],
             offset="0",
             limit="10",
-            download_url=True
+            download_url=True,
+            column_values=None
         )
 
         # Expected payload
@@ -295,6 +347,58 @@ class TestVault(unittest.TestCase):
             VAULT_ID,
             **expected_payload
         )
+        mock_parse_response.assert_called_once_with(mock_api_response)
+
+        # Check that the result matches the expected GetResponse
+        self.assertEqual(result.data, expected_data)
+        self.assertEqual(result.errors, [])  # No errors expected
+
+    @patch("skyflow.vault.controller._vault.validate_get_request")
+    @patch("skyflow.vault.controller._vault.parse_get_response")
+    def test_get_successful_with_column_values(self, mock_parse_response, mock_validate):
+        """Test get functionality for a successful get request."""
+
+        # Mock request
+        request = GetRequest(
+            table=TABLE_NAME,
+            redaction_type=RedactionType.PLAIN_TEXT,
+            column_values=['customer+15@gmail.com'],
+            column_name='email'
+        )
+
+        # Expected payload
+        expected_payload = {
+            "object_name": request.table,
+            "tokenization": request.return_tokens,
+            "column_name": request.column_name,
+            "column_values": request.column_values
+        }
+
+        # Mock API response
+        mock_api_response = Mock()
+        mock_api_response.records = [
+            Mock(fields={"field1": "value1", "field2": "value2"}),
+            Mock(fields={"field1": "value3", "field2": "value4"})
+        ]
+
+        # Expected parsed response
+        expected_data = [
+            {"field1": "value1", "field2": "value2"},
+            {"field1": "value3", "field2": "value4"}
+        ]
+        expected_response = GetResponse(data=expected_data, errors=[])
+
+        # Set the return value for parse_get_response
+        mock_parse_response.return_value = expected_response
+        records_api = self.vault_client.get_records_api.return_value
+        records_api.record_service_bulk_get_record.return_value = mock_api_response
+
+        # Call the get function
+        result = self.vault.get(request)
+
+        # Assertions
+        mock_validate.assert_called_once_with(self.vault_client.get_logger(), request)
+        records_api.record_service_bulk_get_record.assert_called_once()
         mock_parse_response.assert_called_once_with(mock_api_response)
 
         # Check that the result matches the expected GetResponse
