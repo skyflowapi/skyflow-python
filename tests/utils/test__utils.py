@@ -2,13 +2,15 @@ import unittest
 from unittest.mock import patch, Mock
 import os
 import json
+from unittest.mock import MagicMock
+from urllib.parse import quote
 from requests import PreparedRequest
 from requests.models import HTTPError
 from skyflow.error import SkyflowError
 from skyflow.utils import get_credentials, SkyflowMessages, get_vault_url, construct_invoke_connection_request, \
     parse_insert_response, parse_update_record_response, parse_delete_response, parse_get_response, \
     parse_detokenize_response, parse_tokenize_response, parse_query_response, parse_invoke_connection_response, \
-    handle_exception, validate_api_key
+    handle_exception, validate_api_key, encode_column_values
 from skyflow.utils._utils import parse_path_params, to_lowercase_keys, get_metrics
 from skyflow.utils.enums import EnvUrls, Env, ContentType
 from skyflow.vault.connection import InvokeConnectionResponse
@@ -384,3 +386,17 @@ class TestUtils(unittest.TestCase):
     def test_validate_api_key_invalid_pattern(self):
         invalid_key = "sky-ABCDE-1234567890GHIJKL7890abcdef"
         self.assertFalse(validate_api_key(invalid_key))
+
+    def test_encode_column_values(self):
+        get_request = MagicMock()
+        get_request.column_values = ["Hello World!", "foo/bar", "key=value", "email@example.com"]
+
+        expected_encoded_values = [
+            quote("Hello World!"),
+            quote("foo/bar"),
+            quote("key=value"),
+            quote("email@example.com"),
+        ]
+
+        result = encode_column_values(get_request)
+        self.assertEqual(result, expected_encoded_values)
