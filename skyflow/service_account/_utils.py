@@ -117,7 +117,6 @@ def get_signed_tokens(credentials_obj, options):
     try:
         expiry_time = time.time() + options.get("time_to_live", 60)
         prefix = "signed_token_"
-        response_array=[]
 
         if options and options.get("data_tokens"):
             for token in options["data_tokens"]:
@@ -136,9 +135,8 @@ def get_signed_tokens(credentials_obj, options):
                 private_key = credentials_obj.get("privateKey")
                 signed_jwt = jwt.encode(claims, private_key, algorithm="RS256")
                 response_object = get_signed_data_token_response_object(prefix + signed_jwt, token)
-                response_array.append(response_object)
         log_info(SkyflowMessages.Info.GET_SIGNED_DATA_TOKEN_SUCCESS.value)
-        return response_array
+        return response_object
 
     except Exception:
         raise SkyflowError(SkyflowMessages.Error.INVALID_CREDENTIALS.value, invalid_input_error_code)
