@@ -1,5 +1,4 @@
 import json
-
 import requests
 from skyflow.error import SkyflowError
 from skyflow.utils import construct_invoke_connection_request, SkyflowMessages, get_metrics, \
@@ -35,6 +34,7 @@ class Connection:
             session.close()
             invoke_connection_response = parse_invoke_connection_response(response)
             return invoke_connection_response
+
         except Exception as e:
-            print(e)
-            raise SkyflowError(SkyflowMessages.Error.INVOKE_CONNECTION_FAILED.value, SkyflowMessages.ErrorCodes.SERVER_ERROR.value)
+            raise SkyflowError(SkyflowMessages.Error.INVOKE_CONNECTION_FAILED.value,
+                               SkyflowMessages.ErrorCodes.SERVER_ERROR.value)
