@@ -1,10 +1,8 @@
 import json
 import requests
-
 from skyflow.error import SkyflowError
-from skyflow.generated.rest.exceptions import UnauthorizedException
 from skyflow.utils import construct_invoke_connection_request, SkyflowMessages, get_metrics, \
-    parse_invoke_connection_response, handle_exception
+    parse_invoke_connection_response
 from skyflow.utils.logger import log_info
 from skyflow.vault.connection import InvokeConnectionRequest
 

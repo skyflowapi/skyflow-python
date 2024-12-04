@@ -108,9 +108,6 @@ def construct_invoke_connection_request(request, connection_url, logger) -> Prep
     if not hasattr(request.method, 'value'):
         raise SkyflowError(SkyflowMessages.Error.INVALID_REQUEST_METHOD.value, invalid_input_error_code)
 
-    if not request.method.value:
-        raise SkyflowError(SkyflowMessages.Error.INVALID_REQUEST_METHOD.value, invalid_input_error_code)
-
     try:
         return requests.Request(
             method = request.method.value,

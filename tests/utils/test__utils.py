@@ -122,6 +122,21 @@ class TestUtils(unittest.TestCase):
 
         self.assertEqual(context.exception.message, SkyflowMessages.Error.INVALID_REQUEST_HEADERS.value)
 
+    def test_construct_invoke_connection_request_with_invalid_request_method(self):
+        mock_connection_request = Mock()
+        mock_connection_request.path_params = {"param1": "value1"}
+        mock_connection_request.headers = {"Content-Type": ContentType.JSON.value}
+        mock_connection_request.body = {"key": "value"}
+        mock_connection_request.method = "POST"
+        mock_connection_request.query_params = {"query": "test"}
+
+        connection_url = "https://example.com/{param1}/endpoint"
+
+        with self.assertRaises(SkyflowError) as context:
+            result = construct_invoke_connection_request(mock_connection_request, connection_url, logger=None)
+
+        self.assertEqual(context.exception.message, SkyflowMessages.Error.INVALID_REQUEST_METHOD.value)
+
     def test_construct_invoke_connection_request_with_invalid_request_body(self):
         mock_connection_request = Mock()
         mock_connection_request.path_params = {"param1": "value1"}
