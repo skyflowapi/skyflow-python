@@ -5,7 +5,7 @@ import jwt
 from skyflow.error import SkyflowError
 from skyflow.generated.rest.models import V1GetAuthTokenRequest
 from skyflow.service_account.client.auth_client import AuthClient
-from skyflow.utils.logger import log_error, log_info, log_error_log, Logger
+from skyflow.utils.logger import log_info, log_error_log
 from skyflow.utils import get_base_url, format_scope, SkyflowMessages
 
 
@@ -115,7 +115,7 @@ def get_signed_jwt(options, client_id, key_id, token_uri, private_key, logger):
 
 def get_signed_tokens(credentials_obj, options):
     try:
-        expiry_time = time.time() + options.get("time_to_live", 60)
+        expiry_time = int(time.time()) + options.get("time_to_live", 60)
         prefix = "signed_token_"
 
         if options and options.get("data_tokens"):
@@ -123,10 +123,10 @@ def get_signed_tokens(credentials_obj, options):
                 claims = {
                     "iss": "sdk",
                     "key": credentials_obj.get("keyID"),
-                    "aud": credentials_obj.get("tokenURI"),
                     "exp": expiry_time,
                     "sub": credentials_obj.get("clientID"),
-                    "tok": token
+                    "tok": token,
+                    "iat": int(time.time()),
                 }
 
                 if "ctx" in options:
