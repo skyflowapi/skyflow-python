@@ -2,7 +2,7 @@ from skyflow.generated.rest import V1FieldRecords, RecordServiceInsertRecordBody
     V1DetokenizePayload, V1TokenizeRecordRequest, V1TokenizePayload, QueryServiceExecuteQueryBody, \
     RecordServiceBulkDeleteRecordBody, RecordServiceUpdateRecordBody, RecordServiceBatchOperationBody, V1BatchRecord, \
     BatchRecordMethod
-from skyflow.generated.rest.exceptions import BadRequestException, UnauthorizedException
+from skyflow.generated.rest.exceptions import BadRequestException, UnauthorizedException, ForbiddenException
 from skyflow.utils import SkyflowMessages, parse_insert_response, \
     handle_exception, parse_update_record_response, parse_delete_response, parse_detokenize_response, \
     parse_tokenize_response, parse_query_response, parse_get_response, encode_column_values
@@ -105,6 +105,8 @@ class Vault:
             handle_exception(e, self.__vault_client.get_logger())
         except UnauthorizedException as e:
             handle_exception(e, self.__vault_client.get_logger())
+        except ForbiddenException as e:
+            handle_exception(e, self.__vault_client.get_logger())
 
     def update(self, request: UpdateRequest):
         log_info(SkyflowMessages.Info.VALIDATE_UPDATE_REQUEST.value, self.__vault_client.get_logger())
@@ -132,6 +134,8 @@ class Vault:
             handle_exception(e, self.__vault_client.get_logger())
         except UnauthorizedException as e:
             handle_exception(e, self.__vault_client.get_logger())
+        except ForbiddenException as e:
+            handle_exception(e, self.__vault_client.get_logger())
 
     def delete(self, request: DeleteRequest):
         log_info(SkyflowMessages.Info.VALIDATING_DELETE_REQUEST.value, self.__vault_client.get_logger())
@@ -156,6 +160,8 @@ class Vault:
         except UnauthorizedException as e:
             log_error_log(SkyflowMessages.ErrorLogs.DELETE_REQUEST_REJECTED.value,
                           logger=self.__vault_client.get_logger())
+            handle_exception(e, self.__vault_client.get_logger())
+        except ForbiddenException as e:
             handle_exception(e, self.__vault_client.get_logger())
 
     def get(self, request: GetRequest):
@@ -190,6 +196,8 @@ class Vault:
         except UnauthorizedException as e:
             log_error_log(SkyflowMessages.ErrorLogs.GET_REQUEST_REJECTED.value, self.__vault_client.get_logger())
             handle_exception(e, self.__vault_client.get_logger())
+        except ForbiddenException as e:
+            handle_exception(e, self.__vault_client.get_logger())
 
     def query(self, request: QueryRequest):
         log_info(SkyflowMessages.Info.VALIDATING_QUERY_REQUEST.value, self.__vault_client.get_logger())
@@ -212,6 +220,8 @@ class Vault:
             handle_exception(e, self.__vault_client.get_logger())
         except UnauthorizedException as e:
             log_error_log(SkyflowMessages.ErrorLogs.QUERY_REQUEST_REJECTED.value, self.__vault_client.get_logger())
+            handle_exception(e, self.__vault_client.get_logger())
+        except ForbiddenException as e:
             handle_exception(e, self.__vault_client.get_logger())
 
     def detokenize(self, request: DetokenizeRequest):
@@ -241,6 +251,8 @@ class Vault:
             log_error_log(SkyflowMessages.ErrorLogs.DETOKENIZE_REQUEST_REJECTED.value,
                           logger=self.__vault_client.get_logger())
             handle_exception(e, self.__vault_client.get_logger())
+        except ForbiddenException as e:
+            handle_exception(e, self.__vault_client.get_logger())
 
     def tokenize(self, request: TokenizeRequest):
         log_info(SkyflowMessages.Info.VALIDATING_TOKENIZE_REQUEST.value, self.__vault_client.get_logger())
@@ -269,4 +281,6 @@ class Vault:
         except UnauthorizedException as e:
             log_error_log(SkyflowMessages.ErrorLogs.TOKENIZE_REQUEST_REJECTED.value,
                           logger=self.__vault_client.get_logger())
+            handle_exception(e, self.__vault_client.get_logger())
+        except ForbiddenException as e:
             handle_exception(e, self.__vault_client.get_logger())
