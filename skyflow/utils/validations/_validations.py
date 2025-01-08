@@ -1,5 +1,4 @@
 import json
-import re
 from skyflow.service_account import is_expired
 from skyflow.utils.enums import LogLevel, Env, RedactionType, TokenMode
 from skyflow.error import SkyflowError
@@ -45,12 +44,15 @@ def validate_required_field(logger, config, field_name, expected_type, empty_err
         raise SkyflowError(empty_error, invalid_input_error_code)
 
 def validate_api_key(api_key: str, logger = None) -> bool:
+    if not api_key.startswith('sky-'):
+        log_error_log(SkyflowMessages.ErrorLogs.INVALID_API_KEY.value, logger=logger)
+        return False
+
     if len(api_key) != 42:
         log_error_log(SkyflowMessages.ErrorLogs.INVALID_API_KEY.value, logger = logger)
         return False
-    api_key_pattern = re.compile(r'^sky-[a-zA-Z0-9]{5}-[a-fA-F0-9]{32}$')
 
-    return bool(api_key_pattern.match(api_key))
+    return True
 
 def validate_credentials(logger, credentials, config_id_type=None, config_id=None):
     key_present = [k for k in ["path", "token", "credentials_string", "api_key"] if credentials.get(k)]
