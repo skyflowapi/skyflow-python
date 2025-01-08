@@ -2,6 +2,7 @@ import os
 import json
 import urllib.parse
 from dotenv import load_dotenv
+import dotenv
 from requests.sessions import PreparedRequest
 from requests.models import HTTPError
 import requests
@@ -13,7 +14,6 @@ from skyflow.error import SkyflowError
 from skyflow.generated.rest import V1UpdateRecordResponse, V1BulkDeleteRecordResponse, \
     V1DetokenizeResponse, V1TokenizeResponse, V1GetQueryResponse, V1BulkGetRecordResponse
 from skyflow.utils.logger import log_error, log_error_log
-
 from . import SkyflowMessages, SDK_VERSION
 from .enums import Env, ContentType, EnvUrls
 from skyflow.vault.data import InsertResponse, UpdateResponse, DeleteResponse, QueryResponse, GetResponse
@@ -24,7 +24,7 @@ from ..vault.tokens import DetokenizeResponse, TokenizeResponse
 invalid_input_error_code = SkyflowMessages.ErrorCodes.INVALID_INPUT.value
 
 def get_credentials(config_level_creds = None, common_skyflow_creds = None, logger = None):
-    dotenv_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), ".env")
+    dotenv_path = dotenv.find_dotenv(usecwd=True)
     if dotenv_path:
         load_dotenv(dotenv_path)
     env_skyflow_credentials = os.getenv("SKYFLOW_CREDENTIALS")
