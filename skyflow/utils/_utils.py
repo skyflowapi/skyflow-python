@@ -24,6 +24,7 @@ from ..vault.tokens import DetokenizeResponse, TokenizeResponse
 invalid_input_error_code = SkyflowMessages.ErrorCodes.INVALID_INPUT.value
 
 def get_credentials(config_level_creds = None, common_skyflow_creds = None, logger = None):
+    dotenv.load_dotenv()
     dotenv_path = dotenv.find_dotenv(usecwd=True)
     if dotenv_path:
         load_dotenv(dotenv_path)
