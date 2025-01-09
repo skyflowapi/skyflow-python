@@ -10,7 +10,7 @@ jobs:
       - name: Check JIRA ID
         uses: gsactions/commit-message-checker@v1
         with:
-          pattern: '\[?[A-Z]{1,5}-[1-9][0-9]*.+$'
+          pattern: '(\[?[A-Z]{1,5}-[1-9][0-9]*)|(\[AUTOMATED\])|(Merge)|(Release).+$'
           flags: 'gm'
           excludeDescription: 'true'
           checkAllCommitMessages: 'true'
@@ -22,7 +22,7 @@ jobs:
     - uses: actions/checkout@v2
     - uses: actions/setup-python@v2
       with:
-        python-version: '3.7'
+        python-version: '3.8'
 
     - name: create-json
       id: create-json
