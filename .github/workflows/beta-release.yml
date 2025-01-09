@@ -13,6 +13,6 @@ jobs:
   build-and-deploy:
     uses: ./.github/workflows/shared-build-and-deploy.yml
     with:
-      ref: main
-      pypi-token: ${{ secrets.PYPI_PUBLISH_TOKEN }}
+      ref: ${{ github.ref_name }}
       is-internal: false
+    secrets: inherit
