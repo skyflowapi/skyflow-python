@@ -16,46 +16,9 @@ jobs:
           checkAllCommitMessages: 'true'
           accessToken: ${{ secrets.PAT_ACTIONS }}
           error: 'One of your your commit messages is not matching the format with JIRA ID Ex: ( SDK-123 commit message )'
-  Test:
-    runs-on: ubuntu-latest
-    steps:   
-    - uses: actions/checkout@v2
-    - uses: actions/setup-python@v2
-      with:
-        python-version: '3.8'
 
-    - name: create-json
-      id: create-json
-      uses: jsdaniell/create-json@1.1.2
-      with:
-        name: "credentials.json"
-        json: ${{ secrets.CREDENTIALS_FILE_STR }}
-
-    - name: 'Setup .env'
-      run: |
-        touch .env
-        echo VAULT_ID=${{secrets.VAULT_ID}} >> .env
-        echo VAULT_URL=${{secrets.VAULT_URL}} >> .env
-        echo DETOKENIZE_TEST_TOKEN=${{secrets.DETOKENIZE_TEST_TOKEN}} >> .env
-        echo DETOKENIZE_TEST_VALUE=${{secrets.DETOKENIZE_TEST_VALUE}} >> .env
-        echo CREDENTIALS_FILE_PATH=./credentials.json >> .env
-        echo CVV_GEN_CONNECTION_URL=${{secrets.CVV_GEN_CONNECTION_URL}} >> .env
-        echo VISA_CONNECTION_BASIC_AUTH=${{secrets.VISA_CONNECTION_BASIC_AUTH}} >> .env
-        echo SKYFLOW_ID1=${{secrets.SKYFLOW_ID1}} >> .env
-        echo SKYFLOW_ID2=${{secrets.SKYFLOW_ID2}} >> .env
-        echo SKYFLOW_ID3=${{secrets.SKYFLOW_ID3}} >> .env
-
-    - name: 'Run Tests'
-      run: |
-        python -m pip install --upgrade pip
-        pip install requests pyjwt datetime aiohttp cryptography python-dotenv coverage
-        coverage run --source skyflow -m unittest discover
-    - name: coverage
-      run: coverage xml -o test-coverage.xml
-    - name: Codecov
-      uses: codecov/codecov-action@v2.1.0
-      with:
-        token: ${{ secrets.CODECOV_REPO_UPLOAD_TOKEN }}
-        files: test-coverage.xml
-        name: codecov-skyflow-python
-        verbose: true
+  test:
+    uses: ./.github/workflows/shared-tests.yml
+    with:
+      python-version: '3.8'
+    secrets: inherit
