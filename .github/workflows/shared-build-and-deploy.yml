@@ -59,7 +59,7 @@ jobs:
           else
             COMMIT_MESSAGE="[AUTOMATED] Public Release - ${{ steps.previoustag.outputs.tag }}"
             git commit -m "$COMMIT_MESSAGE"
-            git push origin
+            git push origin ${{ github.ref_name }} -f
           fi
 
       - name: Build and Publish Package
