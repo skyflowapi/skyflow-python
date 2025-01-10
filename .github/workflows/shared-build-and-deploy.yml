@@ -17,25 +17,24 @@ jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout branch
-        uses: actions/checkout@v1
+      - name: checkout branch
         with:
           fetch-depth: 0
-
-      - name: Get Branch Name
+        uses: actions/checkout@v1
+      - name: Get Branch
         run: |
           BRANCH_NAME=$(git branch -r --contains ${{ github.sha }} | grep -o 'origin/.*' | sed 's|origin/||' | head -n 1)
           echo "Branch Name: $BRANCH_NAME"
           echo "branch_name=$BRANCH_NAME" >> $GITHUB_ENV
+          git checkout $branch_name
 
       - uses: actions/setup-python@v2
-
-      - name: Install Dependencies
+      - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install setuptools wheel twine
 
-      - name: Get Previous Tag
+      - name: Get Previous tag
         id: previoustag
         uses: WyriHaximus/github-action-get-previous-tag@v1
         with:
@@ -50,7 +49,7 @@ jobs:
             ./ci-scripts/bump_version.sh "${{ steps.previoustag.outputs.tag }}"
           fi
 
-      - name: Commit Changes
+      - name: Commit changes
         run: |
           git config user.name "${{ github.actor }}"
           git config user.email "${{ github.actor }}@users.noreply.github.com"
@@ -61,9 +60,10 @@ jobs:
             VERSION="${{ steps.previoustag.outputs.tag }}.dev0+$(git rev-parse --short $GITHUB_SHA)"
             COMMIT_MESSAGE="[AUTOMATED] Private Release $VERSION"
             git commit -m "$COMMIT_MESSAGE"
-            git push origin HEAD:${{ env.branch_name }} --force
+            git push origin ${{ github.ref_name }} -f
           else
             COMMIT_MESSAGE="[AUTOMATED] Public Release - ${{ steps.previoustag.outputs.tag }}"
             git commit -m "$COMMIT_MESSAGE"
-            git push origin HEAD:${{ env.branch_name }} --force
+            git push origin ${{ env.branch_name }} -f
           fi
+       
