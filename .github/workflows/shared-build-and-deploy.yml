@@ -64,6 +64,7 @@ jobs:
           else
             COMMIT_MESSAGE="[AUTOMATED] Public Release - ${{ steps.previoustag.outputs.tag }}"
             git commit -m "$COMMIT_MESSAGE"
-            git push origin ${{ env.branch_name }} -f
+            git push origin HEAD:refs/heads/${{ env.branch_name }} -f
+
           fi
        
