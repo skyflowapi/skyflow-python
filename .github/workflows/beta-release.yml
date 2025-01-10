@@ -14,5 +14,5 @@ jobs:
     uses: ./.github/workflows/shared-build-and-deploy.yml
     with:
       ref: ${{ github.ref_name }}
-      is-internal: false
+      tag: 'beta'
     secrets: inherit

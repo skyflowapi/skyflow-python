@@ -18,6 +18,6 @@ jobs:
     uses: ./.github/workflows/shared-build-and-deploy.yml
     with:
       ref: ${{ github.ref_name }}
-      is-internal: true
+      tag: 'internal'
     secrets: inherit
       

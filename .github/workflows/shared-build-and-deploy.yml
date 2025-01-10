@@ -7,26 +7,19 @@ on:
         description: 'Git reference to use (e.g., main or branch name)'
         required: true
         type: string
-
-      is-internal:
-        description: 'Flag for internal release'
+      
+      tag:
+        description: 'Release Tag'
         required: true
-        type: boolean
+        type: string
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: checkout branch
+      - uses: actions/checkout@v2
         with:
           fetch-depth: 0
-        uses: actions/checkout@v1
-      - name: Get Branch
-        run: |
-          BRANCH_NAME=$(git branch -r --contains ${{ github.sha }} | grep -o 'origin/.*' | sed 's|origin/||' | head -n 1)
-          echo "Branch Name: $BRANCH_NAME"
-          echo "branch_name=$BRANCH_NAME" >> $GITHUB_ENV
-          git checkout $branch_name
 
       - uses: actions/setup-python@v2
       - name: Install dependencies
@@ -43,28 +36,46 @@ jobs:
       - name: Bump Version
         run: |
           chmod +x ./ci-scripts/bump_version.sh
-          if ${{ inputs.is-internal }}; then
+          if ${{ inputs.tag == 'internal' }}; then
             ./ci-scripts/bump_version.sh "${{ steps.previoustag.outputs.tag }}" "$(git rev-parse --short "$GITHUB_SHA")"
           else
             ./ci-scripts/bump_version.sh "${{ steps.previoustag.outputs.tag }}"
           fi
 
       - name: Commit changes
+        if: ${{ inputs.tag == 'internal' || inputs.tag == 'public' }} 
         run: |
           git config user.name "${{ github.actor }}"
           git config user.email "${{ github.actor }}@users.noreply.github.com"
           git add setup.py
           git add skyflow/utils/_version.py
 
-          if [ "${{ inputs.is-internal }}" = "true" ]; then
+          if [ "${{ inputs.tag }}" = "internal" ]; then
             VERSION="${{ steps.previoustag.outputs.tag }}.dev0+$(git rev-parse --short $GITHUB_SHA)"
             COMMIT_MESSAGE="[AUTOMATED] Private Release $VERSION"
             git commit -m "$COMMIT_MESSAGE"
             git push origin ${{ github.ref_name }} -f
-          else
+          fi
+          if [ "${{ inputs.tag }}" = "public" ]; then
             COMMIT_MESSAGE="[AUTOMATED] Public Release - ${{ steps.previoustag.outputs.tag }}"
             git commit -m "$COMMIT_MESSAGE"
-            git push origin HEAD:refs/heads/${{ env.branch_name }} -f
-
+            git push origin
           fi
-       
+
+      - name: Build and Publish Package
+        if: ${{ inputs.tag == 'beta' || inputs.tag == 'public' }} 
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_PUBLISH_TOKEN }}
+        run: |
+          python setup.py sdist bdist_wheel
+          twine upload dist/*
+
+      - name: Build and Publish to JFrog Artifactory
+        if: ${{ inputs.tag == 'internal' }}
+        env:
+          TWINE_USERNAME: ${{ secrets.JFROG_USERNAME }}
+          TWINE_PASSWORD: ${{ secrets.JFROG_PASSWORD }}
+        run: |
+          python setup.py sdist bdist_wheel
+          twine upload --repository-url https://prekarilabs.jfrog.io/artifactory/api/pypi/skyflow-python/ dist/*
