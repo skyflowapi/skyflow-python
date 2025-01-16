@@ -9,9 +9,6 @@ on:
       - "*.md"
       - "skyflow/utils/_version.py"
 
-permissions:
-  contents: write
-
 jobs:
   build-and-deploy:
     uses: ./.github/workflows/shared-build-and-deploy.yml
