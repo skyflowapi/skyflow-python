@@ -559,14 +559,6 @@ V2 provides enriched **error details** for better debugging.
 
 ---
 
-### Conclusion
-
-By following these migration steps, you can seamlessly transition from SDK v1 to v2, leveraging the new authentication methods, improved client initialization, enhanced request handling, and enriched error responses.
-
-For more details, refer to the official documentation: [Migration Guide](https://docs.google.com/document/d/15CSxPpKjsg19lmFQ6e2S9eHT2RNXAVminhm-EQ1xTZk/edit?tab=t.0#heading=h.lji5fohavue1)
-
-
-
 ## Vault APIs
 
 The vault python module is used to perform operations on the vault such as inserting records, detokenizing tokens, retrieving tokens for a skyflow_id and to invoke a connection.
