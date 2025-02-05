@@ -16,6 +16,7 @@ This Python SDK is designed to help developers easily implement Skyflow into the
     - [Requirements](#requirements)
     - [Configuration](#configuration)
   - [Service Account Bearer Token Generation](#service-account-bearer-token-generation)
+  - [Migation Guide: v1 to v2](#python-sdk-migration-guide)
   - [Vault APIs](#vault-apis)
     - [Insert data into the vault](#insert-data-into-the-vault)
     - [Detokenize](#detokenize)
@@ -328,6 +329,243 @@ try:
 except SkyflowError as e:
     print(e)
 ```
+
+## Python SDK Migration Guide
+
+### Steps to Migrate Python SDK from V1 to V2
+
+Below are the steps to migrate the Python SDK from v1 to v2.
+
+---
+
+### 1. Authentication Options
+
+In V2, multiple authentication options are introduced. You can now provide credentials in the following ways:
+
+- **API Key (Recommended)**
+- **Environment Variable (`SKYFLOW_CREDENTIALS`) (Recommended)**
+- **Path to your credentials JSON file**
+- **Stringified JSON of your credentials**
+- **Bearer token**
+
+These options allow you to choose the authentication method that best suits your use case.
+
+### V1 (Old):
+```python
+# User defined function to provide access token to the vault APIs
+def token_provider():
+    global bearerToken
+    if not is_expired(bearerToken):
+        return bearerToken
+    bearerToken, _ = generate_bearer_token('<YOUR_CREDENTIALS_FILE_PATH>')
+    return bearerToken
+```
+
+### V2 (New):
+```python
+# Option 1: API Key (Recommended)
+credentials = {
+    'api_key': '<your_api_key>',
+}
+
+# Option 2: Environment Variables (Recommended)
+# Set SKYFLOW_CREDENTIALS in your environment
+
+# Option 3: Credentials File
+credentials = {
+    'path': '<path_to_credentials_json>',
+}
+
+# Option 4: Stringified JSON
+credentials = {
+    'credentials_string': '<your_credentials_string>',
+}
+
+# Option 5: Bearer Token
+credentials = {
+    'token': '<your_bearer_token>',
+}
+```
+
+#### Notes:
+- Use only **one** authentication method.
+- Environment variables take precedence over programmatic configuration.
+- **API Key or Environment Variables are recommended for production use.**
+- Secure storage of credentials is essential.
+- For overriding behavior and priority order of credentials, refer to the README.
+
+---
+
+### 2. Client Initialization
+
+V2 introduces a **Builder design pattern** for client initialization and supports **multi-vault configuration**.
+
+### V1 (Old):
+```python
+# Initializing a Skyflow Client instance with a SkyflowConfiguration object
+config = Configuration('<YOUR_VAULT_ID>', '<YOUR_VAULT_URL>', token_provider)
+client = Client(config)
+```
+
+### V2 (New):
+```python
+# Initializing a Skyflow Client instance
+client = (
+    Skyflow.builder()
+    .add_vault_config({
+        'vault_id': 'VAULT_ID',
+        'cluster_id': 'CLUSTER_ID',
+        'env': Env.PROD,
+        'credentials': credentials,
+    })
+    .add_skyflow_credentials(credentials)
+    .set_log_level(LogLevel.INFO)
+    .build()
+)
+```
+
+#### Key Changes:
+- `vault_url` replaced with `cluster_id`.
+- Added **environment specification (`env`)**.
+- Instance-specific **log levels**.
+
+---
+
+### 3. Request & Response Structure
+
+V2 introduces **constructor parameters** for request building.
+
+### V1 (Old): Request Building
+```python
+client.insert(
+    {
+        "records": [
+            {
+                "table": "cards",
+                "fields": {
+                    "cardNumber": "41111111111",
+                    "cvv": "123",
+                },
+            }
+        ]
+    },
+    InsertOptions(True),
+)
+```
+
+### V2 (New): Request Building
+```python
+# Prepare Insertion Data
+insert_data = [
+   {
+       'card_number': '<VALUE1>',
+       'cvv': '<VALUE2>',
+   },
+]
+
+table_name = '<SENSITIVE_DATA_TABLE>'
+
+# Create Insert Request
+insert_request = InsertRequest(
+   table_name=table_name,
+   values=insert_data,
+   return_tokens=True, # Optional: Get tokens for inserted data
+   continue_on_error=True, # Optional: Continue on partial errors
+)
+
+# Perform Secure Insertion
+response = skyflow_client.vault(primary_vault_config.get('vault_id')).insert(insert_request)
+```
+
+### Response Structure:
+#### V1 (Old):
+```json
+{
+    "records": [
+        {
+            "table": "cards",
+            "fields": {
+                "cardNumber": "f3907186-e7e2-466f-91e5-48e12c2bcbc1",
+                "cvv": "1989cb56-63da-4482-a2df-1f74cd0dd1a5",
+                "skyflow_id": "d863633c-8c75-44fc-b2ed-2b58162d1117"
+            },
+            "request_index": 0
+        }
+    ]
+}
+```
+
+#### V2 (New):
+```python
+InsertResponse(
+   inserted_fields=[
+       {
+           'skyflow_id': 'a8f3ed5d-55eb-4f32-bf7e-2dbf4b9d9097',
+           'card_number': '5479-4229-4622-1393'
+       }
+   ],
+   errors=[]
+)
+```
+
+---
+
+### 4. Request Options
+
+In V2, **constructor parameters** allow setting options as key-value pairs in a request.
+
+### V1 (Old):
+```python
+options = InsertOptions(
+    tokens=True
+)
+```
+
+### V2 (New):
+```python
+insert_request = InsertRequest(
+   table_name=table_name,
+   values=insert_data,
+   return_tokens=True, # Optional: Get tokens for inserted data
+   continue_on_error=True # Optional: Continue on partial errors
+)
+```
+
+---
+
+### 5. Error Handling
+
+V2 provides enriched **error details** for better debugging.
+
+### V1 (Old): Error Structure
+```json
+{
+  "code": "<http_code>",
+  "message": "<message>"
+}
+```
+
+### V2 (New): Error Structure
+```json
+{
+    "http_status": "<http_status>",
+    "grpc_code": "<grpc_code>",
+    "http_code": "<http_code>",
+    "message": "<message>",
+    "request_id": "<req_id>",
+    "details": [ "<details>" ]
+}
+```
+
+---
+
+### Conclusion
+
+By following these migration steps, you can seamlessly transition from SDK v1 to v2, leveraging the new authentication methods, improved client initialization, enhanced request handling, and enriched error responses.
+
+For more details, refer to the official documentation: [Migration Guide](https://docs.google.com/document/d/15CSxPpKjsg19lmFQ6e2S9eHT2RNXAVminhm-EQ1xTZk/edit?tab=t.0#heading=h.lji5fohavue1)
+
+
 
 ## Vault APIs
 
