@@ -339,7 +339,7 @@ In V2, we have introduced multiple authentication options.
 You can now provide credentials in the following ways: 
 
 1. **API Key (Recommended)**
-2. **Environment Variables** (SKYFLOW_CREDENTIALS) (Recommended)
+2. **Environment Variables** (SKYFLOW_CREDENTIALS) (**Recommended**)
 3. **Path to your credentials JSON file**
 4. **Stringified JSON of your credentials**
 5. **Bearer token**
@@ -365,7 +365,7 @@ Passing one of the following:
 ```python
 # Option 1: API Key (Recommended)
 credentials = {
-    'api_key': '<your_api_key>', # API key
+    'api_key': '<YOUR_API_KEY>', # API key
 }
 
 # Option 2: Environment Variables (Recommended)
@@ -373,26 +373,26 @@ credentials = {
 
 # Option 3: Credentials File
 credentials = {
-    'path': '<path_to_credentials_json>', # Path to credentials file
+    'path': '<PATH_TO_CREDENTIALS_JSON>', # Path to credentials file
 }
 
 # Option 4: Stringified JSON
 credentials = {
-    'credentials_string': '<your_credentials_string>', # Credentials as string
+    'credentials_string': '<YOUR_CREDENTIALS_sTRING>', # Credentials as string
 }
 
 # Option 5: Bearer Token
 credentials = {
-    'token': '<your_bearer_token>', # Bearer token
+    'token': '<YOUR_BEARER_TOKEN>', # Bearer token
 }
 ```
 
 **Notes:**
-1. Use only ONE authentication method.
-2. Environment variables take precedence over programmatic configuration.
-3. API Key or Environment Variables are recommended for production use.
-4. Secure storage of credentials is essential.
-5. For overriding behavior and priority order of credentials, please refer to the README.
+- Use only ONE authentication method.
+- Environment variables take precedence over programmatic configuration.
+- API Key or Environment Variables are recommended for production use.
+- Secure storage of credentials is essential.
+- For overriding behavior and priority order of credentials, please refer to the README.
 
 ### 2. Client Initialization
 
@@ -402,9 +402,9 @@ In V2, the log level is tied to each individual client instance.
 
 During client initialization, you can pass the following parameters:
 
-1. **vault_id** and **cluster_id**: These values are derived from the vault ID & vault URL.
-2. **env**: Specify the environment (e.g., SANDBOX or PROD).
-3. **credentials**: The necessary authentication credentials.
+- **`vault_id`** and **`cluster_id`**: These values are derived from the vault ID & vault URL.
+- **`env`**: Specify the environment (e.g., SANDBOX or PROD).
+- **`credentials`**: The necessary authentication credentials.
 
 #### V1 (Old):
 
@@ -421,8 +421,8 @@ client = Client(config)
 client = (
     Skyflow.builder()
     .add_vault_config({
-           'vault_id': 'VAULT_ID', # Primary vault
-           'cluster_id': 'CLUSTER_ID', # ID from your vault URL e.g., https://{clusterId}.vault.skyflowapis.com
+           'vault_id': '<VAULT_ID>', # Primary vault
+           'cluster_id': '<CLUSTER_ID>', # ID from your vault URL e.g., https://{clusterId}.vault.skyflowapis.com
            'env': Env.PROD, # Env by default it is set to PROD
            'credentials': credentials # Individual credentials
     })
@@ -433,15 +433,15 @@ client = (
 ```
 
 **Key Changes:**
-1. `vault_url` replaced with `clusterId`.
-2. Added environment specification (`env`).
-3. Instance-specific log levels.
+- `vault_url` replaced with `cluster_Id`.
+- Added environment specification (`env`).
+- Instance-specific log levels.
 
 ### 3. Request & Response Structure
 
 In V2, with the introduction of constructor parameters, you can now pass parameters to `InsertRequest`. This request need 
-- **table_name**: The name of the table.
-- **values**: An array of objects containing the data to be inserted.
+- **`table_name`**: The name of the table.
+- **`values`**: An array of objects containing the data to be inserted.
 The response will be of type `InsertResponse` class, which contains `inserted_fields` and errors.
 
 #### V1 (Old): Request Building
@@ -485,7 +485,7 @@ insert_request = InsertRequest(
 )
 
 # Perform Secure Insertion
-response = skyflow_client.vault(primary_vault_config.get('vault_id')).insert(insert_request)
+response = skyflow_client.vault(primary_vault_config.get('<VAULT_ID>')).insert(insert_request)
 ```
 
 #### V1 (Old): Response Structure
