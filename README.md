@@ -16,7 +16,7 @@ This Python SDK is designed to help developers easily implement Skyflow into the
     - [Requirements](#requirements)
     - [Configuration](#configuration)
   - [Service Account Bearer Token Generation](#service-account-bearer-token-generation)
-  [Migration from v1 to v2](#migrate-from-v1-to-v2)
+  - [Migration from v1 to v2](#migrate-from-v1-to-v2)
   - [Vault APIs](#vault-apis)
     - [Insert data into the vault](#insert-data-into-the-vault)
     - [Detokenize](#detokenize)
@@ -338,11 +338,11 @@ Below are the steps to migrate the Python SDK from V1 to V2.
 In V2, we have introduced multiple authentication options. 
 You can now provide credentials in the following ways: 
 
-1. **API Key (Recommended)**
-2. **Environment Variables** (SKYFLOW_CREDENTIALS) (**Recommended**)
-3. **Path to your credentials JSON file**
-4. **Stringified JSON of your credentials**
-5. **Bearer token**
+- **API Key (Recommended)**
+- **Environment Variable** (`SKYFLOW_CREDENTIALS`) (**Recommended**)
+- **Path to your credentials JSON file**
+- **Stringified JSON of your credentials**
+- **Bearer token**
 
 These options allow you to choose the authentication method that best suits your use case.
 
