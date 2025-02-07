@@ -389,7 +389,6 @@ credentials = {
 
 **Notes:**
 - Use only ONE authentication method.
-- Environment variables take precedence over programmatic configuration.
 - API Key or Environment Variables are recommended for production use.
 - Secure storage of credentials is essential.
 - For overriding behavior and priority order of credentials, please refer to the README.
