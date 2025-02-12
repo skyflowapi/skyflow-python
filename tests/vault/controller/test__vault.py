@@ -455,10 +455,16 @@ class TestVault(unittest.TestCase):
     @patch("skyflow.vault.controller._vault.parse_detokenize_response")
     def test_detokenize_successful(self, mock_parse_response, mock_validate):
         request = DetokenizeRequest(
-            data=[{
-                'token': 'token1',
-                'redaction': RedactionType.PLAIN_TEXT
-            }],
+            data=[
+                {
+                    'token': 'token1',
+                    'redaction': RedactionType.PLAIN_TEXT
+                },
+                {
+                    'token': 'token2',
+                    'redaction': RedactionType.PLAIN_TEXT
+                }
+            ],
             continue_on_error=False
         )
 
