@@ -68,7 +68,7 @@ pip install skyflow
 
 Below are the steps to migrate the Python SDK from V1 to V2.
 
-### 1. Authentication Options
+### Authentication Options
 
 In V2, we have introduced multiple authentication options. 
 You can now provide credentials in the following ways: 
@@ -126,7 +126,7 @@ credentials = {
 - Secure storage of credentials is essential.
 - For overriding behavior and priority order of credentials, please refer to [Initialize the client](#initialize-the-client) section in [Quickstart](#quickstart).
 
-### 2. Initializing the client
+### Initializing the client
 
 In V2, we have introduced a Builder design pattern for client initialization and added support for multi-vault. This allows you to configure multiple vaults during client initialization. 
 
@@ -169,7 +169,7 @@ client = (
 - Added environment specification (`env`).
 - Instance-specific log levels.
 
-### 3. Request & Response Structure
+### Request & Response Structure
 
 In V2, with the introduction of constructor parameters, you can now pass parameters to `InsertRequest`. This request need 
 - **`table_name`**: The name of the table.
@@ -252,7 +252,7 @@ InsertResponse(
 )
 ```
 
-### 4. Request Options
+### Request Options
 
 In V2, we have introduced constructor parameters, allowing you to set options as key-value pairs as parameters in request.
 
@@ -278,7 +278,7 @@ insert_request = InsertRequest(
 )
 ```
 
-### 5. Error Structure
+### Error Structure
 
 In V2, we have enriched the error details to provide better debugging capabilities. 
 The error response now includes: 
@@ -301,8 +301,8 @@ The error response now includes:
 ```json
 {
     "http_status": "<http_status>",
-    "grpc_code": "<grpc_code>",
-    "http_code": "<http_code>",
+    "grpc_code": <grpc_code>,
+    "http_code": <http_code>,
     "message": "<message>",
     "request_id": "<request_id>",
     "details": [ "<details>" ]
@@ -323,17 +323,21 @@ credentials = {
 ```
 
 ### Initialize the client
-To get started, you must first initialize the skyflow client. While initializing the skyflow client, you can specify different types of credentials.
-**1. API keys**
-- A unique identifier used to authenticate and authorize requests to an API.
-**2. Bearer tokens**
+
+To get started, you must first initialize the skyflow client. While initializing the skyflow client, you can specify different types of credentials.  
+**1. API keys**  
+- A unique identifier used to authenticate and authorize requests to an API.  
+
+**2. Bearer tokens**  
 - A temporary access token used to authenticate API requests, typically included in the
-Authorization header.
-**3. Service account credentials file path**
+Authorization header.  
+
+**3. Service account credentials file path**  
 - The file path pointing to a JSON file containing credentials for a service account, used
-for secure API access.
-**4. Service account credentials string**
-- A JSON-formatted string containing service account credentials, often used as an alternative to a file for programmatic authentication.
+for secure API access.  
+
+**4. Service account credentials string**  
+- A JSON-formatted string containing service account credentials, often used as an alternative to a file for programmatic authentication.  
 
 Note: Only one type of credential can be used at a time.
 
@@ -507,7 +511,7 @@ InsertResponse(
 
 ## Vault
 
-The [Vault](#https://github.com/skyflowapi/skyflow-python/tree/v2/skyflow/vault) module performs operations on the vault, including inserting records, detokenizing tokens, and retrieving tokens associated with a skyflow_id.
+The [Vault](https://github.com/skyflowapi/skyflow-python/tree/v2/skyflow/vault) module performs operations on the vault, including inserting records, detokenizing tokens, and retrieving tokens associated with a skyflow_id.
 
 
 ### Insert data into the vault
@@ -648,7 +652,7 @@ InsertResponse(
 
 ```
 
-**Insert call example with `upsert` option**
+**Insert call example with `upsert` option**  
 An upsert operation checks for a record based on a unique column's value. If a match exists, the record is updated; otherwise, a new record is inserted.
 
 ```python
@@ -762,7 +766,7 @@ Notes:
 - `redaction_type` defaults to `RedactionType.PLAIN_TEXT`.
 - `continue_on_error` default valus is `False`.
 
-An [example](#https://github.com/skyflowapi/skyflow-python/blob/v2/samples/vault_api/detokenize_records.py) of a detokenize cal
+#### An [example](https://github.com/skyflowapi/skyflow-python/blob/v2/samples/vault_api/detokenize_records.py) of a detokenize call
 
 ```python
 from skyflow.error import SkyflowError
@@ -820,7 +824,7 @@ DetokenizeResponse(
 )
 ```
 
-An example of a detokenize call with `continue_on_error` option:
+#### An example of a detokenize call with `continue_on_error` option:
 
 ```python
 from skyflow.error import SkyflowError
@@ -939,7 +943,7 @@ except Exception as error:
     print('Unexpected Error:', error)  # Print the stack trace for debugging purposes
 ```
 
-An [example](#https://github.com/skyflowapi/skyflow-python/blob/v2/samples/vault_api/tokenize_records.py) of Tokenize call
+#### An [example](https://github.com/skyflowapi/skyflow-python/blob/v2/samples/vault_api/tokenize_records.py) of Tokenize call
 
 ```python
 from skyflow.error import SkyflowError
@@ -1077,7 +1081,7 @@ except Exception as error:
 Retrieve specific records using skyflow `ids`. Ideal for fetching exact records when IDs are known.
 
 
-An [example](#https://github.com/skyflowapi/skyflow-python/blob/v2/samples/vault_api/get_records.py) of a get call to retrieve data using Redaction type:
+#### An [example](https://github.com/skyflowapi/skyflow-python/blob/v2/samples/vault_api/get_records.py) of a get call to retrieve data using Redaction type:
 
 ```python
 from skyflow.error import SkyflowError
@@ -1154,7 +1158,7 @@ GetResponse(
 #### Get tokens
 Return tokens for records. Ideal for securely processing sensitive data while maintaining data privacy.
 
-An [example](#https://github.com/skyflowapi/skyflow-python/blob/v2/samples/vault_api/get_records.py) of get call to retrieve tokens using Skyflow IDs:
+#### An [example](https://github.com/skyflowapi/skyflow-python/blob/v2/samples/vault_api/get_records.py) of get call to retrieve tokens using Skyflow IDs:
 
 
 ```python
@@ -1228,7 +1232,7 @@ GetResponse(
 #### Get by column name and column values
 Retrieve records by unique column values. Ideal for querying data without knowing Skyflow IDs, using alternate unique identifiers.
 
-An [example](#https://github.com/skyflowapi/skyflow-python/blob/v2/samples/vault_api/get_column_values.py) of get call to retrieve data using column name and column values:
+#### An [example](https://github.com/skyflowapi/skyflow-python/blob/v2/samples/vault_api/get_column_values.py) of get call to retrieve data using column name and column values:
 
 ```python
 from skyflow.error import SkyflowError
@@ -1303,9 +1307,9 @@ GetResponse(
 )
 ```
 
-#### Redaction Types
+#### Redaction Types  
+Redaction types determine how sensitive data is displayed when retrieved from the vault.  
 
-Redaction types determine how sensitive data is displayed when retrieved from the vault.
 **Available Redaction Types**
 
 - `DEFAULT`: Applies the vault-configured default redaction setting.
@@ -1377,7 +1381,7 @@ except Exception as error:
     print('Unexpected Error:', error)  # Print the stack trace for debugging purposes
 ```
 
-An [example](#https://github.com/skyflowapi/skyflow-python/blob/v2/samples/vault_api/update_record.py) of update call
+#### An [example](https://github.com/skyflowapi/skyflow-python/blob/v2/samples/vault_api/update_record.py) of update call
 
 ```python
 from skyflow.error import SkyflowError
@@ -1504,7 +1508,7 @@ except Exception as error:
     print('Unexpected Error:', error)  # Print the exception stack trace for debugging purposes
 ```
 
-An [example](#https://github.com/skyflowapi/skyflow-python/blob/v2/samples/vault_api/delete_records.py) of delete call
+#### An [example](https://github.com/skyflowapi/skyflow-python/blob/v2/samples/vault_api/delete_records.py) of delete call
 
 ```python
 from skyflow.error import SkyflowError
@@ -1604,7 +1608,7 @@ except Exception as error:
     # Handle any unexpected errors during execution
     print('Unexpected Error:', error)  # Print the stack trace for debugging purposes
 ```
-An [example](#https://github.com/skyflowapi/skyflow-python/blob/v2/samples/vault_api/query_records.py) of query call
+#### An [example](https://github.com/skyflowapi/skyflow-python/blob/v2/samples/vault_api/query_records.py) of query call
 
 ```python
 from skyflow.error import SkyflowError
@@ -1666,7 +1670,7 @@ QueryResponse(
 
 ### Connections
 
-Skyflow Connections is a gateway service that uses tokenization to securely send and receive data between your systems and first- or third-party services. The [connections](#https://github.com/skyflowapi/skyflow-python/tree/v2/skyflow/vault/connection) module invokes both inbound and/or outbound connections.
+Skyflow Connections is a gateway service that uses tokenization to securely send and receive data between your systems and first- or third-party services. The [connections](https://github.com/skyflowapi/skyflow-python/tree/v2/skyflow/vault/connection) module invokes both inbound and/or outbound connections.
 - **Inbound connections**: Act as intermediaries between your client and server, tokenizing sensitive data before it reaches your backend, ensuring downstream services handle only tokenized data.
 - **Outbound connections**: Enable secure extraction of data from the vault and transfer it to third-party services via your backend server, such as processing checkout or card issuance flows.
 
@@ -1753,7 +1757,7 @@ except Exception as error:
 
 **path_params, query_params, header, body** are the JSON objects represented as dictionaries that will be sent through the connection integration url.
 
-An [example](#https://github.com/skyflowapi/skyflow-python/blob/v2/samples/vault_api/invoke_connection.py) of Invoke Connection
+#### An [example](https://github.com/skyflowapi/skyflow-python/blob/v2/samples/vault_api/invoke_connection.py) of Invoke Connection
 
 ```python
 from skyflow import Skyflow, LogLevel
@@ -1849,21 +1853,21 @@ ConnectionResponse(
 ### Authenticate with bearer tokens
 This section covers methods for generating and managing tokens to authenticate API calls:
 
-- **Generate a bearer token:**
+- **Generate a bearer token:**  
 Enable the creation of bearer tokens using service account credentials. These tokens, valid for 60 minutes, provide secure access to Vault services and management APIs based on the service account's permissions. Use this for general API calls when you only need basic authentication without additional context or role-based restrictions.
-- **Generate a bearer token with context:**
+- **Generate a bearer token with context:**  
 Support embedding context values into bearer tokens, enabling dynamic access control and the ability to track end-user identity. These tokens include context claims and allow flexible authorization for Vault services. Use this when policies depend on specific contextual attributes or when tracking end-user identity is required.
-- **Generate a scoped bearer token:**
+- **Generate a scoped bearer token:**  
 Facilitate the creation of bearer tokens with role-specific access, ensuring permissions are limited to the operations allowed by the designated role. This is particularly useful for service accounts with multiple roles. Use this to enforce fine-grained role-based access control, ensuring tokens only grant permissions for a specific role.
-- **Generate signed data tokens:**
+- **Generate signed data tokens:**  
 Add an extra layer of security by digitally signing data tokens with the service account's private key. These signed tokens can be securely detokenized, provided the necessary bearer token and permissions are available. Use this to add cryptographic protection to sensitive data, enabling secure detokenization with verified integrity and authenticity.
 
 #### Generate a bearer token
-The [Service Account](#https://github.com/skyflowapi/skyflow-python/tree/v2/skyflow/service_account) Python package generates service account tokens using a service account credentials file, which is provided when a service account is created. The tokens generated by this module are valid for 60 minutes and can be used to make API calls to the [Data](#https://docs.skyflow.com/record/) and [Management](#https://docs.skyflow.com/management/) APIs, depending on the permissions assigned to the service account.
+The [Service Account](https://github.com/skyflowapi/skyflow-python/tree/v2/skyflow/service_account) Python package generates service account tokens using a service account credentials file, which is provided when a service account is created. The tokens generated by this module are valid for 60 minutes and can be used to make API calls to the [Data](https://docs.skyflow.com/record/) and [Management](https://docs.skyflow.com/management/) APIs, depending on the permissions assigned to the service account.
 
 The `generate_bearer_token(filepath)` function takes the credentials file path for token generation, alternatively, you can also send the entire credentials as string, by using `generate_bearer_token_from_creds(credentials)`
 
-[Example](#https://github.com/skyflowapi/skyflow-python/blob/v2/samples/service_account/token_generation_example.py):
+#### [Example](https://github.com/skyflowapi/skyflow-python/blob/v2/samples/service_account/token_generation_example.py):
 
 ```python
 import json
@@ -1938,7 +1942,7 @@ except Exception as e:
 
 A service account with the context_id identifier generates bearer tokens containing context information, represented as a JWT claim in a Skyflow-generated bearer token. Tokens generated from such service accounts include a context_identifier claim, are valid for 60 minutes, and can be used to make API calls to the Data and Management APIs, depending on the service account's permissions.
 
-[Example](#https://github.com/skyflowapi/skyflow-python/blob/v2/samples/service_account/token_generation_with_context_example.py):
+#### [Example](https://github.com/skyflowapi/skyflow-python/blob/v2/samples/service_account/token_generation_with_context_example.py):
 ```python
 import json
 from skyflow.error import SkyflowError
@@ -2018,7 +2022,7 @@ except Exception as e:
 #### Generate scoped bearer tokens
 A service account with multiple roles can generate bearer tokens with access limited to a specific role by specifying the appropriate roleID. This can be used to limit access to specific roles for services with multiple responsibilities, such as segregating access for billing and analytics. The generated bearer tokens are valid for 60 minutes and can only execute operations permitted by the permissions associated with the designated role.
 
-[Example](#https://github.com/skyflowapi/skyflow-python/blob/v2/samples/service_account/scoped_token_generation_example.py):
+#### [Example](https://github.com/skyflowapi/skyflow-python/blob/v2/samples/service_account/scoped_token_generation_example.py):
 ```python
 import json
 from skyflow.error import SkyflowError
@@ -2064,7 +2068,7 @@ except Exception as e:
 #### Generate signed data tokens
 Skyflow generates data tokens when sensitive data is inserted into the vault. These data tokens can be digitally signed with a service account's private key, adding an extra layer of protection. Signed tokens can only be detokenized by providing the signed data token along with a bearer token generated from the service account's credentials. The service account must have the necessary permissions and context to successfully detokenize the signed data tokens.
 
-[Example](#https://github.com/skyflowapi/skyflow-python/blob/v2/samples/service_account/signed_token_generation_example.py):
+#### [Example](https://github.com/skyflowapi/skyflow-python/blob/v2/samples/service_account/signed_token_generation_example.py):
 ```python
 import json
 from skyflow.error import SkyflowError
@@ -2143,16 +2147,17 @@ Notes:
 The  SDK provides logging using python's inbuilt `logging` library. By default the logging level of the SDK is set to `LogLevel.ERROR`. This can be changed by using `set_log_level(log_level)` as shown below:
 
 Currently, the following five log levels are supported:
-- `DEBUG`:
+- `DEBUG`:  
 When `LogLevel.DEBUG` is passed, logs at all levels will be printed (DEBUG, INFO, WARN, ERROR).
-- `INFO`:
+- `INFO`:  
 When `LogLevel.INFO` is passed, INFO logs for every event that occurs during SDK flow execution will be printed, along with WARN and ERROR logs.
-- `WARN`:
-When `LogLevel.WARN` is passed, only WARN and ERROR logs will be printed.
-`ERROR`:
-- When `LogLevel.ERROR` is passed, only ERROR logs will be printed.
-`OFF`:
-- LogLevel.OFF can be used to turn off all logging from the Skyflow Python SDK.
+- `WARN`:  
+When `LogLevel.WARN` is passed, only WARN and ERROR logs will be printed.  
+- `ERROR`:  
+When `LogLevel.ERROR` is passed, only ERROR logs will be printed.
+- `OFF`:
+`LogLevel.OFF` can be used to turn off all logging from the Skyflow Python SDK.
+- **Note:** The ranking of logging levels is as follows: `DEBUG` < `INFO` < `WARN` < `ERROR` < `OFF`.
 
 ```python
 import json
