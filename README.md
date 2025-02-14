@@ -19,7 +19,7 @@ The Skyflow Python SDK is designed to help with integrating Skyflow into a Pytho
     - [Authenticate](#authenticate)
     - [Initialize the client](#initialize-the-client)
     - [Insert data into the vault](#insert-data-into-the-vault)
-  - [Vault](#vault-apis)
+- [Vault](#vault-apis)
     - [Insert data into the vault](#insert-data-into-the-vault)
     - [Detokenize](#detokenize)
     - [Tokenize](#tokenize)
@@ -32,8 +32,15 @@ The Skyflow Python SDK is designed to help with integrating Skyflow into a Pytho
     - [Delete](#delete)
     - [Invoke Connection](#invoke-connection)
     - [Query](#query)
-  - [Logging](#logging)
-  - [Reporting a Vulnerability](#reporting-a-vulnerability)
+- [Connections](#connections)
+    - [Invoke a connection](#invoke-a-connection)
+- [Authenticate with bearer tokens](#authenticate-with-bearer-tokens)
+    - [Generate a bearer token](#generate-a-bearer-token)
+    - [Generate bearer tokens with context](#generate-bearer-tokens-with-context)
+    - [Generate scoped bearer tokens](#generate-scoped-bearer-tokens)
+    - [Generate signed data tokens](#generate-signed-data-tokens)
+- [Logging](#logging)
+- [Reporting a Vulnerability](#reporting-a-vulnerability)
 
 ## Overview
 
@@ -57,283 +64,6 @@ The package can be installed using pip:
 ```bash
 pip install skyflow
 ```
-
-## Service Account Bearer Token Generation
-
-The [Service Account](https://github.com/skyflowapi/skyflow-python/tree/main/skyflow/service_account) python module is used to generate service account tokens from service account credentials file which is downloaded upon creation of service account. The token generated from this module is valid for 60 minutes and can be used to make API calls to vault services as well as management API(s) based on the permissions of the service account.
-
-The `generate_bearer_token(filepath)` function takes the credentials file path for token generation, alternatively, you can also send the entire credentials as string, by using `generate_bearer_token_from_creds(credentials)`
-
-[Example using filepath](https://github.com/skyflowapi/skyflow-python/blob/SK-1749-readme/samples/service_account/token_generation_example.py):
-
-```python
-from skyflow.error import SkyflowError
-from skyflow.service_account import generate_bearer_token, is_expired
-
-# cache token for reuse
-bearer_token = ''
-token_type = ''
-def token_provider():
-    global bearer_token
-    global token_type
-
-    if is_expired(bearer_token):
-        bearer_token, token_type = generate_bearer_toke('<YOUR_CREDENTIALS_FILE_PATH>')
-    return bearer_token, token_type
-
-try:
-    bearer_token, token_type = token_provider()
-    print('Access Token:', bearer_token)
-    print('Type of token:', token_type)
-except SkyflowError as e:
-    print(e)
-
-```
-
-[Example using credentials string](https://github.com/skyflowapi/skyflow-python/blob/SK-1749-readme/samples/service_account/token_generation_example.py):
-
-```python
-from skyflow.error import SkyflowError
-from skyflow.service_account import generate_bearer_token, generate_bearer_token_from_creds, is_expired
-
-# cache token for reuse
-bearer_token = ''
-token_type = ''
-def token_provider():
-    global bearer_token
-    global token_type
-    # As an example
-    skyflow_credentials = {
-        'clientID': '<YOUR_CLIENT_ID>',
-        'clientName': '<YOUR_CLIENT_NAME>',
-        'tokenURI': '<YOUR_TOKEN_URI>',
-        'keyID': '<YOUR_KEY_ID>',
-        'privateKey': '<YOUR_PRIVATE_KEY>',
-    }
-    credentials_string = json.dumps(skyflow_credentials)
-
-    if is_expired(bearer_token):
-        bearer_token, token_type = generate_bearer_token_from_creds(skyflow_credentials_string)
-    return bearer_token, token_type
-
-try:
-    bearer_token, token_type = token_provider()
-    print('Access Token:', bearer_token)
-    print('Type of token:', token_type)
-except SkyflowError as e:
-    print(e)
-
-```
-
-## Service Account Scoped Token Generation
-
-[Example using filepath](https://github.com/skyflowapi/skyflow-python/blob/SK-1749-readme/samples/service_account/scoped_token_generation_example.py):
-
-```python
-from skyflow.error import SkyflowError
-from skyflow.service_account import generate_bearer_token, is_expired
-
-# cache token for reuse
-bearer_token = ''
-token_type = ''
-options = {
-    'role_ids': ['ROLE_ID1', 'ROLE_ID2']
-}
-def token_provider():
-    global bearer_token
-    global token_type
-
-    if is_expired(bearer_token):
-        bearer_token, token_type = generate_bearer_token('<YOUR_CREDENTIALS_FILE_PATH>', options)
-    return bearer_token, token_type
-
-try:
-    bearer_token, token_type = token_provider()
-    print('Access Token:', bearer_token)
-    print('Type of token:', token_type)
-except SkyflowError as e:
-    print(e)
-
-```
-
-[Example using credentials string](https://github.com/skyflowapi/skyflow-python/blob/SK-1749-readme/samples/service_account/scoped_token_generation_example.py):
-
-```python
-from skyflow.error import SkyflowError
-from skyflow.service_account import generate_bearer_token, generate_bearer_token_from_creds, is_expired
-
-# cache token for reuse
-bearer_token = ''
-token_type = ''
-options = {
-    'role_ids': ['ROLE_ID1', 'ROLE_ID2']
-}
-def token_provider():
-    global bearer_token
-    global token_type
-    # As an example
-    skyflow_credentials = {
-        'clientID': '<YOUR_CLIENT_ID>',
-        'clientName': '<YOUR_CLIENT_NAME>',
-        'tokenURI': '<YOUR_TOKEN_URI>',
-        'keyID': '<YOUR_KEY_ID>',
-        'privateKey': '<YOUR_PRIVATE_KEY>',
-    }
-    credentials_string = json.dumps(skyflow_credentials)
-
-    if is_expired(bearer_token):
-        bearer_token, token_type = generate_bearer_token_from_creds(skyflow_credentials_string, options)
-    return bearer_token, token_type
-
-try:
-    bearer_token, token_type = token_provider()
-    print('Access Token:', bearer_token)
-    print('Type of token:', token_type)
-except SkyflowError as e:
-    print(e)
-
-```
-
-## Service Account Token Generation With Context
-
-[Example using filepath](https://github.com/skyflowapi/skyflow-python/blob/SK-1749-readme/samples/service_account/token_generation_with_context_example.py):
-
-```python
-from skyflow.error import SkyflowError
-from skyflow.service_account import generate_bearer_token, is_expired
-
-# cache token for reuse
-bearer_token = ''
-token_type = ''
-options = {
-    'ctx': "<CONTEXT_ID>"
-}
-def token_provider():
-    global bearer_token
-    global token_type
-
-    if is_expired(bearer_token):
-        bearer_token, token_type = generate_bearer_token('<YOUR_CREDENTIALS_FILE_PATH>', options)
-    return bearer_token, token_type
-
-try:
-    bearer_token, token_type = token_provider()
-    print('Access Token:', bearer_token)
-    print('Type of token:', token_type)
-except SkyflowError as e:
-    print(e)
-
-```
-
-[Example using credentials string](https://github.com/skyflowapi/skyflow-python/blob/SK-1749-readme/samples/service_account/token_generation_with_context_example.py):
-
-```python
-from skyflow.error import SkyflowError
-from skyflow.service_account import generate_bearer_token, generate_bearer_token_from_creds, is_expired
-
-# cache token for reuse
-bearer_token = ''
-token_type = ''
-options = {
-    'ctx': '<CONTEXT_ID>'
-}
-def token_provider():
-    global bearer_token
-    global token_type
-    # As an example
-    skyflow_credentials = {
-        'clientID': '<YOUR_CLIENT_ID>',
-        'clientName': '<YOUR_CLIENT_NAME>',
-        'tokenURI': '<YOUR_TOKEN_URI>',
-        'keyID': '<YOUR_KEY_ID>',
-        'privateKey': '<YOUR_PRIVATE_KEY>',
-    }
-    credentials_string = json.dumps(skyflow_credentials)
-
-    if is_expired(bearer_token):
-        bearer_token, token_type = generate_bearer_token_from_creds(skyflow_credentials_string, options)
-    return bearer_token, token_type
-
-try:
-    bearer_token, token_type = token_provider()
-    print('Access Token:', bearer_token)
-    print('Type of token:', token_type)
-except SkyflowError as e:
-    print(e)
-
-```
-
-## Service Account Signed Token Generation
-
-[Example using filepath](https://github.com/skyflowapi/skyflow-python/blob/SK-1749-readme/samples/service_account/signed_token_generation_example.py):
-
-```python
-from skyflow.error import SkyflowError
-from skyflow.service_account import generate_bearer_token, is_expired
-
-# cache token for reuse
-bearer_token = ''
-token_type = ''
-options = {
-    'ctx': 'CONTEX_ID',
-    'data_tokens': ['DATA_TOKEN1', 'DATA_TOKEN2'],
-    'time_to_live': 90 # in seconds
-}
-def token_provider():
-    global bearer_token
-    global token_type
-
-    if is_expired(bearer_token):
-        bearer_token, token_type = generate_bearer_token('<YOUR_CREDENTIALS_FILE_PATH>', options)
-    return bearer_token, token_type
-
-try:
-    bearer_token, token_type = token_provider()
-    print('Access Token:', bearer_token)
-    print('Type of token:', token_type)
-except SkyflowError as e:
-    print(e)
-
-```
-
-[Example using credentials string](https://github.com/skyflowapi/skyflow-python/blob/SK-1749-readme/samples/service_account/signed_token_generation_example.py):
-
-```python
-from skyflow.error import SkyflowError
-from skyflow.service_account import generate_bearer_token, generate_bearer_token_from_creds, is_expired
-
-# cache token for reuse
-bearer_token = ''
-token_type = ''
-options = {
-    'ctx': 'CONTEX_ID',
-    'data_tokens': ['DATA_TOKEN1', 'DATA_TOKEN2'],
-    'time_to_live': 90 # in seconds
-}
-def token_provider():
-    global bearer_token
-    global token_type
-    # As an example
-    skyflow_credentials = {
-        'clientID': '<YOUR_CLIENT_ID>',
-        'clientName': '<YOUR_CLIENT_NAME>',
-        'tokenURI': '<YOUR_TOKEN_URI>',
-        'keyID': '<YOUR_KEY_ID>',
-        'privateKey': '<YOUR_PRIVATE_KEY>',
-    }
-    credentials_string = json.dumps(skyflow_credentials)
-
-    if is_expired(bearer_token):
-        bearer_token, token_type = generate_bearer_token_from_creds(skyflow_credentials_string, options)
-    return bearer_token, token_type
-
-try:
-    bearer_token, token_type = token_provider()
-    print('Access Token:', bearer_token)
-    print('Type of token:', token_type)
-except SkyflowError as e:
-    print(e)
-```
 ## Migration from V1 to V2
 
 Below are the steps to migrate the Python SDK from V1 to V2.
@@ -343,8 +73,8 @@ Below are the steps to migrate the Python SDK from V1 to V2.
 In V2, we have introduced multiple authentication options. 
 You can now provide credentials in the following ways: 
 
-- **API Key (Recommended)**
-- **Environment Variable** (`SKYFLOW_CREDENTIALS`) (**Recommended**)
+- **Passing credentials in ENV.** (`SKYFLOW_CREDENTIALS`) (**Recommended**)
+- **API Key**
 - **Path to your credentials JSON file**
 - **Stringified JSON of your credentials**
 - **Bearer token**
@@ -394,7 +124,7 @@ credentials = {
 - Use only ONE authentication method.
 - API Key or Environment Variables are recommended for production use.
 - Secure storage of credentials is essential.
-- For overriding behavior and priority order of credentials, please refer to the README.
+- For overriding behavior and priority order of credentials, please refer to [Initialize the client](#initialize-the-client) section in [Quickstart](#quickstart).
 
 ### 2. Initializing the client
 
@@ -583,7 +313,7 @@ The error response now includes:
 Get started quickly with the essential steps: authenticate, initialize the client, and perform a basic vault operation. This section provides a minimal setup to help you integrate the SDK efficiently.
 
 ### Authenticate
-You can use an API key to authenticate and authorize requests to an API. For authenticating via bearer tokens and different supported bearer token types, refer to the Authenticate with bearer tokens section. 
+You can use an API key to authenticate and authorize requests to an API. For authenticating via bearer tokens and different supported bearer token types, refer to the [Authenticate with bearer tokens](#authenticate-with-bearer-tokens) section. 
 
 ```python
 # create a new credentials dictionary
@@ -709,7 +439,7 @@ Notes
 - All Vault operations require a client instance.
 
 ### Insert data into the vault
-To insert data into your vault, use the `insert` method.  The `InsertRequest` class creates an insert request, which includes the values to be inserted as a list of records. Below is a simple example to get started. For advanced options, check out Insert data into the vault section.
+To insert data into your vault, use the `insert` method.  The `InsertRequest` class creates an insert request, which includes the values to be inserted as a list of records. Below is a simple example to get started. For advanced options, check out [Insert data into the vault](#insert-data-into-the-vault-1) section.
 
 ```python
 from skyflow.error import SkyflowError
@@ -777,12 +507,12 @@ InsertResponse(
 
 ## Vault
 
-The Vault module performs operations on the vault, including inserting records, detokenizing tokens, and retrieving tokens associated with a skyflow_id.
+The [Vault](#https://github.com/skyflowapi/skyflow-python/tree/v2/skyflow/vault) module performs operations on the vault, including inserting records, detokenizing tokens, and retrieving tokens associated with a skyflow_id.
 
 
 ### Insert data into the vault
 
-Apart from using the `insert` method to insert data into your vault covered in Quickstart, you can also specify options in `InsertRequest`, such as returning tokenized data, upserting records, or continuing the operation in case of errors.
+Apart from using the `insert` method to insert data into your vault covered in [Quickstart](#quickstart), you can also specify options in `InsertRequest`, such as returning tokenized data, upserting records, or continuing the operation in case of errors.
 
 #### Construct an insert request
 
@@ -1032,7 +762,7 @@ Notes:
 - `redaction_type` defaults to `RedactionType.PLAIN_TEXT`.
 - `continue_on_error` default valus is `False`.
 
-An example of a detokenize cal
+An [example](#https://github.com/skyflowapi/skyflow-python/blob/v2/samples/vault_api/detokenize_records.py) of a detokenize cal
 
 ```python
 from skyflow.error import SkyflowError
@@ -1209,7 +939,7 @@ except Exception as error:
     print('Unexpected Error:', error)  # Print the stack trace for debugging purposes
 ```
 
-An example of Tokenize call
+An [example](#https://github.com/skyflowapi/skyflow-python/blob/v2/samples/vault_api/tokenize_records.py) of Tokenize call
 
 ```python
 from skyflow.error import SkyflowError
@@ -1347,7 +1077,7 @@ except Exception as error:
 Retrieve specific records using skyflow `ids`. Ideal for fetching exact records when IDs are known.
 
 
-An example of a get call to retrieve data using Redaction type:
+An [example](#https://github.com/skyflowapi/skyflow-python/blob/v2/samples/vault_api/get_records.py) of a get call to retrieve data using Redaction type:
 
 ```python
 from skyflow.error import SkyflowError
@@ -1424,7 +1154,7 @@ GetResponse(
 #### Get tokens
 Return tokens for records. Ideal for securely processing sensitive data while maintaining data privacy.
 
-An example of get call to retrieve tokens using Skyflow IDs:
+An [example](#https://github.com/skyflowapi/skyflow-python/blob/v2/samples/vault_api/get_records.py) of get call to retrieve tokens using Skyflow IDs:
 
 
 ```python
@@ -1498,7 +1228,7 @@ GetResponse(
 #### Get by column name and column values
 Retrieve records by unique column values. Ideal for querying data without knowing Skyflow IDs, using alternate unique identifiers.
 
-An example of get call to retrieve data using column name and column values:
+An [example](#https://github.com/skyflowapi/skyflow-python/blob/v2/samples/vault_api/get_column_values.py) of get call to retrieve data using column name and column values:
 
 ```python
 from skyflow.error import SkyflowError
@@ -1647,7 +1377,7 @@ except Exception as error:
     print('Unexpected Error:', error)  # Print the stack trace for debugging purposes
 ```
 
-An example of update call
+An [example](#https://github.com/skyflowapi/skyflow-python/blob/v2/samples/vault_api/update_record.py) of update call
 
 ```python
 from skyflow.error import SkyflowError
@@ -1772,12 +1502,9 @@ except SkyflowError as error:
     })
 except Exception as error:
     print('Unexpected Error:', error)  # Print the exception stack trace for debugging purposes
-
-
-
 ```
 
-An example of delete call
+An [example](#https://github.com/skyflowapi/skyflow-python/blob/v2/samples/vault_api/delete_records.py) of delete call
 
 ```python
 from skyflow.error import SkyflowError
@@ -1877,7 +1604,7 @@ except Exception as error:
     # Handle any unexpected errors during execution
     print('Unexpected Error:', error)  # Print the stack trace for debugging purposes
 ```
-An example of query call
+An [example](#https://github.com/skyflowapi/skyflow-python/blob/v2/samples/vault_api/query_records.py) of query call
 
 ```python
 from skyflow.error import SkyflowError
@@ -1939,7 +1666,7 @@ QueryResponse(
 
 ### Connections
 
-Skyflow Connections is a gateway service that uses tokenization to securely send and receive data between your systems and first- or third-party services. The connections module invokes both inbound and/or outbound connections.
+Skyflow Connections is a gateway service that uses tokenization to securely send and receive data between your systems and first- or third-party services. The [connections](#https://github.com/skyflowapi/skyflow-python/tree/v2/skyflow/vault/connection) module invokes both inbound and/or outbound connections.
 - **Inbound connections**: Act as intermediaries between your client and server, tokenizing sensitive data before it reaches your backend, ensuring downstream services handle only tokenized data.
 - **Outbound connections**: Enable secure extraction of data from the vault and transfer it to third-party services via your backend server, such as processing checkout or card issuance flows.
 
@@ -1949,32 +1676,74 @@ To invoke a connection, use the `invoke` method of the Skyflow client.
 
 ```python
 from skyflow.error import SkyflowError
+from skyflow.utils.enums import RequestMethod
 from skyflow.vault.connection import InvokeConnectionRequest
 
-body = {
-    'KEY1': 'VALUE1',
-    'KEY2': 'VALUE2'
-}
-headers = {
-    'KEY1': 'VALUE1'
-}
-path_params = {
-    'KEY1': 'VALUE1'
-}
-query_params = {
-    'KEY1': 'VALUE1'
-}
+"""
+This example demonstrates how to invoke an external connection using the Skyflow SDK, along with corresponding InvokeConnectionRequest schema.
+"""
 
-invoke_connection_request = InvokeConnectionRequest(
-    method = Method.POST,
-    body = body,
-    headers = headers, # optional
-    path_params = path_params, # optional
-    query_params = query_params # optional
-)
+try:
+    # Initialize Skyflow client
+    # Step 1: Define the request body parameters
+    # These are the values you want to send in the request body
+    request_body = {
+        '<COLUMN_NAME_1>': '<COLUMN_VALUE_1>', 
+        '<COLUMN_NAME_2>': '<COLUMN_VALUE_2>'
+    }
+
+    # Step 2: Define the request headers
+    # Add any required headers that need to be sent with the request
+    request_headers = {
+        '<HEADER_NAME_1>': '<HEADER_VALUE_1>',
+        '<HEADER_NAME_2>': '<HEADER_VALUE_2>',
+    }
+
+    # Step 3: Define the path parameters
+    # Path parameters are part of the URL and typically used in RESTful APIs
+    path_params = {
+        '<YOUR_PATH_PARAM_KEY_1>': '<YOUR_PATH_PARAM_VALUE_1>',
+        '<YOUR_PATH_PARAM_KEY_2>': '<YOUR_PATH_PARAM_VALUE_2>'
+    }
+
+    # Step 4: Define the query parameters
+    # Query parameters are included in the URL after a '?' and are used to filter or modify the response
+    query_params = {
+        '<YOUR_QUERY_PARAM_KEY_1>': '<YOUR_QUERY_PARAM_VALUE_1>',
+        '<YOUR_QUERY_PARAM_KEY_2>': '<YOUR_QUERY_PARAM_VALUE_2>',
+    }
+
+    # Step 5: Build the InvokeConnectionRequest using the provided parameters
+    invoke_connection_request = InvokeConnectionRequest(
+        method=RequestMethod.POST,  # The HTTP method to use for the request (POST in this case)
+        body=request_body,  # The body of the request
+        headers=request_headers,  # The headers to include in the request
+        path_params=path_params,  # The path parameters for the URL
+        query_params=query_params  # The query parameters to append to the URL
+    )
+
+    # Step 6: Invoke the connection using the request
+    # Replace '<CONNECTION_ID>' with the actual connection ID you are using
+    response = skyflow_client.connection('<CONNECTION_ID>').invoke(invoke_connection_request)
+
+    # Step 7: Print the response from the invoked connection
+    # This response contains the result of the request sent to the external system
+    print('Connection invocation successful: ', response)
+
+except SkyflowError as error:
+    # Step 8: Handle any exceptions that occur during the connection invocation
+    print('Skyflow Specific Error: ', {
+        'code': error.http_code,
+        'message': error.message,
+        'details': error.details
+    })
+except Exception as error:
+    # Print the exception stack trace for debugging
+    print('Unexpected Error:', error)
+
 ```
 
-`methodName` supports the following methods:
+`method` supports the following methods:
 
 - GET
 - POST
@@ -1982,47 +1751,86 @@ invoke_connection_request = InvokeConnectionRequest(
 - PATCH
 - DELETE
 
-**path_params, query_params, request_header, request_body** are the JSON objects represented as dictionaries that will be sent through the connection integration url.
+**path_params, query_params, header, body** are the JSON objects represented as dictionaries that will be sent through the connection integration url.
 
-An [example](https://github.com/skyflowapi/skyflow-python/blob/SK-1749-readme/samples/vault_api/invoke_connection.py) of invoke_connection:
+An [example](#https://github.com/skyflowapi/skyflow-python/blob/v2/samples/vault_api/invoke_connection.py) of Invoke Connection
 
 ```python
-from skyflow import Skyflow
-from skyflow import LogLevel
-from skyflow.utils.enums import Method
+from skyflow import Skyflow, LogLevel
 from skyflow.error import SkyflowError
+from skyflow.utils.enums import RequestMethod
 from skyflow.vault.connection import InvokeConnectionRequest
 
-credentials = {
-    'path': '/path/to/credentials.json',
-}
+"""
+This example demonstrates how to invoke an external connection using the Skyflow SDK.
+It configures a connection, sets up the request, and sends a POST request to the external service.
 
-client = (
-    Skyflow.builder()
-    .add_connection_config({
-        'connection_id': '<CONNECTION_ID>',
-        'connection_url': '<CONNECTION_URL>',
-        'credentials': credentials
-    })
-    .set_log_level(LogLevel.OFF)
-    .build()
-)
+1. Initialize Skyflow client with connection details.
+2. Define the request body, headers, and method.
+3. Execute the connection request.
+4. Print the response from the invoked connection.
+"""
 
-invoke_connection_request = InvokeConnectionRequest(
-    method=Method.POST,
-    body={
-        'card_number': '4337-1696-5866-0865',
-        'ssn': '524-41-4248'
-    },
-    headers = {
-        'Content-Type': 'application/json'
+try:
+    # Initialize Skyflow client
+    # Step 1: Set up credentials and connection configuration
+    # Load credentials from a JSON file (you need to provide the correct path)
+    credentials = {
+        'path': '/path/to/credentials.json'
     }
-)
 
-response = client.connection('<CONNECTION_ID>').invoke(invoke_connection_request)
+    # Define the connection configuration (URL and credentials)
+    connection_config = {
+        'connection_id': '<CONNECTION_ID>',  # Replace with actual connection ID
+        'connection_url': 'https://connection.url.com',  # Replace with actual connection URL
+        'credentials': credentials  # Set credentials for the connection
+    }
 
-print(response)
+    # Initialize the Skyflow client with the connection configuration
+    skyflow_client = (
+        Skyflow.builder()
+        .add_connection_config(connection_config) # Add connection configuration to client
+        .set_log_level(LogLevel.DEBUG)  # Set log level to DEBUG for detailed logs
+        .build()  # Build the Skyflow client instance
+    )
 
+    # Step 2: Define the request body and headers
+    request_body = {
+        'card_number': '4337-1696-5866-0865', # Example card number
+        'ssn': '524-41-4248'  # Example SSN
+    }
+
+    # Add any required headers that need to be sent with the request
+    request_headers = {
+        'Content-Type': 'application/json',  # Set content type for the request
+    }
+
+    # Step 3: Build the InvokeConnectionRequest with required parameters
+    # Set HTTP method to POST, include the request body and headers
+    invoke_connection_request = InvokeConnectionRequest(
+        method=RequestMethod.POST,  # The HTTP method to use for the request (POST in this case)
+        body=request_body,  # The body of the request
+        headers=request_headers,  # The headers to include in the request
+    )
+
+    # Step 4: Invoke the connection using the request
+    # Replace '<CONNECTION_ID>' with the actual connection ID you are using
+    response = skyflow_client.connection('<CONNECTION_ID>').invoke(invoke_connection_request)
+
+    # Step 5: Print the response from the invoked connection
+    # This response contains the result of the request sent to the external system
+    print('Connection invocation successful: ', response)
+
+except SkyflowError as error:
+    # Step 6: Handle any exceptions that occur during the connection invocation
+    print('Skyflow Specific Error: ', {
+        'code': error.http_code,
+        'message': error.message,
+        'details': error.details
+    })
+except Exception as error:
+    # Print the exception stack trace for debugging
+    print('Unexpected Error:', error)
 ```
 
 Sample response:
@@ -2032,77 +1840,374 @@ ConnectionResponse(
     {
         'card_number': '4337-1696-5866-0865',
         'ssn': '524-41-4248',
-        'request_id': '84796a11-0b7d-4cb0-a348-cf9fefb5886f,84796a11-0b7d-4cb0-a348-cf9fefb5886f'
+        'request_id': '4a3453b5-7aa4-4373-98d7-cf102b1f6f97'
     }
 )
 
 ```
 
-## Logging
+### Authenticate with bearer tokens
+This section covers methods for generating and managing tokens to authenticate API calls:
 
-The skyflow python SDK provides useful logging using python's inbuilt `logging` library. By default the logging level of the SDK is set to `LogLevel.ERROR`. This can be changed by using `set_log_level(log_level)` as shown below:
+- **Generate a bearer token:**
+Enable the creation of bearer tokens using service account credentials. These tokens, valid for 60 minutes, provide secure access to Vault services and management APIs based on the service account's permissions. Use this for general API calls when you only need basic authentication without additional context or role-based restrictions.
+- **Generate a bearer token with context:**
+Support embedding context values into bearer tokens, enabling dynamic access control and the ability to track end-user identity. These tokens include context claims and allow flexible authorization for Vault services. Use this when policies depend on specific contextual attributes or when tracking end-user identity is required.
+- **Generate a scoped bearer token:**
+Facilitate the creation of bearer tokens with role-specific access, ensuring permissions are limited to the operations allowed by the designated role. This is particularly useful for service accounts with multiple roles. Use this to enforce fine-grained role-based access control, ensuring tokens only grant permissions for a specific role.
+- **Generate signed data tokens:**
+Add an extra layer of security by digitally signing data tokens with the service account's private key. These signed tokens can be securely detokenized, provided the necessary bearer token and permissions are available. Use this to add cryptographic protection to sensitive data, enabling secure detokenization with verified integrity and authenticity.
+
+#### Generate a bearer token
+The [Service Account](#https://github.com/skyflowapi/skyflow-python/tree/v2/skyflow/service_account) Python package generates service account tokens using a service account credentials file, which is provided when a service account is created. The tokens generated by this module are valid for 60 minutes and can be used to make API calls to the [Data](#https://docs.skyflow.com/record/) and [Management](#https://docs.skyflow.com/management/) APIs, depending on the permissions assigned to the service account.
+
+The `generate_bearer_token(filepath)` function takes the credentials file path for token generation, alternatively, you can also send the entire credentials as string, by using `generate_bearer_token_from_creds(credentials)`
+
+[Example](#https://github.com/skyflowapi/skyflow-python/blob/v2/samples/service_account/token_generation_example.py):
 
 ```python
-from skyflow import Skyflow
-from skyflow import LogLevel
-from skyflow import Env
+import json
+from skyflow.error import SkyflowError
+from skyflow.service_account import (
+    generate_bearer_token,
+    generate_bearer_token_from_creds,
+    is_expired,
+)
 
-# To generate Bearer Token from credentials string.
-skyflow_credentials = {
+# Example program to generate a Bearer Token using Skyflow's service account utilities.
+# The token can be generated in two ways:
+# 1. Using the file path to a credentials.json file.
+# 2. Using the JSON content of the credentials file as a string.
+
+# Variable to store the generated token
+bearer_token = ''
+
+# Example 1: Generate Bearer Token using a credentials.json file
+try:
+    # Specify the full file path to the credentials.json file
+    file_path = 'CREDENTIALS_FILE_PATH'
+
+    # Check if the token is already generated and still valid
+    if not is_expired(bearer_token):
+        print("Generated Bearer Token (from file):", bearer_token)
+    else:
+        # Generate a new Bearer Token from the credentials file
+        token, _ = generate_bearer_token(file_path) # Set credentials from the file path
+        bearer_token = token
+        # Print the generated Bearer Token to the console
+        print("Generated Bearer Token (from file):", bearer_token)
+except SkyflowError as error:
+    # Handle any exceptions encountered during the token generation process
+    print(f"Error generating token from file path: {error}")
+except Exception as e:
+    # Handle any other unexpected exceptions
+    print(f"Error generating token from file path: {e}")
+
+# Example 2: Generate Bearer Token using the credentials JSON string
+try:
+    # Provide the credentials JSON content as a string
+    skyflow_credentials = {
         'clientID': '<YOUR_CLIENT_ID>',
         'clientName': '<YOUR_CLIENT_NAME>',
         'tokenURI': '<YOUR_TOKEN_URI>',
         'keyID': '<YOUR_KEY_ID>',
         'privateKey': '<YOUR_PRIVATE_KEY>',
     }
-credentials_string = json.dumps(skyflow_credentials)
 
-# Pass one of api_key, token, credentials_string & path as credentials
-credentials = {
-        'token': 'BEARER_TOKEN', # bearer token
-        # api_key: "API_KEY", # API_KEY
-        # path: "PATH", # path to credentials file
-        # credentials_string: credentials_string, #  credentials as string
-}
+    # Convert credentials dictionary to JSON string
+    credentials_string = json.dumps(skyflow_credentials)
 
-client = (
-    Skyflow.builder()
-    .add_vault_config({
-           'vault_id': 'VAULT_ID', # primary vault
-           'cluster_id': 'CLUSTER_ID', # ID from your vault URL Eg https://{clusterId}.vault.skyflowapis.com
-           'env': Env.PROD, # Env by default it is set to PROD
-           'credentials': credentials # individual credentials
-    })
-    .add_skyflow_credentials(credentials) # skyflow credentials will be used if no individual credentials are passed
-    .set_log_level(LogLevel.INFO) # set log level by default it is set to ERROR
-    .build()
-)
+    # Check if the token is either not initialized or has expired
+    if not is_expired(bearer_token):
+        print("Generated Bearer Token (from string):", bearer_token)
+    else:
+        # Generate a new Bearer Token from the credentials string
+        token, _ = generate_bearer_token_from_creds(credentials_string)
+        bearer_token = token
+        print("Generated Bearer Token (from string):", bearer_token)
+except SkyflowError as error:
+    # Handle any exceptions encountered during the token generation process
+    print(f"Error generating token from credentials string: {error}")
+except Exception as e:
+    # Handle any other unexpected exceptions
+    print(f"Error generating token from credentials string: {e}")
 ```
 
-Current the following 5 log levels are supported:
+#### Generate bearer tokens with context
+**Context-aware authorization** embeds context values into a bearer token during its generation and so you can reference those values in your policies. This enables more flexible access controls, such as helping you track end-user identity when making API calls using service accounts, and facilitates using signed data tokens during detokenization.
 
+A service account with the context_id identifier generates bearer tokens containing context information, represented as a JWT claim in a Skyflow-generated bearer token. Tokens generated from such service accounts include a context_identifier claim, are valid for 60 minutes, and can be used to make API calls to the Data and Management APIs, depending on the service account's permissions.
+
+[Example](#https://github.com/skyflowapi/skyflow-python/blob/v2/samples/service_account/token_generation_with_context_example.py):
+```python
+import json
+from skyflow.error import SkyflowError
+from skyflow.service_account import (
+    generate_bearer_token,
+    generate_bearer_token_from_creds,
+    is_expired,
+)
+
+"""
+Example program to generate a Bearer Token using Skyflow's BearerToken utility.
+The token is generated using two approaches:
+1. By providing the credentials.json file path.
+2. By providing the contents of credentials.json as a string.
+"""
+
+# Variable to store the generated token
+bearer_token = ''
+
+# Approach 1: Generate Bearer Token by specifying the path to the credentials.json file
+try:
+    # Replace <YOUR_CREDENTIALS_FILE_PATH> with the full path to your credentials.json file
+    file_path = 'YOUR_CREDENTIALS_FILE_PATH'
+
+    # Set context string (example: "abc")
+    options = {'ctx': 'abc'}
+
+    # Check if the token is already generated and still valid
+    if not is_expired(bearer_token):
+        print("Generated Bearer Token (from file):", bearer_token)
+    else:
+        # Generate a new Bearer Token from the credentials file
+        token, _ = generate_bearer_token(file_path, options) # Set credentials from the file path and options
+        bearer_token = token
+        # Print the generated Bearer Token to the console
+        print("Generated Bearer Token (from file):", bearer_token)
+except SkyflowError as error:
+    # Handle any exceptions encountered during the token generation process
+    print(f"Error generating token from file path: {error}")
+except Exception as e:
+    # Handle any other unexpected exceptions
+    print(f"Error generating token from file path: {e}")
+
+# Approach 2: Generate Bearer Token by specifying the contents of credentials.json as a string
+try:
+    # Provide the credentials JSON content as a string
+    skyflow_credentials = {
+        'clientID': '<YOUR_CLIENT_ID>',
+        'clientName': '<YOUR_CLIENT_NAME>',
+        'tokenURI': '<YOUR_TOKEN_URI>',
+        'keyID': '<YOUR_KEY_ID>',
+        'privateKey': '<YOUR_PRIVATE_KEY>',
+    }
+
+    # Convert credentials dictionary to JSON string
+    credentials_string = json.dumps(skyflow_credentials)
+
+    # Set context string (example: "abc")
+    options = {'ctx': 'abc'}
+
+    # Check if the token is either not initialized or has expired
+    if not is_expired(bearer_token):
+        print("Generated Bearer Token (from string):", bearer_token)
+    else:
+        # Generate a new Bearer Token from the credentials string and options
+        token, _ = generate_bearer_token_from_creds(credentials_string, options)
+        bearer_token = token
+        print("Generated Bearer Token (from string):", bearer_token)
+except SkyflowError as error:
+    # Handle any exceptions encountered during the token generation process
+    print(f"Error generating token from file path: {error}")
+except Exception as e:
+    # Handle any other unexpected exceptions
+    print(f"Error generating token from credentials string: {e}")
+```
+
+#### Generate scoped bearer tokens
+A service account with multiple roles can generate bearer tokens with access limited to a specific role by specifying the appropriate roleID. This can be used to limit access to specific roles for services with multiple responsibilities, such as segregating access for billing and analytics. The generated bearer tokens are valid for 60 minutes and can only execute operations permitted by the permissions associated with the designated role.
+
+[Example](#https://github.com/skyflowapi/skyflow-python/blob/v2/samples/service_account/scoped_token_generation_example.py):
+```python
+import json
+from skyflow.error import SkyflowError
+from skyflow.service_account import (
+    generate_bearer_token,
+    generate_bearer_token_from_creds,
+    is_expired,
+)
+
+"""
+Example program to generate a Scoped Token using Skyflow's BearerToken utility.
+The token is generated by providing the file path to the credentials.json file 
+and specifying roles associated with the token.
+"""
+
+# Variable to store the generated token
+scoped_token = ''
+
+# Example: Generate Scoped Token by specifying the credentials.json file path
+try:
+    # Specify the full file path to the service account's credentials.json file
+    file_path = 'YOUR_CREDENTIALS_FILE_PATH'
+
+    # Set context string (example: "abc")
+    options = {'role_ids': ['ROLE_ID']}
+
+    # Check if the token is already generated and still valid
+    if not is_expired(scoped_token):
+        print("Generated Bearer Token (from file):", scoped_token)
+    else:
+        # Generate a new Bearer Token from the credentials file and associated roles
+        scoped_token, _ = generate_bearer_token(file_path, options) # Set credentials from the file path and options
+        # Print the generated Bearer Token to the console
+        print("Generated Bearer Token (from file):", scoped_token)
+except SkyflowError as error:
+    # Handle any exceptions encountered during the token generation process
+    print(f"Error generating token from file path: {error}")
+except Exception as e:
+    # Handle any other unexpected exceptions
+    print(f"Error generating token from file path: {e}")
+```
+
+#### Generate signed data tokens
+Skyflow generates data tokens when sensitive data is inserted into the vault. These data tokens can be digitally signed with a service account's private key, adding an extra layer of protection. Signed tokens can only be detokenized by providing the signed data token along with a bearer token generated from the service account's credentials. The service account must have the necessary permissions and context to successfully detokenize the signed data tokens.
+
+[Example](#https://github.com/skyflowapi/skyflow-python/blob/v2/samples/service_account/signed_token_generation_example.py):
+```python
+import json
+from skyflow.error import SkyflowError
+from skyflow.service_account import (
+    generate_signed_data_tokens,
+    generate_signed_data_tokens_from_creds,
+)
+
+# Example program to generate Signed Data Tokens using Skyflow's utilities.
+# Signed Data Tokens can be generated in two ways:
+# 1. By specifying the file path to the credentials.json file.
+# 2. By providing the credentials as a JSON string.
+
+# Example 1: Generate Signed Data Tokens using a credentials file
+try:
+    # File path to the service account's credentials.json file
+    file_path = "CREDENTIALS_FILE_PATH"
+
+    # Options for generating signed data tokens
+    options = {
+        "ctx": "CONTEX_ID",  # Set the context value
+        "data_tokens": ["DATA_TOKEN1", "DATA_TOKEN2"],  # Set the data tokens to be signed
+        "time_to_live": 30,  # Set the data tokens to be signed
+    }
+
+    # Generate and retrieve the signed data tokens
+    data_token, signed_data_token = generate_signed_data_tokens(file_path, options)
+    # Print the signed data tokens to the console
+    print("Signed Data Tokens (from file):", data_token, signed_data_token)
+except SkyflowError as error:
+    # Handle any exceptions encountered during the token generation process
+    print(f"Error generating signed token from file path: {error}")
+except Exception as e:
+    # Handle any other unexpected exceptions
+    print(f"Error generating signed token from file path: {e}")
+
+# Example 2: Generate Signed Data Tokens using credentials as a JSON string
+try:
+    # JSON object containing Skyflow credentials
+    skyflow_credentials = {
+        "clientID": "<YOUR_CLIENT_ID>",
+        "clientName": "<YOUR_CLIENT_NAME>",
+        "tokenURI": "<YOUR_TOKEN_URI>",
+        "keyID": "<YOUR_KEY_ID>",
+        "privateKey": "<YOUR_PRIVATE_KEY>",
+    }
+
+    # Convert credentials dictionary to JSON string
+    credentials_string = json.dumps(skyflow_credentials)
+
+    options = {
+        "ctx": "CONTEX_ID",  # Context value associated with the token
+        "data_tokens": ["DATA_TOKEN1", "DATA_TOKEN2"],  # Set the data tokens to be signed
+        "time_to_live": 30,  # Set the token's time-to-live (TTL) in seconds
+    }
+
+    # Generate and retrieve the signed data tokens
+    data_token, signed_data_token = generate_signed_data_tokens_from_creds(credentials_string, options)
+    # Print the signed data tokens to the console
+    print("Signed Data Tokens (from string):", data_token, signed_data_token)
+except SkyflowError as error:
+    # Handle any exceptions encountered during the token generation process
+    print(f"Error generating signed token from credentials string: {error}")
+except Exception as e:
+    # Handle any other unexpected exceptions
+    print(f"Error generating signed token from credentials string: {e}")
+
+```
+
+Notes:
+- The `time_to_live` (TTL) value should be specified in seconds.
+- By default, the TTL value is set to 60 seconds.
+
+## Logging
+
+The  SDK provides logging using python's inbuilt `logging` library. By default the logging level of the SDK is set to `LogLevel.ERROR`. This can be changed by using `set_log_level(log_level)` as shown below:
+
+Currently, the following five log levels are supported:
 - `DEBUG`:
-
-  When `LogLevel.DEBUG` is passed, all level of logs will be printed(DEBUG, INFO, WARN, ERROR)
-
+When `LogLevel.DEBUG` is passed, logs at all levels will be printed (DEBUG, INFO, WARN, ERROR).
 - `INFO`:
-
-  When `LogLevel.INFO` is passed, INFO logs for every event that has occurred during the SDK flow execution will be printed along with WARN and ERROR logs
-
+When `LogLevel.INFO` is passed, INFO logs for every event that occurs during SDK flow execution will be printed, along with WARN and ERROR logs.
 - `WARN`:
+When `LogLevel.WARN` is passed, only WARN and ERROR logs will be printed.
+`ERROR`:
+- When `LogLevel.ERROR` is passed, only ERROR logs will be printed.
+`OFF`:
+- LogLevel.OFF can be used to turn off all logging from the Skyflow Python SDK.
 
-  When `LogLevel.WARN` is passed, WARN and ERROR logs will be printed
+```python
+import json
+from skyflow import Skyflow
+from skyflow import LogLevel
+from skyflow import Env
 
-- `ERROR`:
+"""
+This example demonstrates how to configure the Skyflow client with custom log levels and authentication credentials (either token, credentials string, or other methods). It also shows how to configure a vault connection using specific parameters.
+1. Set up credentials with a Bearer token or credentials string.
+2. Define the Vault configuration.
+3. Build the Skyflow client with the chosen configuration and set log level.
+4. Example of changing the log level from ERROR (default) to INFO.
+"""
 
-  When `LogLevel.ERROR` is passed, only ERROR logs will be printed.
+# Step 1: Set up credentials - either pass token or use credentials string
+# In this case, we are using a Bearer token for authentication
+credentials = {
+        'token': '<BEARER_TOKEN>', # Replace with actual Bearer token
+}
 
-- `OFF`:
+# Step 2: Define the Vault configuration
+# Configure the vault with necessary details like vault ID, cluster ID, and environment
+vault_config = {
+    'vault_id': '<VAULT_ID>', # Replace with actual Vault ID (primary vault)
+    'cluster_id': '<CLUSTER_ID>', # Replace with actual Cluster ID (from vault URL)
+    'env': Env.PROD, # Set the environment (default is PROD)
+    'credentials': credentials # Set credentials for the vault (either token or credentials)
+}
 
-  `LogLevel.OFF` can be used to turn off all logging from the Skyflow SDK.
+# Step 3: Define additional Skyflow credentials (optional, if needed for credentials string)
+skyflow_credentials = {
+    'clientID': '<YOUR_CLIENT_ID>',     # Replace with your client ID
+    'clientName': '<YOUR_CLIENT_NAME>', # Replace with your client name
+    'tokenURI': '<YOUR_TOKEN_URI>',     # Replace with your token URI
+    'keyID': '<YOUR_KEY_ID>',           # Replace with your key ID
+    'privateKey': '<YOUR_PRIVATE_KEY>', # Replace with your private key
+}
 
-`Note`: The ranking of logging levels is as follows : `DEBUG` < `INFO` < `WARN` < `ERROR` < `OFF`
+# Convert the credentials object to a json string format to be used for generating a Bearer Token
+credentials_string = json.dumps(skyflow_credentials) # Set credentials string
+
+# Step 4: Build the Skyflow client with the chosen configuration and log level
+skyflow_client = (
+    Skyflow.builder()
+        .add_vault_config(vault_config)       # Add the Vault configuration
+        .add_skyflow_credentials(skyflow_credentials) # Use Skyflow credentials if no token is passed
+        .set_log_level(LogLevel.INFO) # Set log level to INFO (default is ERROR)
+        .build() # Build the Skyflow client
+)
+
+# Now, the Skyflow client is ready to use with the specified log level and credentials
+print('Skyflow client has been successfully configured with log level: INFO.')
+```
 
 ## Reporting a Vulnerability
 
-If you discover a potential security issue in this project, please reach out to us at security@skyflow.com. Please do not create public GitHub issues or Pull Requests, as malicious actors could potentially view them.
+If you discover a potential security issue in this project, please reach out to us at **security@skyflow.com**. Please do not create public GitHub issues or Pull Requests, as malicious actors could potentially view them.
