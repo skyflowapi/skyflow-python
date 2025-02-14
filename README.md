@@ -298,7 +298,7 @@ The error response now includes:
 
 #### V2 (New) Error Structure:
 
-```json
+```typescript
 {
     "http_status": "<http_status>",
     "grpc_code": <grpc_code>,
