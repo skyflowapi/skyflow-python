@@ -1,29 +1,33 @@
-# Skyflow-python
+# Skyflow Python
 
----
-
-## Description
-
-This Python SDK is designed to help developers easily implement Skyflow into their python backend.
+The Skyflow Python SDK is designed to help with integrating Skyflow into a Python backend.
 
 ## Table of Contents
 
-- [Skyflow-python](#skyflow-python)
-  - [Description](#description)
-  - [Table of Contents](#table-of-contents)
-  - [Features](#features)
-  - [Installation](#installation)
+- [Table of Contents](#table-of-contents)
+- [Overview](#overview)
+- [Install](#installation)
     - [Requirements](#requirements)
     - [Configuration](#configuration)
-  - [Service Account Bearer Token Generation](#service-account-bearer-token-generation)
-  - [Migration from v1 to v2](#migrate-from-v1-to-v2)
-  - [Vault APIs](#vault-apis)
+- [Migration from v1 to v2](#migration-from-v1-to-v2)
+    - [Authentication options](#1-authentication-options)
+    - [Initializing the client](#2-initializing-the-client)
+    - [Request & response structure](#3-request--response-structure)
+    - [Request options](#4-request-options)
+    - [Error structure](#5-error-structure)
+- [Quickstart](#quickstart)
+    - [Authenticate](#authenticate)
+    - [Initialize the client](#initialize-the-client)
+    - [Insert data into the vault](#insert-data-into-the-vault)
+  - [Vault](#vault-apis)
     - [Insert data into the vault](#insert-data-into-the-vault)
     - [Detokenize](#detokenize)
     - [Tokenize](#tokenize)
     - [Get](#get)
-    - [Get By Id](#get-by-id)
-      - [Redaction Types](#redaction-types)
+        - [Get by skyflow IDs](#get-by-skyflow-ids)
+        - [Get tokens](#get-tokens)
+        - [Get by column name and column values](#get-by-column-name-and-column-values)
+        - [Redaction types](#redaction-types)
     - [Update](#update)
     - [Delete](#delete)
     - [Invoke Connection](#invoke-connection)
@@ -31,19 +35,20 @@ This Python SDK is designed to help developers easily implement Skyflow into the
   - [Logging](#logging)
   - [Reporting a Vulnerability](#reporting-a-vulnerability)
 
-## Features
+## Overview
 
-Authentication with a Skyflow Service Account and generation of a bearer token
+- Authenticate using a Skyflow service account and generate bearer tokens for secure access.
 
-Vault API operations to insert, retrieve and tokenize sensitive data
+- Perform Vault API operations such as inserting, retrieving, and tokenizing sensitive data with ease.
 
-Invoking connections to call downstream third party APIs without directly handling sensitive data
+- Invoke connections to third-party APIs without directly handling sensitive data, ensuring compliance and data protection.
+
 
 ## Installation
 
 ### Requirements
 
-- Python 3.8.0 and above
+- Python 3.8.0 and above (tested with Python 3.8.0)
 
 ### Configuration
 
@@ -329,7 +334,7 @@ try:
 except SkyflowError as e:
     print(e)
 ```
-## Migrate from V1 to V2
+## Migration from V1 to V2
 
 Below are the steps to migrate the Python SDK from V1 to V2.
 
@@ -346,8 +351,7 @@ You can now provide credentials in the following ways:
 
 These options allow you to choose the authentication method that best suits your use case.
 
-#### V1 (Old):
-Passing the token provider function below as a parameter to the Configuration.
+#### V1 (Old): Passing the token provider function below as a parameter to the Configuration.
 
 ```python
 # User defined function to provide access token to the vault apis
@@ -359,8 +363,7 @@ def token_provider():
     return bearerToken
 ```
 
-#### V2 (New):
-Passing one of the following:
+#### V2 (New): Passing one of the following:
 
 ```python
 # Option 1: API Key (Recommended)
@@ -393,7 +396,7 @@ credentials = {
 - Secure storage of credentials is essential.
 - For overriding behavior and priority order of credentials, please refer to the README.
 
-### 2. Client Initialization
+### 2. Initializing the client
 
 In V2, we have introduced a Builder design pattern for client initialization and added support for multi-vault. This allows you to configure multiple vaults during client initialization. 
 
@@ -409,7 +412,7 @@ During client initialization, you can pass the following parameters:
 
 ```python
 # Initializing a Skyflow Client instance with a SkyflowConfiguration object
-config = Configuration('<YOUR_VAULT_ID>', '<YOUR_VAULT_URL>', token_provider)
+config = Configuration('<VAULT_ID>', '<VAULT_URL>', token_provider)
 client = Client(config)
 ```
 
@@ -535,20 +538,23 @@ options = InsertOptions(
 
 ```python
 insert_request = InsertRequest(
-   table_name=table_name,
+   table_name=table_name,        # Replace with the table name
    values=insert_data,
-   return_tokens=True, # Optional: Get tokens for inserted data
-   continue_on_error=True # Optional: Continue on partial errors
+   return_tokens=False,          # Do not return tokens
+   continue_on_error=False,      # Stop inserting if any record fails
+   upsert='<UPSERT_COLUMN>',     # Replace with the column name used for upsert logic
+   token_mode=TokenMode.DISABLE, # Disable BYOT
+   tokens='<TOKENS>'             # Replace with tokens when TokenMode is ENABLE.
 )
 ```
 
-### 5. Request Options
+### 5. Error Structure
 
 In V2, we have enriched the error details to provide better debugging capabilities. 
 The error response now includes: 
 - **http_status**: The HTTP status code. 
 - **grpc_code**: The gRPC code associated with the error. 
-- **details & message**: A detailed description of the error. 
+- **details** & **message**: A detailed description of the error. 
 - **request_id**: A unique request identifier for easier debugging.
 
 #### V1 (Old) Error Structure:
@@ -568,113 +574,191 @@ The error response now includes:
     "grpc_code": "<grpc_code>",
     "http_code": "<http_code>",
     "message": "<message>",
-    "request_id": "<req_id>",
+    "request_id": "<request_id>",
     "details": [ "<details>" ]
 }
 ```
 
-## Vault APIs
+## Quickstart
+Get started quickly with the essential steps: authenticate, initialize the client, and perform a basic vault operation. This section provides a minimal setup to help you integrate the SDK efficiently.
 
-The vault python module is used to perform operations on the vault such as inserting records, detokenizing tokens, retrieving tokens for a skyflow_id and to invoke a connection.
-
-To use this module, the skyflow client must first be initialized as follows.
+### Authenticate
+You can use an API key to authenticate and authorize requests to an API. For authenticating via bearer tokens and different supported bearer token types, refer to the Authenticate with bearer tokens section. 
 
 ```python
-from skyflow import Env
-from skyflow import Skyflow, LogLevel
-
-# To generate Bearer Token from credentials string.
-skyflow_credentials = {
-        'clientID': '<YOUR_CLIENT_ID>',
-        'clientName': '<YOUR_CLIENT_NAME>',
-        'tokenURI': '<YOUR_TOKEN_URI>',
-        'keyID': '<YOUR_KEY_ID>',
-        'privateKey': '<YOUR_PRIVATE_KEY>',
-    }
-credentials_string = json.dumps(skyflow_credentials)
-
-# Pass one of api_key, token, credentials_string & path as credentials
+# create a new credentials dictionary
 credentials = {
-        'token': 'BEARER_TOKEN', # bearer token
-        # api_key: "API_KEY", # API_KEY
-        # path: "PATH", # path to credentials file
-        # credentials_string: credentials_string, #  credentials as string
+        api_key: "<API_KEY>", # add your API key in credentials
+}
+```
+
+### Initialize the client
+To get started, you must first initialize the skyflow client. While initializing the skyflow client, you can specify different types of credentials.
+**1. API keys**
+- A unique identifier used to authenticate and authorize requests to an API.
+**2. Bearer tokens**
+- A temporary access token used to authenticate API requests, typically included in the
+Authorization header.
+**3. Service account credentials file path**
+- The file path pointing to a JSON file containing credentials for a service account, used
+for secure API access.
+**4. Service account credentials string**
+- A JSON-formatted string containing service account credentials, often used as an alternative to a file for programmatic authentication.
+
+Note: Only one type of credential can be used at a time.
+
+```python
+import json
+from skyflow import Skyflow
+from skyflow import LogLevel
+from skyflow import Env
+
+"""
+Example program to initialize the Skyflow client with various configurations.
+The Skyflow client facilitates secure interactions with the Skyflow vault, 
+such as securely managing sensitive data.
+"""
+
+# Step 1: Define the primary credentials for authentication.
+# Note: Only one type of credential can be used at a time. You can choose between:
+# - API key
+# - Bearer token
+# - A credentials string (JSON-formatted)
+# - A file path to a credentials file.
+
+# Initialize primary credentials using a Bearer token for authentication.
+primary_credentials = {
+    'token': '<BEARER_TOKEN>'  # Replace <BEARER_TOKEN> with your actual authentication token.
 }
 
-client = (
+# Step 2: Configure the primary vault details.
+# VaultConfig stores all necessary details to connect to a specific Skyflow vault.
+primary_vault_config = {
+    'vault_id': '<PRIMARY_VAULT_ID>',  # Replace with your primary vault's ID.
+    'cluster_id': '<CLUSTER_ID>',      # Replace with the cluster ID (part of the vault URL, e.g., https://{clusterId}.vault.skyflowapis.com).
+    'env': Env.PROD,                    # Set the environment (PROD, SANDBOX, STAGE, DEV).
+    'credentials': primary_credentials  # Attach the primary credentials to this vault configuration.
+}
+
+# Step 3: Create credentials as a JSON object (if a Bearer Token is not provided).
+# Demonstrates an alternate approach to authenticate with Skyflow using a credentials object.
+skyflow_credentials = {
+    'clientID': '<YOUR_CLIENT_ID>',       # Replace with your Client ID.
+    'clientName': '<YOUR_CLIENT_NAME>',   # Replace with your Client Name.
+    'tokenURI': '<YOUR_TOKEN_URI>',       # Replace with the Token URI.
+    'keyID': '<YOUR_KEY_ID>',             # Replace with your Key ID.
+    'privateKey': '<YOUR_PRIVATE_KEY>'    # Replace with your Private Key.
+}
+
+# Step 4: Convert the JSON object to a string and use it as credentials.
+# This approach allows the use of dynamically generated or pre-configured credentials.
+credentials_string = json.dumps(skyflow_credentials)  # Converts JSON object to string for use as credentials.
+
+# Step 5: Define secondary credentials (API key-based authentication as an example).
+# Demonstrates a different type of authentication mechanism for Skyflow vaults.
+secondary_credentials = {
+    'token': '<BEARER_TOKEN>'  # Replace with your API Key for authentication.
+}
+
+# Step 6: Configure the secondary vault details.
+# A secondary vault configuration can be used for operations involving multiple vaults.
+secondary_vault_config = {
+    'vault_id': '<SECONDARY_VAULT_ID>',  # Replace with your secondary vault's ID.
+    'cluster_id': '<CLUSTER_ID>',        # Replace with the corresponding cluster ID.
+    'env': Env.PROD,                      # Set the environment for this vault.
+    'credentials': secondary_credentials  # Attach the secondary credentials to this configuration.
+}
+
+# Step 7: Define tertiary credentials using a path to a credentials JSON file.
+# This method demonstrates an alternative authentication method.
+tertiary_credentials = {
+    'token': '<BEARER_TOKEN>'  # Replace with the path to your credentials file.
+}
+
+# Step 8: Configure the tertiary vault details.
+tertiary_vault_config = {
+    'vault_id': '<TERTIARY_VAULT_ID>',   # Replace with the tertiary vault ID.
+    'cluster_id': '<CLUSTER_ID>',        # Replace with the corresponding cluster ID.
+    'env': Env.PROD,                      # Set the environment for this vault.
+    'credentials': tertiary_credentials  # Attach the tertiary credentials.
+}
+
+# Step 9: Build and initialize the Skyflow client.
+# Skyflow client is configured with multiple vaults and credentials.
+skyflow_client = (
     Skyflow.builder()
-    .add_vault_config({
-           'vault_id': 'VAULT_ID', # primary vault
-           'cluster_id': 'CLUSTER_ID', # ID from your vault URL Eg https://{clusterId}.vault.skyflowapis.com
-           'env': Env.PROD, # Env by default it is set to PROD
-           'credentials': credentials # individual credentials
-    })
-    .add_skyflow_credentials(credentials) # skyflow credentials will be used if no individual credentials are passed
-    .set_log_level(LogLevel.INFO) # set log level by default it is set to ERROR
+    .add_vault_config(primary_vault_config)   # Add the primary vault configuration.
+    .add_vault_config(secondary_vault_config) # Add the secondary vault configuration.
+    .add_vault_config(tertiary_vault_config)  # Add the tertiary vault configuration.
+    .add_skyflow_credentials(skyflow_credentials)  # Add JSON-formatted credentials if applicable.
+    .set_log_level(LogLevel.ERROR)  # Set log level for debugging or monitoring purposes.
     .build()
 )
+
+# The Skyflow client is now fully initialized.
+# Use the `skyflow_client` object to perform secure operations such as:
+# - Inserting data
+# - Retrieving data
+# - Deleting data
+# within the configured Skyflow vaults.
+
 ```
-
-Notes:
-
-- If both Skyflow common credentials and individual credentials at the configuration level are provided, the individual credentials at the configuration level will take priority.
-
-All Vault APIs must be invoked using a client instance.
+Notes
+- If both Skyflow common credentials and individual credentials at the configuration level are specified, the individual credentials at the configuration level will take precedence.
+- If neither Skyflow common credentials nor individual configuration-level credentials are provided, the SDK attempts to retrieve credentials from the SKYFLOW_CREDENTIALS environment variable.
+- All Vault operations require a client instance.
 
 ### Insert data into the vault
-
-To insert data into your vault, use the `insert` method. The `InsertRequest` class is used to create an insert request, which contains the values to be inserted in the form of a dictionary of records. Additionally, you can provide options in the insert request, such as returning tokenized data, upserting records, and continuing on error.
-
-Insert call schema
-
-```python
-#Initialize Client
-from skyflow.error import SkyflowError
-from skyflow.vault.data import InsertRequest
-
-try:
-    insert_data = [
-        {'<FIELD_NAME1>': '<VALUE1>'},
-        {'<FIELD_NAME2>': '<VALUE2>'}
-    ]
-
-
-    insert_request = InsertRequest(
-        table_name = '<TABLE_NAME>',
-        values = insert_data,
-    )
-
-    response = skyflow_client.vault('VAULT_ID').insert(insert_request)
-    print('Response:', response)
-except SkyflowError as e:
-    print('Error Occurred:', e)
-```
-
-**Insert call [example](https://github.com/skyflowapi/skyflow-python/blob/SK-1749-readme/samples/vault_api/insert_records.py)**
+To insert data into your vault, use the `insert` method.  The `InsertRequest` class creates an insert request, which includes the values to be inserted as a list of records. Below is a simple example to get started. For advanced options, check out Insert data into the vault section.
 
 ```python
 from skyflow.error import SkyflowError
 from skyflow.vault.data import InsertRequest
 
+"""
+ * This example demonstrates how to insert sensitive data (e.g., card information) into a Skyflow vault using the Skyflow client.
+ *
+ * 1. Initializes the Skyflow client.
+ * 2. Prepares a record with sensitive data (e.g., card number and cardholder name).
+ * 3. Creates an insert request for inserting the data into the Skyflow vault.
+ * 4. Prints the response of the insert operation.
+"""
+
 try:
+    # Step 1: Initialize data to be inserted into the Skyflow vault
     insert_data = [
-        {'card_number': '4111111111111111'},
+        {
+            'card_number': '4111111111111111',  # Replace with actual card number (sensitive data)
+            'cardholder_name': 'John Doe',     # Replace with actual cardholder name (sensitive data)
+        },
     ]
 
+    # Step 2: Create Insert Request
     insert_request = InsertRequest(
-        table_name = 'table1',
-        values = insert_data,
-        return_tokens = True  # returns tokens
+        table_name='table1',  # Specify the table in the vault where the data will be inserted
+        values=insert_data,   # Attach the data (records) to be inserted
+        return_tokens=True,   # Specify if tokens should be returned upon successful insertion
+        continue_on_error=True  # Optional: Continue on partial errors
     )
 
-    response = client.vault('<VAULT_ID>').insert(insert_request)
-    print("Response:", response)
-except SkyflowError as e:
-    print("Error Occurred:", e)
+    # Step 3: Perform the insert operation using the Skyflow client
+    insert_response = skyflow_client.vault('9f27764a10f7946fe56b3258e117').insert(insert_request)
+    # Replace the vault ID "9f27764a10f7946fe56b3258e117" with your actual Skyflow vault ID
 
+    # Step 4: Print the response from the insert operation
+    print('Insert Response: ', insert_response)
+
+except SkyflowError as error:
+    # Step 5: Handle any exceptions that may occur during the insert operation
+    print('Skyflow Specific Error: ', {
+        'code': error.http_code,
+        'message': error.message,
+        'details': error.details
+    })
+except Exception as error:
+    print('Unexpected Error:', error)  # Print the stack trace for debugging purposes
 ```
-
-Skyflow returns tokens for the record you just inserted.
+Skyflow returns tokens for the record that was just inserted.
 
 ```python
 InsertResponse(
@@ -682,37 +766,131 @@ InsertResponse(
         [
             {
                 'skyflow_id': 'a8f3ed5d-55eb-4f32-bf7e-2dbf4b9d9097',
-                'card_number': '5479-4229-4622-1393'
+                'card_number': '5484-7829-1702-9110',
+                'cardholder_name': 'b2308e2a-c1f5-469b-97b7-1f193159399b'
             }
         ],
     errors=[]
 )
 ```
 
-**Insert call example with `continue_on_error` option**
+
+## Vault
+
+The Vault module performs operations on the vault, including inserting records, detokenizing tokens, and retrieving tokens associated with a skyflow_id.
+
+
+### Insert data into the vault
+
+Apart from using the `insert` method to insert data into your vault covered in Quickstart, you can also specify options in `InsertRequest`, such as returning tokenized data, upserting records, or continuing the operation in case of errors.
+
+#### Construct an insert request
 
 ```python
 from skyflow.error import SkyflowError
 from skyflow.vault.data import InsertRequest
 
+"""
+Example program to demonstrate inserting data into a Skyflow vault, along with corresponding InsertRequest schema.
+"""
+
 try:
+    # Initialize Skyflow client
+    # Step 1: Prepare the data to be inserted into the Skyflow vault
     insert_data = [
-        {'card_number': '4111111111111111'},
-        {'card_numbe': '4111111111111111'},  # Intentional typo card_numbe
+        # Create the first record with field names and their respective values
+        {
+            '<FIELD_NAME_1>': '<VALUE_1>',  # Replace with actual field name and value
+            '<FIELD_NAME_2>': '<VALUE_2>',  # Replace with actual field name and value
+        },
+        # Create the second record with field names and their respective values
+        {
+            '<FIELD_NAME_1>': '<VALUE_1>',  # Replace with actual field name and value
+            '<FIELD_NAME_2>': '<VALUE_2>',  # Replace with actual field name and value
+        }
     ]
 
+    # Step 2: Build an InsertRequest object with the table name and the data to insert
     insert_request = InsertRequest(
-        table_name = 'table1',
-        values = insert_data,
-        return_tokens = True,  # returns tokens
-        continue_on_error = True
+        table_name='<TABLE_NAME>',  # Replace with the actual table name in your Skyflow vault
+        values=insert_data,         # Attach the data to be inserted
     )
 
-    response = client.vault('<VAULT_ID>').insert(insert_request)
-    print('Response:', response)
-except SkyflowError as e:
-    print('Error Occurred:', e)
+    # Step 3: Use the Skyflow client to perform the insert operation
+    insert_response = skyflow_client.vault('<VAULT_ID>').insert(insert_request)
+    # Replace <VAULT_ID> with your actual vault ID
 
+    # Print the response from the insert operation
+    print('Insert Response: ', insert_response)
+
+# Step 5: Handle any exceptions that occur during the insert operation
+except SkyflowError as error:
+    print('Skyflow Specific Error: ', {
+        'code': error.http_code,
+        'message': error.message,
+        'details': error.details
+    })
+except Exception as error:
+    print('Unexpected Error:', error)  # Print the stack trace for debugging purposes
+```
+
+#### Insert call example with `continue_on_error` option
+The `continue_on_error` flag is a boolean that determines whether insert operation should proceed despite encountering partial errors. Set to `True` to allow the process to continue even if some errors occur.
+
+```python
+from skyflow.error import SkyflowError
+from skyflow.vault.data import InsertRequest
+
+"""
+This example demonstrates how to insert sensitive data (e.g., card information) into a Skyflow vault using the Skyflow client.
+
+1. Initializes the Skyflow client.
+2. Prepares a record with sensitive data (e.g., card number and cardholder name).
+3. Creates an insert request for inserting the data into the Skyflow vault.
+4. Specifies options to continue on error and return tokens.
+5. Prints the response of the insert operation.
+"""
+
+try:
+    # Initialize Skyflow client
+    # Step 1: Initialize a list to hold the data records to be inserted into the vault
+    insert_data = [
+        # Step 2: Create the first record with card number and cardholder name
+        {
+            'card_number': '4111111111111111',  # Replace with actual card number (sensitive data)
+            'cardholder_name': 'John Doe',     # Replace with actual cardholder name (sensitive data)
+        },
+        # Step 3: Create the second record with card number and cardholder name
+        {
+            'card_number': '4111111111111111',  # Ensure field name matches ("card_number")
+            'cardholder_name': 'Jane Doe',     # Replace with actual cardholder name (sensitive data)
+        }
+    ]
+
+    # Step 4: Build the InsertRequest object with the data records to insert
+    insert_request = InsertRequest(
+        table_name='table1',  # Specify the table in the vault where the data will be inserted
+        values=insert_data,   # Attach the data (records) to be inserted
+        return_tokens=True,   # Specify if tokens should be returned upon successful insertion
+        continue_on_error=True  # Specify to continue inserting records even if an error occurs for some records
+    )
+
+    # Step 5: Perform the insert operation using the Skyflow client
+    insert_response = skyflow_client.vault('9f27764a10f7946fe56b3258e117').insert(insert_request)
+    # Replace the vault ID "9f27764a10f7946fe56b3258e117" with your actual Skyflow vault ID
+
+    # Step 6: Print the response from the insert operation
+    print('Insert Response: ', insert_response)
+
+except SkyflowError as error:
+    # Step 7: Handle any exceptions that may occur during the insert operation
+    print('Skyflow Specific Error: ', {
+        'code': error.http_code,
+        'message': error.message,
+        'details': error.details
+    })
+except Exception as error:
+    print('Unexpected Error:', error)  # Print the stack trace for debugging purposes
 ```
 
 Sample Response
@@ -722,9 +900,11 @@ InsertResponse(
     inserted_fields=
         [
             {
-                'skyflow_id': '89c125d1-3bec-4360-b701-a032dda16500',
+                'card_number': '5484-7829-1702-9110',
                 'request_index': 0,
-                'card_number': '5479-4229-4622-1393'
+                'skyflow_id': '9fac9201-7b8a-4446-93f8-5244e1213bd1',
+                'cardholder_name': 'b2308e2a-c1f5-469b-97b7-1f193159399b',
+
             }
         ],
     errors=
@@ -738,28 +918,57 @@ InsertResponse(
 
 ```
 
-**Insert call example with `upsert` options**
+**Insert call example with `upsert` option**
+An upsert operation checks for a record based on a unique column's value. If a match exists, the record is updated; otherwise, a new record is inserted.
 
 ```python
 from skyflow.error import SkyflowError
 from skyflow.vault.data import InsertRequest
 
+"""
+This example demonstrates how to insert sensitive data (e.g., card information) into a Skyflow vault using the Skyflow client.
+
+1. Initializes the Skyflow client.
+2. Prepares a record with sensitive data (e.g., card number and cardholder name).
+3. Creates an insert request for inserting the data into the Skyflow vault.
+4. Specifies the field (cardholder_name) for upsert operations.
+5. Prints the response of the insert operation.
+"""
+
 try:
+    # Initialize Skyflow client
+    # Step 1: Initialize a list to hold the data records for the insert/upsert operation
     insert_data = [
-        {"name": 'sample name'},
+        # Step 2: Create a record with the field 'cardholder_name' to insert or upsert
+        {
+            'cardholder_name': 'John Doe',     # Replace with the actual cardholder name
+        }
     ]
 
+    # Step 3: Build the InsertRequest object with the upsertData
     insert_request = InsertRequest(
-        table_name = 'table1',
-        values = insert_data,
-        return_tokens = True,  # returns tokens
-        upsert = "name"  # unique column name
+        table_name='table1',      # Specify the table in the vault where the data will be inserted
+        values=insert_data,       # Attach the data (records) to be inserted
+        return_tokens=True,       # Specify if tokens should be returned upon successful insertion
+        upsert='cardholder_name'  # Specify the field to be used for upsert operations (e.g., cardholder_name)
     )
 
-    response = client.vault('<VAULT_ID>').insert(insert_request)
-    print('Response:', response)
-except SkyflowError as e:
-    print('Error Occurred:', e)
+    # Step 4: Perform the insert/upsert operation using the Skyflow client
+    insert_response = skyflow_client.vault('9f27764a10f7946fe56b3258e117').insert(insert_request)
+    # Replace the vault ID "9f27764a10f7946fe56b3258e117" with your actual Skyflow vault ID
+
+    # Step 5: Print the response from the insert/upsert operation
+    print('Insert Response: ', insert_response)
+
+except SkyflowError as error:
+    # Step 6: Handle any exceptions that may occur during the insert/upsert operation
+    print('Skyflow Specific Error: ', {
+        'code': error.http_code,
+        'message': error.message,
+        'details': error.details
+    })
+except Exception as error:
+    print('Unexpected Error:', error)  # Print the stack trace for debugging purposes
 ```
 
 Skyflow returns tokens, with `upsert` support, for the record you just inserted.
@@ -769,8 +978,8 @@ InsertResponse(
     inserted_fields=
         [
             {
-                'skyflow_id': 'a8f3ed5d-55eb-4f32-bf7e-2dbf4b9d9097',
-                'name': '3f27b3d7-6bf0-432a-acf9-789c0470e2da'
+                'skyflow_id': '9fac9201-7b8a-4446-93f8-5244e1213bd1',
+                'name': '73ce45ce-20fd-490e-9310-c1d4f603ee83'
             }
         ],
     errors=[]
@@ -779,27 +988,43 @@ InsertResponse(
 
 ### Detokenize
 
-To retrieve tokens from your vault, you can use the `detokenize` method. The `DetokenizeRequest` class requires a list of detokenization data to be provided as input. Additionally, the redaction type and continue on error are optional parameters.
-
+To retrieve tokens from your vault, use the `detokenize` method. The `DetokenizeRequest` class requires a list of detokenization data as input. Additionally, you can provide optional parameters, such as the redaction type and the option to continue on error.
+#### Construct a detokenize request
 ```python
 from skyflow.error import SkyflowError
 from skyflow.utils.enums import RedactionType
 from skyflow.vault.tokens import DetokenizeRequest
-
+"""
+This example demonstrates how to detokenize sensitive data from tokens stored in a Skyflow vault, along with corresponding DetokenizeRequest schema. 
+"""
 try:
-    detokenize_data = ['<TOKEN1>', '<TOKEN2>', '<TOKEN3>']
+    # Initialize Skyflow client
+    # Step 1: Step 1: Initialize a list of tokens to be detokenized (replace with actual tokens)
+    detokenize_data = ['<YOUR_TOKEN_VALUE_1>', '<YOUR_TOKEN_VALUE_2>', '<YOUR_TOKEN_VALUE_3>']  # Replace with your actual token values
 
+    # Step 2: Create the DetokenizeRequest object with the tokens and redaction type
     detokenize_request = DetokenizeRequest(
-        tokens =d etokenize_data,
-        continue_on_error = False,  # optional
-        redaction_type = RedactionType.PLAIN_TEXT  # optional
+        tokens=detokenize_data,                  # Provide the list of tokens to be detokenized
+        continue_on_error=True,                  # Continue even if one token cannot be detokenized
+        redaction_type=RedactionType.PLAIN_TEXT  # Specify how the detokenized data should be returned (plain text)
     )
 
-    response = skyflow_client.vault('<VAULT_ID>').detokenize(detokenize_request)
-    print('Response:', response)
-except SkyflowError as e:
-    print('Error Occurred:', e)
+    # Step 3: Call the Skyflow vault to detokenize the provided tokens
+    detokenize_response = skyflow_client.vault('<VAULT_ID>').detokenize(detokenize_request)
+    # Replace <VAULT_ID> with your actual Skyflow vault ID
 
+    # Step 4: Print the detokenization response, which contains the detokenized data
+    print('Response:', detokenize_response)
+# Step 5: Handle any errors that occur during the detokenization process
+except SkyflowError as error:
+    print('Skyflow Specific Error: ', {
+        'code': error.http_code,
+        'message': error.message,
+        'details': error.details
+    })
+
+except Exception as error:
+    print('Unexpected Error:', error)  # Print the exception for debugging purposes
 ```
 
 Notes:
@@ -807,27 +1032,49 @@ Notes:
 - `redaction_type` defaults to `RedactionType.PLAIN_TEXT`.
 - `continue_on_error` default valus is `False`.
 
-An [example](https://github.com/skyflowapi/skyflow-python/blob/SK-1749-readme/samples/vault_api/detokenize_records.py) of a detokenize call:
+An example of a detokenize cal
 
 ```python
 from skyflow.error import SkyflowError
 from skyflow.utils.enums import RedactionType
 from skyflow.vault.tokens import DetokenizeRequest
+"""
+This example demonstrates how to detokenize sensitive data from tokens stored in a Skyflow vault.
 
+1. Initializes the Skyflow client.
+2. Creates a list of tokens (e.g., credit card tokens) that represent the sensitive data.
+3. Builds a detokenization request using the provided tokens and specifies how the redacted data should be returned.
+4. Calls the Skyflow vault to detokenize the tokens and retrieves the detokenized data.
+5. Prints the detokenization response, which contains the detokenized values or errors.
+"""
 try:
-    detokenize_data = ['9738-1683-0486-1480', '6184-6357-8409-6668', '4914-9088-2814-3840']
+    # Initialize Skyflow client
+    # Step 1: Step 1: Initialize a list of tokens to be detokenized (replace with actual tokens)
+    tokens = ['9738-1683-0486-1480', '6184-6357-8409-6668', '4914-9088-2814-3840']  # Replace with your actual token values
 
+    # Step 2: Create the DetokenizeRequest object with the tokens and redaction type
     detokenize_request = DetokenizeRequest(
-        tokens = detokenize_data,
-        continue_on_error = False,  # optional
-        redaction_type = RedactionType.PLAIN_TEXT  # optional
+        tokens=tokens,                           # Provide the list of tokens to be detokenized
+        continue_on_error=False,                 # Stop the process if any token cannot be detokenized
+        redaction_type=RedactionType.PLAIN_TEXT  # Specify how the detokenized data should be returned (plain text)
     )
 
-    response = skyflow_client.vault('<VAULT_ID>').detokenize(detokenize_request)
-    print('Response:', response)
-except SkyflowError as e:
-    print('Error Occurred:', e)
+    # Step 3: Call the Skyflow vault to detokenize the provided tokens
+    detokenize_response = skyflow_client.vault('9f27764a10f7946fe56b3258e117').detokenize(detokenize_request)
+    # Replace "9f27764a10f7946fe56b3258e117" with your actual Skyflow vault ID
 
+    # Step 4: Print the detokenization response, which contains the detokenized data
+    print('Response:', detokenize_response)
+# Step 5: Handle any errors that occur during the detokenization process
+except SkyflowError as error:
+    print('Skyflow Specific Error: ', {
+        'code': error.http_code,
+        'message': error.message,
+        'details': error.details
+    })
+
+except Exception as error:
+    print('Unexpected Error:', error)  # Print the exception for debugging purposes
 ```
 
 Sample response:
@@ -843,27 +1090,49 @@ DetokenizeResponse(
 )
 ```
 
-An example of a detokenize call with continue_on_error:
+An example of a detokenize call with `continue_on_error` option:
 
 ```python
 from skyflow.error import SkyflowError
 from skyflow.utils.enums import RedactionType
 from skyflow.vault.tokens import DetokenizeRequest
+"""
+This example demonstrates how to detokenize sensitive data from tokens stored in a Skyflow vault.
 
+1. Initializes the Skyflow client.
+2. Creates a list of tokens (e.g., credit card tokens) that represent the sensitive data.
+3. Builds a detokenization request using the provided tokens and specifies how the redacted data should be returned.
+4. Calls the Skyflow vault to detokenize the tokens and retrieves the detokenized data.
+5. Prints the detokenization response, which contains the detokenized values or errors.
+"""
 try:
-    detokenize_data = ['9738-1683-0486-1480', '6184-6357-8409-6668', '4914-9088-2814-384']
+    # Initialize Skyflow client
+    # Step 1: Step 1: Initialize a list of tokens to be detokenized (replace with actual tokens)
+    tokens = ['9738-1683-0486-1480', '6184-6357-8409-6668', '4914-9088-2814-3840']  # Replace with your actual token values
 
+    # Step 2: Create the DetokenizeRequest object with the tokens and redaction type
     detokenize_request = DetokenizeRequest(
-        tokens = detokenize_data,
-        continue_on_error = True,  # optional
-        redaction_type = RedactionType.PLAIN_TEXT  # optional
+        tokens=tokens,                           # Provide the list of tokens to be detokenized
+        continue_on_error=True,                  # Continue even if some tokens cannot be detokenized
+        redaction_type=RedactionType.PLAIN_TEXT  # Specify how the detokenized data should be returned (plain text)
     )
 
-    response = skyflow_client.vault('<VAULT_ID>').detokenize(detokenize_request)
-    print('Response:', response)
-except SkyflowError as e:
-    print('Error Occurred:', e)
+    # Step 3: Call the Skyflow vault to detokenize the provided tokens
+    detokenize_response = skyflow_client.vault('9f27764a10f7946fe56b3258e117').detokenize(detokenize_request)
+    # Replace "9f27764a10f7946fe56b3258e117" with your actual Skyflow vault ID
 
+    # Step 4: Print the detokenization response, which contains the detokenized data
+    print('Response:', detokenize_response)
+# Step 5: Handle any errors that occur during the detokenization process
+except SkyflowError as error:
+    print('Skyflow Specific Error: ', {
+        'code': error.http_code,
+        'message': error.message,
+        'details': error.details
+    })
+
+except Exception as error:
+    print('Unexpected Error:', error)  # Print the exception for debugging purposes
 ```
 
 Sample response:
@@ -894,39 +1163,98 @@ DetokenizeResponse(
 
 ### Tokenize
 
-To tokenize data, use the `tokenize` method. The `TokenizeRequest` class is utilized to create a tokenize request. In this request, you specify the `values` parameter, which is a list of dictionaries. Each dictionary contains two keys: `value` and `column_group`.
+Tokenization replaces sensitive data with unique identifier tokens. This approach protects sensitive information by securely storing the original data while allowing the use of tokens within your application.
 
-```python
-from skyflow.vault.tokens import TokenizeRequest
+To tokenize data, use the `tokenize` method. The `TokenizeRequest` class creates a tokenize request. In this request, you specify the values parameter, which is a list of column values objects. Each column value contains two properties: `value` and `column_group`.
 
-tokenize_request = TokenizeRequest(
-    values = [{
-        'value': '<VALUE>',
-        'column_group': '<COLUMN_GROUP>'
-    }]
-)
-```
-
-Sample usage
-
-An [example](https://github.com/skyflowapi/skyflow-python/blob/SK-1749-readme/samples/vault_api/tokenize_records.py) of a tokenize call:
+#### Construct a tokenize request
 
 ```python
 from skyflow.error import SkyflowError
 from skyflow.vault.tokens import TokenizeRequest
 
+"""
+This example demonstrates how to tokenize sensitive data (e.g., credit card information) using the Skyflow client, along with corresponding TokenizeRequest schema.
+"""
 try:
+    # Initialize Skyflow client
+    # Step 1: Initialize a list of column values to be tokenized (replace with actual sensitive data)
+    column_values = [
+        # Step 2: Create column values for each sensitive data field (e.g., card number and cardholder name)
+        {"value": "<VALUE_1>", "column_group": "<COLUMN_GROUP_1>"}, # Replace <VALUE_1> and <COLUMN_GROUP_1> with actual data
+        {"value": "<VALUE_2>", "column_group": "<COLUMN_GROUP_2>"}  # Replace <VALUE_2> and <COLUMN_GROUP_2> with actual data
+    ]
+
+    # Step 3: Build the TokenizeRequest with the column values
     tokenize_request = TokenizeRequest(
-        values = [{
-            "value": '4111111111111111',
-            "column_group": "card_number_cg"
-        }]
+        values=column_values
     )
 
-    response = client.vault('<VAULT_ID>').tokenize(tokenize_request)
-    print(response)
-except SyntaxError as e:
-    print('Error Occurred: ', e)
+    # Step 4: Call the Skyflow vault to tokenize the sensitive data
+    tokenize_response = skyflow_client.vault('<VAULT_ID>').tokenize(tokenize_request)
+    # Replace <VAULT_ID> with your actual Skyflow vault ID
+
+    # Step 5: Print the tokenization response, which contains the generated tokens or errors
+    print(tokenize_response)
+
+# Step 6: Handle any errors that occur during the tokenization process
+except SkyflowError as error:
+    print('Skyflow Specific Error: ', {
+        'code': error.http_code,
+        'message': error.message,
+        'details': error.details
+    })
+
+except Exception as error:
+    print('Unexpected Error:', error)  # Print the stack trace for debugging purposes
+```
+
+An example of Tokenize call
+
+```python
+from skyflow.error import SkyflowError
+from skyflow.vault.tokens import TokenizeRequest
+
+"""
+This example demonstrates how to tokenize sensitive data (e.g., credit card information) using the Skyflow client.
+
+1. Initializes the Skyflow client.
+2. Creates a column value for sensitive data (e.g., credit card number).
+3. Builds a tokenize request with the column value to be tokenized.
+4. Sends the request to the Skyflow vault for tokenization.
+5. Prints the tokenization response, which includes the token or errors.
+"""
+try:
+    # Initialize Skyflow client
+    # Step 1: Initialize a list of column values to be tokenized (replace with actual sensitive data)
+    column_values = [
+        # Step 2: Create column values for each sensitive data field (e.g., card number and cardholder name)
+        {"value": "4111111111111111", "column_group": "card_number_cg"}, # Replace <VALUE_1> and <COLUMN_GROUP_1> with actual data
+    ]
+
+    # Step 3: Build the TokenizeRequest with the column values
+    tokenize_request = TokenizeRequest(
+        values=column_values
+    )
+
+    # Step 4: Call the Skyflow vault to tokenize the sensitive data
+    tokenize_response = skyflow_client.vault('9f27764a10f7946fe56b3258e117').tokenize(tokenize_request)
+    # Replace "9f27764a10f7946fe56b3258e117" with your actual Skyflow vault ID
+
+    # Step 5: Print the tokenization response, which contains the generated tokens or errors
+    print(tokenize_response)
+
+# Step 6: Handle any errors that occur during the tokenization process
+except SkyflowError as error:
+    print('Skyflow Specific Error: ', {
+        'code': error.http_code,
+        'message': error.message,
+        'details': error.details
+    })
+
+except Exception as error:
+    print('Unexpected Error:', error)  # Print the stack trace for debugging purposes
+
 ```
 
 Sample response:
@@ -944,117 +1272,131 @@ TokenizeResponse(
 
 ### Get
 
-To retrieve data using Skyflow IDs or unique column values, use the `get` method. The `GetRequest` class is used to create a get request, where you specify parameters such as the table name, redaction type, Skyflow IDs, column names, column values, and return tokens. If Skyflow IDs are provided, column names and column values cannot be used. Similarly, if column names or column values are provided, Skyflow IDs cannot be used.
+To retrieve data using Skyflow IDs or unique column values, use the get method. The `GetRequest` class creates a get request, where you specify parameters such as the table name, redaction type, Skyflow IDs, column names, column values, and whether to return tokens. If you specify Skyflow IDs, you can't use column names and column values, and the inverse is true—if you specify column names and column values, you can't use Skyflow IDs.
+
+#### Construct a get request
 
 ```python
 from skyflow.error import SkyflowError
 from skyflow.utils.enums import RedactionType
 from skyflow.vault.data import GetRequest
 
-GetRequest(
-    table = '<TABLE_NAME>',
-    ids = ['SKYFLOW_ID1>', 'SKYFLOW_ID2>'],
-    return_tokens = True,
-    redaction_type = RedactionType.PLAIN_TEXT
-)
-
-# or
-
-GetRequest(
-    table = '<TABLE_NAME>',
-    column_name ='<COLUMN_NAME>',
-    column_values = ['COLUMN_VALUE1>', 'COLUMN_VALUE2>'],
-    redaction_type = RedactionType.PLAIN_TEXT
-)
-```
-
-Sample usage
-
-### Get By Column Name and Column Values
-
-The following snippet shows how to use the `get` method using column names and column values. For details, see [get_column_values.py](https://github.com/skyflowapi/skyflow-python/blob/SK-1749-readme/samples/vault_api/get_column_values.py),
-
-```python
-from skyflow.error import SkyflowError
-from skyflow.utils.enums import RedactionType
-from skyflow.vault.data import GetRequest
-
+"""
+This example demonstrates how to retrieve data from the Skyflow vault using different methods, along with corresponding GetRequest schema.
+"""
 try:
+    # Initialize Skyflow client
+    # Step 1: Initialize a list of Skyflow IDs to retrieve records (replace with actual Skyflow IDs)
+    ids = ['<SKYFLOW_ID1>', '<SKYFLOW_ID2>']  # Replace with actual Skyflow IDs
+
+    # Step 2: Create a GetRequest to retrieve records by Skyflow ID without returning tokens
+    get_by_id_request = GetRequest(
+        table='<TABLE_NAME>',  # Replace with your actual table name
+        ids=ids,
+        return_tokens=False,   # Set to false to avoid returning tokens
+        redaction_type=RedactionType.PLAIN_TEXT # Redact data as plain text
+    )
+
+    # Send the request to the Skyflow vault and retrieve the records
+    get_by_id_response = skyflow_client.vault('<VAULT_ID>').get(get_by_id_request)
+    # Replace <VAULT_ID> with your actual Skyflow vault ID
+
+    print(get_by_id_response)
+
+    # Step 3: Create another GetRequest to retrieve records by Skyflow ID with tokenized values
+    get_tokens_request = GetRequest(
+        table='<TABLE_NAME>',  # Replace with your actual table name
+        ids=ids,
+        return_tokens=True  # Set to True to return tokenized values
+    )
+
+    # Send the request to the Skyflow vault and retrieve the tokenized records
+    get_tokens_response = skyflow_client.vault('<VAULT_ID>').get(get_tokens_request)
+    print(get_tokens_response)
+
     column_values = [
-        '123456'
+        '<COLUMN_VALUE_1>',  # Replace with the actual column value
+        '<COLUMN_VALUE_2>'   # Replace with the actual column value
     ]
 
-    get_request = GetRequest(
-        table = 'table1',
-        column_name = 'card_number', # It must be configured as unique in the schema.
-        column_values = column_values,
-        redaction_type = RedactionType.PLAIN_TEXT
+    # Step 4: Create a GetRequest to retrieve records based on specific column values
+    get_by_column_request = GetRequest(
+        table='<TABLE_NAME>',  # Replace with the actual table name
+        column_name='<COLUMN_NAME>',  # Replace with the column name
+        column_values=column_values,  # Add the list of column values to filter by
+        redaction_type=RedactionType.PLAIN_TEXT  # Redact data as plain text
     )
 
-    response = skyflow_client.vault('<VAULT_ID>').get(get_request)
-    print('Response:', response)
-except SkyflowError as e:
-    print('Error Occurred:', e)
+    # Send the request to the Skyflow vault and retrieve the filtered records
+    get_by_column_response = skyflow_client.vault('<VAULT_ID>').get(get_by_column_request)
+    print(get_by_column_response)
+# Step 5: Handle any errors that occur during the retrieval process
+except SkyflowError as error:
+    print('Skyflow Specific Error: ', {
+        'code': error.http_code,
+        'message': error.message,
+        'details': error.details
+    })
+
+except Exception as error:
+    print('Unexpected Error:', error)  # Print the stack trace for debugging purposes
 
 ```
 
-Sample response:
+#### Get by skyflow IDs
+Retrieve specific records using skyflow `ids`. Ideal for fetching exact records when IDs are known.
 
-```python
-GetResponse(
-    data=[
-        {
-            'card_number': '123456',
-            'skyflow_id': '4f7af9f9-09e0-4f47-af8e-04c9b1ee1968'
-        }
-    ],
-    errors=[]
-)
 
-```
-
-### Get By Skyflow Ids
+An example of a get call to retrieve data using Redaction type:
 
 ```python
 from skyflow.error import SkyflowError
 from skyflow.utils.enums import RedactionType
 from skyflow.vault.data import GetRequest
 
-GetRequest(
-    table = '<TABLE_NAME>',
-    ids = ['SKYFLOW_ID1>', 'SKYFLOW_ID2>'],
-    return_tokens = True,
-    redaction_type = RedactionType.PLAIN_TEXT
-)
-```
+"""
+This example demonstrates how to retrieve data from the Skyflow vault using a list of Skyflow IDs.
 
-#### Redaction Types
-
-There are 4 accepted values in Skyflow.RedactionTypes:
-
-- `PLAIN_TEXT`
-- `MASKED`
-- `REDACTED`
-- `DEFAULT`
-
-An [example](https://github.com/skyflowapi/skyflow-python/blob/SK-1749-readme/samples/vault_api/get_records.py) of get by skyflow ids call:
-
-```python
-from skyflow.error import SkyflowError
-from skyflow.utils.enums import RedactionType
-from skyflow.vault.data import GetRequest
-
+1. Initializes the Skyflow client with a given vault ID.
+2. Creates a request to retrieve records based on Skyflow IDs.
+3. Specifies that the response should not return tokens.
+4. Uses plain text redaction type for the retrieved records.
+5. Prints the response to display the retrieved records.
+"""
 try:
-    get_request = GetRequest(
-        table = 'table1',
-        ids = ['aea64577-12b1-4682-aad5-a183194c3f3d', 'b385c565-86eb-4af2-b959-8376f9b0754b'],
-        redaction_type = RedactionType.PLAIN_TEXT
+    # Initialize Skyflow client
+    # Step 1: Initialize a list of Skyflow IDs to retrieve records (replace with actual Skyflow IDs)
+    ids = ['a581d205-1969-4350-acbe-a2a13eb871a6', '5ff887c3-b334-4294-9acc-70e78ae5164a']  # Replace with actual Skyflow IDs
+
+    # Step 2: Create a GetRequest to retrieve records by Skyflow ID without returning tokens
+    #  The request specifies:
+    # - `ids`: The list of Skyflow IDs to retrieve
+    # - `table`: The table from which the records will be retrieved
+    # - `return_tokens`: Set to false, meaning tokens will not be returned in the response
+    # - `redaction_type`: Set to PLAIN_TEXT, meaning the retrieved records will have data redacted as plain text
+    get_by_id_request = GetRequest(
+        table='table1',  # Replace with the actual table name
+        ids=ids,
+        return_tokens=False,   # Set to false to avoid returning tokens
+        redaction_type=RedactionType.PLAIN_TEXT # Redact data as plain text
     )
 
-    response = client.vault('<VAULT_ID>').get(get_request)
-    print('Response:', response)
-except SkyflowError as e:
-    print('Error Occurred:', e)
+    # Step 3: Send the request to the Skyflow vault and retrieve the records
+    get_by_id_response = skyflow_client.vault('9f27764a10f7946fe56b3258e117').get(get_by_id_request)
+    # Replace with actual Vault ID
+
+    print(get_by_id_response) # Print the response to the console
+
+# Step 5: Handle any errors that occur during the retrieval process
+except SkyflowError as error:
+    print('Skyflow Specific Error: ', {
+        'code': error.http_code,
+        'message': error.message,
+        'details': error.details
+    })
+
+except Exception as error:
+    print('Unexpected Error:', error)  # Print the stack trace for debugging purposes
 ```
 
 Sample response:
@@ -1064,35 +1406,148 @@ GetResponse(
     data=[
         {
             'card_number': '4555555555555553',
-            'skyflow_id': 'aea64577-12b1-4682-aad5-a183194c3f3d'
+            'email': 'john.doe@gmail.com',
+            'name': 'john doe',
+            'skyflow_id': 'a581d205-1969-4350-acbe-a2a13eb871a6'
         },
         {
             'card_number': '4555555555555559',
-            'skyflow_id': 'b385c565-86eb-4af2-b959-8376f9b0754b'
+            'email': 'jane.doe@gmail.com',
+            'name': 'jane doe',
+            'skyflow_id': '5ff887c3-b334-4294-9acc-70e78ae5164a'
         }
     ],
     errors=[]
 )
-
 ```
 
-The following snippet shows how to use the `get()` method with return_tokens true.
+#### Get tokens
+Return tokens for records. Ideal for securely processing sensitive data while maintaining data privacy.
+
+An example of get call to retrieve tokens using Skyflow IDs:
+
 
 ```python
 from skyflow.error import SkyflowError
+from skyflow.utils.enums import RedactionType
 from skyflow.vault.data import GetRequest
 
+"""
+This example demonstrates how to retrieve data from the Skyflow vault and return tokens along with the records.
+
+1. Initializes the Skyflow client with a given vault ID.
+2. Creates a request to retrieve records based on Skyflow IDs and ensures tokens are returned.
+3. Prints the response to display the retrieved records along with the tokens.
+"""
 try:
-    get_request = GetRequest(
-        table = 'table1',
-        ids = ['aea64577-12b1-4682-aad5-a183194c3f3d', 'b385c565-86eb-4af2-b959-8376f9b0754b'],
-        return_tokens = True
+    # Initialize Skyflow client
+    # Step 1: Initialize a list of Skyflow IDs (replace with actual Skyflow IDs)
+    ids = ['a581d205-1969-4350-acbe-a2a13eb871a6', '5ff887c3-b334-4294-9acc-70e78ae5164a']  # Replace with actual Skyflow IDs
+
+    # Step 2: Create a GetRequest to retrieve records based on Skyflow IDs
+    #  The request specifies:
+    # - `ids`: The list of Skyflow IDs to retrieve
+    # - `table`: The table from which the records will be retrieved
+    # - `return_tokens`: Set to false, meaning tokens will not be returned in the response
+    get_tokens_request = GetRequest(
+        table='table1',  # Replace with the actual table name
+        ids=ids,
+        return_tokens=True,   # Set to false to avoid returning tokens
     )
 
-    response = client.vault('<VAULT_ID>').get(get_request)
-    print('Response:', response)
-except SkyflowError as e:
-    print('Error Occurred:', e)
+    # Step 3: Send the request to the Skyflow vault and retrieve the records
+    get_tokens_response = skyflow_client.vault('9f27764a10f7946fe56b3258e117').get(get_tokens_request)
+    # Replace with actual Vault ID
+
+    print(get_tokens_response) # Print the response to the console
+
+# Step 5: Handle any errors that occur during the retrieval process
+except SkyflowError as error:
+    print('Skyflow Specific Error: ', {
+        'code': error.http_code,
+        'message': error.message,
+        'details': error.details
+    })
+
+except Exception as error:
+    print('Unexpected Error:', error)  # Print the stack trace for debugging purposes
+```
+
+Sample response:
+
+```python
+GetResponse(
+    data=[
+        {
+            'card_number': '3998-2139-0328-0697',
+            'email': 'c9a6c9555060@82c092e7.bd52',
+            'name': '82c092e7-74c0-4e60-bd52-c9a6c9555060',
+            'skyflow_id': 'a581d205-1969-4350-acbe-a2a13eb871a6'
+        },
+        {
+            'card_number': '3562-0140-8820-7499',
+            'email': '6174366e2bc6@59f82e89.93fc',
+            'name': '59f82e89-138e-4f9b-93fc-6174366e2bc6',
+            'skyflow_id': '5ff887c3-b334-4294-9acc-70e78ae5164a'
+        }
+    ],
+    errors=[]
+)
+```
+
+#### Get by column name and column values
+Retrieve records by unique column values. Ideal for querying data without knowing Skyflow IDs, using alternate unique identifiers.
+
+An example of get call to retrieve data using column name and column values:
+
+```python
+from skyflow.error import SkyflowError
+from skyflow.utils.enums import RedactionType
+from skyflow.vault.data import GetRequest
+
+"""
+This example demonstrates how to retrieve data from the Skyflow vault based on column values.
+
+1. Initializes the Skyflow client with a given vault ID.
+2. Creates a request to retrieve records based on specific column values (e.g., email addresses).
+3. Prints the response to display the retrieved records after redacting sensitive data based on the specified redaction type.
+"""
+try:
+    # Initialize Skyflow client
+    # Step 1: Initialize a list of column values (email addresses in this case)
+    column_values = [
+        'john.doe@gmail.com',  # Example email address
+        'jane.doe@gmail.com'   # Example email address
+    ]
+
+    # Step 2: Step 2: Create a GetRequest to retrieve records based on column values
+    #  The request specifies:
+    # - `ids`: The list of Skyflow IDs to retrieve
+    # - `table`: The table from which the records will be retrieved
+    # - `return_tokens`: Set to false, meaning tokens will not be returned in the response
+    get_by_column_request = GetRequest(
+        table='table1',   # Replace with the actual table name
+        column_name='email',   # The column name to filter by (e.g., "email")
+        column_values=column_values,  # The list of column values to match
+        redaction_type=RedactionType.PLAIN_TEXT  # Set the redaction type (e.g., PLAIN_TEXT)
+    )
+
+    # Step 3: Send the request to the Skyflow vault and retrieve the records
+    get_by_column_response = skyflow_client.vault('9f27764a10f7946fe56b3258e117').get(get_by_column_request)
+    # Replace with actual Vault ID
+
+    print(get_by_column_response) # Print the response to the console
+
+# Step 5: Handle any errors that occur during the retrieval process
+except SkyflowError as error:
+    print('Skyflow Specific Error: ', {
+        'code': error.http_code,
+        'message': error.message,
+        'details': error.details
+    })
+
+except Exception as error:
+    print('Unexpected Error:', error)  # Print the stack trace for debugging purposes
 
 ```
 
@@ -1102,76 +1557,164 @@ Sample response:
 GetResponse(
     data=[
         {
-            'card_number': '3562-0140-8820-7499',
-            'skyflow_id': 'aea64577-12b1-4682-aad5-a183194c3f3d'
+            'card_number': '4555555555555553',
+            'email': 'john.doe@gmail.com',
+            'name': 'john doe',
+            'skyflow_id': 'a581d205-1969-4350-acbe-a2a13eb871a6'
         },
         {
-            'card_number': '3998-2139-0328-0697',
-            'skyflow_id': 'b385c565-86eb-4af2-b959-8376f9b0754b'
+            'card_number': '4555555555555559',
+            'email': 'jane.doe@gmail.com',
+            'name': 'jane doe',
+            'skyflow_id': '5ff887c3-b334-4294-9acc-70e78ae5164a'
         }
     ],
     errors=[]
 )
 ```
 
+#### Redaction Types
+
+Redaction types determine how sensitive data is displayed when retrieved from the vault.
+**Available Redaction Types**
+
+- `DEFAULT`: Applies the vault-configured default redaction setting.
+- `DEFAULT`: Completely removes sensitive data from view.
+- `MASKED`: Partially obscures sensitive information.
+- `PLAIN_TEXT`: Displays the full, unmasked data.
+
+**Choosing the Right Redaction Type**
+- Use `REDACTED` for scenarios requiring maximum data protection to prevent exposure of sensitive information.
+- Use `MASKED` to provide partial visibility of sensitive data for less critical use cases.
+- Use `PLAIN_TEXT` for internal, authorized access where full data visibility is necessary.
+
 ### Update
 
 To update data in your vault, use the `update` method. The `UpdateRequest` class is used to create an update request, where you specify parameters such as the table name, data (as a dictionary), tokens, return_tokens, and token_strict. If `return_tokens` is set to True, Skyflow returns tokens for the updated records. If `return_tokens` is set to False, Skyflow returns IDs for the updated records.
 
+#### Construct an update request
+
 ```python
 from skyflow.error import SkyflowError
+from skyflow.utils.enums import TokenMode
 from skyflow.vault.data import UpdateRequest
 
+"""
+This example demonstrates how to update records in the Skyflow vault by providing new data and/or tokenized values, along with the corresponding UpdateRequest schema.
+"""
+
 try:
+    # Initialize Skyflow client
+    # Step 1: Prepare the data to update in the vault
+    # Use a dictionary to store the data that will be updated in the specified table
     update_data = {
-        'skyflow_id': '<SKYFLOW_ID>',
-        '<FIELD1>': '<VALUE1>'
+        'skyflow_id': '<SKYFLOW_ID>',  # Skyflow ID for identifying the record to update
+        '<COLUMN_NAME_1>': '<COLUMN_VALUE_1>',  # Example of a column name and its value to update
+        '<COLUMN_NAME_2>': '<COLUMN_VALUE_2>'  # Another example of a column name and its value to update
     }
 
+    # Step 2: Prepare the tokens (if necessary) for certain columns that require tokenization
+    # Use a dictionary to specify columns that need tokens in the update request
+    tokens = {
+        '<COLUMN_NAME_2>': '<TOKEN_VALUE_2>'  # Example of a column name that should be tokenized
+    }
+
+    # Step 3: Create an UpdateRequest to specify the update operation
+    # The request includes the table name, data, tokens, and the returnTokens flag
     update_request = UpdateRequest(
-        table='TABLE_NAME',
-        data=update_data
+        table='<TABLE_NAME>',  # Replace with the actual table name to update
+        token_mode=TokenMode.ENABLE,  # Specifies the tokenization mode (ENABLE means tokenization is applied)
+        data=update_data,  # The data to update in the record
+        tokens=tokens,  # The tokens associated with specific columns
+        return_tokens=True  # Specify whether to return tokens in the response
     )
 
-    response = skyflow_client.vault('VAULT_ID').update(update_request)
-    print('Response:', response)
-except SkyflowError as e:
-    print('Error Occurred:', e)
+    # Step 4: Send the request to the Skyflow vault and update the record
+    update_response = skyflow_client.vault('<VAULT_ID>').update(update_request)  # Replace with actual Vault ID
+
+    # Step 5: Print the response to confirm the update result
+    print(update_response)
+
+except SkyflowError as error:
+    # Step 6: Handle any errors that occur during the update operation
+    print('Skyflow Specific Error: ', {
+        'code': error.http_code,
+        'message': error.message,
+        'details': error.details
+    })
+
+except Exception as error:
+    print('Unexpected Error:', error)  # Print the stack trace for debugging purposes
 ```
 
-Sample usage
-
-The following snippet shows how to use the `update()` method. For details, see [update_record.py](https://github.com/skyflowapi/skyflow-python/blob/SK-1749-readme/samples/vault_api/update_record.py),
+An example of update call
 
 ```python
 from skyflow.error import SkyflowError
+from skyflow.utils.enums import TokenMode
 from skyflow.vault.data import UpdateRequest
 
+"""
+This example demonstrates how to update a record in the Skyflow vault with specified data and tokens.
+
+1. Initializes the Skyflow client with a given vault ID.
+2. Constructs an update request with data to modify and tokens to include.
+3. Sends the request to update the record in the vault.
+4. Prints the response to confirm the success or failure of the update operation.
+"""
+
 try:
+    # Initialize Skyflow client
+    # Step 1: Prepare the data to update in the vault
+    # Use a dictionary to store the data that will be updated in the specified table
     update_data = {
-        'skyflow_id': '3b80c76a-c0d7-4c02-be00-b4128cb0f315',
-        'card_number': '4111111111117777'
+        'skyflow_id': '5b699e2c-4301-4f9f-bcff-0a8fd3057413',  # Skyflow ID for identifying the record to update
+        'name': 'john doe',  # Example of a column name and its value to update
+        'card_number': '4111111111111115'  # Another example of a column name and its value to update
     }
 
+    # Step 2: Prepare the tokens (if necessary) for certain columns that require tokenization
+    # Use a dictionary to specify columns that need tokens in the update request
+    tokens = {
+        'name': '72b8ffe3-c8d3-4b4f-8052-38b2a7405b5a'  # Example of a column name that should be tokenized
+    }
+
+    # Step 3: Create an UpdateRequest to specify the update operation
+    # The request includes the table name, data, tokens, and the returnTokens flag
     update_request = UpdateRequest(
-        table = 'table1',
-        data = update_data
+        table='table1',  # Replace with the actual table name to update
+        token_mode=TokenMode.ENABLE,  # Token mode enabled to allow tokenization of sensitive data
+        data=update_data,  # The data to update in the record
+        tokens=tokens,  # The tokenized values for sensitive columns
     )
 
-    response = skyflow_client.vault('<VAULT_ID>').update(update_request)
-    print('Response:', response)
-except SkyflowError as e:
-    print('Error Occurred:', e)
+    # Step 4: Send the request to the Skyflow vault and update the record
+    update_response = skyflow_client.vault('9f27764a10f7946fe56b3258e117').update(update_request)  # Replace with actual Vault ID
+
+    # Step 5: Print the response to confirm the update result
+    print(update_response)
+
+except SkyflowError as error:
+    # Step 6: Handle any errors that occur during the update operation
+    print('Skyflow Specific Error: ', {
+        'code': error.http_code,
+        'message': error.message,
+        'details': error.details
+    })
+
+except Exception as error:
+    print('Unexpected Error:', error)  # Print the stack trace for debugging purposes
 ```
 
 Sample response
 
-`return_tokens` set to `True`
+- When `return_tokens` is set to `True`
 
 ```python
 UpdateResponse(
     updated_field={
-        'skyflow_id': '3b80c76a-c0d7-4c02-be00-b4128cb0f315',
+        'skyflow_id': '5b699e2c-4301-4f9f-bcff-0a8fd3057413',
+        'name': '72b8ffe3-c8d3-4b4f-8052-38b2a7405b5a',
         'card_number': '4131-1751-0217-8491'
     },
     errors=[]
@@ -1179,11 +1722,11 @@ UpdateResponse(
 
 ```
 
-`return_tokens` set to `False`
+- When `return_tokens` is set to `False`
 
 ```python
 UpdateResponse(
-    updated_field={'skyflow_id': '3b80c76a-c0d7-4c02-be00-b4128cb0f315'},
+    updated_field={'skyflow_id': '5b699e2c-4301-4f9f-bcff-0a8fd3057413'},
     errors=[]
 )
 
@@ -1193,44 +1736,87 @@ UpdateResponse(
 
 To delete records using Skyflow IDs, use the `delete` method. The `DeleteRequest` class accepts a list of Skyflow IDs that you want to delete, as shown below:
 
-```python
-from skyflow.error import SkyflowError
-from skyflow.vault.data import DeleteRequest
-
-primary_delete_ids = [
-    'SKYFLOW_ID1',
-    'SKYFLOW_ID2',
-    'SKYFLOW_ID3',
-]
-
-delete_request = DeleteRequest(
-    table = '<TABLE_NAME>',
-    ids = primary_delete_ids
-)
-```
-
-An [example](https://github.com/skyflowapi/skyflow-python/blob/SK-1749-readme/samples/vault_api/delete_records.py) of delete call:
+#### Construct a delete request
 
 ```python
 from skyflow.error import SkyflowError
 from skyflow.vault.data import DeleteRequest
+
+"""
+This example demonstrates how to delete records from a Skyflow vault using specified Skyflow IDs, along with corresponding DeleteRequest schema.
+"""
 
 try:
-    delete_ids = [
-        '77e093f8-3ace-4295-8683-bb6745d6178e',
-        'bf5989cc-79e8-4b2f-ad71-cb20b0a76091'
-    ]
+    # Initialize Skyflow client
+    # Step 1: Prepare a list of Skyflow IDs for the records to delete
+    # The list stores the Skyflow IDs of the records that need to be deleted from the vault
+    delete_ids = ['<SKYFLOW_ID1>', '<SKYFLOW_ID2>', '<SKYFLOW_ID3>']  # Replace with actual Skyflow IDs
 
+    # Step 2: Create a DeleteRequest to define the delete operation
+    # The request specifies the table from which to delete the records and the IDs of the records to delete
     delete_request = DeleteRequest(
-        table='table1',
-        ids=delete_ids
+        table='<TABLE_NAME>',  # Replace with the actual table name from which to delete
+        ids=delete_ids  # List of Skyflow IDs to delete
     )
 
-    response = client.vault('<VAULT_ID>').delete(delete_request)
-    print('Response:', response)
-except SkyflowError as e:
-    print('Error Occurred:', e)
+    # Step 3: Send the delete request to the Skyflow vault
+    delete_response = skyflow_client.vault('<VAULT_ID>').delete(delete_request)  # Replace with your actual Vault ID
+    print(delete_response)  # Print the response to confirm the delete result
 
+except SkyflowError as error:
+    # Step 4: Handle any exceptions that occur during the delete operation
+    print('Skyflow Specific Error: ', {
+        'code': error.http_code,
+        'message': error.message,
+        'details': error.details
+    })
+except Exception as error:
+    print('Unexpected Error:', error)  # Print the exception stack trace for debugging purposes
+
+
+
+```
+
+An example of delete call
+
+```python
+from skyflow.error import SkyflowError
+from skyflow.vault.data import DeleteRequest
+
+"""
+This example demonstrates how to delete records from a Skyflow vault using specified Skyflow IDs.
+
+1. Initializes the Skyflow client with a given Vault ID.
+2. Constructs a delete request by specifying the IDs of the records to delete.
+3. Sends the delete request to the Skyflow vault to delete the specified records.
+4. Prints the response to confirm the success or failure of the delete operation.
+"""
+
+try:
+    # Initialize Skyflow client
+    # Step 1: Prepare a list of Skyflow IDs for the records to delete
+    # The list stores the Skyflow IDs of the records that need to be deleted from the vault
+    delete_ids = ['9cbf66df-6357-48f3-b77b-0f1acbb69280', 'ea74bef4-f27e-46fe-b6a0-a28e91b4477b', '47700796-6d3b-4b54-9153-3973e281cafb']  # Replace with actual Skyflow IDs
+
+    # Step 2: Create a DeleteRequest to define the delete operation
+    # The request specifies the table from which to delete the records and the IDs of the records to delete
+    delete_request = DeleteRequest(
+        table='table1',  # Replace with the actual table name from which to delete
+        ids=delete_ids  # List of Skyflow IDs to delete
+    )
+
+    # Step 3: Send the delete request to the Skyflow vault
+    delete_response = skyflow_client.vault('9f27764a10f7946fe56b3258e117').delete(delete_request)  # Replace with your actual Vault ID
+    print(delete_response)  # Print the response to confirm the delete result
+# Step 4: Handle any exceptions that occur during the delete operation
+except SkyflowError as error:
+    print('Skyflow Specific Error: ', {
+        'code': error.http_code,
+        'message': error.message,
+        'details': error.details
+    })
+except Exception as error:
+    print('Unexpected Error:', error)  # Print the exception stack trace for debugging purposes
 ```
 
 Sample response:
@@ -1238,17 +1824,128 @@ Sample response:
 ```python
 DeleteResponse(
     deleted_ids=[
-        '77e093f8-3ace-4295-8683-bb6745d6178e',
-        'bf5989cc-79e8-4b2f-ad71-cb20b0a76091'
+        '9cbf66df-6357-48f3-b77b-0f1acbb69280',
+        'ea74bef4-f27e-46fe-b6a0-a28e91b4477b',
+        '47700796-6d3b-4b54-9153-3973e281cafb'
     ],
     errors=[]
 )
 
 ```
 
-### Invoke Connection
+### Query
 
-Using Skyflow Connection, end-user applications can integrate checkout/card issuance flow with their apps/systems. To invoke connection, use the `invoke` method of the Skyflow client.
+To retrieve data with SQL queries, use the `query` method. `QueryRequest` is class that takes the `query` parameter as follows:
+
+#### Construct a query request
+Refer to [Query your data](https://docs.skyflow.com/query-data/) and [Execute Query](https://docs.skyflow.com/record/#QueryService_ExecuteQuery) for guidelines and restrictions on supported SQL statements, operators, and keywords.
+
+```python
+from skyflow.error import SkyflowError
+from skyflow.vault.data import QueryRequest
+
+"""
+This example demonstrates how to execute a custom SQL query on a Skyflow vault, along with QueryRequest schema.
+"""
+
+try:
+    # Initialize Skyflow client
+    # Step 1: Define the SQL query to execute on the Skyflow vault
+    # Replace "<YOUR_SQL_QUERY>" with the actual SQL query you want to run
+    query = '<YOUR_SQL_QUERY>'  # Example: "SELECT * FROM table1 WHERE column1 = 'value'"
+
+    # Step 2: Create a QueryRequest with the specified SQL query
+    query_request = QueryRequest(
+        query=query  # SQL query to execute
+    )
+
+    # Step 3: Execute the query request on the specified Skyflow vault
+    query_response = skyflow_client.vault('<VAULT_ID>').query(query_request)  # Replace <VAULT_ID> with your actual Vault ID
+
+    # Step 4: Print the response containing the query results
+    print('Query Result:', query_response)
+
+except SkyflowError as error:
+    # Step 5: Handle any exceptions that occur during the query execution
+    print('Skyflow Specific Error:', {
+        'code': error.http_code,
+        'message': error.message,
+        'details': error.details
+    })
+
+except Exception as error:
+    # Handle any unexpected errors during execution
+    print('Unexpected Error:', error)  # Print the stack trace for debugging purposes
+```
+An example of query call
+
+```python
+from skyflow.error import SkyflowError
+from skyflow.vault.data import QueryRequest
+
+"""
+This example demonstrates how to execute a SQL query on a Skyflow vault to retrieve data.
+
+1. Initializes the Skyflow client with the Vault ID.
+2. Constructs a query request with a specified SQL query.
+3. Executes the query against the Skyflow vault.
+4. Prints the response from the query execution.
+"""
+
+try:
+    # Initialize Skyflow client
+    # Step 1: Define the SQL query
+    # Example query: Retrieve all records from the "cards" table with a specific skyflow_id
+    query = "SELECT * FROM cards WHERE skyflow_id='3ea3861-x107-40w8-la98-106sp08ea83f'"  # Example: "SELECT * FROM table1 WHERE column1 = 'value'"
+
+    # Step 2: Create a QueryRequest with the SQL query
+    query_request = QueryRequest(
+        query=query  # SQL query to execute
+    )
+
+    # Step 3: Execute the query request on the specified Skyflow vault
+    query_response = skyflow_client.vault('9f27764a10f7946fe56b3258e117').query(query_request)  #  Vault ID: 9f27764a10f7946fe56b3258e117
+
+    # Step 4: Print the response containing the query results
+    print(query_response)
+
+except SkyflowError as error:
+    # Step 5: Handle any exceptions that occur during the query execution
+    print('Skyflow Specific Error:', {
+        'code': error.http_code,
+        'message': error.message,
+        'details': error.details
+    })
+
+except Exception as error:
+    print('Unexpected Error:', error)  # Print the stack trace for debugging purposes
+```
+
+Sample Response
+
+```python
+QueryResponse(
+    fields=[
+        {
+            'card_number': 'XXXXXXXXXXXX1112',
+            'name': 'S***ar',
+            'skyflow_id': '3ea3861-x107-40w8-la98-106sp08ea83f',
+            'tokenized_data': {}
+        }
+    ],
+    errors=[]
+)
+```
+
+### Connections
+
+Skyflow Connections is a gateway service that uses tokenization to securely send and receive data between your systems and first- or third-party services. The connections module invokes both inbound and/or outbound connections.
+- **Inbound connections**: Act as intermediaries between your client and server, tokenizing sensitive data before it reaches your backend, ensuring downstream services handle only tokenized data.
+- **Outbound connections**: Enable secure extraction of data from the vault and transfer it to third-party services via your backend server, such as processing checkout or card issuance flows.
+
+#### Invoke a connection
+To invoke a connection, use the `invoke` method of the Skyflow client.
+#### Construct an invoke connection request
 
 ```python
 from skyflow.error import SkyflowError
@@ -1339,55 +2036,6 @@ ConnectionResponse(
     }
 )
 
-```
-
-### Query
-
-To retrieve data with SQL queries, use the `query` method. `QueryRequest` is class that takes the `query` parameter as follows:
-
-```python
-from skyflow.vault.data import QueryRequest
-
-query_request = QueryRequest(
-    query= '<QUERY>'
-)
-```
-
-See [Query your data](https://docs.skyflow.com/query-data/) and [Execute Query](https://docs.skyflow.com/record/#QueryService_ExecuteQuery) for guidelines and restrictions on supported SQL statements, operators, and keywords.
-
-An [example](https://github.com/skyflowapi/skyflow-python/blob/SK-1749-readme/samples/vault_api/query_records.py) of Query call:
-
-```python
-from skyflow.error import SkyflowError
-from skyflow.vault.data import QueryRequest
-
-query_request = QueryRequest(
-    query = "SELECT * FROM cards WHERE skyflow_id='3ea3861-x107-40w8-la98-106sp08ea83f'"
-)
-
-try:
-    skyflow_client.vault('<VAULT_ID>').query(query_request)
-except SkyflowError as e:
-    if e.data:
-        print(e.data)
-    else:
-        print(e.message)
-```
-
-Sample Response
-
-```python
-QueryResponse(
-    fields=[
-        {
-            'card_number': 'XXXXXXXXXXXX1112',
-            'name': 'S***ar',
-            'skyflow_id': '4f7af9f9-09e0-4f47-af8e-04c9b1ee1968',
-            'tokenized_data': {}
-        }
-    ],
-    errors=[]
-)
 ```
 
 ## Logging
