@@ -2156,8 +2156,9 @@ When `LogLevel.WARN` is passed, only WARN and ERROR logs will be printed.
 - `ERROR`:  
 When `LogLevel.ERROR` is passed, only ERROR logs will be printed.
 - `OFF`:
-`LogLevel.OFF` can be used to turn off all logging from the Skyflow Python SDK.
-- **Note:** The ranking of logging levels is as follows: `DEBUG` < `INFO` < `WARN` < `ERROR` < `OFF`.
+`LogLevel.OFF` can be used to turn off all logging from the Skyflow Python SDK.  
+
+**Note:** The ranking of logging levels is as follows: `DEBUG` < `INFO` < `WARN` < `ERROR` < `OFF`.
 
 ```python
 import json
