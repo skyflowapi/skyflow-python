@@ -183,13 +183,23 @@ class TestUtils(unittest.TestCase):
 
     def test_parse_insert_response(self):
         api_response = Mock()
-        api_response.responses = [
-            {"Status": 200, "Body": {"records": [{"skyflow_id": "id1"}]}},
-            {"Status": 400, "Body": {"error": TEST_ERROR_MESSAGE}}
-        ]
+
+        api_response.raw_data = json.dumps({
+            "responses": [
+                {"Status": 200, "Body": {"records": [{"skyflow_id": "id1"}]}},
+                {"Status": 400, "Body": {"error": "TEST_ERROR_MESSAGE"}}
+            ]
+        }).encode('utf-8')
+
+        api_response.headers = {"x-request-id": "test-request-id"}
+
         result = parse_insert_response(api_response, continue_on_error=True)
+
         self.assertEqual(len(result.inserted_fields), 1)
         self.assertEqual(len(result.errors), 1)
+        self.assertEqual(result.inserted_fields[0]['skyflow_id'], "id1")
+        self.assertEqual(result.errors[0]['error'], "TEST_ERROR_MESSAGE")
+        self.assertEqual(result.errors[0]['request_id'], "test-request-id")
 
     def test_parse_insert_response_continue_on_error_false(self):
         mock_api_response = Mock()

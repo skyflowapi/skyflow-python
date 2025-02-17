@@ -194,8 +194,8 @@ def parse_insert_response(api_response, continue_on_error):
     inserted_fields = []
     errors = []
     insert_response = InsertResponse()
-    response_data = json.loads(api_response.raw_data.decode('utf-8'))
     if continue_on_error:
+        response_data = json.loads(api_response.raw_data.decode('utf-8'))
         for idx, response in enumerate(response_data.get('responses', [])):
             if response['Status'] == 200:
                 body = response['Body']
@@ -221,7 +221,7 @@ def parse_insert_response(api_response, continue_on_error):
             insert_response.errors = errors
 
     else:
-        for record in response_data.get('records', []):
+        for record in api_response.records:
             field_data = {
                 'skyflow_id': record.skyflow_id
             }
