@@ -514,15 +514,15 @@ def validate_detokenize_request(logger, request):
         raise SkyflowError(SkyflowMessages.Error.EMPTY_TOKENS_LIST_VALUE.value, invalid_input_error_code)
 
     for item in request.data:
-        if 'token' not in item or 'redaction' not in item:
+        if 'token' not in item:
             raise SkyflowError(SkyflowMessages.Error.INVALID_TOKENS_LIST_VALUE.value(type(request.data)), invalid_input_error_code)
         token = item.get('token')
-        redaction = item.get('redaction')
+        redaction = item.get('redaction', RedactionType.PLAIN_TEXT)
 
         if not isinstance(token, str) or not token:
             raise SkyflowError(SkyflowMessages.Error.INVALID_TOKEN_TYPE.value.format("DETOKENIZE"), invalid_input_error_code)
 
-        if not isinstance(redaction, RedactionType) or not redaction:
+        if redaction is not None and not isinstance(redaction, RedactionType):
             raise SkyflowError(SkyflowMessages.Error.INVALID_REDACTION_TYPE.value.format(type(redaction)), invalid_input_error_code)
 
 def validate_tokenize_request(logger, request):

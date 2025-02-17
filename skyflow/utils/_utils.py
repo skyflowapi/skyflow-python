@@ -12,7 +12,7 @@ import re
 from urllib.parse import quote
 from skyflow.error import SkyflowError
 from skyflow.generated.rest import V1UpdateRecordResponse, V1BulkDeleteRecordResponse, \
-    V1DetokenizeResponse, V1TokenizeResponse, V1GetQueryResponse, V1BulkGetRecordResponse
+    V1DetokenizeResponse, V1TokenizeResponse, V1GetQueryResponse, V1BulkGetRecordResponse, ApiResponse
 from skyflow.utils.logger import log_error, log_error_log
 from . import SkyflowMessages, SDK_VERSION
 from .enums import Env, ContentType, EnvUrls
@@ -194,8 +194,9 @@ def parse_insert_response(api_response, continue_on_error):
     inserted_fields = []
     errors = []
     insert_response = InsertResponse()
+    response_data = json.loads(api_response.raw_data.decode('utf-8'))
     if continue_on_error:
-        for idx, response in enumerate(api_response.responses):
+        for idx, response in enumerate(response_data.get('responses', [])):
             if response['Status'] == 200:
                 body = response['Body']
                 if 'records' in body:
@@ -210,6 +211,7 @@ def parse_insert_response(api_response, continue_on_error):
                         inserted_fields.append(inserted_field)
             elif response['Status'] == 400:
                 error = {
+                    'request_id': api_response.headers.get('x-request-id'),
                     'request_index': idx,
                     'error': response['Body']['error']
                 }
@@ -219,7 +221,7 @@ def parse_insert_response(api_response, continue_on_error):
             insert_response.errors = errors
 
     else:
-        for record in api_response.records:
+        for record in response_data.get('records', []):
             field_data = {
                 'skyflow_id': record.skyflow_id
             }
@@ -264,13 +266,14 @@ def parse_get_response(api_response: V1BulkGetRecordResponse):
 
     return get_response
 
-def parse_detokenize_response(api_response: V1DetokenizeResponse):
+def parse_detokenize_response(api_response: ApiResponse[V1DetokenizeResponse]):
     detokenized_fields = []
     errors = []
 
-    for record in api_response.records:
+    for record in api_response.data.records:
         if record.error:
             errors.append({
+                "request_id": api_response.headers.get('x-request-id'),
                 "token": record.token,
                 "error": record.error
             })

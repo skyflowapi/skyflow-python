@@ -6,6 +6,7 @@ from skyflow.generated.rest.exceptions import BadRequestException, UnauthorizedE
 from skyflow.utils import SkyflowMessages, parse_insert_response, \
     handle_exception, parse_update_record_response, parse_delete_response, parse_detokenize_response, \
     parse_tokenize_response, parse_query_response, parse_get_response, encode_column_values
+from skyflow.utils.enums import RedactionType
 from skyflow.utils.logger import log_info, log_error_log
 from skyflow.utils.validations import validate_insert_request, validate_delete_request, validate_query_request, \
     validate_get_request, validate_update_request, validate_detokenize_request, validate_tokenize_request
@@ -89,7 +90,7 @@ class Vault:
             log_info(SkyflowMessages.Info.INSERT_TRIGGERED.value, self.__vault_client.get_logger())
 
             if request.continue_on_error:
-                api_response = records_api.record_service_batch_operation(self.__vault_client.get_vault_id(),
+                api_response = records_api.record_service_batch_operation_with_http_info(self.__vault_client.get_vault_id(),
                                                                           insert_body)
 
             else:
@@ -230,14 +231,17 @@ class Vault:
         log_info(SkyflowMessages.Info.DETOKENIZE_REQUEST_RESOLVED.value, self.__vault_client.get_logger())
         self.__initialize()
         tokens_list = [
-            V1DetokenizeRecordRequest(token=item.get('token'), redaction=item.get('redaction').value)
+            V1DetokenizeRecordRequest(
+                token=item.get('token'),
+                redaction=item.get('redaction').value if item.get('redaction') else RedactionType.PLAIN_TEXT.value
+            )
             for item in request.data
         ]
         payload = V1DetokenizePayload(detokenization_parameters=tokens_list, continue_on_error=request.continue_on_error)
         tokens_api = self.__vault_client.get_tokens_api()
         try:
             log_info(SkyflowMessages.Info.DETOKENIZE_TRIGGERED.value, self.__vault_client.get_logger())
-            api_response = tokens_api.record_service_detokenize(
+            api_response = tokens_api.record_service_detokenize_with_http_info(
                 self.__vault_client.get_vault_id(),
                 detokenize_payload=payload
             )
