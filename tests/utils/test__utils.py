@@ -262,11 +262,13 @@ class TestUtils(unittest.TestCase):
 
     def test_parse_detokenize_response_with_mixed_records(self):
         mock_api_response = Mock()
-        mock_api_response.records = [
+        mock_api_response.data = Mock()  # Ensure `data` exists
+        mock_api_response.data.records = [
             Mock(token="token1", value="value1", value_type=Mock(value="Type1"), error=None),
             Mock(token="token2", value=None, value_type=None, error="Some error"),
             Mock(token="token3", value="value3", value_type=Mock(value="Type2"), error=None),
         ]
+        mock_api_response.headers = {"x-request-id": "test-request-id"}  # Mock headers
 
         result = parse_detokenize_response(mock_api_response)
         self.assertIsInstance(result, DetokenizeResponse)
@@ -277,7 +279,7 @@ class TestUtils(unittest.TestCase):
         ]
 
         expected_errors = [
-            {"token": "token2", "error": "Some error"}
+            {"request_id": "test-request-id", "token": "token2", "error": "Some error"}
         ]
 
         self.assertEqual(result.detokenized_fields, expected_detokenized_fields)
