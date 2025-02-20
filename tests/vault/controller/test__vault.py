@@ -2,7 +2,8 @@ import unittest
 from unittest.mock import Mock, patch
 from skyflow.generated.rest import RecordServiceBatchOperationBody, V1BatchRecord, RecordServiceInsertRecordBody, \
     V1FieldRecords, RecordServiceUpdateRecordBody, RecordServiceBulkDeleteRecordBody, QueryServiceExecuteQueryBody, \
-    V1DetokenizeRecordRequest, V1DetokenizePayload, V1TokenizePayload, V1TokenizeRecordRequest, RedactionEnumREDACTION
+    V1DetokenizeRecordRequest, V1DetokenizePayload, V1TokenizePayload, V1TokenizeRecordRequest, RedactionEnumREDACTION, \
+    BatchRecordMethod
 from skyflow.utils.enums import RedactionType, TokenMode
 from skyflow.vault.controller import Vault
 from skyflow.vault.data import InsertRequest, InsertResponse, UpdateResponse, UpdateRequest, DeleteResponse, \
@@ -43,7 +44,7 @@ class TestVault(unittest.TestCase):
                 V1BatchRecord(
                     fields={"field": "value"},
                     table_name=TABLE_NAME,
-                    method="POST",
+                    method=BatchRecordMethod.POST,
                     tokenization=True,
                     upsert="column_name"
                 )
@@ -71,14 +72,14 @@ class TestVault(unittest.TestCase):
         # Set the return value for the parse response
         mock_parse_response.return_value = expected_response
         records_api = self.vault_client.get_records_api.return_value
-        records_api.record_service_batch_operation.return_value = mock_api_response
+        records_api.record_service_batch_operation_with_http_info.return_value = mock_api_response
 
         # Call the insert function
         result = self.vault.insert(request)
 
         # Assertions
         mock_validate.assert_called_once_with(self.vault_client.get_logger(), request)
-        records_api.record_service_batch_operation.assert_called_once_with(VAULT_ID, expected_body)
+        records_api.record_service_batch_operation_with_http_info.assert_called_once_with(VAULT_ID, expected_body)
         mock_parse_response.assert_called_once_with(mock_api_response, True)
 
         # Assert that the result matches the expected InsertResponse
@@ -481,28 +482,28 @@ class TestVault(unittest.TestCase):
         # Mock API response
         mock_api_response = Mock()
         mock_api_response.records = [
-            Mock(token="token1", value="value1", value_type=Mock(value="STRING"), error=None),
-            Mock(token="token2", value="value2", value_type=Mock(value="STRING"), error=None)
+            Mock(skyflow_id="id_1", token="token1", value="value1", value_type=Mock(value="STRING"), error=None),
+            Mock(skyflow_id="id_2", token="token2", value="value2", value_type=Mock(value="STRING"), error=None)
         ]
 
         # Expected parsed response
         expected_fields = [
-            {"token": "token1", "value": "value1", "type": "STRING"},
-            {"token": "token2", "value": "value2", "type": "STRING"}
+            {"skyflow_id": "id_1", "token": "token1", "value": "value1", "type": "STRING"},
+            {"skyflow_id": "id_2", "token": "token2", "value": "value2", "type": "STRING"}
         ]
         expected_response = DetokenizeResponse(detokenized_fields=expected_fields, errors=[])
 
         # Set the return value for parse_detokenize_response
         mock_parse_response.return_value = expected_response
         tokens_api = self.vault_client.get_tokens_api.return_value
-        tokens_api.record_service_detokenize.return_value = mock_api_response
+        tokens_api.record_service_detokenize_with_http_info.return_value = mock_api_response
 
         # Call the detokenize function
         result = self.vault.detokenize(request)
 
         # Assertions
         mock_validate.assert_called_once_with(self.vault_client.get_logger(), request)
-        tokens_api.record_service_detokenize.assert_called_once_with(
+        tokens_api.record_service_detokenize_with_http_info.assert_called_once_with(
             VAULT_ID,
             detokenize_payload=expected_payload
         )
