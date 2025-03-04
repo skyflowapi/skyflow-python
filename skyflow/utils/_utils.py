@@ -341,6 +341,11 @@ def parse_invoke_connection_response(api_response: requests.Response):
 
         if 'x-request-id' in api_response.headers:
             message += ' - request id: ' + api_response.headers['x-request-id']
+        
+        if 'error-from-client' in api_response.headers:
+            error_from_client = api_response.headers['error-from-client']
+            details = [{ "error_from_client": error_from_client }]
+            raise SkyflowError(message, status_code, details=details)
 
         raise SkyflowError(message, status_code)
 

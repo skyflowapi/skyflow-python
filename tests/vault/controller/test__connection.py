@@ -100,5 +100,25 @@ class TestConnection(unittest.TestCase):
         with self.assertRaises(SkyflowError) as context:
             self.connection.invoke(request)
         self.assertEqual(context.exception.message, SkyflowMessages.Error.INVOKE_CONNECTION_FAILED.value)
+        self.assertTrue(context.exception.details['error_from_client'])
 
+    @patch('requests.Session.send')
+    def test_invoke_request_error_from_client(self, mock_send):
+        mock_response = Mock()
+        mock_response.status_code = FAILURE_STATUS_CODE
+        mock_response.content = ERROR_RESPONSE_CONTENT
+        mock_response.headers = {'error-from-client': True}
+        mock_send.return_value = mock_response
 
+        request = InvokeConnectionRequest(
+            method=RequestMethod.POST,
+            body=VALID_BODY,
+            path_params=VALID_PATH_PARAMS,
+            headers=VALID_HEADERS,
+            query_params=VALID_QUERY_PARAMS
+        )
+
+        with self.assertRaises(SkyflowError) as context:
+            self.connection.invoke(request)
+        self.assertEqual(context.exception.message, SkyflowMessages.Error.INVOKE_CONNECTION_FAILED.value)
+        self.assertTrue(context.exception.details['error_from_client'])

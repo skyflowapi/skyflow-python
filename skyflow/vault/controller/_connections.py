@@ -27,7 +27,7 @@ class Connection:
 
         invoke_connection_request.headers['sky-metadata'] = json.dumps(get_metrics())
 
-        log_info(SkyflowMessages.Info.INVOKE_CONNECTION_TRIGGERED, self.__vault_client.get_logger())
+        log_info(SkyflowMessages.Info.INVOKE_CONNECTION_TRIGGERED.value, self.__vault_client.get_logger())
 
         try:
             response = session.send(invoke_connection_request)
@@ -36,5 +36,6 @@ class Connection:
             return invoke_connection_response
 
         except Exception as e:
+            if isinstance(e, SkyflowError): raise e
             raise SkyflowError(SkyflowMessages.Error.INVOKE_CONNECTION_FAILED.value,
                                SkyflowMessages.ErrorCodes.SERVER_ERROR.value)
