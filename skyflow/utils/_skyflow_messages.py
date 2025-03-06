@@ -275,6 +275,7 @@ class SkyflowMessages:
         UPDATE_REQUEST_REJECTED = f"{ERROR}: [{error_prefix}] Update request resulted in failure."
         QUERY_REQUEST_REJECTED = f"{ERROR}: [{error_prefix}] Query request resulted in failure."
         GET_REQUEST_REJECTED = f"{ERROR}: [{error_prefix}] Get request resulted in failure."
+        INVOKE_CONNECTION_REQUEST_REJECTED = f"{ERROR}: [{error_prefix}] Invoke connection request resulted in failure."
 
     class Interface(Enum):
         INSERT = "INSERT"

@@ -3,7 +3,7 @@ import requests
 from skyflow.error import SkyflowError
 from skyflow.utils import construct_invoke_connection_request, SkyflowMessages, get_metrics, \
     parse_invoke_connection_response
-from skyflow.utils.logger import log_info
+from skyflow.utils.logger import log_info, log_error_log
 from skyflow.vault.connection import InvokeConnectionRequest
 
 
@@ -36,6 +36,7 @@ class Connection:
             return invoke_connection_response
 
         except Exception as e:
+            log_error_log(SkyflowMessages.ErrorLogs.INVOKE_CONNECTION_REQUEST_REJECTED.value, self.__vault_client.get_logger())
             if isinstance(e, SkyflowError): raise e
             raise SkyflowError(SkyflowMessages.Error.INVOKE_CONNECTION_FAILED.value,
                                SkyflowMessages.ErrorCodes.SERVER_ERROR.value)

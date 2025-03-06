@@ -327,28 +327,29 @@ def parse_invoke_connection_response(api_response: requests.Response):
 
             invoke_connection_response.response = json_content
             return invoke_connection_response
-        except:
+        except Exception as e:
             raise SkyflowError(SkyflowMessages.Error.RESPONSE_NOT_JSON.value.format(content), status_code)
     except HTTPError:
-        message = SkyflowMessages.Error.API_ERROR.value.format(status_code)
-        if api_response and api_response.content:
-            try:
-                error_response = json.loads(content)
-                if isinstance(error_response.get('error'), dict) and 'message' in error_response['error']:
-                    message = error_response['error']['message']
-            except json.JSONDecodeError:
-                message = SkyflowMessages.Error.RESPONSE_NOT_JSON.value.format(content)
+        message = SkyflowMessages.Error.API_ERROR.value.format(status_code)  
+        try:
+            error_response = json.loads(content)                    
+            request_id = api_response.headers['x-request-id']
+            error_from_client = api_response.headers.get('error-from-client')
 
-        if 'x-request-id' in api_response.headers:
-            message += ' - request id: ' + api_response.headers['x-request-id']
-        
-        if 'error-from-client' in api_response.headers:
-            error_from_client = api_response.headers['error-from-client']
-            details = [{ "error_from_client": error_from_client }]
-            raise SkyflowError(message, status_code, details=details)
+            status_code = error_response.get('error', {}).get('http_code', 500)  # Default to 500 if not found
+            http_status = error_response.get('error', {}).get('http_status')
+            grpc_code = error_response.get('error', {}).get('grpc_code')
+            details = error_response.get('error', {}).get('details')
+            message = error_response.get('error', {}).get('message', "An unknown error occurred.")
+            
+            if error_from_client is not None:
+                if details is None: details = []
+                details.append({'error_from_client': error_from_client})
 
+            raise SkyflowError(message, status_code, request_id, grpc_code, http_status, details)
+        except json.JSONDecodeError:
+            message = SkyflowMessages.Error.RESPONSE_NOT_JSON.value.format(content)
         raise SkyflowError(message, status_code)
-
 
 def log_and_reject_error(description, status_code, request_id, http_status=None, grpc_code=None, details=None, logger = None):
     raise SkyflowError(description, status_code, request_id, grpc_code, http_status, details)
