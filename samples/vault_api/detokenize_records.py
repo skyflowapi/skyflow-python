@@ -52,13 +52,20 @@ def perform_detokenization():
         )
 
         # Step 4: Prepare Detokenization Data
-        detokenize_data = ['token1', 'token2', 'token3'] # Tokens to be detokenized
-        redaction_type = RedactionType.REDACTED
+        detokenize_data = [
+            {
+                'token': '<TOKEN1>',                # Token to be detokenized
+                'redaction': RedactionType.REDACTED
+            },
+            {
+                'token': '<TOKEN2>',                # Token to be detokenized
+                'redaction': RedactionType.MASKED
+            }
+        ]
 
         # Create Detokenize Request
         detokenize_request = DetokenizeRequest(
-            tokens=detokenize_data,
-            redaction_type=redaction_type,
+            data=detokenize_data,
             continue_on_error=True # Continue processing on errors
         )
 
