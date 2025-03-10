@@ -1,9 +1,10 @@
 import unittest
 from unittest.mock import Mock, patch
-
+import requests
 from skyflow.error import SkyflowError
-from skyflow.utils import SkyflowMessages
+from skyflow.utils import SkyflowMessages, parse_invoke_connection_response
 from skyflow.utils.enums import RequestMethod
+from skyflow.utils._version import SDK_VERSION
 from skyflow.vault.connection import InvokeConnectionRequest
 from skyflow.vault.controller import Connection
 
@@ -21,7 +22,8 @@ VALID_QUERY_PARAMS = {"query_key": "value"}
 INVALID_HEADERS = "invalid_headers"
 INVALID_BODY = "invalid_body"
 FAILURE_STATUS_CODE = 400
-ERROR_RESPONSE_CONTENT = '{"error": {"message": "error occurred"}}'
+ERROR_RESPONSE_CONTENT = '"message": "Invalid Request"'
+ERROR_FROM_CLIENT_RESPONSE_CONTENT = b'{"error": {"message": "Invalid Request"}}'
 
 class TestConnection(unittest.TestCase):
     def setUp(self):
@@ -99,6 +101,25 @@ class TestConnection(unittest.TestCase):
 
         with self.assertRaises(SkyflowError) as context:
             self.connection.invoke(request)
-        self.assertEqual(context.exception.message, SkyflowMessages.Error.INVOKE_CONNECTION_FAILED.value)
+        self.assertEqual(context.exception.message, f'Skyflow Python SDK {SDK_VERSION} Response {ERROR_RESPONSE_CONTENT} is not valid JSON.')
+        self.assertEqual(context.exception.message, SkyflowMessages.Error.RESPONSE_NOT_JSON.value.format(ERROR_RESPONSE_CONTENT))
+        self.assertEqual(context.exception.http_code, 400)
 
+    def test_parse_invoke_connection_response_error_from_client(self):
+        mock_response = Mock(spec=requests.Response)
+        mock_response.status_code = FAILURE_STATUS_CODE
+        mock_response.content = ERROR_FROM_CLIENT_RESPONSE_CONTENT
+        mock_response.headers = {
+            'error-from-client': 'true',
+            'x-request-id': '12345'
+        }
+        mock_response.raise_for_status.side_effect = requests.HTTPError()
+
+        with self.assertRaises(SkyflowError) as context:
+            parse_invoke_connection_response(mock_response)
+
+        exception = context.exception
+
+        self.assertTrue(any(detail.get('error_from_client') == 'true' for detail in exception.details))
+        self.assertEqual(exception.request_id, '12345')
 

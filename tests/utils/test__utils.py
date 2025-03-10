@@ -344,7 +344,8 @@ class TestUtils(unittest.TestCase):
         with self.assertRaises(SkyflowError) as context:
             parse_invoke_connection_response(mock_response)
 
-        self.assertEqual(context.exception.message, "Not Found - request id: 1234")
+        self.assertEqual(context.exception.message, "Not Found")
+        self.assertEqual(context.exception.request_id, "1234")
 
     @patch("requests.Response")
     def test_parse_invoke_connection_response_http_error_without_json_error_message(self, mock_response):
@@ -357,7 +358,7 @@ class TestUtils(unittest.TestCase):
         with self.assertRaises(SkyflowError) as context:
             parse_invoke_connection_response(mock_response)
 
-        self.assertEqual(context.exception.message, SkyflowMessages.Error.RESPONSE_NOT_JSON.value.format("Internal Server Error") + " - request id: 1234")
+        self.assertEqual(context.exception.message, SkyflowMessages.Error.RESPONSE_NOT_JSON.value.format("Internal Server Error"))
 
     @patch("skyflow.utils._utils.log_and_reject_error")
     def test_handle_exception_json_error(self, mock_log_and_reject_error):
