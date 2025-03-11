@@ -13,7 +13,7 @@ from urllib.parse import quote
 from skyflow.error import SkyflowError
 from skyflow.generated.rest import V1UpdateRecordResponse, V1BulkDeleteRecordResponse, \
     V1DetokenizeResponse, V1TokenizeResponse, V1GetQueryResponse, V1BulkGetRecordResponse
-from skyflow.utils.logger import log_error, log_error_log
+from skyflow.utils.logger import log_error_log
 from . import SkyflowMessages, SDK_VERSION
 from .enums import Env, ContentType, EnvUrls
 from skyflow.vault.data import InsertResponse, UpdateResponse, DeleteResponse, QueryResponse, GetResponse

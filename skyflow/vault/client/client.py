@@ -1,5 +1,4 @@
-import json
-from skyflow.generated.rest import Configuration, RecordsApi, ApiClient, TokensApi, QueryApi
+from skyflow.generated.rest.client import Skyflow
 from skyflow.service_account import generate_bearer_token, generate_bearer_token_from_creds, is_expired
 from skyflow.utils import get_vault_url, get_credentials, SkyflowMessages
 from skyflow.utils.logger import log_info
@@ -30,20 +29,19 @@ class VaultClient:
                                   self.__config.get("env"),
                                   self.__config.get("vault_id"),
                                   logger = self.__logger)
-        self.__client_configuration = Configuration(host=vault_url, access_token=token)
-        self.initialize_api_client(self.__client_configuration)
+        self.initialize_api_client(vault_url, token)
 
-    def initialize_api_client(self, config):
-        self.__api_client =  ApiClient(config)
+    def initialize_api_client(self, vault_url, token):
+        self.__api_client =  Skyflow(base_url=vault_url, token=token)
 
     def get_records_api(self):
-        return RecordsApi(self.__api_client)
+        return self.__api_client.records
 
     def get_tokens_api(self):
-        return TokensApi(self.__api_client)
+        return self.__api_client.tokens
 
     def get_query_api(self):
-        return QueryApi(self.__api_client)
+        return self.__api_client.query
 
     def get_vault_id(self):
         return self.__config.get("vault_id")

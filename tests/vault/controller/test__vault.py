@@ -1,8 +1,6 @@
 import unittest
 from unittest.mock import Mock, patch
-from skyflow.generated.rest import RecordServiceBatchOperationBody, V1BatchRecord, RecordServiceInsertRecordBody, \
-    V1FieldRecords, RecordServiceUpdateRecordBody, RecordServiceBulkDeleteRecordBody, QueryServiceExecuteQueryBody, \
-    V1DetokenizeRecordRequest, V1DetokenizePayload, V1TokenizePayload, V1TokenizeRecordRequest, RedactionEnumREDACTION
+from skyflow.generated.rest import V1BatchRecord, V1FieldRecords, V1DetokenizeRecordRequest, V1TokenizeRecordRequest
 from skyflow.utils.enums import RedactionType, TokenMode
 from skyflow.vault.controller import Vault
 from skyflow.vault.data import InsertRequest, InsertResponse, UpdateResponse, UpdateRequest, DeleteResponse, \
@@ -38,19 +36,16 @@ class TestVault(unittest.TestCase):
             continue_on_error=True
         )
 
-        expected_body = RecordServiceBatchOperationBody(
-            records=[
-                V1BatchRecord(
-                    fields={"field": "value"},
-                    table_name=TABLE_NAME,
-                    method="POST",
-                    tokenization=True,
-                    upsert="column_name"
-                )
-            ],
-            continue_on_error=True,
-            byot="DISABLE"
-        )
+        from skyflow.generated.rest import BatchRecordMethod
+        expected_body = [
+            V1BatchRecord(
+                fields={"field": "value"},
+                table_name=TABLE_NAME,
+                method="POST",
+                tokenization=True,
+                upsert="column_name"
+            )
+        ]
 
         # Mock API response to contain a mix of successful and failed insertions
         mock_api_response = Mock()
@@ -78,7 +73,12 @@ class TestVault(unittest.TestCase):
 
         # Assertions
         mock_validate.assert_called_once_with(self.vault_client.get_logger(), request)
-        records_api.record_service_batch_operation.assert_called_once_with(VAULT_ID, expected_body)
+        records_api.record_service_batch_operation.assert_called_once_with(
+            VAULT_ID,
+            records=expected_body,
+            continue_on_error=True,
+            byot="DISABLE"
+        )
         mock_parse_response.assert_called_once_with(mock_api_response, True)
 
         # Assert that the result matches the expected InsertResponse
@@ -102,14 +102,9 @@ class TestVault(unittest.TestCase):
         )
 
         # Expected API request body based on InsertRequest parameters
-        expected_body = RecordServiceInsertRecordBody(
-            records=[
-                V1FieldRecords(fields={"field": "value"})
-            ],
-            tokenization=True,
-            upsert=None,
-            homogeneous=True
-        )
+        expected_body = [
+            V1FieldRecords(fields={"field": "value"})
+        ]
 
         # Mock API response for a successful insert
         mock_api_response = Mock()
@@ -129,8 +124,14 @@ class TestVault(unittest.TestCase):
 
         # Assertions
         mock_validate.assert_called_once_with(self.vault_client.get_logger(), request)
-        records_api.record_service_insert_record.assert_called_once_with(VAULT_ID, TABLE_NAME,
-                                                                         expected_body)
+        records_api.record_service_insert_record.assert_called_once_with(
+            VAULT_ID,
+            TABLE_NAME,
+            records=expected_body,
+            tokenization=True,
+            upsert=None,
+            homogeneous=True
+        )
         mock_parse_response.assert_called_once_with(mock_api_response, False)
 
         # Assert that the result matches the expected InsertResponse
@@ -154,14 +155,9 @@ class TestVault(unittest.TestCase):
         )
 
         # Expected API request body based on InsertRequest parameters
-        expected_body = RecordServiceInsertRecordBody(
-            records=[
-                V1FieldRecords(fields={"field": "value"}, tokens={"token_field": "token_val1"})
-            ],
-            tokenization=True,
-            upsert=None,
-            homogeneous=True
-        )
+        expected_body = [
+            V1FieldRecords(fields={"field": "value"}, tokens={"token_field": "token_val1"})
+        ]
 
         # Mock API response for a successful insert
         mock_api_response = Mock()
@@ -181,8 +177,14 @@ class TestVault(unittest.TestCase):
 
         # Assertions
         mock_validate.assert_called_once_with(self.vault_client.get_logger(), request)
-        records_api.record_service_insert_record.assert_called_once_with(VAULT_ID, TABLE_NAME,
-                                                                         expected_body)
+        records_api.record_service_insert_record.assert_called_once_with(
+            VAULT_ID,
+            TABLE_NAME,
+            records=expected_body,
+            tokenization=True,
+            upsert=None,
+            homogeneous=True
+        )
         mock_parse_response.assert_called_once_with(mock_api_response, False)
 
         # Assert that the result matches the expected InsertResponse
@@ -204,14 +206,7 @@ class TestVault(unittest.TestCase):
         )
 
         # Expected payload
-        expected_payload = RecordServiceUpdateRecordBody(
-            record=V1FieldRecords(
-                fields={"field": "new_value"},
-                tokens=request.tokens
-            ),
-            tokenization=request.return_tokens,
-            byot=request.token_mode.value
-        )
+        expected_record = V1FieldRecords(fields={"field": "new_value"}, tokens=None)
 
         # Mock API response
         mock_api_response = Mock()
@@ -234,9 +229,11 @@ class TestVault(unittest.TestCase):
         mock_validate.assert_called_once_with(self.vault_client.get_logger(), request)
         records_api.record_service_update_record.assert_called_once_with(
             VAULT_ID,
-            request.table,
-            request.data["skyflow_id"],
-            expected_payload
+            TABLE_NAME,
+            id="12345",
+            record=expected_record,
+            tokenization=True,
+            byot="DISABLE"
         )
         mock_parse_response.assert_called_once_with(mock_api_response)
 
@@ -256,7 +253,7 @@ class TestVault(unittest.TestCase):
         )
 
         # Expected payload
-        expected_payload = RecordServiceBulkDeleteRecordBody(skyflow_ids=request.ids)
+        expected_payload = ["12345", "67890"]
 
         # Mock API response
         mock_api_response = Mock()
@@ -278,8 +275,8 @@ class TestVault(unittest.TestCase):
         mock_validate.assert_called_once_with(self.vault_client.get_logger(), request)
         records_api.record_service_bulk_delete_record.assert_called_once_with(
             VAULT_ID,
-            request.table,
-            expected_payload
+            TABLE_NAME,
+            skyflow_ids=["12345", "67890"]
         )
         mock_parse_response.assert_called_once_with(mock_api_response)
 
@@ -413,9 +410,6 @@ class TestVault(unittest.TestCase):
         # Mock request
         request = QueryRequest(query="SELECT * FROM test_table")
 
-        # Expected payload as a QueryServiceExecuteQueryBody instance
-        expected_payload = QueryServiceExecuteQueryBody(query=request.query)
-
         # Mock API response
         mock_api_response = Mock()
         mock_api_response.records = [
@@ -443,7 +437,7 @@ class TestVault(unittest.TestCase):
         mock_validate.assert_called_once_with(self.vault_client.get_logger(), request)
         query_api.query_service_execute_query.assert_called_once_with(
             VAULT_ID,
-            expected_payload
+            query="SELECT * FROM test_table"
         )
         mock_parse_response.assert_called_once_with(mock_api_response)
 
@@ -468,15 +462,10 @@ class TestVault(unittest.TestCase):
             continue_on_error=False
         )
 
-        # Expected payload as a V1DetokenizePayload instance
-        tokens_list = [
-            V1DetokenizeRecordRequest(token="token1", redaction=RedactionEnumREDACTION.PLAIN_TEXT),
-            V1DetokenizeRecordRequest(token="token2", redaction=RedactionEnumREDACTION.PLAIN_TEXT)
+        expected_tokens_list = [
+            V1DetokenizeRecordRequest(token="token1", redaction="PLAIN_TEXT"),
+            V1DetokenizeRecordRequest(token="token2", redaction="PLAIN_TEXT")
         ]
-        expected_payload = V1DetokenizePayload(
-            detokenization_parameters=tokens_list,
-            continue_on_error=request.continue_on_error
-        )
 
         # Mock API response
         mock_api_response = Mock()
@@ -504,7 +493,8 @@ class TestVault(unittest.TestCase):
         mock_validate.assert_called_once_with(self.vault_client.get_logger(), request)
         tokens_api.record_service_detokenize.assert_called_once_with(
             VAULT_ID,
-            detokenize_payload=expected_payload
+            detokenization_parameters=expected_tokens_list,
+            continue_on_error=False
         )
         mock_parse_response.assert_called_once_with(mock_api_response)
 
@@ -525,12 +515,10 @@ class TestVault(unittest.TestCase):
             ]
         )
 
-        # Expected payload as a V1TokenizePayload instance
-        records_list = [
+        expected_records_list = [
             V1TokenizeRecordRequest(value="value1", column_group="group1"),
             V1TokenizeRecordRequest(value="value2", column_group="group2")
         ]
-        expected_payload = V1TokenizePayload(tokenization_parameters=records_list)
 
         # Mock API response
         mock_api_response = Mock()
@@ -558,7 +546,7 @@ class TestVault(unittest.TestCase):
         mock_validate.assert_called_once_with(self.vault_client.get_logger(), request)
         tokens_api.record_service_tokenize.assert_called_once_with(
             VAULT_ID,
-            tokenize_payload=expected_payload
+            tokenization_parameters=expected_records_list
         )
         mock_parse_response.assert_called_once_with(mock_api_response)
 

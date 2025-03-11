@@ -1,6 +1,5 @@
 import unittest
 from unittest.mock import patch, MagicMock
-from skyflow.generated.rest import Configuration
 from skyflow.vault.client.client import VaultClient
 
 CONFIG = {
@@ -31,10 +30,8 @@ class TestVaultClient(unittest.TestCase):
 
     @patch("skyflow.vault.client.client.get_credentials")
     @patch("skyflow.vault.client.client.get_vault_url")
-    @patch("skyflow.vault.client.client.Configuration")
     @patch("skyflow.vault.client.client.VaultClient.initialize_api_client")
-    def test_initialize_client_configuration(self, mock_init_api_client, mock_config, mock_get_vault_url,
-                                             mock_get_credentials):
+    def test_initialize_client_configuration(self, mock_init_api_client, mock_get_vault_url, mock_get_credentials):
         mock_get_credentials.return_value = (CREDENTIALS_WITH_API_KEY)
         mock_get_vault_url.return_value = "https://test-vault-url.com"
 
@@ -42,32 +39,30 @@ class TestVaultClient(unittest.TestCase):
 
         mock_get_credentials.assert_called_once_with(CONFIG["credentials"], None, logger=None)
         mock_get_vault_url.assert_called_once_with(CONFIG["cluster_id"], CONFIG["env"], CONFIG["vault_id"], logger=None)
-        mock_config.assert_called_once_with(host="https://test-vault-url.com", access_token="dummy_api_key")
         mock_init_api_client.assert_called_once()
 
-    @patch("skyflow.vault.client.client.ApiClient")
+    @patch("skyflow.vault.client.client.Skyflow")
     def test_initialize_api_client(self, mock_api_client):
-        config = Configuration()
-        self.vault_client.initialize_api_client(config)
-        mock_api_client.assert_called_once_with(config)
+        self.vault_client.initialize_api_client("https://test-vault-url.com", "dummy_token")
+        mock_api_client.assert_called_once_with(base_url="https://test-vault-url.com", token="dummy_token")
 
-    @patch("skyflow.vault.client.client.RecordsApi")
-    def test_get_records_api(self, mock_records_api):
-        self.vault_client.initialize_api_client(Configuration())
-        self.vault_client.get_records_api()
-        mock_records_api.assert_called_once()
+    def test_get_records_api(self):
+        self.vault_client._VaultClient__api_client = MagicMock()
+        self.vault_client._VaultClient__api_client.records = MagicMock()
+        records_api = self.vault_client.get_records_api()
+        self.assertIsNotNone(records_api)
 
-    @patch("skyflow.vault.client.client.TokensApi")
-    def test_get_tokens_api(self, mock_tokens_api):
-        self.vault_client.initialize_api_client(Configuration())
-        self.vault_client.get_tokens_api()
-        mock_tokens_api.assert_called_once()
+    def test_get_tokens_api(self):
+        self.vault_client._VaultClient__api_client = MagicMock()
+        self.vault_client._VaultClient__api_client.tokens = MagicMock()
+        tokens_api = self.vault_client.get_tokens_api()
+        self.assertIsNotNone(tokens_api)
 
-    @patch("skyflow.vault.client.client.QueryApi")
-    def test_get_query_api(self, mock_query_api):
-        self.vault_client.initialize_api_client(Configuration())
-        self.vault_client.get_query_api()
-        mock_query_api.assert_called_once()
+    def test_get_query_api(self):
+        self.vault_client._VaultClient__api_client = MagicMock()
+        self.vault_client._VaultClient__api_client.query = MagicMock()
+        query_api = self.vault_client.get_query_api()
+        self.assertIsNotNone(query_api)
 
     def test_get_vault_id(self):
         self.assertEqual(self.vault_client.get_vault_id(), CONFIG["vault_id"])
