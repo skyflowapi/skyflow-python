@@ -20,5 +20,5 @@ jobs:
   test:
     uses: ./.github/workflows/shared-tests.yml
     with:
-      python-version: '3.10'
+      python-version: '3.8'
     secrets: inherit

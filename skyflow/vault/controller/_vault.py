@@ -1,4 +1,4 @@
-from skyflow.generated.rest import V1FieldRecords, V1BatchRecord, BatchRecordMethod, V1TokenizeRecordRequest, \
+from skyflow.generated.rest import V1FieldRecords, V1BatchRecord, V1TokenizeRecordRequest, \
     V1DetokenizeRecordRequest
 from skyflow.generated.rest.errors import BadRequestError, UnauthorizedError, ForbiddenError
 from skyflow.utils import SkyflowMessages, parse_insert_response, \

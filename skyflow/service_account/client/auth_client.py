@@ -1,5 +1,4 @@
-from skyflow.generated.rest import Skyflow
-
+from skyflow.generated.rest.client import Skyflow
 
 class AuthClient:
     def __init__(self, url):
