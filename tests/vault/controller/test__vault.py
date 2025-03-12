@@ -1,6 +1,8 @@
 import unittest
-from unittest.mock import Mock, patch
-from skyflow.generated.rest import V1BatchRecord, V1FieldRecords, V1DetokenizeRecordRequest, V1TokenizeRecordRequest
+from unittest.mock import Mock, patch, MagicMock
+from skyflow.generated.rest import V1BatchRecord, V1FieldRecords, V1DetokenizeRecordRequest, V1TokenizeRecordRequest, \
+    UnauthorizedError
+from skyflow.generated.rest.errors import ForbiddenError
 from skyflow.utils.enums import RedactionType, TokenMode
 from skyflow.vault.controller import Vault
 from skyflow.vault.data import InsertRequest, InsertResponse, UpdateResponse, UpdateRequest, DeleteResponse, \
@@ -139,6 +141,45 @@ class TestVault(unittest.TestCase):
         self.assertEqual(result.errors, [])  # No errors expected
 
     @patch("skyflow.vault.controller._vault.validate_insert_request")
+    def test_insert_handles_generic_error(self, mock_validate):
+        request = InsertRequest(table_name="test_table", values=[{"column_name": "value"}], return_tokens=False,
+                                upsert=False,
+                                homogeneous=False, continue_on_error=False, token_mode=Mock())
+        records_api = self.vault_client.get_records_api.return_value
+        records_api.record_service_insert_record.side_effect = Exception("Generic Exception")
+
+        with self.assertRaises(Exception):
+            self.vault.insert(request)
+
+        records_api.record_service_insert_record.assert_called_once()
+
+    @patch("skyflow.vault.controller._vault.validate_insert_request")
+    def test_insert_handles_forbidden_error(self, mock_validate):
+        request = InsertRequest(table_name="test_table", values=[{"column_name": "value"}], return_tokens=False,
+                                upsert=False,
+                                homogeneous=False, continue_on_error=False, token_mode=Mock())
+        records_api = self.vault_client.get_records_api.return_value
+        records_api.record_service_insert_record.side_effect = ForbiddenError("ForbiddenError")
+
+        with self.assertRaises(Exception):
+            self.vault.insert(request)
+
+        records_api.record_service_insert_record.assert_called_once()
+
+    @patch("skyflow.vault.controller._vault.validate_insert_request")
+    def test_insert_handles_unauthorized_error(self, mock_validate):
+        request = InsertRequest(table_name="test_table", values=[{"column_name": "value"}], return_tokens=False,
+                                upsert=False,
+                                homogeneous=False, continue_on_error=False, token_mode=Mock())
+        records_api = self.vault_client.get_records_api.return_value
+        records_api.record_service_insert_record.side_effect = UnauthorizedError("Unauthorized")
+
+        with self.assertRaises(Exception):
+            self.vault.insert(request)
+
+        records_api.record_service_insert_record.assert_called_once()
+
+    @patch("skyflow.vault.controller._vault.validate_insert_request")
     @patch("skyflow.vault.controller._vault.parse_insert_response")
     def test_insert_with_continue_on_error_false_when_tokens_are_not_none(self, mock_parse_response, mock_validate):
         """Test insert functionality when continue_on_error is False, ensuring a single bulk insert."""
@@ -241,6 +282,42 @@ class TestVault(unittest.TestCase):
         self.assertEqual(result.updated_field, expected_updated_field)
         self.assertEqual(result.errors, [])  # No errors expected
 
+    @patch("skyflow.vault.controller._vault.validate_update_request")
+    def test_update_handles_generic_error(self, mock_validate):
+        request = UpdateRequest(table="test_table", data={"skyflow_id": "123", "field": "value"},
+                                return_tokens=False)
+        records_api = self.vault_client.get_records_api.return_value
+        records_api.record_service_update_record.side_effect = Exception("Generic Exception")
+
+        with self.assertRaises(Exception):
+            self.vault.update(request)
+
+        records_api.record_service_update_record.assert_called_once()
+
+    @patch("skyflow.vault.controller._vault.validate_update_request")
+    def test_update_handles_unauthorized_error(self, mock_validate):
+        request = UpdateRequest(table="test_table", data={"skyflow_id": "123", "field": "value"},
+                                return_tokens=False)
+        records_api = self.vault_client.get_records_api.return_value
+        records_api.record_service_update_record.side_effect = UnauthorizedError("UnauthorizedError")
+
+        with self.assertRaises(Exception):
+            self.vault.update(request)
+
+        records_api.record_service_update_record.assert_called_once()
+
+    @patch("skyflow.vault.controller._vault.validate_update_request")
+    def test_update_handles_forbidden_error(self, mock_validate):
+        request = UpdateRequest(table="test_table", data={"skyflow_id": "123", "field": "value"},
+                                return_tokens=False)
+        records_api = self.vault_client.get_records_api.return_value
+        records_api.record_service_update_record.side_effect = ForbiddenError("ForbiddenError")
+
+        with self.assertRaises(Exception):
+            self.vault.update(request)
+
+        records_api.record_service_update_record.assert_called_once()
+
     @patch("skyflow.vault.controller._vault.validate_delete_request")
     @patch("skyflow.vault.controller._vault.parse_delete_response")
     def test_delete_successful(self, mock_parse_response, mock_validate):
@@ -283,6 +360,39 @@ class TestVault(unittest.TestCase):
         # Check that the result matches the expected DeleteResponse
         self.assertEqual(result.deleted_ids, expected_deleted_ids)
         self.assertEqual(result.errors, [])  # No errors expected
+
+    @patch("skyflow.vault.controller._vault.validate_delete_request")
+    def test_delete_handles_generic_exception(self, mock_validate):
+        request = DeleteRequest(table="test_table", ids=["id1", "id2"])
+        records_api = self.vault_client.get_records_api.return_value
+        records_api.record_service_bulk_delete_record.side_effect = Exception("Generic Error")
+
+        with self.assertRaises(Exception):
+            self.vault.delete(request)
+
+        records_api.record_service_bulk_delete_record.assert_called_once()
+
+    @patch("skyflow.vault.controller._vault.validate_delete_request")
+    def test_delete_handles_unauthorized_error(self, mock_validate):
+        request = DeleteRequest(table="test_table", ids=["id1", "id2"])
+        records_api = self.vault_client.get_records_api.return_value
+        records_api.record_service_bulk_delete_record.side_effect = UnauthorizedError("Unauthorized")
+
+        with self.assertRaises(Exception):
+            self.vault.delete(request)
+
+        records_api.record_service_bulk_delete_record.assert_called_once()
+
+    @patch("skyflow.vault.controller._vault.validate_delete_request")
+    def test_delete_handles_forbidden_error(self, mock_validate):
+        request = DeleteRequest(table="test_table", ids=["id1", "id2"])
+        records_api = self.vault_client.get_records_api.return_value
+        records_api.record_service_bulk_delete_record.side_effect = ForbiddenError("Forbidden")
+
+        with self.assertRaises(Exception):
+            self.vault.delete(request)
+
+        records_api.record_service_bulk_delete_record.assert_called_once()
 
     @patch("skyflow.vault.controller._vault.validate_get_request")
     @patch("skyflow.vault.controller._vault.parse_get_response")
@@ -402,6 +512,39 @@ class TestVault(unittest.TestCase):
         self.assertEqual(result.data, expected_data)
         self.assertEqual(result.errors, [])  # No errors expected
 
+    @patch("skyflow.vault.controller._vault.validate_get_request")
+    def test_get_handles_generic_error(self, mock_validate):
+        request = GetRequest(table="test_table", ids=["id1", "id2"])
+        records_api = self.vault_client.get_records_api.return_value
+        records_api.record_service_bulk_get_record.side_effect = Exception("Generic Exception")
+
+        with self.assertRaises(Exception):
+            self.vault.get(request)
+
+        records_api.record_service_bulk_get_record.assert_called_once()
+
+    @patch("skyflow.vault.controller._vault.validate_get_request")
+    def test_get_handles_unauthorized_error(self, mock_validate):
+        request = GetRequest(table="test_table", ids=["id1", "id2"])
+        records_api = self.vault_client.get_records_api.return_value
+        records_api.record_service_bulk_get_record.side_effect = UnauthorizedError("UnauthorizedError")
+
+        with self.assertRaises(Exception):
+            self.vault.get(request)
+
+        records_api.record_service_bulk_get_record.assert_called_once()
+
+    @patch("skyflow.vault.controller._vault.validate_get_request")
+    def test_get_handles_forbidden_error(self, mock_validate):
+        request = GetRequest(table="test_table", ids=["id1", "id2"])
+        records_api = self.vault_client.get_records_api.return_value
+        records_api.record_service_bulk_get_record.side_effect = ForbiddenError("ForbiddenError")
+
+        with self.assertRaises(Exception):
+            self.vault.get(request)
+
+        records_api.record_service_bulk_get_record.assert_called_once()
+
     @patch("skyflow.vault.controller._vault.validate_query_request")
     @patch("skyflow.vault.controller._vault.parse_query_response")
     def test_query_successful(self, mock_parse_response, mock_validate):
@@ -444,6 +587,39 @@ class TestVault(unittest.TestCase):
         # Check that the result matches the expected QueryResponse
         self.assertEqual(result.fields, expected_fields)
         self.assertEqual(result.errors, [])  # No errors expected
+
+    @patch("skyflow.vault.controller._vault.validate_query_request")
+    def test_query_handles_generic_error(self, mock_validate):
+        request = QueryRequest(query="SELECT * from table_name")
+        query_api = self.vault_client.get_query_api.return_value
+        query_api.query_service_execute_query.side_effect = Exception("Generic Exception")
+
+        with self.assertRaises(Exception):
+            self.vault.query(request)
+
+        query_api.query_service_execute_query.assert_called_once()
+
+    @patch("skyflow.vault.controller._vault.validate_query_request")
+    def test_query_handles_unauthorized_error(self, mock_validate):
+        request = QueryRequest(query="SELECT * from table_name")
+        query_api = self.vault_client.get_query_api.return_value
+        query_api.query_service_execute_query.side_effect = UnauthorizedError("UnauthorizedError")
+
+        with self.assertRaises(Exception):
+            self.vault.query(request)
+
+        query_api.query_service_execute_query.assert_called_once()
+
+    @patch("skyflow.vault.controller._vault.validate_query_request")
+    def test_query_handles_forbidden_error(self, mock_validate):
+        request = QueryRequest(query="SELECT * from table_name")
+        query_api = self.vault_client.get_query_api.return_value
+        query_api.query_service_execute_query.side_effect = ForbiddenError("ForbiddenError")
+
+        with self.assertRaises(Exception):
+            self.vault.query(request)
+
+        query_api.query_service_execute_query.assert_called_once()
 
     @patch("skyflow.vault.controller._vault.validate_detokenize_request")
     @patch("skyflow.vault.controller._vault.parse_detokenize_response")
@@ -502,6 +678,75 @@ class TestVault(unittest.TestCase):
         self.assertEqual(result.detokenized_fields, expected_fields)
         self.assertEqual(result.errors, [])  # No errors expected
 
+    @patch("skyflow.vault.controller._vault.validate_detokenize_request")
+    def test_detokenize_handles_generic_error(self, mock_validate):
+        request = DetokenizeRequest(
+            data=[
+                {
+                    'token': 'token1',
+                    'redaction': RedactionType.PLAIN_TEXT
+                },
+                {
+                    'token': 'token2',
+                    'redaction': RedactionType.PLAIN_TEXT
+                }
+            ],
+            continue_on_error=False
+        )
+        tokens_api = self.vault_client.get_tokens_api.return_value
+        tokens_api.record_service_detokenize.side_effect = Exception("Generic Error")
+
+        with self.assertRaises(Exception):
+            self.vault.detokenize(request)
+
+        tokens_api.record_service_detokenize.assert_called_once()
+
+    @patch("skyflow.vault.controller._vault.validate_detokenize_request")
+    def test_detokenize_handles_unauthorized_error(self, mock_validate):
+        request = DetokenizeRequest(
+            data=[
+                {
+                    'token': 'token1',
+                    'redaction': RedactionType.PLAIN_TEXT
+                },
+                {
+                    'token': 'token2',
+                    'redaction': RedactionType.PLAIN_TEXT
+                }
+            ],
+            continue_on_error=False
+        )
+        tokens_api = self.vault_client.get_tokens_api.return_value
+        tokens_api.record_service_detokenize.side_effect = UnauthorizedError("UnauthorizedError")
+
+        with self.assertRaises(Exception):
+            self.vault.detokenize(request)
+
+        tokens_api.record_service_detokenize.assert_called_once()
+
+    @patch("skyflow.vault.controller._vault.validate_detokenize_request")
+    def test_detokenize_handles_forbidden_error(self, mock_validate):
+        request = DetokenizeRequest(
+            data=[
+                {
+                    'token': 'token1',
+                    'redaction': RedactionType.PLAIN_TEXT
+                },
+                {
+                    'token': 'token2',
+                    'redaction': RedactionType.PLAIN_TEXT
+                }
+            ],
+            continue_on_error=False
+        )
+        tokens_api = self.vault_client.get_tokens_api.return_value
+        tokens_api.record_service_detokenize.side_effect = ForbiddenError("ForbiddenError")
+
+        with self.assertRaises(Exception):
+            self.vault.detokenize(request)
+
+        tokens_api.record_service_detokenize.assert_called_once()
+
     @patch("skyflow.vault.controller._vault.validate_tokenize_request")
     @patch("skyflow.vault.controller._vault.parse_tokenize_response")
     def test_tokenize_successful(self, mock_parse_response, mock_validate):
@@ -552,3 +797,51 @@ class TestVault(unittest.TestCase):
 
         # Check that the result matches the expected TokenizeResponse
         self.assertEqual(result.tokenized_fields, expected_fields)
+
+    @patch("skyflow.vault.controller._vault.validate_tokenize_request")
+    def test_tokenize_handles_generic_error(self, mock_validate):
+        request = TokenizeRequest(
+            values=[
+                {"value": "value1", "column_group": "group1"},
+                {"value": "value2", "column_group": "group2"}
+            ]
+        )
+        tokens_api = self.vault_client.get_tokens_api.return_value
+        tokens_api.record_service_tokenize.side_effect = Exception("Generic Error")
+
+        with self.assertRaises(Exception):
+            self.vault.tokenize(request)
+
+        tokens_api.record_service_tokenize.assert_called_once()
+
+    @patch("skyflow.vault.controller._vault.validate_tokenize_request")
+    def test_tokenize_handles_unauthorized_error(self, mock_validate):
+        request = TokenizeRequest(
+            values=[
+                {"value": "value1", "column_group": "group1"},
+                {"value": "value2", "column_group": "group2"}
+            ]
+        )
+        tokens_api = self.vault_client.get_tokens_api.return_value
+        tokens_api.record_service_tokenize.side_effect = UnauthorizedError("UnauthorizedError")
+
+        with self.assertRaises(Exception):
+            self.vault.tokenize(request)
+
+        tokens_api.record_service_tokenize.assert_called_once()
+
+    @patch("skyflow.vault.controller._vault.validate_tokenize_request")
+    def test_tokenize_handles_forbidden_error(self, mock_validate):
+        request = TokenizeRequest(
+            values=[
+                {"value": "value1", "column_group": "group1"},
+                {"value": "value2", "column_group": "group2"}
+            ]
+        )
+        tokens_api = self.vault_client.get_tokens_api.return_value
+        tokens_api.record_service_tokenize.side_effect = ForbiddenError("Forbidden Error")
+
+        with self.assertRaises(Exception):
+            self.vault.tokenize(request)
+
+        tokens_api.record_service_tokenize.assert_called_once()
