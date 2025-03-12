@@ -6,7 +6,7 @@ class AuthClient:
         self.__api_client = self.initialize_api_client()
 
     def initialize_api_client(self):
-        return Skyflow(base_url=self.__url, token='')
+        return Skyflow(base_url=self.__url, token='token')
 
     def get_auth_api(self):
         return self.__api_client.authentication
