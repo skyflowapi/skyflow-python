@@ -129,7 +129,8 @@ class TestVault(unittest.TestCase):
             records=expected_body,
             tokenization=True,
             upsert=None,
-            homogeneous=True
+            homogeneous=True,
+            byot='DISABLE'
         )
         mock_parse_response.assert_called_once_with(mock_api_response, False)
 
@@ -195,7 +196,8 @@ class TestVault(unittest.TestCase):
             records=expected_body,
             tokenization=True,
             upsert=None,
-            homogeneous=True
+            homogeneous=True,
+            byot='DISABLE'
         )
         mock_parse_response.assert_called_once_with(mock_api_response, False)
 
