@@ -190,7 +190,10 @@ class Vault:
         log_info(SkyflowMessages.Info.DETOKENIZE_REQUEST_RESOLVED.value, self.__vault_client.get_logger())
         self.__initialize()
         tokens_list = [
-            V1DetokenizeRecordRequest(token=item.get('token'), redaction=item.get('redaction').value if item.get('redaction') is not None else None)
+            V1DetokenizeRecordRequest(
+                token=item.get('token'),
+                redaction=item.get('redaction', None)
+            )
             for item in request.data
         ]
         tokens_api = self.__vault_client.get_tokens_api()
