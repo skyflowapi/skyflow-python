@@ -3,6 +3,5 @@
 from .bad_request_error import BadRequestError
 from .not_found_error import NotFoundError
 from .unauthorized_error import UnauthorizedError
-from .forbidden_error import ForbiddenError
 
-__all__ = ["BadRequestError", "NotFoundError", "UnauthorizedError", "ForbiddenError"]
+__all__ = ["BadRequestError", "NotFoundError", "UnauthorizedError"]

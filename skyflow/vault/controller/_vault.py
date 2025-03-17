@@ -1,6 +1,5 @@
 from skyflow.generated.rest import V1FieldRecords, V1BatchRecord, V1TokenizeRecordRequest, \
     V1DetokenizeRecordRequest
-from skyflow.generated.rest.errors import BadRequestError, UnauthorizedError, ForbiddenError
 from skyflow.utils import SkyflowMessages, parse_insert_response, \
     handle_exception, parse_update_record_response, parse_delete_response, parse_detokenize_response, \
     parse_tokenize_response, parse_query_response, parse_get_response, encode_column_values
@@ -74,25 +73,20 @@ class Vault:
 
         try:
             log_info(SkyflowMessages.Info.INSERT_TRIGGERED.value, self.__vault_client.get_logger())
-
             if request.continue_on_error:
                 api_response = records_api.record_service_batch_operation(self.__vault_client.get_vault_id(),
                                                                           records=insert_body, continue_on_error=request.continue_on_error, byot=request.token_mode.value)
 
             else:
                 api_response = records_api.record_service_insert_record(self.__vault_client.get_vault_id(),
-                                                                        request.table_name, records=insert_body,tokenization= request.return_tokens, upsert=request.upsert, homogeneous=request.homogeneous)
+                                                                        request.table_name, records=insert_body,tokenization= request.return_tokens, upsert=request.upsert, homogeneous=request.homogeneous, byot=request.token_mode.value)
 
             insert_response = parse_insert_response(api_response, request.continue_on_error)
             log_info(SkyflowMessages.Info.INSERT_SUCCESS.value, self.__vault_client.get_logger())
             return insert_response
 
-        except BadRequestError as e:
+        except Exception as e:
             log_error_log(SkyflowMessages.ErrorLogs.INSERT_RECORDS_REJECTED.value, self.__vault_client.get_logger())
-            handle_exception(e, self.__vault_client.get_logger())
-        except UnauthorizedError as e:
-            handle_exception(e, self.__vault_client.get_logger())
-        except ForbiddenError as e:
             handle_exception(e, self.__vault_client.get_logger())
 
     def update(self, request: UpdateRequest):
@@ -120,10 +114,6 @@ class Vault:
         except Exception as e:
             log_error_log(SkyflowMessages.ErrorLogs.UPDATE_REQUEST_REJECTED.value, logger = self.__vault_client.get_logger())
             handle_exception(e, self.__vault_client.get_logger())
-        except UnauthorizedError as e:
-            handle_exception(e, self.__vault_client.get_logger())
-        except ForbiddenError as e:
-            handle_exception(e, self.__vault_client.get_logger())
 
     def delete(self, request: DeleteRequest):
         log_info(SkyflowMessages.Info.VALIDATING_DELETE_REQUEST.value, self.__vault_client.get_logger())
@@ -143,12 +133,6 @@ class Vault:
             return delete_response
         except Exception as e:
             log_error_log(SkyflowMessages.ErrorLogs.DELETE_REQUEST_REJECTED.value, logger = self.__vault_client.get_logger())
-            handle_exception(e, self.__vault_client.get_logger())
-        except UnauthorizedError as e:
-            log_error_log(SkyflowMessages.ErrorLogs.DELETE_REQUEST_REJECTED.value,
-                          logger=self.__vault_client.get_logger())
-            handle_exception(e, self.__vault_client.get_logger())
-        except ForbiddenError as e:
             handle_exception(e, self.__vault_client.get_logger())
 
     def get(self, request: GetRequest):
@@ -180,11 +164,6 @@ class Vault:
         except Exception as e:
             log_error_log(SkyflowMessages.ErrorLogs.GET_REQUEST_REJECTED.value, self.__vault_client.get_logger())
             handle_exception(e, self.__vault_client.get_logger())
-        except UnauthorizedError as e:
-            log_error_log(SkyflowMessages.ErrorLogs.GET_REQUEST_REJECTED.value, self.__vault_client.get_logger())
-            handle_exception(e, self.__vault_client.get_logger())
-        except ForbiddenError as e:
-            handle_exception(e, self.__vault_client.get_logger())
 
     def query(self, request: QueryRequest):
         log_info(SkyflowMessages.Info.VALIDATING_QUERY_REQUEST.value, self.__vault_client.get_logger())
@@ -204,11 +183,6 @@ class Vault:
         except Exception as e:
             log_error_log(SkyflowMessages.ErrorLogs.QUERY_REQUEST_REJECTED.value, self.__vault_client.get_logger())
             handle_exception(e, self.__vault_client.get_logger())
-        except UnauthorizedError as e:
-            log_error_log(SkyflowMessages.ErrorLogs.QUERY_REQUEST_REJECTED.value, self.__vault_client.get_logger())
-            handle_exception(e, self.__vault_client.get_logger())
-        except ForbiddenError as e:
-            handle_exception(e, self.__vault_client.get_logger())
 
     def detokenize(self, request: DetokenizeRequest):
         log_info(SkyflowMessages.Info.VALIDATE_DETOKENIZE_REQUEST.value, self.__vault_client.get_logger())
@@ -216,10 +190,9 @@ class Vault:
         log_info(SkyflowMessages.Info.DETOKENIZE_REQUEST_RESOLVED.value, self.__vault_client.get_logger())
         self.__initialize()
         tokens_list = [
-            V1DetokenizeRecordRequest(token=item.get('token'), redaction=item.get('redaction').value)
+            V1DetokenizeRecordRequest(token=item.get('token'), redaction=item.get('redaction').value if item.get('redaction') is not None else None)
             for item in request.data
         ]
-        # payload = V1DetokenizePayload(detokenization_parameters=tokens_list, continue_on_error=request.continue_on_error)
         tokens_api = self.__vault_client.get_tokens_api()
         try:
             log_info(SkyflowMessages.Info.DETOKENIZE_TRIGGERED.value, self.__vault_client.get_logger())
@@ -234,12 +207,6 @@ class Vault:
         except Exception as e:
             log_error_log(SkyflowMessages.ErrorLogs.DETOKENIZE_REQUEST_REJECTED.value, logger = self.__vault_client.get_logger())
             handle_exception(e, self.__vault_client.get_logger())
-        except UnauthorizedError as e:
-            log_error_log(SkyflowMessages.ErrorLogs.DETOKENIZE_REQUEST_REJECTED.value,
-                          logger=self.__vault_client.get_logger())
-            handle_exception(e, self.__vault_client.get_logger())
-        except ForbiddenError as e:
-            handle_exception(e, self.__vault_client.get_logger())
 
     def tokenize(self, request: TokenizeRequest):
         log_info(SkyflowMessages.Info.VALIDATING_TOKENIZE_REQUEST.value, self.__vault_client.get_logger())
@@ -251,7 +218,6 @@ class Vault:
             V1TokenizeRecordRequest(value=item["value"], column_group=item["column_group"])
             for item in request.values
         ]
-        # payload = V1TokenizePayload(tokenization_parameters=records_list)
         tokens_api = self.__vault_client.get_tokens_api()
         try:
             log_info(SkyflowMessages.Info.TOKENIZE_TRIGGERED.value, self.__vault_client.get_logger())
@@ -264,10 +230,4 @@ class Vault:
             return tokenize_response
         except Exception as e:
             log_error_log(SkyflowMessages.ErrorLogs.TOKENIZE_REQUEST_REJECTED.value, logger = self.__vault_client.get_logger())
-            handle_exception(e, self.__vault_client.get_logger())
-        except UnauthorizedError as e:
-            log_error_log(SkyflowMessages.ErrorLogs.TOKENIZE_REQUEST_REJECTED.value,
-                          logger=self.__vault_client.get_logger())
-            handle_exception(e, self.__vault_client.get_logger())
-        except ForbiddenError as e:
             handle_exception(e, self.__vault_client.get_logger())

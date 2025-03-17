@@ -61,7 +61,7 @@ def get_vault_url(cluster_id, env,vault_id, logger = None):
         raise SkyflowError(SkyflowMessages.Error.INVALID_ENV.value.format(vault_id), invalid_input_error_code)
 
     base_url = EnvUrls[env.name].value
-    protocol = "https" if env != Env.PROD else "http"
+    protocol = "https"
 
     return f"{protocol}://{cluster_id}.{base_url}"
 
