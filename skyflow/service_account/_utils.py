@@ -3,7 +3,6 @@ import datetime
 import time
 import jwt
 from skyflow.error import SkyflowError
-from skyflow.generated.rest.models import V1GetAuthTokenRequest
 from skyflow.service_account.client.auth_client import AuthClient
 from skyflow.utils.logger import log_info, log_error_log
 from skyflow.utils import get_base_url, format_scope, SkyflowMessages
@@ -89,10 +88,9 @@ def get_service_account_token(credentials, options, logger):
     if options and "role_ids" in options:
         formatted_scope = format_scope(options.get("role_ids"))
 
-    request = V1GetAuthTokenRequest(assertion = signed_token,
+    response = auth_api.authentication_service_get_auth_token(assertion = signed_token,
                                     grant_type="urn:ietf:params:oauth:grant-type:jwt-bearer",
                                     scope=formatted_scope)
-    response = auth_api.authentication_service_get_auth_token(request)
     log_info(SkyflowMessages.Info.GET_BEARER_TOKEN_SUCCESS.value, logger)
     return response.access_token, response.token_type
 

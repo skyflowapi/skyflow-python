@@ -13,8 +13,9 @@ from urllib.parse import quote
 from skyflow.error import SkyflowError
 from skyflow.generated.rest import V1UpdateRecordResponse, V1BulkDeleteRecordResponse, \
     V1DetokenizeResponse, V1TokenizeResponse, V1GetQueryResponse, V1BulkGetRecordResponse
-from skyflow.utils.logger import log_error, log_error_log
+from skyflow.utils.logger import log_error_log
 from . import SkyflowMessages, SDK_VERSION
+from .constants import PROTOCOL
 from .enums import Env, ContentType, EnvUrls
 from skyflow.vault.data import InsertResponse, UpdateResponse, DeleteResponse, QueryResponse, GetResponse
 from .validations import validate_invoke_connection_params
@@ -61,7 +62,7 @@ def get_vault_url(cluster_id, env,vault_id, logger = None):
         raise SkyflowError(SkyflowMessages.Error.INVALID_ENV.value.format(vault_id), invalid_input_error_code)
 
     base_url = EnvUrls[env.name].value
-    protocol = "https" if env != Env.PROD else "http"
+    protocol = PROTOCOL
 
     return f"{protocol}://{cluster_id}.{base_url}"
 
