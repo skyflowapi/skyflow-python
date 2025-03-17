@@ -511,11 +511,11 @@ class TestVault(unittest.TestCase):
             data=[
                 {
                     'token': 'token1',
-                    'redaction': RedactionType.PLAIN_TEXT
+                    'redaction': 'PLAIN_TEXT'
                 },
                 {
                     'token': 'token2',
-                    'redaction': RedactionType.PLAIN_TEXT
+                    'redaction': 'PLAIN_TEXT'
                 }
             ],
             continue_on_error=False
