@@ -68,7 +68,7 @@ class Vault:
         validate_insert_request(self.__vault_client.get_logger(), request)
         log_info(SkyflowMessages.Info.INSERT_REQUEST_RESOLVED.value, self.__vault_client.get_logger())
         self.__initialize()
-        records_api = self.__vault_client.get_records_api()
+        records_api = self.__vault_client.get_records_api().with_raw_response
         insert_body = self.__build_insert_body(request)
 
         try:
@@ -196,7 +196,7 @@ class Vault:
             )
             for item in request.data
         ]
-        tokens_api = self.__vault_client.get_tokens_api()
+        tokens_api = self.__vault_client.get_tokens_api().with_raw_response
         try:
             log_info(SkyflowMessages.Info.DETOKENIZE_TRIGGERED.value, self.__vault_client.get_logger())
             api_response = tokens_api.record_service_detokenize(

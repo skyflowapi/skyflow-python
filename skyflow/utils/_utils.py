@@ -13,6 +13,7 @@ from urllib.parse import quote
 from skyflow.error import SkyflowError
 from skyflow.generated.rest import V1UpdateRecordResponse, V1BulkDeleteRecordResponse, \
     V1DetokenizeResponse, V1TokenizeResponse, V1GetQueryResponse, V1BulkGetRecordResponse
+from skyflow.generated.rest.core.http_response import HttpResponse
 from skyflow.utils.logger import log_error_log
 from . import SkyflowMessages, SDK_VERSION
 from .constants import PROTOCOL
@@ -192,11 +193,16 @@ def get_metrics():
 
 
 def parse_insert_response(api_response, continue_on_error):
+    # Retrieve the headers and data from the API response
+    api_response_headers = api_response.headers
+    api_response_data = api_response.data
+    # Retrieve the request ID from the headers
+    request_id = api_response_headers.get('x-request-id')
     inserted_fields = []
     errors = []
     insert_response = InsertResponse()
     if continue_on_error:
-        for idx, response in enumerate(api_response.responses):
+        for idx, response in enumerate(api_response_data.responses):
             if response['Status'] == 200:
                 body = response['Body']
                 if 'records' in body:
@@ -212,6 +218,7 @@ def parse_insert_response(api_response, continue_on_error):
             elif response['Status'] == 400:
                 error = {
                     'request_index': idx,
+                    'request_id': request_id,
                     'error': response['Body']['error']
                 }
                 errors.append(error)
@@ -220,7 +227,7 @@ def parse_insert_response(api_response, continue_on_error):
             insert_response.errors = errors
 
     else:
-        for record in api_response.records:
+        for record in api_response_data.records:
             field_data = {
                 'skyflow_id': record.skyflow_id
             }
@@ -265,18 +272,24 @@ def parse_get_response(api_response: V1BulkGetRecordResponse):
 
     return get_response
 
-def parse_detokenize_response(api_response: V1DetokenizeResponse):
+def parse_detokenize_response(api_response: HttpResponse[V1DetokenizeResponse]):
+    # Retrieve the headers and data from the API response
+    api_response_headers = api_response.headers
+    api_response_data = api_response.data
+    # Retrieve the request ID from the headers
+    request_id = api_response_headers.get('x-request-id')
     detokenized_fields = []
     errors = []
 
-    for record in api_response.records:
+    for record in api_response_data.records:
         if record.error:
             errors.append({
                 "token": record.token,
-                "error": record.error
+                "error": record.error,
+                "request_id": request_id
             })
         else:
-            value_type = record.value_type.value if record.value_type else None
+            value_type = record.value_type if record.value_type else None
             detokenized_fields.append({
                 "token": record.token,
                 "value": record.value,
@@ -372,7 +385,10 @@ def handle_exception(error, logger):
 
 def handle_json_error(err, data, request_id, logger):
     try:
-        description = json.loads(data)
+        if isinstance(data, dict):  # If data is already a dict
+            description = data
+        else:
+            description = json.loads(data)
         status_code = description.get('error', {}).get('http_code', 500)  # Default to 500 if not found
         http_status = description.get('error', {}).get('http_status')
         grpc_code = description.get('error', {}).get('grpc_code')

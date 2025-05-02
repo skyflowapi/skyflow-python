@@ -183,21 +183,22 @@ class TestUtils(unittest.TestCase):
 
     def test_parse_insert_response(self):
         api_response = Mock()
-        api_response.responses = [
+        api_response.headers = {"x-request-id": "12345", "content-type": "application/json"}
+        api_response.data = Mock(responses=[
             {"Status": 200, "Body": {"records": [{"skyflow_id": "id1"}]}},
             {"Status": 400, "Body": {"error": TEST_ERROR_MESSAGE}}
-        ]
+        ])
         result = parse_insert_response(api_response, continue_on_error=True)
         self.assertEqual(len(result.inserted_fields), 1)
         self.assertEqual(len(result.errors), 1)
 
     def test_parse_insert_response_continue_on_error_false(self):
         mock_api_response = Mock()
-        mock_api_response.records = [
+        mock_api_response.headers = {"x-request-id": "12345", "content-type": "application/json"}
+        mock_api_response.data = Mock(records=[
             Mock(skyflow_id="id_1", tokens={"token1": "token_value1"}),
             Mock(skyflow_id="id_2", tokens={"token2": "token_value2"})
-        ]
-
+        ])
         result = parse_insert_response(mock_api_response, continue_on_error=False)
 
         self.assertIsInstance(result, InsertResponse)
@@ -252,11 +253,12 @@ class TestUtils(unittest.TestCase):
 
     def test_parse_detokenize_response_with_mixed_records(self):
         mock_api_response = Mock()
-        mock_api_response.records = [
-            Mock(token="token1", value="value1", value_type=Mock(value="Type1"), error=None),
+        mock_api_response.headers = {"x-request-id": "12345", "content-type": "application/json"}
+        mock_api_response.data = Mock(records=[
+            Mock(token="token1", value="value1", value_type="Type1", error=None),
             Mock(token="token2", value=None, value_type=None, error="Some error"),
-            Mock(token="token3", value="value3", value_type=Mock(value="Type2"), error=None),
-        ]
+            Mock(token="token3", value="value3", value_type="Type2", error=None),     
+        ])
 
         result = parse_detokenize_response(mock_api_response)
         self.assertIsInstance(result, DetokenizeResponse)
@@ -267,7 +269,7 @@ class TestUtils(unittest.TestCase):
         ]
 
         expected_errors = [
-            {"token": "token2", "error": "Some error"}
+            {"token": "token2", "error": "Some error", "request_id": "12345"}
         ]
 
         self.assertEqual(result.detokenized_fields, expected_detokenized_fields)
