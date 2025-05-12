@@ -3,6 +3,7 @@ import json
 import urllib.parse
 from dotenv import load_dotenv
 import dotenv
+import httpx
 from requests.sessions import PreparedRequest
 from requests.models import HTTPError
 import requests
@@ -369,6 +370,10 @@ def log_and_reject_error(description, status_code, request_id, http_status=None,
     raise SkyflowError(description, status_code, request_id, grpc_code, http_status, details)
 
 def handle_exception(error, logger):
+    # handle invalid cluster ID error scenario
+    if (isinstance(error, httpx.ConnectError)):
+        handle_generic_error(error, None, SkyflowMessages.ErrorCodes.INVALID_INPUT.value, logger)
+        
     request_id = error.headers.get('x-request-id', 'unknown-request-id')
     content_type = error.headers.get('content-type')
     data = error.body
@@ -403,9 +408,11 @@ def handle_text_error(err, data, request_id, logger):
     log_and_reject_error(data, err.status, request_id, logger =  logger)
 
 def handle_generic_error(err, request_id, logger):
-    description = "An error occurred."
-    log_and_reject_error(description, err.status, request_id, logger = logger)
+    handle_generic_error(err, request_id, err.status, logger = logger)
 
+def handle_generic_error(err, request_id, status, logger):
+    description = SkyflowMessages.Error.GENERIC_API_ERROR.value
+    log_and_reject_error(description, status, request_id, logger = logger)
 
 def encode_column_values(get_request):
     encoded_column_values = list()
