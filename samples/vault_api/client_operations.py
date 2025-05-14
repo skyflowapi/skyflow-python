@@ -12,7 +12,6 @@ This example demonstrates how to:
     3. Create a delete request
     4. Handle response and errors
 """
-
 def perform_secure_data_deletion():
     try:
         # Step 1: Configure Bearer Token Credentials

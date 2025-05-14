@@ -502,19 +502,32 @@ def validate_update_request(logger, request):
                 invalid_input_error_code)
 
 def validate_detokenize_request(logger, request):
-    if not isinstance(request.redaction_type, RedactionType):
-        raise SkyflowError(SkyflowMessages.Error.INVALID_REDACTION_TYPE.value.format(type(request.redaction_type)), invalid_input_error_code)
-
     if not isinstance(request.continue_on_error, bool):
         raise SkyflowError(SkyflowMessages.Error.INVALID_CONTINUE_ON_ERROR_TYPE.value, invalid_input_error_code)
 
-    if not len(request.tokens):
+    if not isinstance(request.data, list):
+        raise SkyflowError(SkyflowMessages.Error.INVALID_TOKENS_LIST_VALUE.value(type(request.data)), invalid_input_error_code)
+
+    if not len(request.data):
         log_error_log(SkyflowMessages.ErrorLogs.TOKENS_REQUIRED.value.format("DETOKENIZE"), logger = logger)
         log_error_log(SkyflowMessages.ErrorLogs.EMPTY_TOKENS.value.format("DETOKENIZE"), logger = logger)
         raise SkyflowError(SkyflowMessages.Error.EMPTY_TOKENS_LIST_VALUE.value, invalid_input_error_code)
 
-    if not isinstance(request.tokens, list):
-        raise SkyflowError(SkyflowMessages.Error.INVALID_TOKENS_LIST_VALUE.value(type(request.tokens)), invalid_input_error_code)
+    for item in request.data:
+        if 'token' not in item:
+            raise SkyflowError(SkyflowMessages.Error.INVALID_TOKENS_LIST_VALUE.value.format(type(request.data)),
+                               invalid_input_error_code)
+
+        token = item.get('token')
+        redaction = item.get('redaction', None)
+
+        if not isinstance(token, str) or not token:
+            raise SkyflowError(SkyflowMessages.Error.INVALID_TOKEN_TYPE.value.format("DETOKENIZE"),
+                               invalid_input_error_code)
+
+        if redaction is not None and not isinstance(redaction, RedactionType):
+            raise SkyflowError(SkyflowMessages.Error.INVALID_REDACTION_TYPE.value.format(type(redaction)),
+                               invalid_input_error_code)
 
 def validate_tokenize_request(logger, request):
     parameters = request.values

@@ -3,6 +3,7 @@ import json
 import urllib.parse
 from dotenv import load_dotenv
 import dotenv
+import httpx
 from requests.sessions import PreparedRequest
 from requests.models import HTTPError
 import requests
@@ -13,8 +14,10 @@ from urllib.parse import quote
 from skyflow.error import SkyflowError
 from skyflow.generated.rest import V1UpdateRecordResponse, V1BulkDeleteRecordResponse, \
     V1DetokenizeResponse, V1TokenizeResponse, V1GetQueryResponse, V1BulkGetRecordResponse
-from skyflow.utils.logger import log_error, log_error_log
+from skyflow.generated.rest.core.http_response import HttpResponse
+from skyflow.utils.logger import log_error_log
 from . import SkyflowMessages, SDK_VERSION
+from .constants import PROTOCOL
 from .enums import Env, ContentType, EnvUrls
 from skyflow.vault.data import InsertResponse, UpdateResponse, DeleteResponse, QueryResponse, GetResponse
 from .validations import validate_invoke_connection_params
@@ -61,7 +64,7 @@ def get_vault_url(cluster_id, env,vault_id, logger = None):
         raise SkyflowError(SkyflowMessages.Error.INVALID_ENV.value.format(vault_id), invalid_input_error_code)
 
     base_url = EnvUrls[env.name].value
-    protocol = "https"
+    protocol = PROTOCOL
 
     return f"{protocol}://{cluster_id}.{base_url}"
 
@@ -191,11 +194,16 @@ def get_metrics():
 
 
 def parse_insert_response(api_response, continue_on_error):
+    # Retrieve the headers and data from the API response
+    api_response_headers = api_response.headers
+    api_response_data = api_response.data
+    # Retrieve the request ID from the headers
+    request_id = api_response_headers.get('x-request-id')
     inserted_fields = []
     errors = []
     insert_response = InsertResponse()
     if continue_on_error:
-        for idx, response in enumerate(api_response.responses):
+        for idx, response in enumerate(api_response_data.responses):
             if response['Status'] == 200:
                 body = response['Body']
                 if 'records' in body:
@@ -211,6 +219,7 @@ def parse_insert_response(api_response, continue_on_error):
             elif response['Status'] == 400:
                 error = {
                     'request_index': idx,
+                    'request_id': request_id,
                     'error': response['Body']['error']
                 }
                 errors.append(error)
@@ -219,7 +228,7 @@ def parse_insert_response(api_response, continue_on_error):
             insert_response.errors = errors
 
     else:
-        for record in api_response.records:
+        for record in api_response_data.records:
             field_data = {
                 'skyflow_id': record.skyflow_id
             }
@@ -264,18 +273,24 @@ def parse_get_response(api_response: V1BulkGetRecordResponse):
 
     return get_response
 
-def parse_detokenize_response(api_response: V1DetokenizeResponse):
+def parse_detokenize_response(api_response: HttpResponse[V1DetokenizeResponse]):
+    # Retrieve the headers and data from the API response
+    api_response_headers = api_response.headers
+    api_response_data = api_response.data
+    # Retrieve the request ID from the headers
+    request_id = api_response_headers.get('x-request-id')
     detokenized_fields = []
     errors = []
 
-    for record in api_response.records:
+    for record in api_response_data.records:
         if record.error:
             errors.append({
                 "token": record.token,
-                "error": record.error
+                "error": record.error,
+                "request_id": request_id
             })
         else:
-            value_type = record.value_type.value if record.value_type else None
+            value_type = record.value_type if record.value_type else None
             detokenized_fields.append({
                 "token": record.token,
                 "value": record.value,
@@ -311,8 +326,6 @@ def parse_query_response(api_response: V1GetQueryResponse):
     return query_response
 
 def parse_invoke_connection_response(api_response: requests.Response):
-    invoke_connection_response = InvokeConnectionResponse()
-
     status_code = api_response.status_code
     content = api_response.content
     if isinstance(content, bytes):
@@ -320,35 +333,45 @@ def parse_invoke_connection_response(api_response: requests.Response):
     try:
         api_response.raise_for_status()
         try:
-            json_content = json.loads(content)
+            data = json.loads(content)
+            metadata = {}
             if 'x-request-id' in api_response.headers:
-                request_id = api_response.headers['x-request-id']
-                json_content['request_id'] = request_id
+                metadata['request_id'] = api_response.headers['x-request-id']
 
-            invoke_connection_response.response = json_content
-            return invoke_connection_response
-        except:
+            return InvokeConnectionResponse(data=data, metadata=metadata)
+        except Exception as e:
             raise SkyflowError(SkyflowMessages.Error.RESPONSE_NOT_JSON.value.format(content), status_code)
     except HTTPError:
-        message = SkyflowMessages.Error.API_ERROR.value.format(status_code)
-        if api_response and api_response.content:
-            try:
-                error_response = json.loads(content)
-                if isinstance(error_response.get('error'), dict) and 'message' in error_response['error']:
-                    message = error_response['error']['message']
-            except json.JSONDecodeError:
-                message = SkyflowMessages.Error.RESPONSE_NOT_JSON.value.format(content)
+        message = SkyflowMessages.Error.API_ERROR.value.format(status_code)  
+        try:
+            error_response = json.loads(content)                    
+            request_id = api_response.headers['x-request-id']
+            error_from_client = api_response.headers.get('error-from-client')
 
-        if 'x-request-id' in api_response.headers:
-            message += ' - request id: ' + api_response.headers['x-request-id']
+            status_code = error_response.get('error', {}).get('http_code', 500)  # Default to 500 if not found
+            http_status = error_response.get('error', {}).get('http_status')
+            grpc_code = error_response.get('error', {}).get('grpc_code')
+            details = error_response.get('error', {}).get('details')
+            message = error_response.get('error', {}).get('message', "An unknown error occurred.")
+            
+            if error_from_client is not None:
+                if details is None: details = []
+                error_from_client_bool = error_from_client.lower() == 'true'
+                details.append({'error_from_client': error_from_client_bool})
 
+            raise SkyflowError(message, status_code, request_id, grpc_code, http_status, details)
+        except json.JSONDecodeError:
+            message = SkyflowMessages.Error.RESPONSE_NOT_JSON.value.format(content)
         raise SkyflowError(message, status_code)
-
 
 def log_and_reject_error(description, status_code, request_id, http_status=None, grpc_code=None, details=None, logger = None):
     raise SkyflowError(description, status_code, request_id, grpc_code, http_status, details)
 
 def handle_exception(error, logger):
+    # handle invalid cluster ID error scenario
+    if (isinstance(error, httpx.ConnectError)):
+        handle_generic_error(error, None, SkyflowMessages.ErrorCodes.INVALID_INPUT.value, logger)
+        
     request_id = error.headers.get('x-request-id', 'unknown-request-id')
     content_type = error.headers.get('content-type')
     data = error.body
@@ -365,11 +388,14 @@ def handle_exception(error, logger):
 
 def handle_json_error(err, data, request_id, logger):
     try:
-        description = json.loads(data)
+        if isinstance(data, dict):  # If data is already a dict
+            description = data
+        else:
+            description = json.loads(data)
         status_code = description.get('error', {}).get('http_code', 500)  # Default to 500 if not found
         http_status = description.get('error', {}).get('http_status')
         grpc_code = description.get('error', {}).get('grpc_code')
-        details = description.get('error', {}).get('details')
+        details = description.get('error', {}).get('details', [])
 
         description_message = description.get('error', {}).get('message', "An unknown error occurred.")
         log_and_reject_error(description_message, status_code, request_id, http_status, grpc_code, details, logger = logger)
@@ -380,9 +406,11 @@ def handle_text_error(err, data, request_id, logger):
     log_and_reject_error(data, err.status, request_id, logger =  logger)
 
 def handle_generic_error(err, request_id, logger):
-    description = "An error occurred."
-    log_and_reject_error(description, err.status, request_id, logger = logger)
+    handle_generic_error(err, request_id, err.status, logger = logger)
 
+def handle_generic_error(err, request_id, status, logger):
+    description = SkyflowMessages.Error.GENERIC_API_ERROR.value
+    log_and_reject_error(description, status, request_id, logger = logger)
 
 def encode_column_values(get_request):
     encoded_column_values = list()

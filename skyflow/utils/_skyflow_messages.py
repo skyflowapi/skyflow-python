@@ -16,6 +16,8 @@ class SkyflowMessages:
         REDACTION_WITH_TOKENS_NOT_SUPPORTED = 400
 
     class Error(Enum):
+        GENERIC_API_ERROR = f"{error_prefix} Validation error. Invalid configuration. Please add a valid vault configuration."
+        
         EMPTY_VAULT_ID = f"{error_prefix} Initialization failed. Invalid vault Id. Specify a valid vault Id."
         INVALID_VAULT_ID = f"{error_prefix} Initialization failed. Invalid vault Id. Specify a valid vault Id as a string."
         EMPTY_CLUSTER_ID = f"{error_prefix} Initialization failed. Invalid cluster Id for vault with id {{}}. Specify a valid cluster Id."
@@ -101,7 +103,7 @@ class SkyflowMessages:
         INVOKE_CONNECTION_FAILED = f"{error_prefix} Invoke Connection operation failed."
 
         INVALID_IDS_TYPE = f"{error_prefix} Validation error. 'ids' has a value of type {{}}. Specify 'ids' as list."
-        INVALID_REDACTION_TYPE = f"{error_prefix} Validation error. 'redaction' has a value of type {{}}. Specify 'redaction' as type Skyflow.Redaction."
+        INVALID_REDACTION_TYPE = f"{error_prefix} Validation error. 'redaction' has a value of type {{}}. Specify 'redaction' as type Skyflow.RedactionType."
         INVALID_COLUMN_NAME = f"{error_prefix} Validation error. 'column' has a value of type {{}}. Specify 'column' as a string."
         INVALID_COLUMN_VALUE = f"{error_prefix} Validation error. columnValues key has a value of type {{}}. Specify columnValues key as list."
         INVALID_FIELDS_VALUE = f"{error_prefix} Validation error. fields key has a value of type{{}}. Specify fields key as list."
@@ -117,8 +119,10 @@ class SkyflowMessages:
         UPDATE_FIELD_KEY_ERROR = f"{error_prefix} Validation error. Fields are empty in an update payload. Specify at least one field."
         INVALID_FIELDS_TYPE = f"{error_prefix} Validation error. The 'data' key has a value of type {{}}. Specify 'data' as a dictionary."
         IDS_KEY_ERROR = f"{error_prefix} Validation error. 'ids' key is missing from the payload. Specify an 'ids' key."
-        INVALID_TOKENS_LIST_VALUE = f"{error_prefix} Validation error. The 'tokens' key has a value of type {{}}. Specify 'tokens' as a list."
+        INVALID_TOKENS_LIST_VALUE = f"{error_prefix} Validation error. The 'data' field is invalid. Specify 'data' as a list of dictionaries containing 'token' and 'redaction'."
+        INVALID_DATA_FOR_DETOKENIZE = f"{error_prefix}"
         EMPTY_TOKENS_LIST_VALUE = f"{error_prefix} Validation error. Tokens are empty in detokenize payload. Specify at lease one token"
+        INVALID_TOKEN_TYPE = f"{ERROR}: [{error_prefix}] Invalid {{}} request. Tokens should be of type string."
 
         INVALID_TOKENIZE_PARAMETERS = f"{error_prefix} Validation error. The 'values' key has a value of type {{}}. Specify 'tokenize_parameters' as a list."
         EMPTY_TOKENIZE_PARAMETERS = f"{error_prefix} Validation error. Tokenize values are empty in tokenize payload. Specify at least one parameter."
@@ -275,6 +279,7 @@ class SkyflowMessages:
         UPDATE_REQUEST_REJECTED = f"{ERROR}: [{error_prefix}] Update request resulted in failure."
         QUERY_REQUEST_REJECTED = f"{ERROR}: [{error_prefix}] Query request resulted in failure."
         GET_REQUEST_REJECTED = f"{ERROR}: [{error_prefix}] Get request resulted in failure."
+        INVOKE_CONNECTION_REQUEST_REJECTED = f"{ERROR}: [{error_prefix}] Invoke connection request resulted in failure."
 
     class Interface(Enum):
         INSERT = "INSERT"
