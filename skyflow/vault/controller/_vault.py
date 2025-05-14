@@ -139,6 +139,7 @@ class Vault:
         log_info(SkyflowMessages.Info.GET_REQUEST_RESOLVED.value, self.__vault_client.get_logger())
         self.__initialize()
         records_api = self.__vault_client.get_records_api()
+
         try:
             log_info(SkyflowMessages.Info.GET_TRIGGERED.value, self.__vault_client.get_logger())
             api_response = records_api.record_service_bulk_get_record(
