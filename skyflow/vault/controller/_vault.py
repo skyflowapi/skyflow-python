@@ -43,8 +43,6 @@ class Vault:
                 upsert=upsert,
                 tokens=token
             )
-            if token is not None:
-                batch_record.tokens = token
             batch_record_list.append(batch_record)
         return batch_record_list
 
@@ -68,7 +66,7 @@ class Vault:
         validate_insert_request(self.__vault_client.get_logger(), request)
         log_info(SkyflowMessages.Info.INSERT_REQUEST_RESOLVED.value, self.__vault_client.get_logger())
         self.__initialize()
-        records_api = self.__vault_client.get_records_api()
+        records_api = self.__vault_client.get_records_api().with_raw_response
         insert_body = self.__build_insert_body(request)
 
         try:
@@ -138,8 +136,6 @@ class Vault:
     def get(self, request: GetRequest):
         log_info(SkyflowMessages.Info.VALIDATE_GET_REQUEST.value, self.__vault_client.get_logger())
         validate_get_request(self.__vault_client.get_logger(), request)
-        if request.column_values:
-            request.column_values = encode_column_values(request)
         log_info(SkyflowMessages.Info.GET_REQUEST_RESOLVED.value, self.__vault_client.get_logger())
         self.__initialize()
         records_api = self.__vault_client.get_records_api()
@@ -196,7 +192,7 @@ class Vault:
             )
             for item in request.data
         ]
-        tokens_api = self.__vault_client.get_tokens_api()
+        tokens_api = self.__vault_client.get_tokens_api().with_raw_response
         try:
             log_info(SkyflowMessages.Info.DETOKENIZE_TRIGGERED.value, self.__vault_client.get_logger())
             api_response = tokens_api.record_service_detokenize(

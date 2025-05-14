@@ -8,7 +8,7 @@ class SkyflowError(Exception):
                  request_id = None,
                  grpc_code = None,
                  http_status = None,
-                 details = None):
+                 details = []):
         self.message = message
         self.http_code = http_code
         self.grpc_code = grpc_code
