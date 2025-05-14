@@ -2,7 +2,7 @@ from collections import OrderedDict
 from skyflow import LogLevel
 from skyflow.error import SkyflowError
 from skyflow.utils import SkyflowMessages
-from skyflow.utils.logger import log_info, Logger, log_error
+from skyflow.utils.logger import log_info, Logger
 from skyflow.utils.validations import validate_vault_config, validate_connection_config, validate_update_vault_config, \
     validate_update_connection_config, validate_credentials, validate_log_level
 from skyflow.vault.client.client import VaultClient

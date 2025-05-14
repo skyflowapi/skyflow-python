@@ -7,7 +7,7 @@ import sys
 
 if sys.version_info < (3, 8):
     raise RuntimeError("skyflow requires Python 3.8+")
-current_version = '2.0.0b1.dev0+3d4ee51'
+current_version = '2.0.0b2.dev0+3a80017'
 
 setup(
     name='skyflow',
@@ -20,17 +20,18 @@ setup(
     description='Skyflow SDK for the Python programming language',
     long_description=open('README.rst').read(),
     install_requires=[
-    'python_dateutil >= 2.5.3',
-    'setuptools >= 21.0.0',
-    'urllib3 >= 1.25.3, < 2.1.0',
-    'pydantic >= 2',
-    'typing-extensions >= 4.7.1',
-    'DateTime~=5.5',
-    'PyJWT~=2.9.0',
-    'requests~=2.32.3',
-    'coverage',
-    'cryptography',
-    'python-dotenv~=1.0.1'
-],
-    python_requires=">=3.8"
+        'python_dateutil >= 2.5.3',
+    	'setuptools >= 21.0.0',
+        'urllib3 >= 1.25.3, < 2.1.0',
+        'pydantic >= 2',
+        'typing-extensions >= 4.7.1',
+        'DateTime~=5.5',
+        'PyJWT~=2.9.0',
+        'requests~=2.32.3',
+        'coverage',
+        'cryptography',
+        'python-dotenv~=1.0.1',
+        'httpx'
+    ],
+    python_requires=">=3.8",
 )

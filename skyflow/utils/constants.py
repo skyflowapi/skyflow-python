@@ -1,0 +1,2 @@
+OPTIONAL_TOKEN='token'
+PROTOCOL='https'
