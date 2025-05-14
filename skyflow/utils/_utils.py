@@ -326,8 +326,6 @@ def parse_query_response(api_response: V1GetQueryResponse):
     return query_response
 
 def parse_invoke_connection_response(api_response: requests.Response):
-    invoke_connection_response = InvokeConnectionResponse()
-
     status_code = api_response.status_code
     content = api_response.content
     if isinstance(content, bytes):
@@ -335,13 +333,12 @@ def parse_invoke_connection_response(api_response: requests.Response):
     try:
         api_response.raise_for_status()
         try:
-            json_content = json.loads(content)
+            data = json.loads(content)
+            metadata = {}
             if 'x-request-id' in api_response.headers:
-                request_id = api_response.headers['x-request-id']
-                json_content['request_id'] = request_id
+                metadata['request_id'] = api_response.headers['x-request-id']
 
-            invoke_connection_response.response = json_content
-            return invoke_connection_response
+            return InvokeConnectionResponse(data=data, metadata=metadata)
         except Exception as e:
             raise SkyflowError(SkyflowMessages.Error.RESPONSE_NOT_JSON.value.format(content), status_code)
     except HTTPError:

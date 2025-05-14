@@ -321,8 +321,8 @@ class TestUtils(unittest.TestCase):
         result = parse_invoke_connection_response(mock_response)
 
         self.assertIsInstance(result, InvokeConnectionResponse)
-        self.assertEqual(result.response["key"], "value")
-        self.assertEqual(result.response["request_id"], "1234")
+        self.assertEqual(result.data["key"], "value")
+        self.assertEqual(result.metadata["request_id"], "1234")
 
     @patch("requests.Response")
     def test_parse_invoke_connection_response_json_decode_error(self, mock_response):

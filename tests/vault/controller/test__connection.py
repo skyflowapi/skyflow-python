@@ -53,7 +53,11 @@ class TestConnection(unittest.TestCase):
         response = self.connection.invoke(request)
 
         # Assertions for successful invocation
-        self.assertEqual(response.response, {"response": "success", "request_id": "test-request-id"})
+        expected_response = {
+            'data': {"response": "success"},
+            'metadata': {"request_id": "test-request-id"}
+        }
+        self.assertEqual(vars(response), expected_response)
         self.mock_vault_client.get_bearer_token.assert_called_once()
 
     @patch('requests.Session.send')
