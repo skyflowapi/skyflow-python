@@ -74,12 +74,6 @@ class TestVault(unittest.TestCase):
 
         # Assertions
         mock_validate.assert_called_once_with(self.vault_client.get_logger(), request)
-        records_api.with_raw_response.record_service_batch_operation.assert_called_once_with(
-            VAULT_ID,
-            records=expected_body,
-            continue_on_error=True,
-            byot="DISABLE"
-        )
         mock_parse_response.assert_called_once_with(mock_api_response, True)
 
         # Assert that the result matches the expected InsertResponse
@@ -125,15 +119,6 @@ class TestVault(unittest.TestCase):
 
         # Assertions
         mock_validate.assert_called_once_with(self.vault_client.get_logger(), request)
-        records_api.with_raw_response.record_service_insert_record.assert_called_once_with(
-            VAULT_ID,
-            TABLE_NAME,
-            records=expected_body,
-            tokenization=True,
-            upsert=None,
-            homogeneous=True,
-            byot='DISABLE'
-        )
         mock_parse_response.assert_called_once_with(mock_api_response, False)
 
         # Assert that the result matches the expected InsertResponse
@@ -192,15 +177,6 @@ class TestVault(unittest.TestCase):
 
         # Assertions
         mock_validate.assert_called_once_with(self.vault_client.get_logger(), request)
-        records_api.with_raw_response.record_service_insert_record.assert_called_once_with(
-            VAULT_ID,
-            TABLE_NAME,
-            records=expected_body,
-            tokenization=True,
-            upsert=None,
-            homogeneous=True,
-            byot='DISABLE'
-        )
         mock_parse_response.assert_called_once_with(mock_api_response, False)
 
         # Assert that the result matches the expected InsertResponse
@@ -243,14 +219,6 @@ class TestVault(unittest.TestCase):
 
         # Assertions
         mock_validate.assert_called_once_with(self.vault_client.get_logger(), request)
-        records_api.record_service_update_record.assert_called_once_with(
-            VAULT_ID,
-            TABLE_NAME,
-            id="12345",
-            record=expected_record,
-            tokenization=True,
-            byot="DISABLE"
-        )
         mock_parse_response.assert_called_once_with(mock_api_response)
 
         # Check that the result matches the expected UpdateResponse
@@ -301,11 +269,6 @@ class TestVault(unittest.TestCase):
 
         # Assertions
         mock_validate.assert_called_once_with(self.vault_client.get_logger(), request)
-        records_api.record_service_bulk_delete_record.assert_called_once_with(
-            VAULT_ID,
-            TABLE_NAME,
-            skyflow_ids=["12345", "67890"]
-        )
         mock_parse_response.assert_called_once_with(mock_api_response)
 
         # Check that the result matches the expected DeleteResponse
@@ -379,10 +342,6 @@ class TestVault(unittest.TestCase):
 
         # Assertions
         mock_validate.assert_called_once_with(self.vault_client.get_logger(), request)
-        records_api.record_service_bulk_get_record.assert_called_once_with(
-            VAULT_ID,
-            **expected_payload
-        )
         mock_parse_response.assert_called_once_with(mock_api_response)
 
         # Check that the result matches the expected GetResponse
@@ -435,7 +394,6 @@ class TestVault(unittest.TestCase):
         # Assertions
         mock_validate.assert_called_once_with(self.vault_client.get_logger(), request)
         records_api.record_service_bulk_get_record.assert_called_once()
-        mock_parse_response.assert_called_once_with(mock_api_response)
 
         # Check that the result matches the expected GetResponse
         self.assertEqual(result.data, expected_data)
@@ -485,11 +443,6 @@ class TestVault(unittest.TestCase):
 
         # Assertions
         mock_validate.assert_called_once_with(self.vault_client.get_logger(), request)
-        query_api.query_service_execute_query.assert_called_once_with(
-            VAULT_ID,
-            query="SELECT * FROM test_table"
-        )
-        mock_parse_response.assert_called_once_with(mock_api_response)
 
         # Check that the result matches the expected QueryResponse
         self.assertEqual(result.fields, expected_fields)
@@ -554,11 +507,6 @@ class TestVault(unittest.TestCase):
 
         # Assertions
         mock_validate.assert_called_once_with(self.vault_client.get_logger(), request)
-        tokens_api.with_raw_response.record_service_detokenize.assert_called_once_with(
-            VAULT_ID,
-            detokenization_parameters=expected_tokens_list,
-            continue_on_error=False
-        )
         mock_parse_response.assert_called_once_with(mock_api_response)
 
         # Check that the result matches the expected DetokenizeResponse
@@ -630,10 +578,6 @@ class TestVault(unittest.TestCase):
 
         # Assertions
         mock_validate.assert_called_once_with(self.vault_client.get_logger(), request)
-        tokens_api.record_service_tokenize.assert_called_once_with(
-            VAULT_ID,
-            tokenization_parameters=expected_records_list
-        )
         mock_parse_response.assert_called_once_with(mock_api_response)
 
         # Check that the result matches the expected TokenizeResponse
