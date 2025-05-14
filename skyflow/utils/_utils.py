@@ -359,7 +359,8 @@ def parse_invoke_connection_response(api_response: requests.Response):
             
             if error_from_client is not None:
                 if details is None: details = []
-                details.append({'error_from_client': error_from_client})
+                error_from_client_bool = error_from_client.lower() == 'true'
+                details.append({'error_from_client': error_from_client_bool})
 
             raise SkyflowError(message, status_code, request_id, grpc_code, http_status, details)
         except json.JSONDecodeError:
@@ -397,7 +398,7 @@ def handle_json_error(err, data, request_id, logger):
         status_code = description.get('error', {}).get('http_code', 500)  # Default to 500 if not found
         http_status = description.get('error', {}).get('http_status')
         grpc_code = description.get('error', {}).get('grpc_code')
-        details = description.get('error', {}).get('details')
+        details = description.get('error', {}).get('details', [])
 
         description_message = description.get('error', {}).get('message', "An unknown error occurred.")
         log_and_reject_error(description_message, status_code, request_id, http_status, grpc_code, details, logger = logger)

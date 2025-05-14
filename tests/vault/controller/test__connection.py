@@ -120,6 +120,6 @@ class TestConnection(unittest.TestCase):
 
         exception = context.exception
 
-        self.assertTrue(any(detail.get('error_from_client') == 'true' for detail in exception.details))
+        self.assertTrue(any(detail.get('error_from_client') == True for detail in exception.details))
         self.assertEqual(exception.request_id, '12345')
 

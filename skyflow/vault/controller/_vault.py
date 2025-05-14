@@ -43,8 +43,6 @@ class Vault:
                 upsert=upsert,
                 tokens=token
             )
-            if token is not None:
-                batch_record.tokens = token
             batch_record_list.append(batch_record)
         return batch_record_list
 
