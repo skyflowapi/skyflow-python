@@ -2,6 +2,11 @@
 
 # isort: skip_file
 
+from .advanced_options_column_mapping import AdvancedOptionsColumnMapping
+from .advanced_options_entity_column_map import AdvancedOptionsEntityColumnMap
+from .advanced_options_vault_schema import AdvancedOptionsVaultSchema
+from .allow_regex import AllowRegex
+from .audio_config_transcription_type import AudioConfigTranscriptionType
 from .audit_event_audit_resource_type import AuditEventAuditResourceType
 from .audit_event_context import AuditEventContext
 from .audit_event_data import AuditEventData
@@ -9,11 +14,44 @@ from .audit_event_http_info import AuditEventHttpInfo
 from .batch_record_method import BatchRecordMethod
 from .context_access_type import ContextAccessType
 from .context_auth_mode import ContextAuthMode
+from .deidentify_file_output import DeidentifyFileOutput
+from .deidentify_file_output_processed_file_type import DeidentifyFileOutputProcessedFileType
+from .deidentify_file_response import DeidentifyFileResponse
+from .deidentify_status_response import DeidentifyStatusResponse
+from .deidentify_status_response_output_type import DeidentifyStatusResponseOutputType
+from .deidentify_status_response_status import DeidentifyStatusResponseStatus
+from .deidentify_string_response import DeidentifyStringResponse
+from .detect_data_accuracy import DetectDataAccuracy
+from .detect_data_entities import DetectDataEntities
+from .detect_file_request_data_type import DetectFileRequestDataType
+from .detect_request_deidentify_option import DetectRequestDeidentifyOption
+from .detected_entity import DetectedEntity
 from .detokenize_record_response_value_type import DetokenizeRecordResponseValueType
+from .entity_location import EntityLocation
+from .entity_type import EntityType
+from .entity_types import EntityTypes
+from .error_response import ErrorResponse
+from .error_response_error import ErrorResponseError
+from .error_string import ErrorString
 from .googlerpc_status import GooglerpcStatus
+from .processed_file_output_processed_file_type import ProcessedFileOutputProcessedFileType
 from .protobuf_any import ProtobufAny
 from .redaction_enum_redaction import RedactionEnumRedaction
+from .reidentify_string_response import ReidentifyStringResponse
 from .request_action_type import RequestActionType
+from .resource_id import ResourceId
+from .restrict_regex import RestrictRegex
+from .token_type import TokenType
+from .token_type_default import TokenTypeDefault
+from .token_type_without_vault import TokenTypeWithoutVault
+from .token_type_without_vault_default import TokenTypeWithoutVaultDefault
+from .transformations import Transformations
+from .transformations_shift_dates import TransformationsShiftDates
+from .transformations_shift_dates_entity_types_item import TransformationsShiftDatesEntityTypesItem
+from .uuid_ import Uuid
+from .v_1_advanced_options import V1AdvancedOptions
+from .v_1_audio_config import V1AudioConfig
+from .v_1_audio_options import V1AudioOptions
 from .v_1_audit_after_options import V1AuditAfterOptions
 from .v_1_audit_event_response import V1AuditEventResponse
 from .v_1_audit_response import V1AuditResponse
@@ -28,25 +66,43 @@ from .v_1_byot import V1Byot
 from .v_1_card import V1Card
 from .v_1_delete_file_response import V1DeleteFileResponse
 from .v_1_delete_record_response import V1DeleteRecordResponse
+from .v_1_detect_file_response import V1DetectFileResponse
+from .v_1_detect_status_response import V1DetectStatusResponse
+from .v_1_detect_status_response_status import V1DetectStatusResponseStatus
+from .v_1_detect_text_request import V1DetectTextRequest
+from .v_1_detect_text_response import V1DetectTextResponse
 from .v_1_detokenize_record_request import V1DetokenizeRecordRequest
 from .v_1_detokenize_record_response import V1DetokenizeRecordResponse
 from .v_1_detokenize_response import V1DetokenizeResponse
 from .v_1_field_records import V1FieldRecords
 from .v_1_file_av_scan_status import V1FileAvScanStatus
+from .v_1_file_data_format import V1FileDataFormat
 from .v_1_get_auth_token_response import V1GetAuthTokenResponse
 from .v_1_get_file_scan_status_response import V1GetFileScanStatusResponse
 from .v_1_get_query_response import V1GetQueryResponse
+from .v_1_image_options import V1ImageOptions
 from .v_1_insert_record_response import V1InsertRecordResponse
+from .v_1_locations import V1Locations
 from .v_1_member_type import V1MemberType
+from .v_1_pdf_config import V1PdfConfig
+from .v_1_pdf_options import V1PdfOptions
+from .v_1_processed_file_output import V1ProcessedFileOutput
 from .v_1_record_meta_properties import V1RecordMetaProperties
+from .v_1_response_entities import V1ResponseEntities
 from .v_1_tokenize_record_request import V1TokenizeRecordRequest
 from .v_1_tokenize_record_response import V1TokenizeRecordResponse
 from .v_1_tokenize_response import V1TokenizeResponse
 from .v_1_update_record_response import V1UpdateRecordResponse
 from .v_1_vault_field_mapping import V1VaultFieldMapping
 from .v_1_vault_schema_config import V1VaultSchemaConfig
+from .vault_id import VaultId
 
 __all__ = [
+    "AdvancedOptionsColumnMapping",
+    "AdvancedOptionsEntityColumnMap",
+    "AdvancedOptionsVaultSchema",
+    "AllowRegex",
+    "AudioConfigTranscriptionType",
     "AuditEventAuditResourceType",
     "AuditEventContext",
     "AuditEventData",
@@ -54,11 +110,44 @@ __all__ = [
     "BatchRecordMethod",
     "ContextAccessType",
     "ContextAuthMode",
+    "DeidentifyFileOutput",
+    "DeidentifyFileOutputProcessedFileType",
+    "DeidentifyFileResponse",
+    "DeidentifyStatusResponse",
+    "DeidentifyStatusResponseOutputType",
+    "DeidentifyStatusResponseStatus",
+    "DeidentifyStringResponse",
+    "DetectDataAccuracy",
+    "DetectDataEntities",
+    "DetectFileRequestDataType",
+    "DetectRequestDeidentifyOption",
+    "DetectedEntity",
     "DetokenizeRecordResponseValueType",
+    "EntityLocation",
+    "EntityType",
+    "EntityTypes",
+    "ErrorResponse",
+    "ErrorResponseError",
+    "ErrorString",
     "GooglerpcStatus",
+    "ProcessedFileOutputProcessedFileType",
     "ProtobufAny",
     "RedactionEnumRedaction",
+    "ReidentifyStringResponse",
     "RequestActionType",
+    "ResourceId",
+    "RestrictRegex",
+    "TokenType",
+    "TokenTypeDefault",
+    "TokenTypeWithoutVault",
+    "TokenTypeWithoutVaultDefault",
+    "Transformations",
+    "TransformationsShiftDates",
+    "TransformationsShiftDatesEntityTypesItem",
+    "Uuid",
+    "V1AdvancedOptions",
+    "V1AudioConfig",
+    "V1AudioOptions",
     "V1AuditAfterOptions",
     "V1AuditEventResponse",
     "V1AuditResponse",
@@ -73,21 +162,34 @@ __all__ = [
     "V1Card",
     "V1DeleteFileResponse",
     "V1DeleteRecordResponse",
+    "V1DetectFileResponse",
+    "V1DetectStatusResponse",
+    "V1DetectStatusResponseStatus",
+    "V1DetectTextRequest",
+    "V1DetectTextResponse",
     "V1DetokenizeRecordRequest",
     "V1DetokenizeRecordResponse",
     "V1DetokenizeResponse",
     "V1FieldRecords",
     "V1FileAvScanStatus",
+    "V1FileDataFormat",
     "V1GetAuthTokenResponse",
     "V1GetFileScanStatusResponse",
     "V1GetQueryResponse",
+    "V1ImageOptions",
     "V1InsertRecordResponse",
+    "V1Locations",
     "V1MemberType",
+    "V1PdfConfig",
+    "V1PdfOptions",
+    "V1ProcessedFileOutput",
     "V1RecordMetaProperties",
+    "V1ResponseEntities",
     "V1TokenizeRecordRequest",
     "V1TokenizeRecordResponse",
     "V1TokenizeResponse",
     "V1UpdateRecordResponse",
     "V1VaultFieldMapping",
     "V1VaultSchemaConfig",
+    "VaultId",
 ]

@@ -7,9 +7,12 @@ from .audit.client import AsyncAuditClient, AuditClient
 from .authentication.client import AsyncAuthenticationClient, AuthenticationClient
 from .bin_lookup.client import AsyncBinLookupClient, BinLookupClient
 from .core.client_wrapper import AsyncClientWrapper, SyncClientWrapper
+from .deprecated.client import AsyncDeprecatedClient, DeprecatedClient
 from .environment import SkyflowEnvironment
+from .files.client import AsyncFilesClient, FilesClient
 from .query.client import AsyncQueryClient, QueryClient
 from .records.client import AsyncRecordsClient, RecordsClient
+from .strings.client import AsyncStringsClient, StringsClient
 from .tokens.client import AsyncTokensClient, TokensClient
 
 
@@ -74,6 +77,9 @@ class Skyflow:
         self.tokens = TokensClient(client_wrapper=self._client_wrapper)
         self.query = QueryClient(client_wrapper=self._client_wrapper)
         self.authentication = AuthenticationClient(client_wrapper=self._client_wrapper)
+        self.deprecated = DeprecatedClient(client_wrapper=self._client_wrapper)
+        self.strings = StringsClient(client_wrapper=self._client_wrapper)
+        self.files = FilesClient(client_wrapper=self._client_wrapper)
 
 
 class AsyncSkyflow:
@@ -137,6 +143,9 @@ class AsyncSkyflow:
         self.tokens = AsyncTokensClient(client_wrapper=self._client_wrapper)
         self.query = AsyncQueryClient(client_wrapper=self._client_wrapper)
         self.authentication = AsyncAuthenticationClient(client_wrapper=self._client_wrapper)
+        self.deprecated = AsyncDeprecatedClient(client_wrapper=self._client_wrapper)
+        self.strings = AsyncStringsClient(client_wrapper=self._client_wrapper)
+        self.files = AsyncFilesClient(client_wrapper=self._client_wrapper)
 
 
 def _get_base_url(*, base_url: typing.Optional[str] = None, environment: SkyflowEnvironment) -> str:
