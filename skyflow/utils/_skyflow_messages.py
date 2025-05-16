@@ -16,6 +16,8 @@ class SkyflowMessages:
         REDACTION_WITH_TOKENS_NOT_SUPPORTED = 400
 
     class Error(Enum):
+        GENERIC_API_ERROR = f"{error_prefix} Validation error. Invalid configuration. Please add a valid vault configuration."
+        
         EMPTY_VAULT_ID = f"{error_prefix} Initialization failed. Invalid vault Id. Specify a valid vault Id."
         INVALID_VAULT_ID = f"{error_prefix} Initialization failed. Invalid vault Id. Specify a valid vault Id as a string."
         EMPTY_CLUSTER_ID = f"{error_prefix} Initialization failed. Invalid cluster Id for vault with id {{}}. Specify a valid cluster Id."

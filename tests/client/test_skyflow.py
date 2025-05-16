@@ -65,7 +65,7 @@ class TestSkyflow(unittest.TestCase):
 
         self.assertNotIn(VALID_VAULT_CONFIG['vault_id'], self.builder._Builder__vault_configs)
 
-    @patch('skyflow.client.skyflow.log_error')
+    @patch('skyflow.utils.logger.log_error')
     def test_remove_vault_config_invalid(self, mock_log_error):
         self.builder.add_vault_config(VALID_VAULT_CONFIG)
         self.builder.build()
@@ -159,7 +159,7 @@ class TestSkyflow(unittest.TestCase):
         self.assertNotIn(VALID_CONNECTION_CONFIG.get("connection_id"), self.builder._Builder__connection_configs)
 
 
-    @patch('skyflow.client.skyflow.log_error')
+    @patch('skyflow.utils.logger.log_error')
     def test_remove_connection_config_invalid(self, mock_log_error):
         self.builder.add_connection_config(VALID_CONNECTION_CONFIG)
         self.builder.build()
