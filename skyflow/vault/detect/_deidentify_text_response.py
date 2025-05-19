@@ -1,50 +1,19 @@
-from dataclasses import dataclass
-from typing import List, Dict
-from ._text_index import TextIndex
+from typing import List
 from ._entity_info import EntityInfo
 
-@dataclass
 class DeidentifyTextResponse:
-    processed_text: str
-    entities: List[EntityInfo]
-    word_count: int
-    char_count: int
+    def __init__(self, 
+                processed_text: str,
+                entities: List[EntityInfo], 
+                word_count: int,
+                char_count: int):
+        self.processed_text = processed_text
+        self.entities = entities
+        self.word_count = word_count
+        self.char_count = char_count
 
-    @property
-    def processed_text(self) -> str:
-        return self._processed_text
+    def __repr__(self):
+        return f"DeidentifyTextResponse(processed_text='{self.processed_text}', entities={self.entities}, word_count={self.word_count}, char_count={self.char_count})"
 
-    @processed_text.setter
-    def processed_text(self, value: str):
-        self._processed_text = value
-
-    @property
-    def entities(self) -> List[EntityInfo]:
-        return self._entities
-
-    @entities.setter
-    def entities(self, value: List[EntityInfo]):
-        self._entities = value
-
-    @property
-    def word_count(self) -> int:
-        return self._word_count
-
-    @word_count.setter
-    def word_count(self, value: int):
-        self._word_count = value
-
-    @property
-    def char_count(self) -> int:
-        return self._char_count
-
-    @char_count.setter
-    def char_count(self, value: int):
-        self._char_count = value
-
-    def __init__(self, processed_text: str, entities: List[EntityInfo], 
-                 word_count: int, char_count: int):
-        self._processed_text = processed_text
-        self._entities = entities
-        self._word_count = word_count
-        self._char_count = char_count
+    def __str__(self):
+        return self.__repr__()

@@ -1,6 +1,9 @@
 import json
+from skyflow.generated.rest.types.token_type import TokenType
+from skyflow.generated.rest.types.transformations import Transformations
+from skyflow.generated.rest.types.transformations_shift_dates import TransformationsShiftDates
 from skyflow.utils._skyflow_messages import SkyflowMessages
-from skyflow.utils._utils import get_metrics, handle_exception, parse_deidentify_text_response, parse_reidentify_text_response
+from skyflow.utils._utils import convert_to_entity_type, get_metrics, handle_exception, parse_deidentify_text_response, parse_reidentify_text_response
 from skyflow.utils.constants import SKY_META_DATA_HEADER
 from skyflow.utils.logger import log_info, log_error_log
 from skyflow.utils.validations._validations import validate_deidentify_text_request, validate_reidentify_text_request
@@ -23,29 +26,42 @@ class Detect:
       
     def ___build_deidentify_text_body(self, request: DeidentifyTextRequest) -> Dict[str, Any]:
         deidentify_text_body = {}
-        entity_types = []
+        parsed_entity_types = convert_to_entity_type(request.entities)
+
+        parsed_token_type = TokenType(
+            default = request.token_format.default,
+            vault_token = convert_to_entity_type(request.token_format.vault_token),
+            entity_unq_counter = convert_to_entity_type(request.token_format.entity_unique_counter),
+            entity_only = convert_to_entity_type(request.token_format.entity_only)
+        )
+        parsed_transformations = None
+        if request.transformations is not None:
+            parsed_transformations = Transformations(
+                shift_dates = TransformationsShiftDates(
+                    max_days = request.transformations.shift_days.max,
+                    min_days = request.transformations.shift_days.min,
+                    entity_types = convert_to_entity_type(request.transformations.shift_days.entities)
+                )
+            )
+        
         deidentify_text_body['text'] = request.text
-
-        for entity in request.entities:
-            entity_type = entity.value
-            entity_types.append(entity_type)
-
-        deidentify_text_body['entity_types'] = entity_types
-        deidentify_text_body['token_type'] = request.token_format
+        deidentify_text_body['entity_types'] = parsed_entity_types
+        deidentify_text_body['token_type'] = parsed_token_type
         deidentify_text_body['allow_regex'] = request.allow_regex_list
         deidentify_text_body['restrict_regex'] = request.restrict_regex_list 
-        deidentify_text_body['transformations'] = request.transformations 
+        deidentify_text_body['transformations'] = parsed_transformations 
+        
         return deidentify_text_body
 
     def ___build_reidentify_text_body(self, request: ReidentifyTextRequest) -> Dict[str, Any]:
-        format_obj = ReidentifyStringRequestFormat(
-            redacted=request.redacted_entities,
-            masked=request.masked_entities,
-            plaintext=request.plain_text_entities
+        parsed_format = ReidentifyStringRequestFormat(
+            redacted=convert_to_entity_type(request.redacted_entities),
+            masked=convert_to_entity_type(request.masked_entities),
+            plaintext=convert_to_entity_type(request.plain_text_entities)
         )
-        reidentify_text_body = []
+        reidentify_text_body = {}
         reidentify_text_body['text'] = request.text
-        reidentify_text_body['format'] = format_obj
+        reidentify_text_body['format'] = parsed_format
         return reidentify_text_body
 
     def deidentify_text(self, request: DeidentifyTextRequest) -> DeidentifyTextResponse:
@@ -59,12 +75,12 @@ class Detect:
         try:
             log_info(SkyflowMessages.Info.DEIDENTIFY_TEXT_TRIGGERED.value, self.__vault_client.get_logger())
             api_response = detect_api.deidentify_string(
-              self.__vault_client.get_vault_id(),
-              request.text,
-              entity_types=deidentify_text_body['entities'],
-              allows_regex=deidentify_text_body['allow_regex_list'],
-              restrict_regex=deidentify_text_body['restrict_regex_list'],
-              token_type=deidentify_text_body['token_format'],
+              vault_id=self.__vault_client.get_vault_id(),
+              text=deidentify_text_body['text'],
+              entity_types=deidentify_text_body['entity_types'],
+              allow_regex=deidentify_text_body['allow_regex'],
+              restrict_regex=deidentify_text_body['restrict_regex'],
+              token_type=deidentify_text_body['token_type'],
               transformations=deidentify_text_body['transformations'],
               request_options=self.__get_headers()
             )
@@ -78,7 +94,7 @@ class Detect:
 
     def reidentify_text(self, request: ReidentifyTextRequest) -> ReidentifyTextResponse:
         log_info(SkyflowMessages.Info.VALIDATING_REIDENTIFY_TEXT_INPUT.value, self.__vault_client.get_logger())
-        validate_deidentify_text_request(self.__vault_client.get_logger(), request)
+        validate_reidentify_text_request(self.__vault_client.get_logger(), request)
         log_info(SkyflowMessages.Info.REIDENTIFY_TEXT_REQUEST_RESOLVED.value, self.__vault_client.get_logger())
         self.__initialize()
         detect_api = self.__vault_client.get_detect_text_api()
@@ -87,8 +103,8 @@ class Detect:
         try:
             log_info(SkyflowMessages.Info.REIDENTIFY_TEXT_TRIGGERED.value, self.__vault_client.get_logger())
             api_response = detect_api.reidentify_string(
-                text=reidentify_text_body['text'],
                 vault_id=self.__vault_client.get_vault_id(),
+                text=reidentify_text_body['text'],
                 format=reidentify_text_body['format'],
                 request_options=self.__get_headers()
             )
@@ -97,5 +113,5 @@ class Detect:
             return reidentify_text_response
 
         except Exception as e:
-            log_error_log(SkyflowMessages.ErrorLogs.DEIDENTIFY_TEXT_REQUEST_REJECTED.value, self.__vault_client.get_logger())
+            log_error_log(SkyflowMessages.ErrorLogs.REIDENTIFY_TEXT_REQUEST_REJECTED.value, self.__vault_client.get_logger())
             handle_exception(e, self.__vault_client.get_logger())

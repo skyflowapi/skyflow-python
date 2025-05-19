@@ -258,22 +258,22 @@ class SkyflowMessages:
         DEIDENTIFY_TEXT_TRIGGERED = f"{INFO}: [{error_prefix}] Deidentify text method triggered."
         VALIDATING_DEIDENTIFY_TEXT_INPUT = f"{INFO}: [{error_prefix}] Validating deidentify text input."
         DEIDENTIFY_TEXT_REQUEST_RESOLVED = f"{INFO}: [{error_prefix}] Deidentify text request is resolved."
-        DEIDENTIFY_TEXT_SUCCESS = f"{INFO}: [{error_prefix}] data deidentified." 
+        DEIDENTIFY_TEXT_SUCCESS = f"{INFO}: [{error_prefix}] Data deidentified." 
         
         REIDENTIFY_TEXT_TRIGGERED = f"{INFO}: [{error_prefix}] Reidentify text method triggered."
         VALIDATING_REIDENTIFY_TEXT_INPUT = f"{INFO}: [{error_prefix}] Validating reidentify text input."
         REIDENTIFY_TEXT_REQUEST_RESOLVED = f"{INFO}: [{error_prefix}] Reidentify text request is resolved."
-        REIDENTIFY_TEXT_SUCCESS = f"{INFO}: [{error_prefix}] data reidentified." 
+        REIDENTIFY_TEXT_SUCCESS = f"{INFO}: [{error_prefix}] Data reidentified." 
         
         DEIDENTIFY_FILE_TRIGGERED = f"{INFO}: [{error_prefix}] Deidentify file triggered."
         VALIDATING_DETECT_FILE_INPUT = f"{INFO}: [{error_prefix}] Validating deidentify file input."
         DEIDENTIFY_FILE_REQUEST_RESOLVED = f"{INFO}: [{error_prefix}] Deidentify file request is resolved."
-        DEIDENTIFY_FILE_SUCCESS = f"{INFO}: [{error_prefix}] file deidentified." 
+        DEIDENTIFY_FILE_SUCCESS = f"{INFO}: [{error_prefix}] File deidentified." 
         
         GET_DETECT_RUN_TRIGGERED = f"{INFO}: [{error_prefix}] Get detect run triggered."
         VALIDATING_GET_DETECT_RUN_INPUT = f"{INFO}: [{error_prefix}] Validating get detect run input."
         GET_DETECT_RUN_REQUEST_RESOLVED = f"{INFO}: [{error_prefix}] Get detect run request is resolved."
-        GET_DETECT_RUN_SUCCESS = f"{INFO}: [{error_prefix}] get detect run success." # will see for a better message
+        GET_DETECT_RUN_SUCCESS = f"{INFO}: [{error_prefix}] Get detect run success." # will see for a better message
         
         DETECT_REQUEST_RESOLVED = f"{INFO}: [{error_prefix}] Detect request is resolved." # Whats this for?
 

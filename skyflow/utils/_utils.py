@@ -18,6 +18,7 @@ from skyflow.generated.rest import V1UpdateRecordResponse, V1BulkDeleteRecordRes
 from skyflow.generated.rest.core.http_response import HttpResponse
 from skyflow.utils.logger import log_error_log
 from skyflow.vault.detect import DeidentifyTextResponse, ReidentifyTextResponse
+from skyflow.vault.detect import EntityInfo, TextIndex
 from . import SkyflowMessages, SDK_VERSION
 from .constants import PROTOCOL
 from .enums import Env, ContentType, EnvUrls
@@ -83,6 +84,30 @@ def to_lowercase_keys(dict):
         result[key.lower()] = value
 
     return result
+
+def convert_to_entity_type(detect_entities):
+    entity_types = None
+    if (detect_entities is not None and len(detect_entities) != 0):
+        entity_types = []
+        for entity in detect_entities:
+            entity_types.append(entity.value)
+    return entity_types
+
+def _convert_detected_entity_to_entity_info(detected_entity):
+    return EntityInfo(
+        token=detected_entity.token,
+        value=detected_entity.value,
+        text_index=TextIndex(
+            start=detected_entity.location.start_index,
+            end=detected_entity.location.end_index
+        ),
+        processed_index=TextIndex(
+            start=detected_entity.location.start_index_processed,
+            end=detected_entity.location.end_index_processed
+        ),
+        entity=detected_entity.entity_type,
+        scores=detected_entity.entity_scores
+    )
 
 def construct_invoke_connection_request(request, connection_url, logger) -> PreparedRequest:
     url = parse_path_params(connection_url.rstrip('/'), request.path_params)
@@ -367,11 +392,13 @@ def parse_invoke_connection_response(api_response: requests.Response):
         raise SkyflowError(message, status_code)
 
 def parse_deidentify_text_response(api_response: DeidentifyStringResponse):
-    processed_text = api_response.processed_text
-    entities = api_response.entities
-    word_count = api_response.word_count
-    character_count = api_response.character_count
-    return DeidentifyTextResponse(processed_text, entities, word_count, character_count)
+    entities = [_convert_detected_entity_to_entity_info(entity) for entity in api_response.entities]
+    return DeidentifyTextResponse(
+        processed_text=api_response.processed_text,
+        entities=entities,
+        word_count=api_response.word_count,
+        char_count=api_response.character_count
+    )
 
 def parse_reidentify_text_response(api_response: ReidentifyStringResponse):
     return ReidentifyTextResponse(api_response.processed_text)
