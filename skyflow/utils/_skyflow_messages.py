@@ -147,6 +147,51 @@ class SkyflowMessages:
         FILE_INVALID_JSON = f"{error_prefix} Initialization failed. File at {{}} is not in valid JSON format. Verify the file contents."
         INVALID_JSON_FORMAT_IN_CREDENTIALS_ENV = f"{error_prefix} Validation error. Invalid JSON format in SKYFLOW_CREDENTIALS environment variable."
 
+        INVALID_TEXT_IN_DEIDENTIFY: f"{error_prefix} Validation error. The text field is required and must be a non-empty string. Specify a valid text."
+        INVALID_ENTITIES_IN_DEIDENTIFY: f"{error_prefix} Validation error. The entities field must be an array of DetectEntities enums. Specify a valid entities."
+        INVALID_ALLOW_REGEX_LIST: f"{error_prefix} Validation error. The allowRegexList field must be an array of strings. Specify a valid allowRegexList."
+        INVALID_RESTRICT_REGEX_LIST: f"{error_prefix} Validation error. The restrictRegexList field must be an array of strings. Specify a valid restrictRegexList."
+        INVALID_TOKEN_FORMAT: f"{error_prefix} Validation error. The tokenFormat key must be an instance of TokenFormat. Specify a valid token format."
+        INVALID_TRANSFORMATIONS: f"{error_prefix} Validation error. The transformations key must be an instance of Transformations. Specify a valid transformations."
+
+        INVALID_TEXT_IN_REIDENTIFY: f"{error_prefix} Validation error. The text field is required and must be a non-empty string. Specify a valid text."
+        INVALID_REDACTED_ENTITIES_IN_REIDENTIFY: f"{error_prefix} Validation error. The redactedEntities field must be an array of DetectEntities enums. Specify a valid redactedEntities."
+        INVALID_MASKED_ENTITIES_IN_REIDENTIFY: f"{error_prefix} Validation error. The maskedEntities field must be an array of DetectEntities enums. Specify a valid maskedEntities."
+        INVALID_PLAIN_TEXT_ENTITIES_IN_REIDENTIFY: f"{error_prefix} Validation error. The plainTextEntities field must be an array of DetectEntities enums. Specify a valid plainTextEntities."
+
+        INVALID_DEIDENTIFY_FILE_REQUEST: f"{error_prefix} Validation error. Invalid deidentify file request. Specify a valid deidentify file request."
+        EMPTY_FILE_OBJECT: f"{error_prefix} Validation error. File object cannot be empty. Specify a valid file object."
+        INVALID_FILE_FORMAT: f"{error_prefix} Validation error. Invalid file format. Specify a valid file format."
+        MISSING_FILE_SOURCE: f"{error_prefix} Validation error. Provide exactly one of filePath, base64, or fileObject."
+        INVALID_FILE_OBJECT: f"{error_prefix} Validation error. Invalid file object. Specify a valid file object."
+        INVALID_BASE64_STRING: f"{error_prefix} Validation error. Invalid base64 string. Specify a valid base64 string."
+        INVALID_DEIDENTIFY_FILE_OPTIONS: f"{error_prefix} Validation error. Invalid deidentify file options. Specify a valid deidentify file options."
+        INVALID_ENTITIES: f"{error_prefix} Validation error. Invalid entities. Specify valid entities as string array."
+        EMPTY_ENTITIES: f"{error_prefix} Validation error. Entities cannot be empty. Specify valid entities."
+        EMPTY_ALLOW_REGEX_LIST: f"{error_prefix} Validation error. Allow regex list cannot be empty. Specify valid allow regex list."
+        INVALID_ALLOW_REGEX: f"{error_prefix} Validation error. Invalid allow regex. Specify valid allow regex at index {{}}."
+        EMPTY_RESTRICT_REGEX_LIST: f"{error_prefix} Validation error. Restrict regex list cannot be empty. Specify valid restrict regex list."
+        INVALID_RESTRICT_REGEX: f"{error_prefix} Validation error. Invalid restrict regex. Specify valid restrict regex at index {{}}."
+        INVALID_OUTPUT_PROCESSED_IMAGE: f"{error_prefix} Validation error. Invalid output processed image. Specify valid output processed image as string."
+        INVALID_OUTPUT_OCR_TEXT: f"{error_prefix} Validation error. Invalid output ocr text. Specify valid output ocr text as string."
+        INVALID_MASKING_METHOD: f"{error_prefix} Validation error. Invalid masking method. Specify valid masking method as string."
+        INVALID_PIXEL_DENSITY: f"{error_prefix} Validation error. Invalid pixel density. Specify valid pixel density as string."
+        INVALID_OUTPUT_TRANSCRIPTION: f"{error_prefix} Validation error. Invalid output transcription. Specify valid output transcription as string."
+        INVALID_OUTPUT_PROCESSED_AUDIO: f"{error_prefix} Validation error. Invalid output processed audio. Specify valid output processed audio as string."
+        INVALID_MAX_RESOLUTION: f"{error_prefix} Validation error. Invalid max resolution. Specify valid max resolution as string."
+        INVALID_BLEEP: f"{error_prefix} Validation error. Invalid bleep. Specify valid bleep as object."
+        INVALID_FILE_OR_ENCODED_FILE: f"{error_prefix} . Error while decoding base64 and saving file"
+        INVALID_FILE_TYPE : f"{error_prefix} Validation error. Invalid file type. Specify a valid file type."
+        INVALID_FILE_NAME: f"{error_prefix} Validation error. Invalid file name. Specify a valid file name."
+        FILE_READ_ERROR: f"{error_prefix} Validation error. Unable to read file. Verify the file path." 
+        INVALID_BASE64_HEADER: f"{error_prefix} Validation error. Invalid base64 header. Specify a valid base64 header."
+        INVALID_WAIT_TIME: f"{error_prefix} Validation error. Invalid wait time. Specify a valid wait time as number and should not be greater than 20 secs."
+        INVALID_OUTPUT_DIRECTORY: f"{error_prefix} Validation error. Invalid output directory. Specify a valid output directory as string."
+        INVALID_OUTPUT_DIRECTORY_PATH: f"{error_prefix} Validation error. Invalid output directory path. Specify a valid output directory path as string."
+        EMPTY_RUN_ID: f"{error_prefix} Validation error. Run id cannot be empty. Specify a valid run id."
+        INVALID_RUN_ID: f"{error_prefix} Validation error. Invalid run id. Specify a valid run id as string."
+        INTERNAL_SERVER_ERROR: f"{error_prefix}. Internal server error. {{}}."
+
     class Info(Enum):
         CLIENT_INITIALIZED = f"{INFO}: [{error_prefix}] Initialized skyflow client."
         VALIDATING_VAULT_CONFIG = f"{INFO}: [{error_prefix}] Validating vault config."
@@ -154,6 +199,7 @@ class SkyflowMessages:
         UNABLE_TO_GENERATE_SDK_METRIC = f"{INFO}: [{error_prefix}] Unable to generate {{}} metric."
         VAULT_CONTROLLER_INITIALIZED = f"{INFO}: [{error_prefix}] Initialized vault controller with vault ID {{}}."
         CONNECTION_CONTROLLER_INITIALIZED = f"{INFO}: [{error_prefix}] Initialized connection controller with connection ID {{}}."
+        DETECT_CONTROLLER_INITIALIZED = f"{INFO}: [{error_prefix}] Initialized detect controller with vault ID {{}}."
         VAULT_CONFIG_EXISTS = f"{INFO}: [{error_prefix}] Vault config with vault ID {{}} already exists."
         VAULT_CONFIG_DOES_NOT_EXIST = f"{INFO}: [{error_prefix}] Vault config with vault ID {{}} doesn't exist."
         CONNECTION_CONFIG_EXISTS = f"{INFO}: [{error_prefix}] Connection config with connection ID {{}} already exists."
@@ -166,9 +212,8 @@ class SkyflowMessages:
         GET_BEARER_TOKEN_SUCCESS = f"{INFO}: [{error_prefix}] Bearer token generated."
         GET_SIGNED_DATA_TOKENS_TRIGGERED = f"{INFO}: [{error_prefix}] generate_signed_data_tokens method triggered."
         GET_SIGNED_DATA_TOKEN_SUCCESS = f"{INFO}: [{error_prefix}] Signed data tokens generated."
-        GENERATE_BEARER_TOKEN_FROM_CREDENTIALS_STRING_TRIGGERED = f"{INFO}: [{error_prefix}] generate bearer_token_from_credential_string method triggered ."
+        GENERATE_BEARER_TOKEN_FROM_CREDENTIALS_STRING_TRIGGERED = f"{INFO}: [{error_prefix}] generate bearer_token_from_credential_string method triggered."
         REUSE_BEARER_TOKEN = f"{INFO}: [{error_prefix}] Reusing bearer token."
-
 
         VALIDATE_INSERT_REQUEST = f"{INFO}: [{error_prefix}] Validating insert request."
         INSERT_TRIGGERED = f"{INFO}: [{error_prefix}] Insert method triggered."
@@ -209,6 +254,28 @@ class SkyflowMessages:
         VALIDATING_INVOKE_CONNECTION_REQUEST = f"{INFO}: [{error_prefix}] Validating invoke connection request."
         INVOKE_CONNECTION_REQUEST_RESOLVED = f"{INFO}: [{error_prefix}] Invoke connection request resolved."
         INVOKE_CONNECTION_SUCCESS = f"{INFO}: [{error_prefix}] Invoke Connection Success."
+
+        DEIDENTIFY_TEXT_TRIGGERED = f"{INFO}: [{error_prefix}] Deidentify text method triggered."
+        VALIDATING_DEIDENTIFY_TEXT_INPUT = f"{INFO}: [{error_prefix}] Validating deidentify text input."
+        DEIDENTIFY_TEXT_REQUEST_RESOLVED = f"{INFO}: [{error_prefix}] Deidentify text request is resolved."
+        DEIDENTIFY_TEXT_SUCCESS = f"{INFO}: [{error_prefix}] data deidentified." 
+        
+        REIDENTIFY_TEXT_TRIGGERED = f"{INFO}: [{error_prefix}] Reidentify text method triggered."
+        VALIDATING_REIDENTIFY_TEXT_INPUT = f"{INFO}: [{error_prefix}] Validating reidentify text input."
+        REIDENTIFY_TEXT_REQUEST_RESOLVED = f"{INFO}: [{error_prefix}] Reidentify text request is resolved."
+        REIDENTIFY_TEXT_SUCCESS = f"{INFO}: [{error_prefix}] data reidentified." 
+        
+        DEIDENTIFY_FILE_TRIGGERED = f"{INFO}: [{error_prefix}] Deidentify file triggered."
+        VALIDATING_DETECT_FILE_INPUT = f"{INFO}: [{error_prefix}] Validating deidentify file input."
+        DEIDENTIFY_FILE_REQUEST_RESOLVED = f"{INFO}: [{error_prefix}] Deidentify file request is resolved."
+        DEIDENTIFY_FILE_SUCCESS = f"{INFO}: [{error_prefix}] file deidentified." 
+        
+        GET_DETECT_RUN_TRIGGERED = f"{INFO}: [{error_prefix}] Get detect run triggered."
+        VALIDATING_GET_DETECT_RUN_INPUT = f"{INFO}: [{error_prefix}] Validating get detect run input."
+        GET_DETECT_RUN_REQUEST_RESOLVED = f"{INFO}: [{error_prefix}] Get detect run request is resolved."
+        GET_DETECT_RUN_SUCCESS = f"{INFO}: [{error_prefix}] get detect run success." # will see for a better message
+        
+        DETECT_REQUEST_RESOLVED = f"{INFO}: [{error_prefix}] Detect request is resolved." # Whats this for?
 
     class ErrorLogs(Enum):
         VAULTID_IS_REQUIRED = f"{ERROR}: [{error_prefix}] Invalid vault config. Vault ID is required."
@@ -280,6 +347,13 @@ class SkyflowMessages:
         QUERY_REQUEST_REJECTED = f"{ERROR}: [{error_prefix}] Query request resulted in failure."
         GET_REQUEST_REJECTED = f"{ERROR}: [{error_prefix}] Get request resulted in failure."
         INVOKE_CONNECTION_REQUEST_REJECTED = f"{ERROR}: [{error_prefix}] Invoke connection request resulted in failure."
+        
+        EMPTY_RUN_ID = f"{ERROR}: [{error_prefix}] Validation error. Run id cannot be empty. Specify a valid run id."
+        INVALID_RUN_ID = f"{ERROR}: [{error_prefix}] Validation error. Invalid run id. Specify a valid run id as string."
+        DEIDENTIFY_FILE_REQUEST_REJECTED = f"{ERROR}: [{error_prefix}] Deidentify file resulted in failure."
+        DETECT_RUN_REQUEST_REJECTED = f"{ERROR}: [{error_prefix}] Detect get run resulted in failure."
+        DEIDENTIFY_TEXT_REQUEST_REJECTED = f"{ERROR}: [{error_prefix}] Deidentify text resulted in failure."
+        REIDENTIFY_TEXT_REQUEST_REJECTED = f"{ERROR}: [{error_prefix}] Reidentify text resulted in failure."
 
     class Interface(Enum):
         INSERT = "INSERT"

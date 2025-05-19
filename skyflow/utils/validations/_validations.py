@@ -4,6 +4,7 @@ from skyflow.utils.enums import LogLevel, Env, RedactionType, TokenMode
 from skyflow.error import SkyflowError
 from skyflow.utils import SkyflowMessages
 from skyflow.utils.logger import log_info, log_error_log
+from skyflow.vault.detect import DeidentifyTextRequest, ReidentifyTextRequest, TokenFormat, Transformations
 
 valid_vault_config_keys = ["vault_id", "cluster_id", "credentials", "env"]
 valid_connection_config_keys = ["connection_id", "connection_url", "credentials"]
@@ -572,3 +573,43 @@ def validate_invoke_connection_params(logger, query_params, path_params):
         json.dumps(query_params)
     except TypeError:
         raise SkyflowError(SkyflowMessages.Error.INVALID_QUERY_PARAMS.value, invalid_input_error_code)
+
+def validate_deidentify_text_request(self, request: DeidentifyTextRequest):
+    if not request.text or not isinstance(request.text, str) or not request.text.strip():
+        raise SkyflowError(SkyflowMessages.Error.INVALID_TEXT_IN_DEIDENTIFY.value, invalid_input_error_code)
+
+    # Validate entities if present
+    if request.entities is not None and not isinstance(request.entities, list):
+        raise SkyflowError(SkyflowMessages.Error.INVALID_ENTITIES_IN_DEIDENTIFY.value, invalid_input_error_code)
+
+    # Validate allowed_regex_list if present
+    if request.allow_regex_list is not None and not isinstance(request.allowed_regex_list, list):
+        raise SkyflowError(SkyflowMessages.Error.INVALID_ALLOW_REGEX_LIST.value, invalid_input_error_code)
+
+    # Validate restricted_regex_list if present
+    if request.restrict_regex_list is not None and not isinstance(request.restricted_regex_list, list):
+        raise SkyflowError(SkyflowMessages.Error.INVALID_RESTRICT_REGEX_LIST.value, invalid_input_error_code)
+
+    # Validate token_format if present
+    if request.token_format is not None and not isinstance(request.token_format, TokenFormat):
+        raise SkyflowError(SkyflowMessages.Error.INVALID_TOKEN_FORMAT.value, invalid_input_error_code)
+
+    # Validate transformations if present
+    if request.transformations is not None and not isinstance(request.transformations, Transformations):
+        raise SkyflowError(SkyflowMessages.Error.INVALID_TRANSFORMATIONS.value, invalid_input_error_code)
+
+def validate_reidentify_text_request(self, request: ReidentifyTextRequest):
+    if not request.text or not isinstance(request.text, str) or not request.text.strip():
+        raise SkyflowError(SkyflowMessages.Error.INVALID_TEXT_IN_REIDENTIFY.value, invalid_input_error_code)
+
+    # Validate redacted_entities if present
+    if request.redacted_entities is not None and not isinstance(request.redacted_entities, list):
+        raise SkyflowError(SkyflowMessages.Error.INVALID_REDACTED_ENTITIES_IN_REIDENTIFY.value, invalid_input_error_code)
+
+    # Validate masked_entities if present
+    if request.masked_entities is not None and not isinstance(request.masked_entities, list):
+        raise SkyflowError(SkyflowMessages.Error.INVALID_MASKED_ENTITIES_IN_REIDENTIFY.value, invalid_input_error_code)
+
+    # Validate plain_text_entities if present
+    if request.plain_text_entities is not None and not isinstance(request.plain_text_entities, list):
+        raise SkyflowError(SkyflowMessages.Error.INVALID_PLAIN_TEXT_ENTITIES_IN_REIDENTIFY.value, invalid_input_error_code)

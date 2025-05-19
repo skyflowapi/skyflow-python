@@ -13,9 +13,11 @@ import re
 from urllib.parse import quote
 from skyflow.error import SkyflowError
 from skyflow.generated.rest import V1UpdateRecordResponse, V1BulkDeleteRecordResponse, \
-    V1DetokenizeResponse, V1TokenizeResponse, V1GetQueryResponse, V1BulkGetRecordResponse
+    V1DetokenizeResponse, V1TokenizeResponse, V1GetQueryResponse, V1BulkGetRecordResponse, \
+    DeidentifyStringResponse, ReidentifyStringResponse
 from skyflow.generated.rest.core.http_response import HttpResponse
 from skyflow.utils.logger import log_error_log
+from skyflow.vault.detect import DeidentifyTextResponse, ReidentifyTextResponse
 from . import SkyflowMessages, SDK_VERSION
 from .constants import PROTOCOL
 from .enums import Env, ContentType, EnvUrls
@@ -363,6 +365,16 @@ def parse_invoke_connection_response(api_response: requests.Response):
         except json.JSONDecodeError:
             message = SkyflowMessages.Error.RESPONSE_NOT_JSON.value.format(content)
         raise SkyflowError(message, status_code)
+
+def parse_deidentify_text_response(api_response: DeidentifyStringResponse):
+    processed_text = api_response.processed_text
+    entities = api_response.entities
+    word_count = api_response.word_count
+    character_count = api_response.character_count
+    return DeidentifyTextResponse(processed_text, entities, word_count, character_count)
+
+def parse_reidentify_text_response(api_response: ReidentifyStringResponse):
+    return ReidentifyTextResponse(api_response.processed_text)
 
 def log_and_reject_error(description, status_code, request_id, http_status=None, grpc_code=None, details=None, logger = None):
     raise SkyflowError(description, status_code, request_id, grpc_code, http_status, details)
