@@ -10,7 +10,8 @@ from skyflow.error import SkyflowError
 from skyflow.utils import get_credentials, SkyflowMessages, get_vault_url, construct_invoke_connection_request, \
     parse_insert_response, parse_update_record_response, parse_delete_response, parse_get_response, \
     parse_detokenize_response, parse_tokenize_response, parse_query_response, parse_invoke_connection_response, \
-    handle_exception, validate_api_key, encode_column_values
+    handle_exception, validate_api_key, encode_column_values, parse_deidentify_text_response, \
+    parse_reidentify_text_response, convert_to_entity_type, convert_detected_entity_to_entity_info
 from skyflow.utils._utils import parse_path_params, to_lowercase_keys, get_metrics
 from skyflow.utils.enums import EnvUrls, Env, ContentType
 from skyflow.vault.connection import InvokeConnectionResponse
@@ -418,3 +419,133 @@ class TestUtils(unittest.TestCase):
 
         result = encode_column_values(get_request)
         self.assertEqual(result, expected_encoded_values)
+
+    def test_parse_deidentify_text_response(self):
+        """Test parsing deidentify text response with multiple entities."""
+        mock_entity = Mock()
+        mock_entity.token = "token123"
+        mock_entity.value = "sensitive_value"
+        mock_entity.entity_type = "EMAIL"
+        mock_entity.entity_scores = {"EMAIL": 0.95}
+        mock_entity.location = Mock(
+            start_index=10,
+            end_index=20,
+            start_index_processed=15,
+            end_index_processed=25
+        )
+
+        mock_api_response = Mock()
+        mock_api_response.processed_text = "Sample processed text"
+        mock_api_response.entities = [mock_entity]
+        mock_api_response.word_count = 3
+        mock_api_response.character_count = 20
+
+        result = parse_deidentify_text_response(mock_api_response)
+
+        self.assertEqual(result.processed_text, "Sample processed text")
+        self.assertEqual(result.word_count, 3)
+        self.assertEqual(result.char_count, 20)
+        self.assertEqual(len(result.entities), 1)
+
+        entity = result.entities[0]
+        self.assertEqual(entity.token, "token123")
+        self.assertEqual(entity.value, "sensitive_value")
+        self.assertEqual(entity.entity, "EMAIL")
+        self.assertEqual(entity.scores, {"EMAIL": 0.95})
+        self.assertEqual(entity.text_index.start, 10)
+        self.assertEqual(entity.text_index.end, 20)
+        self.assertEqual(entity.processed_index.start, 15)
+        self.assertEqual(entity.processed_index.end, 25)
+
+    def test_parse_deidentify_text_response_no_entities(self):
+        """Test parsing deidentify text response with no entities."""
+        mock_api_response = Mock()
+        mock_api_response.processed_text = "Sample processed text"
+        mock_api_response.entities = []
+        mock_api_response.word_count = 3
+        mock_api_response.character_count = 20
+
+        result = parse_deidentify_text_response(mock_api_response)
+
+        self.assertEqual(result.processed_text, "Sample processed text")
+        self.assertEqual(result.word_count, 3)
+        self.assertEqual(result.char_count, 20)
+        self.assertEqual(len(result.entities), 0)
+
+    def test_parse_reidentify_text_response(self):
+        """Test parsing reidentify text response."""
+        mock_api_response = Mock()
+        mock_api_response.processed_text = "Reidentified text with actual values"
+
+        result = parse_reidentify_text_response(mock_api_response)
+
+        self.assertEqual(result.processed_text, "Reidentified text with actual values")
+
+    def test_convert_to_entity_type_with_valid_entities(self):
+        """Test converting entity types with valid input."""
+        from skyflow.utils.enums import DetectEntities
+
+        detect_entities = [DetectEntities.EMAIL_ADDRESS, DetectEntities.PHONE_NUMBER]
+        result = convert_to_entity_type(detect_entities)
+
+        self.assertEqual(result, ["email_address", "phone_number"])
+
+    def test_convert_to_entity_type_with_empty_list(self):
+        """Test converting entity types with empty list."""
+        result = convert_to_entity_type([])
+        self.assertIsNone(result)
+
+    def test_convert_to_entity_type_with_none(self):
+        """Test converting entity types with None input."""
+        result = convert_to_entity_type(None)
+        self.assertIsNone(result)
+
+    def test__convert_detected_entity_to_entity_info(self):
+        """Test converting detected entity to EntityInfo object."""
+        mock_detected_entity = Mock()
+        mock_detected_entity.token = "token123"
+        mock_detected_entity.value = "sensitive_value"
+        mock_detected_entity.entity_type = "EMAIL"
+        mock_detected_entity.entity_scores = {"EMAIL": 0.95}
+        mock_detected_entity.location = Mock(
+            start_index=10,
+            end_index=20,
+            start_index_processed=15,
+            end_index_processed=25
+        )
+
+        result = convert_detected_entity_to_entity_info(mock_detected_entity)
+
+        self.assertEqual(result.token, "token123")
+        self.assertEqual(result.value, "sensitive_value")
+        self.assertEqual(result.entity, "EMAIL")
+        self.assertEqual(result.scores, {"EMAIL": 0.95})
+        self.assertEqual(result.text_index.start, 10)
+        self.assertEqual(result.text_index.end, 20)
+        self.assertEqual(result.processed_index.start, 15)
+        self.assertEqual(result.processed_index.end, 25)
+
+    def test__convert_detected_entity_to_entity_info_with_minimal_data(self):
+        """Test converting detected entity with minimal required data."""
+        mock_detected_entity = Mock()
+        mock_detected_entity.token = "token123"
+        mock_detected_entity.value = None
+        mock_detected_entity.entity_type = "UNKNOWN"
+        mock_detected_entity.entity_scores = {}
+        mock_detected_entity.location = Mock(
+            start_index=0,
+            end_index=0,
+            start_index_processed=0,
+            end_index_processed=0
+        )
+
+        result = convert_detected_entity_to_entity_info(mock_detected_entity)
+
+        self.assertEqual(result.token, "token123")
+        self.assertIsNone(result.value)
+        self.assertEqual(result.entity, "UNKNOWN")
+        self.assertEqual(result.scores, {})
+        self.assertEqual(result.text_index.start, 0)
+        self.assertEqual(result.text_index.end, 0)
+        self.assertEqual(result.processed_index.start, 0)
+        self.assertEqual(result.processed_index.end, 0)

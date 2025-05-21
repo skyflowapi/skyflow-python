@@ -93,7 +93,7 @@ def convert_to_entity_type(detect_entities):
             entity_types.append(entity.value)
     return entity_types
 
-def _convert_detected_entity_to_entity_info(detected_entity):
+def convert_detected_entity_to_entity_info(detected_entity):
     return EntityInfo(
         token=detected_entity.token,
         value=detected_entity.value,
@@ -392,7 +392,7 @@ def parse_invoke_connection_response(api_response: requests.Response):
         raise SkyflowError(message, status_code)
 
 def parse_deidentify_text_response(api_response: DeidentifyStringResponse):
-    entities = [_convert_detected_entity_to_entity_info(entity) for entity in api_response.entities]
+    entities = [convert_detected_entity_to_entity_info(entity) for entity in api_response.entities]
     return DeidentifyTextResponse(
         processed_text=api_response.processed_text,
         entities=entities,

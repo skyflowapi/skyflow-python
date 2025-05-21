@@ -28,12 +28,14 @@ class Detect:
         deidentify_text_body = {}
         parsed_entity_types = convert_to_entity_type(request.entities)
 
-        parsed_token_type = TokenType(
-            default = request.token_format.default,
-            vault_token = convert_to_entity_type(request.token_format.vault_token),
-            entity_unq_counter = convert_to_entity_type(request.token_format.entity_unique_counter),
-            entity_only = convert_to_entity_type(request.token_format.entity_only)
-        )
+        parsed_token_type = None
+        if request.token_format is not None:
+            parsed_token_type = TokenType(
+                default = request.token_format.default,
+                vault_token = convert_to_entity_type(request.token_format.vault_token),
+                entity_unq_counter = convert_to_entity_type(request.token_format.entity_unique_counter),
+                entity_only = convert_to_entity_type(request.token_format.entity_only)
+            )
         parsed_transformations = None
         if request.transformations is not None:
             parsed_transformations = Transformations(
