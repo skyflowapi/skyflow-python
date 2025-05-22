@@ -438,6 +438,9 @@ def handle_json_error(err, data, request_id, logger):
 def handle_text_error(err, data, request_id, logger):
     log_and_reject_error(data, err.status, request_id, logger =  logger)
 
+def handle_generic_error(err, request_id, logger):
+    handle_generic_error(err, request_id, err.status, logger = logger)
+
 def handle_generic_error(err, request_id, status, logger):
     description = SkyflowMessages.Error.GENERIC_API_ERROR.value
     log_and_reject_error(description, status, request_id, logger = logger)

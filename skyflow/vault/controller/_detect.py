@@ -36,31 +36,13 @@ class Detect:
     def ___build_deidentify_text_body(self, request: DeidentifyTextRequest) -> Dict[str, Any]:
         deidentify_text_body = {}
         parsed_entity_types = request.entities
-
-        parsed_token_type = None
-        if request.token_format is not None:
-            parsed_token_type = TokenType(
-                default = request.token_format.default,
-                vault_token = request.token_format.vault_token,
-                entity_unq_counter = request.token_format.entity_unique_counter,
-                entity_only = request.token_format.entity_only
-            )
-        parsed_transformations = None
-        if request.transformations is not None:
-            parsed_transformations = Transformations(
-                shift_dates = TransformationsShiftDates(
-                    max_days = request.transformations.shift_dates.max,
-                    min_days = request.transformations.shift_dates.min,
-                    entity_types = request.transformations.shift_dates.entities
-                )
-            )
         
         deidentify_text_body['text'] = request.text
         deidentify_text_body['entity_types'] = parsed_entity_types
-        deidentify_text_body['token_type'] = parsed_token_type
+        deidentify_text_body['token_type'] = self.__get_token_format(request)
         deidentify_text_body['allow_regex'] = request.allow_regex_list
         deidentify_text_body['restrict_regex'] = request.restrict_regex_list 
-        deidentify_text_body['transformations'] = parsed_transformations 
+        deidentify_text_body['transformations'] = self.__get_transformations(request)
         
         return deidentify_text_body
 
@@ -167,7 +149,8 @@ class Detect:
         return {
             'default': getattr(request.token_format, "default", None),
             'entity_unq_counter': getattr(request.token_format, "entity_unique_counter", None),
-            'entity_only': getattr(request.token_format, "entity_only", None)
+            'entity_only': getattr(request.token_format, "entity_only", None),
+            'vault_token': getattr(request.token_format, "vault_token", None)
         }
 
     def __get_transformations(self, request):
