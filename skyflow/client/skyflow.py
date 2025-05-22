@@ -191,6 +191,7 @@ class Skyflow:
                 "detect_controller": Detect(vault_client)
             }
             log_info(SkyflowMessages.Info.VAULT_CONTROLLER_INITIALIZED.value.format(config.get("vault_id")), self.__logger)
+            log_info(SkyflowMessages.Info.DETECT_CONTROLLER_INITIALIZED.value.format(config.get("vault_id")), self.__logger)
 
         def __add_connection_config(self, config):
             validate_connection_config(self.__logger, config)
