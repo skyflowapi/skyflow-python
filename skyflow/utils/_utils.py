@@ -393,7 +393,7 @@ def parse_deidentify_text_response(api_response: DeidentifyStringResponse):
     )
 
 def parse_reidentify_text_response(api_response: ReidentifyStringResponse):
-    return ReidentifyTextResponse(api_response.processed_text)
+    return ReidentifyTextResponse(api_response.text)
 
 def log_and_reject_error(description, status_code, request_id, http_status=None, grpc_code=None, details=None, logger = None):
     raise SkyflowError(description, status_code, request_id, grpc_code, http_status, details)
