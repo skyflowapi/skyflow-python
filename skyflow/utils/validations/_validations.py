@@ -687,11 +687,11 @@ def validate_deidentify_text_request(self, request: DeidentifyTextRequest):
         raise SkyflowError(SkyflowMessages.Error.INVALID_ENTITIES_IN_DEIDENTIFY.value, invalid_input_error_code)
 
     # Validate allowed_regex_list if present
-    if request.allow_regex_list is not None and not isinstance(request.allowed_regex_list, list):
+    if request.allow_regex_list is not None and not isinstance(request.allow_regex_list, list):
         raise SkyflowError(SkyflowMessages.Error.INVALID_ALLOW_REGEX_LIST.value, invalid_input_error_code)
 
     # Validate restricted_regex_list if present
-    if request.restrict_regex_list is not None and not isinstance(request.restricted_regex_list, list):
+    if request.restrict_regex_list is not None and not isinstance(request.restrict_regex_list, list):
         raise SkyflowError(SkyflowMessages.Error.INVALID_RESTRICT_REGEX_LIST.value, invalid_input_error_code)
 
     # Validate token_format if present
