@@ -475,7 +475,7 @@ class TestUtils(unittest.TestCase):
     def test_parse_reidentify_text_response(self):
         """Test parsing reidentify text response."""
         mock_api_response = Mock()
-        mock_api_response.processed_text = "Reidentified text with actual values"
+        mock_api_response.text = "Reidentified text with actual values"
 
         result = parse_reidentify_text_response(mock_api_response)
 
