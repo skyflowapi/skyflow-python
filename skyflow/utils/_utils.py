@@ -85,14 +85,6 @@ def to_lowercase_keys(dict):
 
     return result
 
-def convert_to_entity_type(detect_entities):
-    entity_types = None
-    if (detect_entities is not None and len(detect_entities) != 0):
-        entity_types = []
-        for entity in detect_entities:
-            entity_types.append(entity.value)
-    return entity_types
-
 def convert_detected_entity_to_entity_info(detected_entity):
     return EntityInfo(
         token=detected_entity.token,

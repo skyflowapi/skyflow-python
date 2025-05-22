@@ -3,7 +3,7 @@ from skyflow.generated.rest.types.token_type import TokenType
 from skyflow.generated.rest.types.transformations import Transformations
 from skyflow.generated.rest.types.transformations_shift_dates import TransformationsShiftDates
 from skyflow.utils._skyflow_messages import SkyflowMessages
-from skyflow.utils._utils import convert_to_entity_type, get_metrics, handle_exception, parse_deidentify_text_response, parse_reidentify_text_response
+from skyflow.utils._utils import get_metrics, handle_exception, parse_deidentify_text_response, parse_reidentify_text_response
 from skyflow.utils.constants import SKY_META_DATA_HEADER
 from skyflow.utils.logger import log_info, log_error_log
 from skyflow.utils.validations._validations import validate_deidentify_text_request, validate_reidentify_text_request
@@ -26,23 +26,23 @@ class Detect:
       
     def ___build_deidentify_text_body(self, request: DeidentifyTextRequest) -> Dict[str, Any]:
         deidentify_text_body = {}
-        parsed_entity_types = convert_to_entity_type(request.entities)
+        parsed_entity_types = request.entities
 
         parsed_token_type = None
         if request.token_format is not None:
             parsed_token_type = TokenType(
                 default = request.token_format.default,
-                vault_token = convert_to_entity_type(request.token_format.vault_token),
-                entity_unq_counter = convert_to_entity_type(request.token_format.entity_unique_counter),
-                entity_only = convert_to_entity_type(request.token_format.entity_only)
+                vault_token = request.token_format.vault_token,
+                entity_unq_counter = request.token_format.entity_unique_counter,
+                entity_only = request.token_format.entity_only
             )
         parsed_transformations = None
         if request.transformations is not None:
             parsed_transformations = Transformations(
                 shift_dates = TransformationsShiftDates(
-                    max_days = request.transformations.shift_days.max,
-                    min_days = request.transformations.shift_days.min,
-                    entity_types = convert_to_entity_type(request.transformations.shift_days.entities)
+                    max_days = request.transformations.shift_dates.max,
+                    min_days = request.transformations.shift_dates.min,
+                    entity_types = request.transformations.shift_dates.entities
                 )
             )
         
@@ -57,9 +57,9 @@ class Detect:
 
     def ___build_reidentify_text_body(self, request: ReidentifyTextRequest) -> Dict[str, Any]:
         parsed_format = ReidentifyStringRequestFormat(
-            redacted=convert_to_entity_type(request.redacted_entities),
-            masked=convert_to_entity_type(request.masked_entities),
-            plaintext=convert_to_entity_type(request.plain_text_entities)
+            redacted=request.redacted_entities,
+            masked=request.masked_entities,
+            plaintext=request.plain_text_entities
         )
         reidentify_text_body = {}
         reidentify_text_body['text'] = request.text

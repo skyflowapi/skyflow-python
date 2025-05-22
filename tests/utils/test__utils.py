@@ -11,7 +11,7 @@ from skyflow.utils import get_credentials, SkyflowMessages, get_vault_url, const
     parse_insert_response, parse_update_record_response, parse_delete_response, parse_get_response, \
     parse_detokenize_response, parse_tokenize_response, parse_query_response, parse_invoke_connection_response, \
     handle_exception, validate_api_key, encode_column_values, parse_deidentify_text_response, \
-    parse_reidentify_text_response, convert_to_entity_type, convert_detected_entity_to_entity_info
+    parse_reidentify_text_response, convert_detected_entity_to_entity_info
 from skyflow.utils._utils import parse_path_params, to_lowercase_keys, get_metrics
 from skyflow.utils.enums import EnvUrls, Env, ContentType
 from skyflow.vault.connection import InvokeConnectionResponse
@@ -480,25 +480,6 @@ class TestUtils(unittest.TestCase):
         result = parse_reidentify_text_response(mock_api_response)
 
         self.assertEqual(result.processed_text, "Reidentified text with actual values")
-
-    def test_convert_to_entity_type_with_valid_entities(self):
-        """Test converting entity types with valid input."""
-        from skyflow.utils.enums import DetectEntities
-
-        detect_entities = [DetectEntities.EMAIL_ADDRESS, DetectEntities.PHONE_NUMBER]
-        result = convert_to_entity_type(detect_entities)
-
-        self.assertEqual(result, ["email_address", "phone_number"])
-
-    def test_convert_to_entity_type_with_empty_list(self):
-        """Test converting entity types with empty list."""
-        result = convert_to_entity_type([])
-        self.assertIsNone(result)
-
-    def test_convert_to_entity_type_with_none(self):
-        """Test converting entity types with None input."""
-        result = convert_to_entity_type(None)
-        self.assertIsNone(result)
 
     def test__convert_detected_entity_to_entity_info(self):
         """Test converting detected entity to EntityInfo object."""
