@@ -14,7 +14,7 @@ from urllib.parse import quote
 from skyflow.error import SkyflowError
 from skyflow.generated.rest import V1UpdateRecordResponse, V1BulkDeleteRecordResponse, \
     V1DetokenizeResponse, V1TokenizeResponse, V1GetQueryResponse, V1BulkGetRecordResponse, \
-    DeidentifyStringResponse, ReidentifyStringResponse
+    DeidentifyStringResponse, ReidentifyStringResponse, ErrorResponse
 from skyflow.generated.rest.core.http_response import HttpResponse
 from skyflow.utils.logger import log_error_log
 from skyflow.vault.detect import DeidentifyTextResponse, ReidentifyTextResponse
@@ -429,6 +429,8 @@ def handle_json_error(err, data, request_id, logger):
     try:
         if isinstance(data, dict):  # If data is already a dict
             description = data
+        elif isinstance(data, ErrorResponse):
+            description = data.dict()
         else:
             description = json.loads(data)
         status_code = description.get('error', {}).get('http_code', 500)  # Default to 500 if not found
@@ -443,9 +445,6 @@ def handle_json_error(err, data, request_id, logger):
 
 def handle_text_error(err, data, request_id, logger):
     log_and_reject_error(data, err.status, request_id, logger =  logger)
-
-def handle_generic_error(err, request_id, logger):
-    handle_generic_error(err, request_id, err.status, logger = logger)
 
 def handle_generic_error(err, request_id, status, logger):
     description = SkyflowMessages.Error.GENERIC_API_ERROR.value

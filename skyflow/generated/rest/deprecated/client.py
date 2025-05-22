@@ -109,10 +109,48 @@ class DeprecatedClient:
 
         Examples
         --------
-        from skyflow import Skyflow
-        from skyflow import V1AudioConfig
-        client = Skyflow(token="YOUR_TOKEN", )
-        client.deprecated.detect_service_detect_file_input(file='fkdjfhdlnnggtsjj...', data_format="mp3", input_type="BASE64", vault_id='a372f752689c9bfc8ca3d4dba', restrict_entity_types=["name", "age", "location", "ssn", "bank_account", "credit_card", "credit_card_expiration", "cvv", "date", "date_interval", "dob", "driver_license", "email_address", "healthcare_number", "numerical_pii", "phone_number", "medical_code", "account_number", "gender_sexuality", "name_medical_professional", "occupation", "organization", "organization_medical_facility"], return_entities=True, accuracy="high_multilingual", audio=V1AudioConfig(output_transcription="none", output_processed_audio=False, ), )
+        from skyflow import Skyflow, V1AudioConfig
+
+        client = Skyflow(
+            token="YOUR_TOKEN",
+        )
+        client.deprecated.detect_service_detect_file_input(
+            file="fkdjfhdlnnggtsjj...",
+            data_format="mp3",
+            input_type="BASE64",
+            vault_id="a372f752689c9bfc8ca3d4dba",
+            restrict_entity_types=[
+                "name",
+                "age",
+                "location",
+                "ssn",
+                "bank_account",
+                "credit_card",
+                "credit_card_expiration",
+                "cvv",
+                "date",
+                "date_interval",
+                "dob",
+                "driver_license",
+                "email_address",
+                "healthcare_number",
+                "numerical_pii",
+                "phone_number",
+                "medical_code",
+                "account_number",
+                "gender_sexuality",
+                "name_medical_professional",
+                "occupation",
+                "organization",
+                "organization_medical_facility",
+            ],
+            return_entities=True,
+            accuracy="high_multilingual",
+            audio=V1AudioConfig(
+                output_transcription="none",
+                output_processed_audio=False,
+            ),
+        )
         """
         _response = self._raw_client.detect_service_detect_file_input(
             file=file,
@@ -159,8 +197,13 @@ class DeprecatedClient:
         Examples
         --------
         from skyflow import Skyflow
-        client = Skyflow(token="YOUR_TOKEN", )
-        client.deprecated.detect_service_detect_status(id='ID', )
+
+        client = Skyflow(
+            token="YOUR_TOKEN",
+        )
+        client.deprecated.detect_service_detect_status(
+            id="ID",
+        )
         """
         _response = self._raw_client.detect_service_detect_status(
             id, vault_id=vault_id, request_options=request_options
@@ -229,8 +272,14 @@ class DeprecatedClient:
         Examples
         --------
         from skyflow import Skyflow
-        client = Skyflow(token="YOUR_TOKEN", )
-        client.deprecated.detect_service_detect_text(text='text', vault_id='c848741aefb74bf38780da5399a76507', )
+
+        client = Skyflow(
+            token="YOUR_TOKEN",
+        )
+        client.deprecated.detect_service_detect_text(
+            text="text",
+            vault_id="c848741aefb74bf38780da5399a76507",
+        )
         """
         _response = self._raw_client.detect_service_detect_text(
             text=text,
@@ -336,12 +385,55 @@ class AsyncDeprecatedClient:
 
         Examples
         --------
-        from skyflow import AsyncSkyflow
-        from skyflow import V1AudioConfig
         import asyncio
-        client = AsyncSkyflow(token="YOUR_TOKEN", )
+
+        from skyflow import AsyncSkyflow, V1AudioConfig
+
+        client = AsyncSkyflow(
+            token="YOUR_TOKEN",
+        )
+
+
         async def main() -> None:
-            await client.deprecated.detect_service_detect_file_input(file='fkdjfhdlnnggtsjj...', data_format="mp3", input_type="BASE64", vault_id='a372f752689c9bfc8ca3d4dba', restrict_entity_types=["name", "age", "location", "ssn", "bank_account", "credit_card", "credit_card_expiration", "cvv", "date", "date_interval", "dob", "driver_license", "email_address", "healthcare_number", "numerical_pii", "phone_number", "medical_code", "account_number", "gender_sexuality", "name_medical_professional", "occupation", "organization", "organization_medical_facility"], return_entities=True, accuracy="high_multilingual", audio=V1AudioConfig(output_transcription="none", output_processed_audio=False, ), )
+            await client.deprecated.detect_service_detect_file_input(
+                file="fkdjfhdlnnggtsjj...",
+                data_format="mp3",
+                input_type="BASE64",
+                vault_id="a372f752689c9bfc8ca3d4dba",
+                restrict_entity_types=[
+                    "name",
+                    "age",
+                    "location",
+                    "ssn",
+                    "bank_account",
+                    "credit_card",
+                    "credit_card_expiration",
+                    "cvv",
+                    "date",
+                    "date_interval",
+                    "dob",
+                    "driver_license",
+                    "email_address",
+                    "healthcare_number",
+                    "numerical_pii",
+                    "phone_number",
+                    "medical_code",
+                    "account_number",
+                    "gender_sexuality",
+                    "name_medical_professional",
+                    "occupation",
+                    "organization",
+                    "organization_medical_facility",
+                ],
+                return_entities=True,
+                accuracy="high_multilingual",
+                audio=V1AudioConfig(
+                    output_transcription="none",
+                    output_processed_audio=False,
+                ),
+            )
+
+
         asyncio.run(main())
         """
         _response = await self._raw_client.detect_service_detect_file_input(
@@ -388,11 +480,21 @@ class AsyncDeprecatedClient:
 
         Examples
         --------
-        from skyflow import AsyncSkyflow
         import asyncio
-        client = AsyncSkyflow(token="YOUR_TOKEN", )
+
+        from skyflow import AsyncSkyflow
+
+        client = AsyncSkyflow(
+            token="YOUR_TOKEN",
+        )
+
+
         async def main() -> None:
-            await client.deprecated.detect_service_detect_status(id='ID', )
+            await client.deprecated.detect_service_detect_status(
+                id="ID",
+            )
+
+
         asyncio.run(main())
         """
         _response = await self._raw_client.detect_service_detect_status(
@@ -461,11 +563,22 @@ class AsyncDeprecatedClient:
 
         Examples
         --------
-        from skyflow import AsyncSkyflow
         import asyncio
-        client = AsyncSkyflow(token="YOUR_TOKEN", )
+
+        from skyflow import AsyncSkyflow
+
+        client = AsyncSkyflow(
+            token="YOUR_TOKEN",
+        )
+
+
         async def main() -> None:
-            await client.deprecated.detect_service_detect_text(text='text', vault_id='c848741aefb74bf38780da5399a76507', )
+            await client.deprecated.detect_service_detect_text(
+                text="text",
+                vault_id="c848741aefb74bf38780da5399a76507",
+            )
+
+
         asyncio.run(main())
         """
         _response = await self._raw_client.detect_service_detect_text(

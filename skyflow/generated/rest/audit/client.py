@@ -200,8 +200,13 @@ class AuditClient:
         Examples
         --------
         from skyflow import Skyflow
-        client = Skyflow(token="YOUR_TOKEN", )
-        client.audit.audit_service_list_audit_events(filter_ops_account_id='filterOps.accountID', )
+
+        client = Skyflow(
+            token="YOUR_TOKEN",
+        )
+        client.audit.audit_service_list_audit_events(
+            filter_ops_account_id="filterOps.accountID",
+        )
         """
         _response = self._raw_client.audit_service_list_audit_events(
             filter_ops_account_id=filter_ops_account_id,
@@ -415,11 +420,21 @@ class AsyncAuditClient:
 
         Examples
         --------
-        from skyflow import AsyncSkyflow
         import asyncio
-        client = AsyncSkyflow(token="YOUR_TOKEN", )
+
+        from skyflow import AsyncSkyflow
+
+        client = AsyncSkyflow(
+            token="YOUR_TOKEN",
+        )
+
+
         async def main() -> None:
-            await client.audit.audit_service_list_audit_events(filter_ops_account_id='filterOps.accountID', )
+            await client.audit.audit_service_list_audit_events(
+                filter_ops_account_id="filterOps.accountID",
+            )
+
+
         asyncio.run(main())
         """
         _response = await self._raw_client.audit_service_list_audit_events(

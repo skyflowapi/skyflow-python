@@ -7,3 +7,7 @@ from ._reidentify_text_response import ReidentifyTextResponse
 from ._text_index import TextIndex
 from ._token_format import TokenFormat
 from ._transformations import Transformations
+from ._deidentify_file_request import DeidentifyFileRequest
+from ._audio_bleep import Bleep
+from ._deidentify_file_response import DeidentifyFileResponse
+from ._get_detect_run_request import GetDetectRunRequest

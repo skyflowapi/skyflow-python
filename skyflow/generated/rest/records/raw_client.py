@@ -603,7 +603,8 @@ class RawRecordsClient:
         object_name: str,
         id: str,
         *,
-        file_column_name: typing.Optional[core.File] = OMIT,
+        file: typing.Optional[core.File] = OMIT,
+        column_name: typing.Optional[str] = OMIT,
         request_options: typing.Optional[RequestOptions] = None,
     ) -> HttpResponse[V1UpdateRecordResponse]:
         """
@@ -620,8 +621,11 @@ class RawRecordsClient:
         id : str
             `skyflow_id` of the record.
 
-        file_column_name : typing.Optional[core.File]
+        file : typing.Optional[core.File]
             See core.File for more documentation
+
+        column_name : typing.Optional[str]
+            Name of the column to store the file in. The column must have a file data type.
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
@@ -634,12 +638,15 @@ class RawRecordsClient:
         _response = self._client_wrapper.httpx_client.request(
             f"v1/vaults/{jsonable_encoder(vault_id)}/{jsonable_encoder(object_name)}/{jsonable_encoder(id)}/files",
             method="POST",
-            data={},
+            data={
+                "columnName": column_name,
+            },
             files={
-                **({"fileColumnName": file_column_name} if fileColumnName is not None else {}),
+                **({"file": file} if file is not None else {}),
             },
             request_options=request_options,
             omit=OMIT,
+            force_multipart=True,
         )
         try:
             if 200 <= _response.status_code < 300:
@@ -1370,7 +1377,8 @@ class AsyncRawRecordsClient:
         object_name: str,
         id: str,
         *,
-        file_column_name: typing.Optional[core.File] = OMIT,
+        file: typing.Optional[core.File] = OMIT,
+        column_name: typing.Optional[str] = OMIT,
         request_options: typing.Optional[RequestOptions] = None,
     ) -> AsyncHttpResponse[V1UpdateRecordResponse]:
         """
@@ -1387,8 +1395,11 @@ class AsyncRawRecordsClient:
         id : str
             `skyflow_id` of the record.
 
-        file_column_name : typing.Optional[core.File]
+        file : typing.Optional[core.File]
             See core.File for more documentation
+
+        column_name : typing.Optional[str]
+            Name of the column to store the file in. The column must have a file data type.
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
@@ -1401,12 +1412,15 @@ class AsyncRawRecordsClient:
         _response = await self._client_wrapper.httpx_client.request(
             f"v1/vaults/{jsonable_encoder(vault_id)}/{jsonable_encoder(object_name)}/{jsonable_encoder(id)}/files",
             method="POST",
-            data={},
+            data={
+                "columnName": column_name,
+            },
             files={
-                **({"fileColumnName": file_column_name} if fileColumnName is not None else {}),
+                **({"file": file} if file is not None else {}),
             },
             request_options=request_options,
             omit=OMIT,
+            force_multipart=True,
         )
         try:
             if 200 <= _response.status_code < 300:

@@ -28,6 +28,8 @@ class Skyflow:
     environment : SkyflowEnvironment
         The environment to use for requests from the client. from .environment import SkyflowEnvironment
 
+
+
         Defaults to SkyflowEnvironment.PRODUCTION
 
 
@@ -45,7 +47,10 @@ class Skyflow:
     Examples
     --------
     from skyflow import Skyflow
-    client = Skyflow(token="YOUR_TOKEN", )
+
+    client = Skyflow(
+        token="YOUR_TOKEN",
+    )
     """
 
     def __init__(
@@ -94,6 +99,8 @@ class AsyncSkyflow:
     environment : SkyflowEnvironment
         The environment to use for requests from the client. from .environment import SkyflowEnvironment
 
+
+
         Defaults to SkyflowEnvironment.PRODUCTION
 
 
@@ -111,7 +118,10 @@ class AsyncSkyflow:
     Examples
     --------
     from skyflow import AsyncSkyflow
-    client = AsyncSkyflow(token="YOUR_TOKEN", )
+
+    client = AsyncSkyflow(
+        token="YOUR_TOKEN",
+    )
     """
 
     def __init__(

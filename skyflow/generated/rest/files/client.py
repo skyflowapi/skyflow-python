@@ -90,8 +90,17 @@ class FilesClient:
         --------
         from skyflow import Skyflow
         from skyflow.files import DeidentifyFileRequestFile
-        client = Skyflow(token="YOUR_TOKEN", )
-        client.files.deidentify_file(vault_id='f4b3b3b33b3b3b3b3b3b3b3b3b3b3b3b', file=DeidentifyFileRequestFile(base_64='Zm9vYmFy', data_format="txt", ), )
+
+        client = Skyflow(
+            token="YOUR_TOKEN",
+        )
+        client.files.deidentify_file(
+            vault_id="f4b3b3b33b3b3b3b3b3b3b3b3b3b3b3b",
+            file=DeidentifyFileRequestFile(
+                base_64="Zm9vYmFy",
+                data_format="txt",
+            ),
+        )
         """
         _response = self._raw_client.deidentify_file(
             vault_id=vault_id,
@@ -149,8 +158,17 @@ class FilesClient:
         --------
         from skyflow import Skyflow
         from skyflow.files import DeidentifyDocumentRequestFile
-        client = Skyflow(token="YOUR_TOKEN", )
-        client.files.deidentify_document(vault_id='f4b3b3b33b3b3b3b3b3b3b3b3b3b3b3b', file=DeidentifyDocumentRequestFile(base_64='SGkgaSBhbSBEZXZhbnNodSwgbGl2...aW5nIGluIGNhbGlmb3JuaWEuIA==', data_format="docx", ), )
+
+        client = Skyflow(
+            token="YOUR_TOKEN",
+        )
+        client.files.deidentify_document(
+            vault_id="f4b3b3b33b3b3b3b3b3b3b3b3b3b3b3b",
+            file=DeidentifyDocumentRequestFile(
+                base_64="SGkgaSBhbSBEZXZhbnNodSwgbGl2...aW5nIGluIGNhbGlmb3JuaWEuIA==",
+                data_format="docx",
+            ),
+        )
         """
         _response = self._raw_client.deidentify_document(
             vault_id=vault_id,
@@ -216,8 +234,16 @@ class FilesClient:
         --------
         from skyflow import Skyflow
         from skyflow.files import DeidentifyPdfRequestFile
-        client = Skyflow(token="YOUR_TOKEN", )
-        client.files.deidentify_pdf(vault_id='f4b3b3b33b3b3b3b3b3b3b3b3b3b3b3b', file=DeidentifyPdfRequestFile(base_64='SGkgaSBhbSBEZXZhbnNodSwgbGl2...aW5nIGluIGNhbGlmb3JuaWEuIA==', ), )
+
+        client = Skyflow(
+            token="YOUR_TOKEN",
+        )
+        client.files.deidentify_pdf(
+            vault_id="f4b3b3b33b3b3b3b3b3b3b3b3b3b3b3b",
+            file=DeidentifyPdfRequestFile(
+                base_64="SGkgaSBhbSBEZXZhbnNodSwgbGl2...aW5nIGluIGNhbGlmb3JuaWEuIA==",
+            ),
+        )
         """
         _response = self._raw_client.deidentify_pdf(
             vault_id=vault_id,
@@ -289,8 +315,17 @@ class FilesClient:
         --------
         from skyflow import Skyflow
         from skyflow.files import DeidentifyImageRequestFile
-        client = Skyflow(token="YOUR_TOKEN", )
-        client.files.deidentify_image(vault_id='f4b3b3b33b3b3b3b3b3b3b3b3b3b3b3b', file=DeidentifyImageRequestFile(base_64='SGkgaSBhbSBEZXZhbnNodSwgbGl2...aW5nIGluIGNhbGlmb3JuaWEuIA==', data_format="jpg", ), )
+
+        client = Skyflow(
+            token="YOUR_TOKEN",
+        )
+        client.files.deidentify_image(
+            vault_id="f4b3b3b33b3b3b3b3b3b3b3b3b3b3b3b",
+            file=DeidentifyImageRequestFile(
+                base_64="SGkgaSBhbSBEZXZhbnNodSwgbGl2...aW5nIGluIGNhbGlmb3JuaWEuIA==",
+                data_format="jpg",
+            ),
+        )
         """
         _response = self._raw_client.deidentify_image(
             vault_id=vault_id,
@@ -351,8 +386,16 @@ class FilesClient:
         --------
         from skyflow import Skyflow
         from skyflow.files import DeidentifyTextRequestFile
-        client = Skyflow(token="YOUR_TOKEN", )
-        client.files.deidentify_text(vault_id='f4b3b3b33b3b3b3b3b3b3b3b3b3b3b3b', file=DeidentifyTextRequestFile(base_64='Zm9vYmFy', ), )
+
+        client = Skyflow(
+            token="YOUR_TOKEN",
+        )
+        client.files.deidentify_text(
+            vault_id="f4b3b3b33b3b3b3b3b3b3b3b3b3b3b3b",
+            file=DeidentifyTextRequestFile(
+                base_64="Zm9vYmFy",
+            ),
+        )
         """
         _response = self._raw_client.deidentify_text(
             vault_id=vault_id,
@@ -410,8 +453,17 @@ class FilesClient:
         --------
         from skyflow import Skyflow
         from skyflow.files import DeidentifyStructuredTextRequestFile
-        client = Skyflow(token="YOUR_TOKEN", )
-        client.files.deidentify_structured_text(vault_id='f4b3b3b33b3b3b3b3b3b3b3b3b3b3b3b', file=DeidentifyStructuredTextRequestFile(base_64='SGkgaSBhbSBEZXZhbnNodSwgbGl2...aW5nIGluIGNhbGlmb3JuaWEuIA==', data_format="json", ), )
+
+        client = Skyflow(
+            token="YOUR_TOKEN",
+        )
+        client.files.deidentify_structured_text(
+            vault_id="f4b3b3b33b3b3b3b3b3b3b3b3b3b3b3b",
+            file=DeidentifyStructuredTextRequestFile(
+                base_64="SGkgaSBhbSBEZXZhbnNodSwgbGl2...aW5nIGluIGNhbGlmb3JuaWEuIA==",
+                data_format="json",
+            ),
+        )
         """
         _response = self._raw_client.deidentify_structured_text(
             vault_id=vault_id,
@@ -469,8 +521,17 @@ class FilesClient:
         --------
         from skyflow import Skyflow
         from skyflow.files import DeidentifySpreadsheetRequestFile
-        client = Skyflow(token="YOUR_TOKEN", )
-        client.files.deidentify_spreadsheet(vault_id='f4b3b3b33b3b3b3b3b3b3b3b3b3b3b3b', file=DeidentifySpreadsheetRequestFile(base_64='SGkgaSBhbSBEZXZhbnNodSwgbGl2...aW5nIGluIGNhbGlmb3JuaWEuIA==', data_format="csv", ), )
+
+        client = Skyflow(
+            token="YOUR_TOKEN",
+        )
+        client.files.deidentify_spreadsheet(
+            vault_id="f4b3b3b33b3b3b3b3b3b3b3b3b3b3b3b",
+            file=DeidentifySpreadsheetRequestFile(
+                base_64="SGkgaSBhbSBEZXZhbnNodSwgbGl2...aW5nIGluIGNhbGlmb3JuaWEuIA==",
+                data_format="csv",
+            ),
+        )
         """
         _response = self._raw_client.deidentify_spreadsheet(
             vault_id=vault_id,
@@ -528,8 +589,17 @@ class FilesClient:
         --------
         from skyflow import Skyflow
         from skyflow.files import DeidentifyPresentationRequestFile
-        client = Skyflow(token="YOUR_TOKEN", )
-        client.files.deidentify_presentation(vault_id='f4b3b3b33b3b3b3b3b3b3b3b3b3b3b3b', file=DeidentifyPresentationRequestFile(base_64='SGkgaSBhbSBEZXZhbnNodSwgbGl2...aW5nIGluIGNhbGlmb3JuaWEuIA==', data_format="pptx", ), )
+
+        client = Skyflow(
+            token="YOUR_TOKEN",
+        )
+        client.files.deidentify_presentation(
+            vault_id="f4b3b3b33b3b3b3b3b3b3b3b3b3b3b3b",
+            file=DeidentifyPresentationRequestFile(
+                base_64="SGkgaSBhbSBEZXZhbnNodSwgbGl2...aW5nIGluIGNhbGlmb3JuaWEuIA==",
+                data_format="pptx",
+            ),
+        )
         """
         _response = self._raw_client.deidentify_presentation(
             vault_id=vault_id,
@@ -611,8 +681,17 @@ class FilesClient:
         --------
         from skyflow import Skyflow
         from skyflow.files import DeidentifyAudioRequestFile
-        client = Skyflow(token="YOUR_TOKEN", )
-        client.files.deidentify_audio(vault_id='f4b3b3b33b3b3b3b3b3b3b3b3b3b3b3b', file=DeidentifyAudioRequestFile(base_64='SGkgaSBhbSBEZXZhbnNodSwgbGl2...aW5nIGluIGNhbGlmb3JuaWEuIA==', data_format="mp3", ), )
+
+        client = Skyflow(
+            token="YOUR_TOKEN",
+        )
+        client.files.deidentify_audio(
+            vault_id="f4b3b3b33b3b3b3b3b3b3b3b3b3b3b3b",
+            file=DeidentifyAudioRequestFile(
+                base_64="SGkgaSBhbSBEZXZhbnNodSwgbGl2...aW5nIGluIGNhbGlmb3JuaWEuIA==",
+                data_format="mp3",
+            ),
+        )
         """
         _response = self._raw_client.deidentify_audio(
             vault_id=vault_id,
@@ -657,8 +736,14 @@ class FilesClient:
         Examples
         --------
         from skyflow import Skyflow
-        client = Skyflow(token="YOUR_TOKEN", )
-        client.files.get_run(run_id='run_id', vault_id='vault_id', )
+
+        client = Skyflow(
+            token="YOUR_TOKEN",
+        )
+        client.files.get_run(
+            run_id="run_id",
+            vault_id="vault_id",
+        )
         """
         _response = self._raw_client.get_run(run_id, vault_id=vault_id, request_options=request_options)
         return _response.data
@@ -721,12 +806,26 @@ class AsyncFilesClient:
 
         Examples
         --------
+        import asyncio
+
         from skyflow import AsyncSkyflow
         from skyflow.files import DeidentifyFileRequestFile
-        import asyncio
-        client = AsyncSkyflow(token="YOUR_TOKEN", )
+
+        client = AsyncSkyflow(
+            token="YOUR_TOKEN",
+        )
+
+
         async def main() -> None:
-            await client.files.deidentify_file(vault_id='f4b3b3b33b3b3b3b3b3b3b3b3b3b3b3b', file=DeidentifyFileRequestFile(base_64='Zm9vYmFy', data_format="txt", ), )
+            await client.files.deidentify_file(
+                vault_id="f4b3b3b33b3b3b3b3b3b3b3b3b3b3b3b",
+                file=DeidentifyFileRequestFile(
+                    base_64="Zm9vYmFy",
+                    data_format="txt",
+                ),
+            )
+
+
         asyncio.run(main())
         """
         _response = await self._raw_client.deidentify_file(
@@ -783,12 +882,26 @@ class AsyncFilesClient:
 
         Examples
         --------
+        import asyncio
+
         from skyflow import AsyncSkyflow
         from skyflow.files import DeidentifyDocumentRequestFile
-        import asyncio
-        client = AsyncSkyflow(token="YOUR_TOKEN", )
+
+        client = AsyncSkyflow(
+            token="YOUR_TOKEN",
+        )
+
+
         async def main() -> None:
-            await client.files.deidentify_document(vault_id='f4b3b3b33b3b3b3b3b3b3b3b3b3b3b3b', file=DeidentifyDocumentRequestFile(base_64='SGkgaSBhbSBEZXZhbnNodSwgbGl2...aW5nIGluIGNhbGlmb3JuaWEuIA==', data_format="docx", ), )
+            await client.files.deidentify_document(
+                vault_id="f4b3b3b33b3b3b3b3b3b3b3b3b3b3b3b",
+                file=DeidentifyDocumentRequestFile(
+                    base_64="SGkgaSBhbSBEZXZhbnNodSwgbGl2...aW5nIGluIGNhbGlmb3JuaWEuIA==",
+                    data_format="docx",
+                ),
+            )
+
+
         asyncio.run(main())
         """
         _response = await self._raw_client.deidentify_document(
@@ -853,12 +966,25 @@ class AsyncFilesClient:
 
         Examples
         --------
+        import asyncio
+
         from skyflow import AsyncSkyflow
         from skyflow.files import DeidentifyPdfRequestFile
-        import asyncio
-        client = AsyncSkyflow(token="YOUR_TOKEN", )
+
+        client = AsyncSkyflow(
+            token="YOUR_TOKEN",
+        )
+
+
         async def main() -> None:
-            await client.files.deidentify_pdf(vault_id='f4b3b3b33b3b3b3b3b3b3b3b3b3b3b3b', file=DeidentifyPdfRequestFile(base_64='SGkgaSBhbSBEZXZhbnNodSwgbGl2...aW5nIGluIGNhbGlmb3JuaWEuIA==', ), )
+            await client.files.deidentify_pdf(
+                vault_id="f4b3b3b33b3b3b3b3b3b3b3b3b3b3b3b",
+                file=DeidentifyPdfRequestFile(
+                    base_64="SGkgaSBhbSBEZXZhbnNodSwgbGl2...aW5nIGluIGNhbGlmb3JuaWEuIA==",
+                ),
+            )
+
+
         asyncio.run(main())
         """
         _response = await self._raw_client.deidentify_pdf(
@@ -929,12 +1055,26 @@ class AsyncFilesClient:
 
         Examples
         --------
+        import asyncio
+
         from skyflow import AsyncSkyflow
         from skyflow.files import DeidentifyImageRequestFile
-        import asyncio
-        client = AsyncSkyflow(token="YOUR_TOKEN", )
+
+        client = AsyncSkyflow(
+            token="YOUR_TOKEN",
+        )
+
+
         async def main() -> None:
-            await client.files.deidentify_image(vault_id='f4b3b3b33b3b3b3b3b3b3b3b3b3b3b3b', file=DeidentifyImageRequestFile(base_64='SGkgaSBhbSBEZXZhbnNodSwgbGl2...aW5nIGluIGNhbGlmb3JuaWEuIA==', data_format="jpg", ), )
+            await client.files.deidentify_image(
+                vault_id="f4b3b3b33b3b3b3b3b3b3b3b3b3b3b3b",
+                file=DeidentifyImageRequestFile(
+                    base_64="SGkgaSBhbSBEZXZhbnNodSwgbGl2...aW5nIGluIGNhbGlmb3JuaWEuIA==",
+                    data_format="jpg",
+                ),
+            )
+
+
         asyncio.run(main())
         """
         _response = await self._raw_client.deidentify_image(
@@ -994,12 +1134,25 @@ class AsyncFilesClient:
 
         Examples
         --------
+        import asyncio
+
         from skyflow import AsyncSkyflow
         from skyflow.files import DeidentifyTextRequestFile
-        import asyncio
-        client = AsyncSkyflow(token="YOUR_TOKEN", )
+
+        client = AsyncSkyflow(
+            token="YOUR_TOKEN",
+        )
+
+
         async def main() -> None:
-            await client.files.deidentify_text(vault_id='f4b3b3b33b3b3b3b3b3b3b3b3b3b3b3b', file=DeidentifyTextRequestFile(base_64='Zm9vYmFy', ), )
+            await client.files.deidentify_text(
+                vault_id="f4b3b3b33b3b3b3b3b3b3b3b3b3b3b3b",
+                file=DeidentifyTextRequestFile(
+                    base_64="Zm9vYmFy",
+                ),
+            )
+
+
         asyncio.run(main())
         """
         _response = await self._raw_client.deidentify_text(
@@ -1056,12 +1209,26 @@ class AsyncFilesClient:
 
         Examples
         --------
+        import asyncio
+
         from skyflow import AsyncSkyflow
         from skyflow.files import DeidentifyStructuredTextRequestFile
-        import asyncio
-        client = AsyncSkyflow(token="YOUR_TOKEN", )
+
+        client = AsyncSkyflow(
+            token="YOUR_TOKEN",
+        )
+
+
         async def main() -> None:
-            await client.files.deidentify_structured_text(vault_id='f4b3b3b33b3b3b3b3b3b3b3b3b3b3b3b', file=DeidentifyStructuredTextRequestFile(base_64='SGkgaSBhbSBEZXZhbnNodSwgbGl2...aW5nIGluIGNhbGlmb3JuaWEuIA==', data_format="json", ), )
+            await client.files.deidentify_structured_text(
+                vault_id="f4b3b3b33b3b3b3b3b3b3b3b3b3b3b3b",
+                file=DeidentifyStructuredTextRequestFile(
+                    base_64="SGkgaSBhbSBEZXZhbnNodSwgbGl2...aW5nIGluIGNhbGlmb3JuaWEuIA==",
+                    data_format="json",
+                ),
+            )
+
+
         asyncio.run(main())
         """
         _response = await self._raw_client.deidentify_structured_text(
@@ -1118,12 +1285,26 @@ class AsyncFilesClient:
 
         Examples
         --------
+        import asyncio
+
         from skyflow import AsyncSkyflow
         from skyflow.files import DeidentifySpreadsheetRequestFile
-        import asyncio
-        client = AsyncSkyflow(token="YOUR_TOKEN", )
+
+        client = AsyncSkyflow(
+            token="YOUR_TOKEN",
+        )
+
+
         async def main() -> None:
-            await client.files.deidentify_spreadsheet(vault_id='f4b3b3b33b3b3b3b3b3b3b3b3b3b3b3b', file=DeidentifySpreadsheetRequestFile(base_64='SGkgaSBhbSBEZXZhbnNodSwgbGl2...aW5nIGluIGNhbGlmb3JuaWEuIA==', data_format="csv", ), )
+            await client.files.deidentify_spreadsheet(
+                vault_id="f4b3b3b33b3b3b3b3b3b3b3b3b3b3b3b",
+                file=DeidentifySpreadsheetRequestFile(
+                    base_64="SGkgaSBhbSBEZXZhbnNodSwgbGl2...aW5nIGluIGNhbGlmb3JuaWEuIA==",
+                    data_format="csv",
+                ),
+            )
+
+
         asyncio.run(main())
         """
         _response = await self._raw_client.deidentify_spreadsheet(
@@ -1180,12 +1361,26 @@ class AsyncFilesClient:
 
         Examples
         --------
+        import asyncio
+
         from skyflow import AsyncSkyflow
         from skyflow.files import DeidentifyPresentationRequestFile
-        import asyncio
-        client = AsyncSkyflow(token="YOUR_TOKEN", )
+
+        client = AsyncSkyflow(
+            token="YOUR_TOKEN",
+        )
+
+
         async def main() -> None:
-            await client.files.deidentify_presentation(vault_id='f4b3b3b33b3b3b3b3b3b3b3b3b3b3b3b', file=DeidentifyPresentationRequestFile(base_64='SGkgaSBhbSBEZXZhbnNodSwgbGl2...aW5nIGluIGNhbGlmb3JuaWEuIA==', data_format="pptx", ), )
+            await client.files.deidentify_presentation(
+                vault_id="f4b3b3b33b3b3b3b3b3b3b3b3b3b3b3b",
+                file=DeidentifyPresentationRequestFile(
+                    base_64="SGkgaSBhbSBEZXZhbnNodSwgbGl2...aW5nIGluIGNhbGlmb3JuaWEuIA==",
+                    data_format="pptx",
+                ),
+            )
+
+
         asyncio.run(main())
         """
         _response = await self._raw_client.deidentify_presentation(
@@ -1266,12 +1461,26 @@ class AsyncFilesClient:
 
         Examples
         --------
+        import asyncio
+
         from skyflow import AsyncSkyflow
         from skyflow.files import DeidentifyAudioRequestFile
-        import asyncio
-        client = AsyncSkyflow(token="YOUR_TOKEN", )
+
+        client = AsyncSkyflow(
+            token="YOUR_TOKEN",
+        )
+
+
         async def main() -> None:
-            await client.files.deidentify_audio(vault_id='f4b3b3b33b3b3b3b3b3b3b3b3b3b3b3b', file=DeidentifyAudioRequestFile(base_64='SGkgaSBhbSBEZXZhbnNodSwgbGl2...aW5nIGluIGNhbGlmb3JuaWEuIA==', data_format="mp3", ), )
+            await client.files.deidentify_audio(
+                vault_id="f4b3b3b33b3b3b3b3b3b3b3b3b3b3b3b",
+                file=DeidentifyAudioRequestFile(
+                    base_64="SGkgaSBhbSBEZXZhbnNodSwgbGl2...aW5nIGluIGNhbGlmb3JuaWEuIA==",
+                    data_format="mp3",
+                ),
+            )
+
+
         asyncio.run(main())
         """
         _response = await self._raw_client.deidentify_audio(
@@ -1316,11 +1525,22 @@ class AsyncFilesClient:
 
         Examples
         --------
-        from skyflow import AsyncSkyflow
         import asyncio
-        client = AsyncSkyflow(token="YOUR_TOKEN", )
+
+        from skyflow import AsyncSkyflow
+
+        client = AsyncSkyflow(
+            token="YOUR_TOKEN",
+        )
+
+
         async def main() -> None:
-            await client.files.get_run(run_id='run_id', vault_id='vault_id', )
+            await client.files.get_run(
+                run_id="run_id",
+                vault_id="vault_id",
+            )
+
+
         asyncio.run(main())
         """
         _response = await self._raw_client.get_run(run_id, vault_id=vault_id, request_options=request_options)

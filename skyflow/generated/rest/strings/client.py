@@ -77,8 +77,14 @@ class StringsClient:
         Examples
         --------
         from skyflow import Skyflow
-        client = Skyflow(token="YOUR_TOKEN", )
-        client.strings.deidentify_string(vault_id='f4b3b3b33b3b3b3b3b3b3b3b3b3b3b3b', text='My name is John Doe, and my email is johndoe@acme.com.', )
+
+        client = Skyflow(
+            token="YOUR_TOKEN",
+        )
+        client.strings.deidentify_string(
+            vault_id="f4b3b3b33b3b3b3b3b3b3b3b3b3b3b3b",
+            text="My name is John Doe, and my email is johndoe@acme.com.",
+        )
         """
         _response = self._raw_client.deidentify_string(
             vault_id=vault_id,
@@ -125,8 +131,14 @@ class StringsClient:
         Examples
         --------
         from skyflow import Skyflow
-        client = Skyflow(token="YOUR_TOKEN", )
-        client.strings.reidentify_string(text='My name is [NAME_1], and my email is [EMAIL_1].', vault_id='1ad6db07-8405-46cf-9a1e-db148ff9f4c5', )
+
+        client = Skyflow(
+            token="YOUR_TOKEN",
+        )
+        client.strings.reidentify_string(
+            text="My name is [NAME_1], and my email is [EMAIL_1].",
+            vault_id="1ad6db07-8405-46cf-9a1e-db148ff9f4c5",
+        )
         """
         _response = self._raw_client.reidentify_string(
             text=text, vault_id=vault_id, format=format, request_options=request_options
@@ -191,11 +203,22 @@ class AsyncStringsClient:
 
         Examples
         --------
-        from skyflow import AsyncSkyflow
         import asyncio
-        client = AsyncSkyflow(token="YOUR_TOKEN", )
+
+        from skyflow import AsyncSkyflow
+
+        client = AsyncSkyflow(
+            token="YOUR_TOKEN",
+        )
+
+
         async def main() -> None:
-            await client.strings.deidentify_string(vault_id='f4b3b3b33b3b3b3b3b3b3b3b3b3b3b3b', text='My name is John Doe, and my email is johndoe@acme.com.', )
+            await client.strings.deidentify_string(
+                vault_id="f4b3b3b33b3b3b3b3b3b3b3b3b3b3b3b",
+                text="My name is John Doe, and my email is johndoe@acme.com.",
+            )
+
+
         asyncio.run(main())
         """
         _response = await self._raw_client.deidentify_string(
@@ -242,11 +265,22 @@ class AsyncStringsClient:
 
         Examples
         --------
-        from skyflow import AsyncSkyflow
         import asyncio
-        client = AsyncSkyflow(token="YOUR_TOKEN", )
+
+        from skyflow import AsyncSkyflow
+
+        client = AsyncSkyflow(
+            token="YOUR_TOKEN",
+        )
+
+
         async def main() -> None:
-            await client.strings.reidentify_string(text='My name is [NAME_1], and my email is [EMAIL_1].', vault_id='1ad6db07-8405-46cf-9a1e-db148ff9f4c5', )
+            await client.strings.reidentify_string(
+                text="My name is [NAME_1], and my email is [EMAIL_1].",
+                vault_id="1ad6db07-8405-46cf-9a1e-db148ff9f4c5",
+            )
+
+
         asyncio.run(main())
         """
         _response = await self._raw_client.reidentify_string(

@@ -75,14 +75,40 @@ class RecordsClient:
 
         Examples
         --------
-        from skyflow import Skyflow
-        from skyflow import V1BatchRecord
-        client = Skyflow(token="YOUR_TOKEN", )
-        client.records.record_service_batch_operation(vault_id='vaultID', records=[V1BatchRecord(fields={'drivers_license_number': '89867453'
-        , 'name': 'Connor'
-        , 'phone_number': '8794523160'
-        , 'ssn': '143-89-2306'
-        }, table_name='persons', method="POST", batch_id='persons-12345', redaction="PLAIN_TEXT", tokenization=False, download_url=False, upsert='drivers_license_number', ), V1BatchRecord(table_name='persons', method="GET", batch_id='persons-12345', redaction="PLAIN_TEXT", tokenization=False, id='f1dbc55c-7c9b-495d-9a36-72bb2b619202', download_url=True, )], )
+        from skyflow import Skyflow, V1BatchRecord
+
+        client = Skyflow(
+            token="YOUR_TOKEN",
+        )
+        client.records.record_service_batch_operation(
+            vault_id="vaultID",
+            records=[
+                V1BatchRecord(
+                    fields={
+                        "drivers_license_number": "89867453",
+                        "name": "Connor",
+                        "phone_number": "8794523160",
+                        "ssn": "143-89-2306",
+                    },
+                    table_name="persons",
+                    method="POST",
+                    batch_id="persons-12345",
+                    redaction="PLAIN_TEXT",
+                    tokenization=False,
+                    download_url=False,
+                    upsert="drivers_license_number",
+                ),
+                V1BatchRecord(
+                    table_name="persons",
+                    method="GET",
+                    batch_id="persons-12345",
+                    redaction="PLAIN_TEXT",
+                    tokenization=False,
+                    id="f1dbc55c-7c9b-495d-9a36-72bb2b619202",
+                    download_url=True,
+                ),
+            ],
+        )
         """
         _response = self._raw_client.record_service_batch_operation(
             vault_id, records=records, continue_on_error=continue_on_error, byot=byot, request_options=request_options
@@ -158,8 +184,14 @@ class RecordsClient:
         Examples
         --------
         from skyflow import Skyflow
-        client = Skyflow(token="YOUR_TOKEN", )
-        client.records.record_service_bulk_get_record(vault_id='vaultID', object_name='objectName', )
+
+        client = Skyflow(
+            token="YOUR_TOKEN",
+        )
+        client.records.record_service_bulk_get_record(
+            vault_id="vaultID",
+            object_name="objectName",
+        )
         """
         _response = self._raw_client.record_service_bulk_get_record(
             vault_id,
@@ -225,18 +257,36 @@ class RecordsClient:
 
         Examples
         --------
-        from skyflow import Skyflow
-        from skyflow import V1FieldRecords
-        client = Skyflow(token="YOUR_TOKEN", )
-        client.records.record_service_insert_record(vault_id='vaultID', object_name='objectName', records=[V1FieldRecords(fields={'drivers_license_number': '13456789'
-        , 'name': 'John'
-        , 'phone_number': '1236784563'
-        , 'ssn': '123-45-6789'
-        }, ), V1FieldRecords(fields={'drivers_license_number': '98765432'
-        , 'name': 'James'
-        , 'phone_number': '9876543215'
-        , 'ssn': '345-45-9876'
-        }, )], tokenization=True, upsert='drivers_license_number', homogeneous=False, )
+        from skyflow import Skyflow, V1FieldRecords
+
+        client = Skyflow(
+            token="YOUR_TOKEN",
+        )
+        client.records.record_service_insert_record(
+            vault_id="vaultID",
+            object_name="objectName",
+            records=[
+                V1FieldRecords(
+                    fields={
+                        "drivers_license_number": "13456789",
+                        "name": "John",
+                        "phone_number": "1236784563",
+                        "ssn": "123-45-6789",
+                    },
+                ),
+                V1FieldRecords(
+                    fields={
+                        "drivers_license_number": "98765432",
+                        "name": "James",
+                        "phone_number": "9876543215",
+                        "ssn": "345-45-9876",
+                    },
+                ),
+            ],
+            tokenization=True,
+            upsert="drivers_license_number",
+            homogeneous=False,
+        )
         """
         _response = self._raw_client.record_service_insert_record(
             vault_id,
@@ -283,8 +333,18 @@ class RecordsClient:
         Examples
         --------
         from skyflow import Skyflow
-        client = Skyflow(token="YOUR_TOKEN", )
-        client.records.record_service_bulk_delete_record(vault_id='vaultID', object_name='objectName', skyflow_ids=['51782ea4-91a5-4430-a06d-f4b76efd3d2f', '110ce08f-6059-4874-b1ae-7c6651d286ff'], )
+
+        client = Skyflow(
+            token="YOUR_TOKEN",
+        )
+        client.records.record_service_bulk_delete_record(
+            vault_id="vaultID",
+            object_name="objectName",
+            skyflow_ids=[
+                "51782ea4-91a5-4430-a06d-f4b76efd3d2f",
+                "110ce08f-6059-4874-b1ae-7c6651d286ff",
+            ],
+        )
         """
         _response = self._raw_client.record_service_bulk_delete_record(
             vault_id, object_name, skyflow_ids=skyflow_ids, request_options=request_options
@@ -340,8 +400,15 @@ class RecordsClient:
         Examples
         --------
         from skyflow import Skyflow
-        client = Skyflow(token="YOUR_TOKEN", )
-        client.records.record_service_get_record(vault_id='vaultID', object_name='objectName', id='ID', )
+
+        client = Skyflow(
+            token="YOUR_TOKEN",
+        )
+        client.records.record_service_get_record(
+            vault_id="vaultID",
+            object_name="objectName",
+            id="ID",
+        )
         """
         _response = self._raw_client.record_service_get_record(
             vault_id,
@@ -397,14 +464,25 @@ class RecordsClient:
 
         Examples
         --------
-        from skyflow import Skyflow
-        from skyflow import V1FieldRecords
-        client = Skyflow(token="YOUR_TOKEN", )
-        client.records.record_service_update_record(vault_id='vaultID', object_name='objectName', id='ID', record=V1FieldRecords(fields={'drivers_license_number': '89867453'
-        , 'name': 'Steve Smith'
-        , 'phone_number': '8794523160'
-        , 'ssn': '143-89-2306'
-        }, ), tokenization=True, )
+        from skyflow import Skyflow, V1FieldRecords
+
+        client = Skyflow(
+            token="YOUR_TOKEN",
+        )
+        client.records.record_service_update_record(
+            vault_id="vaultID",
+            object_name="objectName",
+            id="ID",
+            record=V1FieldRecords(
+                fields={
+                    "drivers_license_number": "89867453",
+                    "name": "Steve Smith",
+                    "phone_number": "8794523160",
+                    "ssn": "143-89-2306",
+                },
+            ),
+            tokenization=True,
+        )
         """
         _response = self._raw_client.record_service_update_record(
             vault_id,
@@ -445,8 +523,15 @@ class RecordsClient:
         Examples
         --------
         from skyflow import Skyflow
-        client = Skyflow(token="YOUR_TOKEN", )
-        client.records.record_service_delete_record(vault_id='vaultID', object_name='objectName', id='ID', )
+
+        client = Skyflow(
+            token="YOUR_TOKEN",
+        )
+        client.records.record_service_delete_record(
+            vault_id="vaultID",
+            object_name="objectName",
+            id="ID",
+        )
         """
         _response = self._raw_client.record_service_delete_record(
             vault_id, object_name, id, request_options=request_options
@@ -459,7 +544,8 @@ class RecordsClient:
         object_name: str,
         id: str,
         *,
-        file_column_name: typing.Optional[core.File] = OMIT,
+        file: typing.Optional[core.File] = OMIT,
+        column_name: typing.Optional[str] = OMIT,
         request_options: typing.Optional[RequestOptions] = None,
     ) -> V1UpdateRecordResponse:
         """
@@ -476,8 +562,11 @@ class RecordsClient:
         id : str
             `skyflow_id` of the record.
 
-        file_column_name : typing.Optional[core.File]
+        file : typing.Optional[core.File]
             See core.File for more documentation
+
+        column_name : typing.Optional[str]
+            Name of the column to store the file in. The column must have a file data type.
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
@@ -490,11 +579,18 @@ class RecordsClient:
         Examples
         --------
         from skyflow import Skyflow
-        client = Skyflow(token="YOUR_TOKEN", )
-        client.records.file_service_upload_file(vault_id='vaultID', object_name='objectName', id='ID', )
+
+        client = Skyflow(
+            token="YOUR_TOKEN",
+        )
+        client.records.file_service_upload_file(
+            vault_id="vaultID",
+            object_name="objectName",
+            id="ID",
+        )
         """
         _response = self._raw_client.file_service_upload_file(
-            vault_id, object_name, id, file_column_name=file_column_name, request_options=request_options
+            vault_id, object_name, id, file=file, column_name=column_name, request_options=request_options
         )
         return _response.data
 
@@ -535,8 +631,16 @@ class RecordsClient:
         Examples
         --------
         from skyflow import Skyflow
-        client = Skyflow(token="YOUR_TOKEN", )
-        client.records.file_service_delete_file(vault_id='vaultID', table_name='tableName', id='ID', column_name='columnName', )
+
+        client = Skyflow(
+            token="YOUR_TOKEN",
+        )
+        client.records.file_service_delete_file(
+            vault_id="vaultID",
+            table_name="tableName",
+            id="ID",
+            column_name="columnName",
+        )
         """
         _response = self._raw_client.file_service_delete_file(
             vault_id, table_name, id, column_name, request_options=request_options
@@ -580,8 +684,16 @@ class RecordsClient:
         Examples
         --------
         from skyflow import Skyflow
-        client = Skyflow(token="YOUR_TOKEN", )
-        client.records.file_service_get_file_scan_status(vault_id='vaultID', table_name='tableName', id='ID', column_name='columnName', )
+
+        client = Skyflow(
+            token="YOUR_TOKEN",
+        )
+        client.records.file_service_get_file_scan_status(
+            vault_id="vaultID",
+            table_name="tableName",
+            id="ID",
+            column_name="columnName",
+        )
         """
         _response = self._raw_client.file_service_get_file_scan_status(
             vault_id, table_name, id, column_name, request_options=request_options
@@ -639,16 +751,47 @@ class AsyncRecordsClient:
 
         Examples
         --------
-        from skyflow import AsyncSkyflow
-        from skyflow import V1BatchRecord
         import asyncio
-        client = AsyncSkyflow(token="YOUR_TOKEN", )
+
+        from skyflow import AsyncSkyflow, V1BatchRecord
+
+        client = AsyncSkyflow(
+            token="YOUR_TOKEN",
+        )
+
+
         async def main() -> None:
-            await client.records.record_service_batch_operation(vault_id='vaultID', records=[V1BatchRecord(fields={'drivers_license_number': '89867453'
-            , 'name': 'Connor'
-            , 'phone_number': '8794523160'
-            , 'ssn': '143-89-2306'
-            }, table_name='persons', method="POST", batch_id='persons-12345', redaction="PLAIN_TEXT", tokenization=False, download_url=False, upsert='drivers_license_number', ), V1BatchRecord(table_name='persons', method="GET", batch_id='persons-12345', redaction="PLAIN_TEXT", tokenization=False, id='f1dbc55c-7c9b-495d-9a36-72bb2b619202', download_url=True, )], )
+            await client.records.record_service_batch_operation(
+                vault_id="vaultID",
+                records=[
+                    V1BatchRecord(
+                        fields={
+                            "drivers_license_number": "89867453",
+                            "name": "Connor",
+                            "phone_number": "8794523160",
+                            "ssn": "143-89-2306",
+                        },
+                        table_name="persons",
+                        method="POST",
+                        batch_id="persons-12345",
+                        redaction="PLAIN_TEXT",
+                        tokenization=False,
+                        download_url=False,
+                        upsert="drivers_license_number",
+                    ),
+                    V1BatchRecord(
+                        table_name="persons",
+                        method="GET",
+                        batch_id="persons-12345",
+                        redaction="PLAIN_TEXT",
+                        tokenization=False,
+                        id="f1dbc55c-7c9b-495d-9a36-72bb2b619202",
+                        download_url=True,
+                    ),
+                ],
+            )
+
+
         asyncio.run(main())
         """
         _response = await self._raw_client.record_service_batch_operation(
@@ -724,11 +867,22 @@ class AsyncRecordsClient:
 
         Examples
         --------
-        from skyflow import AsyncSkyflow
         import asyncio
-        client = AsyncSkyflow(token="YOUR_TOKEN", )
+
+        from skyflow import AsyncSkyflow
+
+        client = AsyncSkyflow(
+            token="YOUR_TOKEN",
+        )
+
+
         async def main() -> None:
-            await client.records.record_service_bulk_get_record(vault_id='vaultID', object_name='objectName', )
+            await client.records.record_service_bulk_get_record(
+                vault_id="vaultID",
+                object_name="objectName",
+            )
+
+
         asyncio.run(main())
         """
         _response = await self._raw_client.record_service_bulk_get_record(
@@ -795,20 +949,43 @@ class AsyncRecordsClient:
 
         Examples
         --------
-        from skyflow import AsyncSkyflow
-        from skyflow import V1FieldRecords
         import asyncio
-        client = AsyncSkyflow(token="YOUR_TOKEN", )
+
+        from skyflow import AsyncSkyflow, V1FieldRecords
+
+        client = AsyncSkyflow(
+            token="YOUR_TOKEN",
+        )
+
+
         async def main() -> None:
-            await client.records.record_service_insert_record(vault_id='vaultID', object_name='objectName', records=[V1FieldRecords(fields={'drivers_license_number': '13456789'
-            , 'name': 'John'
-            , 'phone_number': '1236784563'
-            , 'ssn': '123-45-6789'
-            }, ), V1FieldRecords(fields={'drivers_license_number': '98765432'
-            , 'name': 'James'
-            , 'phone_number': '9876543215'
-            , 'ssn': '345-45-9876'
-            }, )], tokenization=True, upsert='drivers_license_number', homogeneous=False, )
+            await client.records.record_service_insert_record(
+                vault_id="vaultID",
+                object_name="objectName",
+                records=[
+                    V1FieldRecords(
+                        fields={
+                            "drivers_license_number": "13456789",
+                            "name": "John",
+                            "phone_number": "1236784563",
+                            "ssn": "123-45-6789",
+                        },
+                    ),
+                    V1FieldRecords(
+                        fields={
+                            "drivers_license_number": "98765432",
+                            "name": "James",
+                            "phone_number": "9876543215",
+                            "ssn": "345-45-9876",
+                        },
+                    ),
+                ],
+                tokenization=True,
+                upsert="drivers_license_number",
+                homogeneous=False,
+            )
+
+
         asyncio.run(main())
         """
         _response = await self._raw_client.record_service_insert_record(
@@ -855,11 +1032,26 @@ class AsyncRecordsClient:
 
         Examples
         --------
-        from skyflow import AsyncSkyflow
         import asyncio
-        client = AsyncSkyflow(token="YOUR_TOKEN", )
+
+        from skyflow import AsyncSkyflow
+
+        client = AsyncSkyflow(
+            token="YOUR_TOKEN",
+        )
+
+
         async def main() -> None:
-            await client.records.record_service_bulk_delete_record(vault_id='vaultID', object_name='objectName', skyflow_ids=['51782ea4-91a5-4430-a06d-f4b76efd3d2f', '110ce08f-6059-4874-b1ae-7c6651d286ff'], )
+            await client.records.record_service_bulk_delete_record(
+                vault_id="vaultID",
+                object_name="objectName",
+                skyflow_ids=[
+                    "51782ea4-91a5-4430-a06d-f4b76efd3d2f",
+                    "110ce08f-6059-4874-b1ae-7c6651d286ff",
+                ],
+            )
+
+
         asyncio.run(main())
         """
         _response = await self._raw_client.record_service_bulk_delete_record(
@@ -915,11 +1107,23 @@ class AsyncRecordsClient:
 
         Examples
         --------
-        from skyflow import AsyncSkyflow
         import asyncio
-        client = AsyncSkyflow(token="YOUR_TOKEN", )
+
+        from skyflow import AsyncSkyflow
+
+        client = AsyncSkyflow(
+            token="YOUR_TOKEN",
+        )
+
+
         async def main() -> None:
-            await client.records.record_service_get_record(vault_id='vaultID', object_name='objectName', id='ID', )
+            await client.records.record_service_get_record(
+                vault_id="vaultID",
+                object_name="objectName",
+                id="ID",
+            )
+
+
         asyncio.run(main())
         """
         _response = await self._raw_client.record_service_get_record(
@@ -976,16 +1180,32 @@ class AsyncRecordsClient:
 
         Examples
         --------
-        from skyflow import AsyncSkyflow
-        from skyflow import V1FieldRecords
         import asyncio
-        client = AsyncSkyflow(token="YOUR_TOKEN", )
+
+        from skyflow import AsyncSkyflow, V1FieldRecords
+
+        client = AsyncSkyflow(
+            token="YOUR_TOKEN",
+        )
+
+
         async def main() -> None:
-            await client.records.record_service_update_record(vault_id='vaultID', object_name='objectName', id='ID', record=V1FieldRecords(fields={'drivers_license_number': '89867453'
-            , 'name': 'Steve Smith'
-            , 'phone_number': '8794523160'
-            , 'ssn': '143-89-2306'
-            }, ), tokenization=True, )
+            await client.records.record_service_update_record(
+                vault_id="vaultID",
+                object_name="objectName",
+                id="ID",
+                record=V1FieldRecords(
+                    fields={
+                        "drivers_license_number": "89867453",
+                        "name": "Steve Smith",
+                        "phone_number": "8794523160",
+                        "ssn": "143-89-2306",
+                    },
+                ),
+                tokenization=True,
+            )
+
+
         asyncio.run(main())
         """
         _response = await self._raw_client.record_service_update_record(
@@ -1026,11 +1246,23 @@ class AsyncRecordsClient:
 
         Examples
         --------
-        from skyflow import AsyncSkyflow
         import asyncio
-        client = AsyncSkyflow(token="YOUR_TOKEN", )
+
+        from skyflow import AsyncSkyflow
+
+        client = AsyncSkyflow(
+            token="YOUR_TOKEN",
+        )
+
+
         async def main() -> None:
-            await client.records.record_service_delete_record(vault_id='vaultID', object_name='objectName', id='ID', )
+            await client.records.record_service_delete_record(
+                vault_id="vaultID",
+                object_name="objectName",
+                id="ID",
+            )
+
+
         asyncio.run(main())
         """
         _response = await self._raw_client.record_service_delete_record(
@@ -1044,7 +1276,8 @@ class AsyncRecordsClient:
         object_name: str,
         id: str,
         *,
-        file_column_name: typing.Optional[core.File] = OMIT,
+        file: typing.Optional[core.File] = OMIT,
+        column_name: typing.Optional[str] = OMIT,
         request_options: typing.Optional[RequestOptions] = None,
     ) -> V1UpdateRecordResponse:
         """
@@ -1061,8 +1294,11 @@ class AsyncRecordsClient:
         id : str
             `skyflow_id` of the record.
 
-        file_column_name : typing.Optional[core.File]
+        file : typing.Optional[core.File]
             See core.File for more documentation
+
+        column_name : typing.Optional[str]
+            Name of the column to store the file in. The column must have a file data type.
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
@@ -1074,15 +1310,27 @@ class AsyncRecordsClient:
 
         Examples
         --------
-        from skyflow import AsyncSkyflow
         import asyncio
-        client = AsyncSkyflow(token="YOUR_TOKEN", )
+
+        from skyflow import AsyncSkyflow
+
+        client = AsyncSkyflow(
+            token="YOUR_TOKEN",
+        )
+
+
         async def main() -> None:
-            await client.records.file_service_upload_file(vault_id='vaultID', object_name='objectName', id='ID', )
+            await client.records.file_service_upload_file(
+                vault_id="vaultID",
+                object_name="objectName",
+                id="ID",
+            )
+
+
         asyncio.run(main())
         """
         _response = await self._raw_client.file_service_upload_file(
-            vault_id, object_name, id, file_column_name=file_column_name, request_options=request_options
+            vault_id, object_name, id, file=file, column_name=column_name, request_options=request_options
         )
         return _response.data
 
@@ -1122,11 +1370,24 @@ class AsyncRecordsClient:
 
         Examples
         --------
-        from skyflow import AsyncSkyflow
         import asyncio
-        client = AsyncSkyflow(token="YOUR_TOKEN", )
+
+        from skyflow import AsyncSkyflow
+
+        client = AsyncSkyflow(
+            token="YOUR_TOKEN",
+        )
+
+
         async def main() -> None:
-            await client.records.file_service_delete_file(vault_id='vaultID', table_name='tableName', id='ID', column_name='columnName', )
+            await client.records.file_service_delete_file(
+                vault_id="vaultID",
+                table_name="tableName",
+                id="ID",
+                column_name="columnName",
+            )
+
+
         asyncio.run(main())
         """
         _response = await self._raw_client.file_service_delete_file(
@@ -1170,11 +1431,24 @@ class AsyncRecordsClient:
 
         Examples
         --------
-        from skyflow import AsyncSkyflow
         import asyncio
-        client = AsyncSkyflow(token="YOUR_TOKEN", )
+
+        from skyflow import AsyncSkyflow
+
+        client = AsyncSkyflow(
+            token="YOUR_TOKEN",
+        )
+
+
         async def main() -> None:
-            await client.records.file_service_get_file_scan_status(vault_id='vaultID', table_name='tableName', id='ID', column_name='columnName', )
+            await client.records.file_service_get_file_scan_status(
+                vault_id="vaultID",
+                table_name="tableName",
+                id="ID",
+                column_name="columnName",
+            )
+
+
         asyncio.run(main())
         """
         _response = await self._raw_client.file_service_get_file_scan_status(

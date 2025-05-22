@@ -71,8 +71,14 @@ class AuthenticationClient:
         Examples
         --------
         from skyflow import Skyflow
-        client = Skyflow(token="YOUR_TOKEN", )
-        client.authentication.authentication_service_get_auth_token(grant_type='urn:ietf:params:oauth:grant-type:jwt-bearer', assertion='eyLhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaXNzIjoiY29tcGFueSIsImV4cCI6MTYxNTE5MzgwNywiaWF0IjoxNjE1MTY1MDQwLCJhdWQiOiKzb21lYXVkaWVuY2UifQ.4pcPyMDQ9o1PSyXnrXCjTwXyr4BSezdI1AVTmud2fU3', )
+
+        client = Skyflow(
+            token="YOUR_TOKEN",
+        )
+        client.authentication.authentication_service_get_auth_token(
+            grant_type="urn:ietf:params:oauth:grant-type:jwt-bearer",
+            assertion="eyLhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaXNzIjoiY29tcGFueSIsImV4cCI6MTYxNTE5MzgwNywiaWF0IjoxNjE1MTY1MDQwLCJhdWQiOiKzb21lYXVkaWVuY2UifQ.4pcPyMDQ9o1PSyXnrXCjTwXyr4BSezdI1AVTmud2fU3",
+        )
         """
         _response = self._raw_client.authentication_service_get_auth_token(
             grant_type=grant_type,
@@ -145,11 +151,22 @@ class AsyncAuthenticationClient:
 
         Examples
         --------
-        from skyflow import AsyncSkyflow
         import asyncio
-        client = AsyncSkyflow(token="YOUR_TOKEN", )
+
+        from skyflow import AsyncSkyflow
+
+        client = AsyncSkyflow(
+            token="YOUR_TOKEN",
+        )
+
+
         async def main() -> None:
-            await client.authentication.authentication_service_get_auth_token(grant_type='urn:ietf:params:oauth:grant-type:jwt-bearer', assertion='eyLhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaXNzIjoiY29tcGFueSIsImV4cCI6MTYxNTE5MzgwNywiaWF0IjoxNjE1MTY1MDQwLCJhdWQiOiKzb21lYXVkaWVuY2UifQ.4pcPyMDQ9o1PSyXnrXCjTwXyr4BSezdI1AVTmud2fU3', )
+            await client.authentication.authentication_service_get_auth_token(
+                grant_type="urn:ietf:params:oauth:grant-type:jwt-bearer",
+                assertion="eyLhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaXNzIjoiY29tcGFueSIsImV4cCI6MTYxNTE5MzgwNywiaWF0IjoxNjE1MTY1MDQwLCJhdWQiOiKzb21lYXVkaWVuY2UifQ.4pcPyMDQ9o1PSyXnrXCjTwXyr4BSezdI1AVTmud2fU3",
+            )
+
+
         asyncio.run(main())
         """
         _response = await self._raw_client.authentication_service_get_auth_token(

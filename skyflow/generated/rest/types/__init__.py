@@ -20,6 +20,7 @@ from .deidentify_file_response import DeidentifyFileResponse
 from .deidentify_status_response import DeidentifyStatusResponse
 from .deidentify_status_response_output_type import DeidentifyStatusResponseOutputType
 from .deidentify_status_response_status import DeidentifyStatusResponseStatus
+from .deidentify_status_response_word_character_count import DeidentifyStatusResponseWordCharacterCount
 from .deidentify_string_response import DeidentifyStringResponse
 from .detect_data_accuracy import DetectDataAccuracy
 from .detect_data_entities import DetectDataEntities
@@ -116,6 +117,7 @@ __all__ = [
     "DeidentifyStatusResponse",
     "DeidentifyStatusResponseOutputType",
     "DeidentifyStatusResponseStatus",
+    "DeidentifyStatusResponseWordCharacterCount",
     "DeidentifyStringResponse",
     "DetectDataAccuracy",
     "DetectDataEntities",
