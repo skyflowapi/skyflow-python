@@ -55,8 +55,14 @@ class QueryClient:
         Examples
         --------
         from skyflow import Skyflow
-        client = Skyflow(token="YOUR_TOKEN", )
-        client.query.query_service_execute_query(vault_id='vaultID', query='select * from opportunities where id="01010000ade21cded569d43944544ec6"', )
+
+        client = Skyflow(
+            token="YOUR_TOKEN",
+        )
+        client.query.query_service_execute_query(
+            vault_id="vaultID",
+            query='select * from opportunities where id="01010000ade21cded569d43944544ec6"',
+        )
         """
         _response = self._raw_client.query_service_execute_query(vault_id, query=query, request_options=request_options)
         return _response.data
@@ -105,11 +111,22 @@ class AsyncQueryClient:
 
         Examples
         --------
-        from skyflow import AsyncSkyflow
         import asyncio
-        client = AsyncSkyflow(token="YOUR_TOKEN", )
+
+        from skyflow import AsyncSkyflow
+
+        client = AsyncSkyflow(
+            token="YOUR_TOKEN",
+        )
+
+
         async def main() -> None:
-            await client.query.query_service_execute_query(vault_id='vaultID', query='select * from opportunities where id="01010000ade21cded569d43944544ec6"', )
+            await client.query.query_service_execute_query(
+                vault_id="vaultID",
+                query='select * from opportunities where id="01010000ade21cded569d43944544ec6"',
+            )
+
+
         asyncio.run(main())
         """
         _response = await self._raw_client.query_service_execute_query(

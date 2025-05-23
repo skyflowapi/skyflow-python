@@ -3,10 +3,13 @@
 import typing
 
 import pydantic
+import typing_extensions
 from ..core.pydantic_utilities import IS_PYDANTIC_V2, UniversalBaseModel
+from ..core.serialization import FieldMetadata
 from .deidentify_file_output import DeidentifyFileOutput
 from .deidentify_status_response_output_type import DeidentifyStatusResponseOutputType
 from .deidentify_status_response_status import DeidentifyStatusResponseStatus
+from .deidentify_status_response_word_character_count import DeidentifyStatusResponseWordCharacterCount
 
 
 class DeidentifyStatusResponse(UniversalBaseModel):
@@ -24,7 +27,9 @@ class DeidentifyStatusResponse(UniversalBaseModel):
     How the input file was specified.
     """
 
-    output_type: DeidentifyStatusResponseOutputType = pydantic.Field()
+    output_type: typing_extensions.Annotated[
+        typing.Optional[DeidentifyStatusResponseOutputType], FieldMetadata(alias="outputType")
+    ] = pydantic.Field(default=None)
     """
     How the output file is specified.
     """
@@ -34,22 +39,19 @@ class DeidentifyStatusResponse(UniversalBaseModel):
     Status details about the detect run.
     """
 
-    word_count: typing.Optional[int] = pydantic.Field(default=None)
+    word_character_count: typing_extensions.Annotated[
+        typing.Optional[DeidentifyStatusResponseWordCharacterCount], FieldMetadata(alias="wordCharacterCount")
+    ] = pydantic.Field(default=None)
     """
-    Number of words in the processed text.
-    """
-
-    character_count: typing.Optional[int] = pydantic.Field(default=None)
-    """
-    Number of characters in the processed text.
+    Word and character count in the processed text.
     """
 
-    size: typing.Optional[int] = pydantic.Field(default=None)
+    size: typing.Optional[float] = pydantic.Field(default=None)
     """
     Size of the processed text in kilobytes (KB).
     """
 
-    duration: typing.Optional[int] = pydantic.Field(default=None)
+    duration: typing.Optional[float] = pydantic.Field(default=None)
     """
     Duration of the processed audio in seconds.
     """

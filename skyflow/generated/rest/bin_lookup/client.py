@@ -63,8 +63,13 @@ class BinLookupClient:
         Examples
         --------
         from skyflow import Skyflow
-        client = Skyflow(token="YOUR_TOKEN", )
-        client.bin_lookup.bin_list_service_list_cards_of_bin(bin='012345', )
+
+        client = Skyflow(
+            token="YOUR_TOKEN",
+        )
+        client.bin_lookup.bin_list_service_list_cards_of_bin(
+            bin="012345",
+        )
         """
         _response = self._raw_client.bin_list_service_list_cards_of_bin(
             fields=fields,
@@ -126,11 +131,21 @@ class AsyncBinLookupClient:
 
         Examples
         --------
-        from skyflow import AsyncSkyflow
         import asyncio
-        client = AsyncSkyflow(token="YOUR_TOKEN", )
+
+        from skyflow import AsyncSkyflow
+
+        client = AsyncSkyflow(
+            token="YOUR_TOKEN",
+        )
+
+
         async def main() -> None:
-            await client.bin_lookup.bin_list_service_list_cards_of_bin(bin='012345', )
+            await client.bin_lookup.bin_list_service_list_cards_of_bin(
+                bin="012345",
+            )
+
+
         asyncio.run(main())
         """
         _response = await self._raw_client.bin_list_service_list_cards_of_bin(

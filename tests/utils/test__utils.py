@@ -7,12 +7,13 @@ from urllib.parse import quote
 from requests import PreparedRequest
 from requests.models import HTTPError
 from skyflow.error import SkyflowError
+from skyflow.generated.rest import ErrorResponse
 from skyflow.utils import get_credentials, SkyflowMessages, get_vault_url, construct_invoke_connection_request, \
     parse_insert_response, parse_update_record_response, parse_delete_response, parse_get_response, \
     parse_detokenize_response, parse_tokenize_response, parse_query_response, parse_invoke_connection_response, \
     handle_exception, validate_api_key, encode_column_values, parse_deidentify_text_response, \
     parse_reidentify_text_response, convert_detected_entity_to_entity_info
-from skyflow.utils._utils import parse_path_params, to_lowercase_keys, get_metrics
+from skyflow.utils._utils import parse_path_params, to_lowercase_keys, get_metrics, handle_json_error
 from skyflow.utils.enums import EnvUrls, Env, ContentType
 from skyflow.vault.connection import InvokeConnectionResponse
 from skyflow.vault.data import InsertResponse, DeleteResponse, GetResponse, QueryResponse
@@ -66,6 +67,65 @@ class TestUtils(unittest.TestCase):
         with self.assertRaises(SkyflowError) as context:
             url = get_vault_url(valid_cluster_id, valid_env, valid_vault_id)
         self.assertEqual(context.exception.message, SkyflowMessages.Error.INVALID_ENV.value.format(valid_vault_id))
+
+    @patch("skyflow.utils._utils.log_and_reject_error")
+    def test_handle_json_error_with_dict_data(self, mock_log_and_reject_error):
+        """Test handling JSON error when data is already a dict."""
+        error_dict = {
+            "error": {
+                "message": "Dict error message",
+                "http_code": 400,
+                "http_status": "Bad Request",
+                "grpc_code": 3,
+                "details": ["detail1"]
+            }
+        }
+
+        mock_error = Mock()
+        mock_logger = Mock()
+        request_id = "test-request-id"
+
+        handle_json_error(mock_error, error_dict, request_id, mock_logger)
+
+        mock_log_and_reject_error.assert_called_once_with(
+            "Dict error message",
+            400,
+            request_id,
+            "Bad Request",
+            3,
+            ["detail1"],
+            logger=mock_logger
+        )
+
+    @patch("skyflow.utils._utils.log_and_reject_error")
+    def test_handle_json_error_with_error_response_object(self, mock_log_and_reject_error):
+        """Test handling JSON error when data is an ErrorResponse object."""
+        mock_error_response = Mock(spec=ErrorResponse)
+        mock_error_response.dict.return_value = {
+            "error": {
+                "message": "ErrorResponse message",
+                "http_code": 403,
+                "http_status": "Forbidden",
+                "grpc_code": 7,
+                "details": ["detail2"]
+            }
+        }
+
+        mock_error = Mock()
+        mock_logger = Mock()
+        request_id = "test-request-id-2"
+
+        handle_json_error(mock_error, mock_error_response, request_id, mock_logger)
+
+        mock_log_and_reject_error.assert_called_once_with(
+            "ErrorResponse message",
+            403,
+            request_id,
+            "Forbidden",
+            7,
+            ["detail2"],
+            logger=mock_logger
+        )
 
     def test_parse_path_params(self):
         url = "https://example.com/{param1}/{param2}"

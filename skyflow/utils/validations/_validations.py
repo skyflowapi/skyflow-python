@@ -1,10 +1,14 @@
 import json
+import os
+from skyflow.generated.rest import TokenType
 from skyflow.service_account import is_expired
-from skyflow.utils.enums import LogLevel, Env, RedactionType, TokenMode
+from skyflow.utils.enums import LogLevel, Env, RedactionType, TokenMode, DetectEntities, DetectOutputTranscriptions, \
+    MaskingMethod
 from skyflow.error import SkyflowError
 from skyflow.utils import SkyflowMessages
 from skyflow.utils.logger import log_info, log_error_log
-from skyflow.vault.detect import DeidentifyTextRequest, ReidentifyTextRequest, TokenFormat, Transformations
+from skyflow.vault.detect import DeidentifyTextRequest, ReidentifyTextRequest, TokenFormat, Transformations, \
+    GetDetectRunRequest, Bleep, DeidentifyFileRequest
 
 valid_vault_config_keys = ["vault_id", "cluster_id", "credentials", "env"]
 valid_connection_config_keys = ["connection_id", "connection_url", "credentials"]
@@ -253,6 +257,106 @@ def validate_update_connection_config(logger, config):
 
     return True
 
+def validate_deidentify_file_request(logger, request: DeidentifyFileRequest):
+    if not hasattr(request, 'file') or request.file is None:
+        raise SkyflowError(SkyflowMessages.Error.INVALID_FILE_INPUT.value, invalid_input_error_code)
+
+    # Optional: entities
+    if hasattr(request, 'entities') and request.entities is not None:
+        if not isinstance(request.entities, list):
+            raise SkyflowError(SkyflowMessages.Error.INVALID_DETECT_ENTITIES_TYPE.value, invalid_input_error_code)
+
+        if not all(isinstance(entity, DetectEntities) for entity in request.entities):
+            raise SkyflowError(SkyflowMessages.Error.INVALID_DETECT_ENTITIES_TYPE.value, invalid_input_error_code)
+
+    # Optional: allow_regex_list
+    if hasattr(request, 'allow_regex_list') and request.allow_regex_list is not None:
+        if not isinstance(request.allow_regex_list, list) or not all(isinstance(x, str) for x in request.allow_regex_list):
+            raise SkyflowError(SkyflowMessages.Error.INVALID_ALLOW_REGEX_LIST.value, invalid_input_error_code)
+
+    # Optional: restrict_regex_list
+    if hasattr(request, 'restrict_regex_list') and request.restrict_regex_list is not None:
+        if not isinstance(request.restrict_regex_list, list) or not all(isinstance(x, str) for x in request.restrict_regex_list):
+            raise SkyflowError(SkyflowMessages.Error.INVALID_RESTRICT_REGEX_LIST.value, invalid_input_error_code)
+
+    # Optional: token_format
+    if request.token_format is not None and not isinstance(request.token_format, TokenFormat):
+        raise SkyflowError(SkyflowMessages.Error.INVALID_TOKEN_FORMAT.value, invalid_input_error_code)
+
+    # Optional: transformations
+    if request.transformations is not None and not isinstance(request.transformations, Transformations):
+        raise SkyflowError(SkyflowMessages.Error.INVALID_TRANSFORMATIONS.value, invalid_input_error_code)
+
+    # Optional: output_processed_image
+    if hasattr(request, 'output_processed_image') and request.output_processed_image is not None:
+        if not isinstance(request.output_processed_image, bool):
+            raise SkyflowError(SkyflowMessages.Error.INVALID_OUTPUT_PROCESSED_IMAGE.value, invalid_input_error_code)
+
+    # Optional: output_ocr_text
+    if hasattr(request, 'output_ocr_text') and request.output_ocr_text is not None:
+        if not isinstance(request.output_ocr_text, bool):
+            raise SkyflowError(SkyflowMessages.Error.INVALID_OUTPUT_OCR_TEXT.value, invalid_input_error_code)
+
+    # Optional: masking_method
+        # Optional: masking_method
+    if hasattr(request, 'masking_method') and request.masking_method is not None:
+        if not isinstance(request.masking_method, MaskingMethod):
+            raise SkyflowError(SkyflowMessages.Error.INVALID_MASKING_METHOD.value, invalid_input_error_code)
+
+    # Optional: pixel_density
+    if hasattr(request, 'pixel_density') and request.pixel_density is not None:
+        if not isinstance(request.pixel_density, (int, float)):
+            raise SkyflowError(SkyflowMessages.Error.INVALID_PIXEL_DENSITY.value, invalid_input_error_code)
+
+    # Optional: max_resolution
+    if hasattr(request, 'max_resolution') and request.max_resolution is not None:
+        if not isinstance(request.max_resolution, (int, float)):
+            raise SkyflowError(SkyflowMessages.Error.INVALID_MAXIMUM_RESOLUTION.value, invalid_input_error_code)
+
+    # Optional: output_processed_audio
+    if hasattr(request, 'output_processed_audio') and request.output_processed_audio is not None:
+        if not isinstance(request.output_processed_audio, bool):
+            raise SkyflowError(SkyflowMessages.Error.INVALID_OUTPUT_PROCESSED_AUDIO.value, invalid_input_error_code)
+
+    # Optional: output_transcription
+    if hasattr(request, 'output_transcription') and request.output_transcription is not None:
+        if not isinstance(request.output_transcription, DetectOutputTranscriptions):
+            raise SkyflowError(SkyflowMessages.Error.INVALID_OUTPUT_TRANSCRIPTION.value, invalid_input_error_code)
+
+    # Optional: bleep
+    if hasattr(request, 'bleep') and request.bleep is not None:
+        if not isinstance(request.bleep, Bleep):
+            raise SkyflowError(SkyflowMessages.Error.INVALID_BLEEP_TYPE.value, invalid_input_error_code)
+            
+        # Validate gain
+        if request.bleep.gain is not None and not isinstance(request.bleep.gain, (int, float)):
+            raise SkyflowError(SkyflowMessages.Error.INVALID_BLEEP_GAIN.value, invalid_input_error_code)
+            
+        # Validate frequency
+        if request.bleep.frequency is not None and not isinstance(request.bleep.frequency, (int, float)):
+            raise SkyflowError(SkyflowMessages.Error.INVALID_BLEEP_FREQUENCY.value, invalid_input_error_code)
+            
+        # Validate start_padding
+        if request.bleep.start_padding is not None and not isinstance(request.bleep.start_padding, (int, float)):
+            raise SkyflowError(SkyflowMessages.Error.INVALID_BLEEP_START_PADDING.value, invalid_input_error_code)
+            
+        # Validate stop_padding
+        if request.bleep.stop_padding is not None and not isinstance(request.bleep.stop_padding, (int, float)):
+            raise SkyflowError(SkyflowMessages.Error.INVALID_BLEEP_STOP_PADDING.value, invalid_input_error_code)
+
+    # Optional: output_directory
+    if hasattr(request, 'output_directory') and request.output_directory is not None:
+        if not isinstance(request.output_directory, str):
+            raise SkyflowError(SkyflowMessages.Error.INVALID_OUTPUT_DIRECTORY_VALUE.value, invalid_input_error_code)
+        if not os.path.isdir(request.output_directory):
+            raise SkyflowError(SkyflowMessages.Error.INVALID_OUTPUT_DIRECTORY_VALUE.value, invalid_input_error_code)
+
+    # Optional: wait_time
+    if hasattr(request, 'wait_time') and request.wait_time is not None:
+        if not isinstance(request.wait_time, (int, float)):
+            raise SkyflowError(SkyflowMessages.Error.INVALID_WAIT_TIME.value, invalid_input_error_code)
+        if request.wait_time > 64:
+            raise SkyflowError(SkyflowMessages.Error.WAIT_TIME_GREATER_THEN_64.value, invalid_input_error_code)
 
 def validate_insert_request(logger, request):
     if not isinstance(request.table_name, str):
@@ -613,3 +717,8 @@ def validate_reidentify_text_request(self, request: ReidentifyTextRequest):
     # Validate plain_text_entities if present
     if request.plain_text_entities is not None and not isinstance(request.plain_text_entities, list):
         raise SkyflowError(SkyflowMessages.Error.INVALID_PLAIN_TEXT_ENTITIES_IN_REIDENTIFY.value, invalid_input_error_code)
+
+def validate_get_detect_run_request(self, request: GetDetectRunRequest):
+    if not request.run_id or not isinstance(request.run_id, str) or not request.run_id.strip():
+        raise SkyflowError(SkyflowMessages.Error.INVALID_RUN_ID.value, invalid_input_error_code)
+

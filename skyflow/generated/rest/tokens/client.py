@@ -65,10 +65,25 @@ class TokensClient:
 
         Examples
         --------
-        from skyflow import Skyflow
-        from skyflow import V1DetokenizeRecordRequest
-        client = Skyflow(token="YOUR_TOKEN", )
-        client.tokens.record_service_detokenize(vault_id='vaultID', detokenization_parameters=[V1DetokenizeRecordRequest(token='afbd1074-51c1-4a16-9eee-e2c0ecb52125', redaction="PLAIN_TEXT", ), V1DetokenizeRecordRequest(token='05383487-fcae-42e5-a48e-5bd62a51af12', redaction="DEFAULT", )], download_url=False, )
+        from skyflow import Skyflow, V1DetokenizeRecordRequest
+
+        client = Skyflow(
+            token="YOUR_TOKEN",
+        )
+        client.tokens.record_service_detokenize(
+            vault_id="vaultID",
+            detokenization_parameters=[
+                V1DetokenizeRecordRequest(
+                    token="afbd1074-51c1-4a16-9eee-e2c0ecb52125",
+                    redaction="PLAIN_TEXT",
+                ),
+                V1DetokenizeRecordRequest(
+                    token="05383487-fcae-42e5-a48e-5bd62a51af12",
+                    redaction="DEFAULT",
+                ),
+            ],
+            download_url=False,
+        )
         """
         _response = self._raw_client.record_service_detokenize(
             vault_id,
@@ -108,8 +123,13 @@ class TokensClient:
         Examples
         --------
         from skyflow import Skyflow
-        client = Skyflow(token="YOUR_TOKEN", )
-        client.tokens.record_service_tokenize(vault_id='vaultID', )
+
+        client = Skyflow(
+            token="YOUR_TOKEN",
+        )
+        client.tokens.record_service_tokenize(
+            vault_id="vaultID",
+        )
         """
         _response = self._raw_client.record_service_tokenize(
             vault_id, tokenization_parameters=tokenization_parameters, request_options=request_options
@@ -168,12 +188,32 @@ class AsyncTokensClient:
 
         Examples
         --------
-        from skyflow import AsyncSkyflow
-        from skyflow import V1DetokenizeRecordRequest
         import asyncio
-        client = AsyncSkyflow(token="YOUR_TOKEN", )
+
+        from skyflow import AsyncSkyflow, V1DetokenizeRecordRequest
+
+        client = AsyncSkyflow(
+            token="YOUR_TOKEN",
+        )
+
+
         async def main() -> None:
-            await client.tokens.record_service_detokenize(vault_id='vaultID', detokenization_parameters=[V1DetokenizeRecordRequest(token='afbd1074-51c1-4a16-9eee-e2c0ecb52125', redaction="PLAIN_TEXT", ), V1DetokenizeRecordRequest(token='05383487-fcae-42e5-a48e-5bd62a51af12', redaction="DEFAULT", )], download_url=False, )
+            await client.tokens.record_service_detokenize(
+                vault_id="vaultID",
+                detokenization_parameters=[
+                    V1DetokenizeRecordRequest(
+                        token="afbd1074-51c1-4a16-9eee-e2c0ecb52125",
+                        redaction="PLAIN_TEXT",
+                    ),
+                    V1DetokenizeRecordRequest(
+                        token="05383487-fcae-42e5-a48e-5bd62a51af12",
+                        redaction="DEFAULT",
+                    ),
+                ],
+                download_url=False,
+            )
+
+
         asyncio.run(main())
         """
         _response = await self._raw_client.record_service_detokenize(
@@ -213,11 +253,21 @@ class AsyncTokensClient:
 
         Examples
         --------
-        from skyflow import AsyncSkyflow
         import asyncio
-        client = AsyncSkyflow(token="YOUR_TOKEN", )
+
+        from skyflow import AsyncSkyflow
+
+        client = AsyncSkyflow(
+            token="YOUR_TOKEN",
+        )
+
+
         async def main() -> None:
-            await client.tokens.record_service_tokenize(vault_id='vaultID', )
+            await client.tokens.record_service_tokenize(
+                vault_id="vaultID",
+            )
+
+
         asyncio.run(main())
         """
         _response = await self._raw_client.record_service_tokenize(

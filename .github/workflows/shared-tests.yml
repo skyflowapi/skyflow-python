@@ -27,7 +27,7 @@ jobs:
       - name: 'Run Tests'
         run: |
           pip install -r requirements.txt
-          python -m coverage run --source=skyflow --omit=skyflow/generated/*,skyflow/utils/validations/*,skyflow/vault/data/*,skyflow/vault/tokens/*,skyflow/vault/connection/*,skyflow/error/*,skyflow/utils/enums/*,skyflow/vault/controller/_audit.py,skyflow/vault/controller/_bin_look_up.py -m unittest discover
+          python -m coverage run --source=skyflow --omit=skyflow/generated/*,skyflow/utils/validations/*,skyflow/vault/data/*,skyflow/vault/detect/*,skyflow/vault/tokens/*,skyflow/vault/connection/*,skyflow/error/*,skyflow/utils/enums/*,skyflow/vault/controller/_audit.py,skyflow/vault/controller/_bin_look_up.py -m unittest discover
 
       - name: coverage
         run: coverage xml -o test-coverage.xml
