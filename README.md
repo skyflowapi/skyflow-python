@@ -19,7 +19,7 @@ The Skyflow Python SDK is designed to help with integrating Skyflow into a Pytho
     - [Authenticate](#authenticate)
     - [Initialize the client](#initialize-the-client)
     - [Insert data into the vault](#insert-data-into-the-vault)
-- [Vault](#vault-apis)
+- [Vault](#vault)
     - [Insert data into the vault](#insert-data-into-the-vault)
     - [Detokenize](#detokenize)
     - [Tokenize](#tokenize)
@@ -30,9 +30,8 @@ The Skyflow Python SDK is designed to help with integrating Skyflow into a Pytho
         - [Redaction types](#redaction-types)
     - [Update](#update)
     - [Delete](#delete)
-    - [Invoke Connection](#invoke-connection)
     - [Query](#query)
-- [Detect](#detect-apis)
+- [Detect](#detect)
     - [Deidentify Text](#deidentify-text)
     - [Reidentify Text](#reidentify-text)
     - [Deidentify File](#deidentify-file)
@@ -1698,13 +1697,13 @@ try:
         token_format = TokenFormat(       # Specify the token format for deidentified entities
             default=TokenType.VAULT_TOKEN,
         ),
-        # transformations=Transformations(  # Specify custom transformations for entities
-        #     shift_dates={
-        #         "max_days": 30,
-        #         "min_days": 10,
-        #         "entities": [DetectEntities.DOB]
-        #     }
-        # ),
+        transformations=Transformations(  # Specify custom transformations for entities
+            shift_dates={
+                "max_days": 30,
+                "min_days": 10,
+                "entities": [DetectEntities.DOB]
+            }
+        ),
         allow_regex_list=["<REGEX_PATTERN>"],  # Optional regex patterns to allow
         restrict_regex_list=["<REGEX_PATTERN>"]  # Optional regex patterns to restrict
     )
@@ -1755,13 +1754,13 @@ try:
         token_format = TokenFormat(       # Specify the token format for deidentified entities
             default=TokenType.VAULT_TOKEN,
         ),
-        # transformations=Transformations(  # Specify custom transformations for entities
-        #     shift_dates={
-        #         "max_days": 30,
-        #         "min_days": 30,
-        #         "entities": [DetectEntities.DOB]
-        #     }
-        # )
+        transformations=Transformations(  # Specify custom transformations for entities
+            shift_dates={
+                "max_days": 30,
+                "min_days": 30,
+                "entities": [DetectEntities.DOB]
+            }
+        )
     )
 
     # Step 2: Call deidentify_text
@@ -1826,11 +1825,9 @@ try:
     # Step 1: Create request to reidentify
     request = ReidentifyTextRequest(
         text="<YOUR_REDACTED_TEXT>",  # Text containing tokens to reidentify
-        format=ReidentifyFormat(
-            redacted=["<ENTITY_TYPE>"],  # Entities to show redacted
-            masked=["<ENTITY_TYPE>"],    # Entities to show masked
-            plaintext=["<ENTITY_TYPE>"]  # Entities to show as plain text
-        )
+        redacted_entities=["<ENTITY_TYPE>"],  # Entities to show redacted
+        masked_entities=["<ENTITY_TYPE>"],    # Entities to show masked
+        plain_text_entities=["<ENTITY_TYPE>"]  # Entities to show as plain text
     )
     
     # Step 2: Call reidentify_text
@@ -1872,11 +1869,6 @@ try:
     # Step 1: Create request with deidentified text
     request = ReidentifyTextRequest(
         text="My SSN is [SSN_VqLazzA] and my card is [CREDIT_CARD_54lAgtk].",
-        # format=ReidentifyFormat(
-        #     redacted=[DetectEntities.SSN],           # Show SSN redacted
-        #     masked=[DetectEntities.CREDIT_CARD],     # Show credit card masked
-        #     plaintext=[DetectEntities.DOB]           # Show DOB as plain text
-        # )
     )
     
     # Step 2: Call reidentify_text
