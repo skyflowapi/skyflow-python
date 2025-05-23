@@ -8,6 +8,7 @@ from skyflow.utils.validations import validate_vault_config, validate_connection
 from skyflow.vault.client.client import VaultClient
 from skyflow.vault.controller import Vault
 from skyflow.vault.controller import Connection
+from skyflow.vault.controller import Detect
 
 class Skyflow:
     def __init__(self, builder):
@@ -65,11 +66,15 @@ class Skyflow:
 
     def vault(self, vault_id = None) -> Vault:
         vault_config = self.__builder.get_vault_config(vault_id)
-        return vault_config.get("controller")
+        return vault_config.get("vault_controller")
 
     def connection(self, connection_id = None) -> Connection:
         connection_config = self.__builder.get_connection_config(connection_id)
         return connection_config.get("controller")
+    
+    def detect(self, vault_id = None) -> Detect:
+        vault_config = self.__builder.get_vault_config(vault_id)
+        return vault_config.get("detect_controller")
 
     class Builder:
         def __init__(self):
@@ -182,9 +187,11 @@ class Skyflow:
             vault_client = VaultClient(config)
             self.__vault_configs[vault_id] = {
                 "vault_client": vault_client,
-                "controller": Vault(vault_client)
+                "vault_controller": Vault(vault_client),
+                "detect_controller": Detect(vault_client)
             }
             log_info(SkyflowMessages.Info.VAULT_CONTROLLER_INITIALIZED.value.format(config.get("vault_id")), self.__logger)
+            log_info(SkyflowMessages.Info.DETECT_CONTROLLER_INITIALIZED.value.format(config.get("vault_id")), self.__logger)
 
         def __add_connection_config(self, config):
             validate_connection_config(self.__logger, config)

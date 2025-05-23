@@ -94,9 +94,9 @@ class RawAuthenticationClient:
                 raise BadRequestError(
                     headers=dict(_response.headers),
                     body=typing.cast(
-                        typing.Dict[str, typing.Optional[typing.Any]],
+                        typing.Optional[typing.Any],
                         parse_obj_as(
-                            type_=typing.Dict[str, typing.Optional[typing.Any]],  # type: ignore
+                            type_=typing.Optional[typing.Any],  # type: ignore
                             object_=_response.json(),
                         ),
                     ),
@@ -105,9 +105,9 @@ class RawAuthenticationClient:
                 raise UnauthorizedError(
                     headers=dict(_response.headers),
                     body=typing.cast(
-                        typing.Dict[str, typing.Optional[typing.Any]],
+                        typing.Optional[typing.Any],
                         parse_obj_as(
-                            type_=typing.Dict[str, typing.Optional[typing.Any]],  # type: ignore
+                            type_=typing.Optional[typing.Any],  # type: ignore
                             object_=_response.json(),
                         ),
                     ),
@@ -116,9 +116,9 @@ class RawAuthenticationClient:
                 raise NotFoundError(
                     headers=dict(_response.headers),
                     body=typing.cast(
-                        typing.Dict[str, typing.Optional[typing.Any]],
+                        typing.Optional[typing.Any],
                         parse_obj_as(
-                            type_=typing.Dict[str, typing.Optional[typing.Any]],  # type: ignore
+                            type_=typing.Optional[typing.Any],  # type: ignore
                             object_=_response.json(),
                         ),
                     ),
@@ -206,9 +206,9 @@ class AsyncRawAuthenticationClient:
                 raise BadRequestError(
                     headers=dict(_response.headers),
                     body=typing.cast(
-                        typing.Dict[str, typing.Optional[typing.Any]],
+                        typing.Optional[typing.Any],
                         parse_obj_as(
-                            type_=typing.Dict[str, typing.Optional[typing.Any]],  # type: ignore
+                            type_=typing.Optional[typing.Any],  # type: ignore
                             object_=_response.json(),
                         ),
                     ),
@@ -217,9 +217,9 @@ class AsyncRawAuthenticationClient:
                 raise UnauthorizedError(
                     headers=dict(_response.headers),
                     body=typing.cast(
-                        typing.Dict[str, typing.Optional[typing.Any]],
+                        typing.Optional[typing.Any],
                         parse_obj_as(
-                            type_=typing.Dict[str, typing.Optional[typing.Any]],  # type: ignore
+                            type_=typing.Optional[typing.Any],  # type: ignore
                             object_=_response.json(),
                         ),
                     ),
@@ -228,9 +228,9 @@ class AsyncRawAuthenticationClient:
                 raise NotFoundError(
                     headers=dict(_response.headers),
                     body=typing.cast(
-                        typing.Dict[str, typing.Optional[typing.Any]],
+                        typing.Optional[typing.Any],
                         parse_obj_as(
-                            type_=typing.Dict[str, typing.Optional[typing.Any]],  # type: ignore
+                            type_=typing.Optional[typing.Any],  # type: ignore
                             object_=_response.json(),
                         ),
                     ),

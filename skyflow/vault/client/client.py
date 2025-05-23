@@ -42,6 +42,12 @@ class VaultClient:
 
     def get_query_api(self):
         return self.__api_client.query
+    
+    def get_detect_text_api(self):
+        return self.__api_client.strings
+    
+    def get_detect_file_api(self):
+        return self.__api_client.files
 
     def get_vault_id(self):
         return self.__config.get("vault_id")
