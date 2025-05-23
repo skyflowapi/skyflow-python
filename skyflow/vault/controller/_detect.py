@@ -61,11 +61,11 @@ class Detect:
         return filename.split('.')[-1].lower() if '.' in filename else ''
 
     def __poll_for_processed_file(self, run_id, max_wait_time=64):
-        files_api = self.__vault_client.get_detect_file_api()
+        files_api = self.__vault_client.get_detect_file_api().with_raw_response
         current_wait_time = 1  # Start with 1 second
         try:
             while True:
-                response = files_api.get_run(run_id, vault_id=self.__vault_client.get_vault_id(), request_options=self.__get_headers())
+                response = files_api.get_run(run_id, vault_id=self.__vault_client.get_vault_id(), request_options=self.__get_headers()).data
                 status = response.status
                 if status == 'IN_PROGRESS':
                     if current_wait_time >= max_wait_time:
@@ -79,12 +79,8 @@ class Detect:
                             wait_time = next_wait_time
                             current_wait_time = next_wait_time
                         time.sleep(wait_time)
-                elif status == 'SUCCESS':
+                elif status == 'SUCCESS' or status == 'FAILED':
                     return response
-                elif status == 'FAILED':
-                    raise SkyflowError(SkyflowMessages.Error.INTERNAL_SERVER_ERROR.value.format(response.message), 500)
-                else:
-                    raise SkyflowError(SkyflowMessages.Error.GET_DETECT_RUN_FAILED.value, 500)
         except Exception as e:
             raise e
 

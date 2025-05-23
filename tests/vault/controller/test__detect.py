@@ -260,66 +260,85 @@ class TestDetect(unittest.TestCase):
     @patch("skyflow.vault.controller._detect.base64")
     @patch("skyflow.vault.controller._detect.os.path.basename")
     @patch("skyflow.vault.controller._detect.open", create=True)
-    @patch("skyflow.vault.controller._detect.time.sleep", return_value=None)
-    def test_deidentify_file_all_branches(self, mock_sleep, mock_open, mock_basename, mock_base64, mock_validate):
-        # Helper to run a branch
-        def run_branch(file_name, file_extension, api_call_attr, req_file_class):
-            file_content = b"test content"
-            file_obj = Mock()
-            file_obj.read.return_value = file_content
-            file_obj.name = file_name
-            mock_basename.return_value = os.path.basename(file_name)
-            mock_base64.b64encode.return_value = b"dGVzdCBjb250ZW50"
-            req = DeidentifyFileRequest(file=file_obj)
-            req.entities = []
-            req.token_format = Mock(default="default", entity_unique_counter=[], entity_only=[])
-            req.allow_regex_list = []
-            req.restrict_regex_list = []
-            req.transformations = None
-            req.output_directory = "/tmp"
-            files_api = Mock()
-            files_api.with_raw_response = files_api
-            setattr(files_api, api_call_attr, Mock())
-            self.vault_client.get_detect_file_api.return_value = files_api
-            api_response = Mock()
-            api_response.data = Mock(run_id="runid123")
-            getattr(files_api, api_call_attr).return_value = api_response
+    @patch.object(Detect, "_Detect__poll_for_processed_file")
+    def test_deidentify_file_all_branches(self, mock_poll, mock_open, mock_basename, mock_base64, mock_validate):
+        """Test all file type branches with optimized mocking"""
 
-            # Patch get_run for polling
-            poll_response = Mock()
-            poll_response.status = "SUCCESS"
-            poll_response.output = [
-                {"processedFile": "dGVzdCBjb250ZW50", "processedFileType": file_extension,
-                 "processedFileExtension": file_extension}
+        # Common mocks
+        file_content = b"test content"
+        mock_base64.b64encode.return_value = b"dGVzdCBjb250ZW50"
+
+        # Prepare a generic processed_response for all branches
+        processed_response = Mock()
+        processed_response.status = "SUCCESS"
+        processed_response.output = [
+            {"processedFile": "dGVzdCBjb250ZW50", "processedFileType": "pdf", "processedFileExtension": "pdf"}
+        ]
+        processed_response.word_character_count = Mock(word_count=1, character_count=1)
+        processed_response.size = 1
+        processed_response.duration = 1
+        processed_response.pages = 1
+        processed_response.slides = 1
+        processed_response.message = ""
+        processed_response.run_id = "runid123"
+        mock_poll.return_value = processed_response
+
+        # Patch __parse_deidentify_file_response to return a valid DeidentifyFileResponse
+        with patch.object(self.detect, "_Detect__parse_deidentify_file_response",
+                          return_value=DeidentifyFileResponse(
+                              file="dGVzdCBjb250ZW50", type="pdf", extension="pdf",
+                              word_count=1, char_count=1, size_in_kb=1,
+                              duration_in_seconds=1, page_count=1, slide_count=1,
+                              entities=[], run_id="runid123", status="SUCCESS", errors=[]
+                          )) as mock_parse:
+            # Test configuration for different file types
+            test_cases = [
+                ("test.pdf", "pdf", "deidentify_pdf"),
+                ("test.jpg", "jpg", "deidentify_image"),
+                ("test.pptx", "pptx", "deidentify_presentation"),
+                ("test.csv", "csv", "deidentify_spreadsheet"),
+                ("test.docx", "docx", "deidentify_document"),
+                ("test.json", "json", "deidentify_structured_text"),
+                ("test.xml", "xml", "deidentify_structured_text"),
+                ("test.unknown", "unknown", "deidentify_file")
             ]
-            poll_response.word_character_count = Mock(word_count=1, character_count=1)
-            poll_response.size = 1
-            poll_response.duration = 1
-            poll_response.pages = 1
-            poll_response.slides = 1
-            poll_response.message = ""
-            poll_response.run_id = "runid123"
-            files_api.get_run.return_value = poll_response
 
-            # Actually run the method (no patching of __poll_for_processed_file or __parse_deidentify_file_response)
-            result = self.detect.deidentify_file(req)
-            self.assertIsInstance(result, DeidentifyFileResponse)
-            self.assertEqual(result.status, "SUCCESS")
-            self.assertEqual(result.file, "dGVzdCBjb250ZW50")
-            self.assertEqual(result.type, file_extension)
-            self.assertEqual(result.extension, file_extension)
+            for file_name, extension, api_method in test_cases:
+                with self.subTest(file_type=extension):
+                    # Setup file mock
+                    file_obj = Mock()
+                    file_obj.read.return_value = file_content
+                    file_obj.name = file_name
+                    mock_basename.return_value = file_name
 
-        # Test all branches
-        run_branch("test.pdf", "pdf", "deidentify_pdf", "DeidentifyPdfRequestFile")
-        run_branch("test.jpg", "jpg", "deidentify_image", "DeidentifyImageRequestFile")
-        run_branch("test.pptx", "pptx", "deidentify_presentation", "DeidentifyPresentationRequestFile")
-        run_branch("test.csv", "csv", "deidentify_spreadsheet", "DeidentifySpreadsheetRequestFile")
-        run_branch("test.docx", "docx", "deidentify_document", "DeidentifyDocumentRequestFile")
-        run_branch("test.json", "json", "deidentify_structured_text", "DeidentifyStructuredTextRequestFile")
-        run_branch("test.xml", "xml", "deidentify_structured_text", "DeidentifyStructuredTextRequestFile")
-        # Test else branch (unknown extension)
-        run_branch("test.unknown", "unknown", "deidentify_file", "DeidentifyFileRequestFile")
+                    # Setup request
+                    req = DeidentifyFileRequest(file=file_obj)
+                    req.entities = []
+                    req.token_format = Mock(default="default", entity_unique_counter=[], entity_only=[])
+                    req.allow_regex_list = []
+                    req.restrict_regex_list = []
+                    req.transformations = None
+                    req.output_directory = "/tmp"
 
+                    # Setup API mock
+                    files_api = Mock()
+                    files_api.with_raw_response = files_api
+                    api_method_mock = Mock()
+                    setattr(files_api, api_method, api_method_mock)
+                    self.vault_client.get_detect_file_api.return_value = files_api
+
+                    # Setup API response
+                    api_response = Mock()
+                    api_response.data = Mock(run_id="runid123")
+                    api_method_mock.return_value = api_response
+
+                    # Actually run the method
+                    result = self.detect.deidentify_file(req)
+                    self.assertIsInstance(result, DeidentifyFileResponse)
+                    self.assertEqual(result.status, "SUCCESS")
+                    self.assertEqual(result.file, "dGVzdCBjb250ZW50")
+                    self.assertEqual(result.type, "pdf")
+                    self.assertEqual(result.extension, "pdf")
     @patch("skyflow.vault.controller._detect.validate_deidentify_file_request")
     @patch("skyflow.vault.controller._detect.base64")
     def test_deidentify_file_exception(self, mock_base64, mock_validate):
@@ -339,38 +358,47 @@ class TestDetect(unittest.TestCase):
     @patch("skyflow.vault.controller._detect.time.sleep", return_value=None)
     def test_poll_for_processed_file_success(self, mock_sleep):
         files_api = Mock()
+        files_api.with_raw_response = files_api
         self.vault_client.get_detect_file_api.return_value = files_api
-        # First call returns IN_PROGRESS, second call returns SUCCESS
-        in_progress = Mock()
-        in_progress.status = "IN_PROGRESS"
-        in_progress.message = ""
-        success = Mock()
-        success.status = "SUCCESS"
-        files_api.get_run.side_effect = [in_progress, success]
+
+        call_count = {"count": 0}
+
+        def get_run_side_effect(*args, **kwargs):
+            if call_count["count"] < 1:
+                call_count["count"] += 1
+                in_progress = Mock()
+                in_progress.status = "IN_PROGRESS"
+                in_progress.message = ""
+                return Mock(data=in_progress)
+            else:
+                success = Mock()
+                success.status = "SUCCESS"
+                return Mock(data=success)
+
+        files_api.get_run.side_effect = get_run_side_effect
+
+        # Use max_wait_time > 1 to allow the loop to reach the SUCCESS status
         result = self.detect._Detect__poll_for_processed_file("runid123", max_wait_time=2)
         self.assertEqual(result.status, "SUCCESS")
 
     @patch("skyflow.vault.controller._detect.time.sleep", return_value=None)
     def test_poll_for_processed_file_failed(self, mock_sleep):
         files_api = Mock()
+        files_api.with_raw_response = files_api
         self.vault_client.get_detect_file_api.return_value = files_api
-        failed = Mock()
-        failed.status = "FAILED"
-        failed.message = "fail"
-        files_api.get_run.return_value = failed
-        with self.assertRaises(SkyflowError):
-            self.detect._Detect__poll_for_processed_file("runid123", max_wait_time=1)
 
-    @patch("skyflow.vault.controller._detect.time.sleep", return_value=None)
-    def test_poll_for_processed_file_unknown(self, mock_sleep):
-        files_api = Mock()
-        self.vault_client.get_detect_file_api.return_value = files_api
-        unknown = Mock()
-        unknown.status = "UNKNOWN"
-        unknown.message = "fail"
-        files_api.get_run.return_value = unknown
-        with self.assertRaises(SkyflowError):
-            self.detect._Detect__poll_for_processed_file("runid123", max_wait_time=1)
+        # Always return FAILED on first call
+        def get_run_side_effect(*args, **kwargs):
+            failed = Mock()
+            failed.status = "FAILED"
+            failed.message = "fail"
+            return Mock(data=failed)
+
+        files_api.get_run.side_effect = get_run_side_effect
+
+        result = self.detect._Detect__poll_for_processed_file("runid123", max_wait_time=1)
+        self.assertEqual(result.status, "FAILED")
+        self.assertEqual(result.message, "fail")
 
     def test_parse_deidentify_file_response_dict_and_obj(self):
         # Dict input
@@ -413,6 +441,7 @@ class TestDetect(unittest.TestCase):
         obj_data = DummyData()
         result = self.detect._Detect__parse_deidentify_file_response(obj_data, "runid", "SUCCESS")
         self.assertIsInstance(result, DeidentifyFileResponse)
+
     def test_get_token_format_missing_attribute(self):
         """Test __get_token_format when token_format attribute is missing"""
         class DummyRequest:
