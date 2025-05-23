@@ -68,7 +68,7 @@ def perform_file_deidentification():
             masking_method=MaskingMethod.BLACKOUT,  # Masking method for images
 
             # PDF-specific options
-            pixel_density=1.5,  # Pixel density for PDF processing
+            pixel_density=15,  # Pixel density for PDF processing
             max_resolution=2000,  # Max resolution for PDF
 
             # Audio-specific options
