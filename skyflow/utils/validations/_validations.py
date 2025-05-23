@@ -349,7 +349,7 @@ def validate_deidentify_file_request(logger, request: DeidentifyFileRequest):
         if not isinstance(request.output_directory, str):
             raise SkyflowError(SkyflowMessages.Error.INVALID_OUTPUT_DIRECTORY_VALUE.value, invalid_input_error_code)
         if not os.path.isdir(request.output_directory):
-            raise SkyflowError(SkyflowMessages.Error.INVALID_OUTPUT_DIRECTORY_VALUE.value, invalid_input_error_code)
+            raise SkyflowError(SkyflowMessages.Error.OUTPUT_DIRECTORY_NOT_FOUND.value.format(request.output_directory), invalid_input_error_code)
 
     # Optional: wait_time
     if hasattr(request, 'wait_time') and request.wait_time is not None:

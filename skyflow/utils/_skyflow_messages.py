@@ -78,6 +78,7 @@ class SkyflowMessages:
         INVALID_MAXIMUM_RESOLUTION = f"{error_prefix} Validation error. Invalid type of maximum resolution. Specify maximum resolution as a number."
         INVALID_OUTPUT_DIRECTORY_VALUE = f"{error_prefix} Validation error. Invalid type of output directory. Specify output directory as a string."
         WAIT_TIME_GREATER_THEN_64 = f"{error_prefix} Validation error. Invalid wait time. Wait time should be less than or equal to 64 seconds."
+        OUTPUT_DIRECTORY_NOT_FOUND = f"{error_prefix} Validation error. Invalid output directory. Directory {{}} not found."
 
         MISSING_TABLE_NAME_IN_INSERT = f"{error_prefix} Validation error. Table name cannot be empty in insert request. Specify a table name."
         INVALID_TABLE_NAME_IN_INSERT = f"{error_prefix} Validation error. Invalid table name in insert request. Specify a valid table name."
