@@ -487,3 +487,93 @@ class TestDetect(unittest.TestCase):
             self.assertIsInstance(args, DeidentifyFileResponse)
             self.assertEqual(args.status, 'IN_PROGRESS')
             self.assertEqual(args.run_id, run_id)
+
+    def test_get_transformations_with_shift_dates(self):
+
+        class DummyShiftDates:
+            max = 30
+            min = 10
+            entities = ["SSN"]
+
+        class DummyTransformations:
+            shift_dates = DummyShiftDates()
+
+        class DummyRequest:
+            transformations = DummyTransformations()
+
+        request = DummyRequest()
+        result = self.detect._Detect__get_transformations(request)
+
+        self.assertEqual(result, {
+            'shift_dates': {
+                'max_days': 30,
+                'min_days': 10,
+                'entity_types': ["SSN"]
+            }
+        })
+
+    @patch("skyflow.vault.controller._detect.time.sleep", return_value=None)
+    def test_poll_for_processed_file_timeout(self, mock_sleep):
+        """Test polling timeout returns IN_PROGRESS status"""
+        files_api = Mock()
+        files_api.with_raw_response = files_api
+        self.vault_client.get_detect_file_api.return_value = files_api
+
+        # Always return IN_PROGRESS
+        def get_run_side_effect(*args, **kwargs):
+            in_progress = Mock()
+            in_progress.status = "IN_PROGRESS"
+            return Mock(data=in_progress)
+
+        files_api.get_run.side_effect = get_run_side_effect
+
+        result = self.detect._Detect__poll_for_processed_file("runid123", max_wait_time=1)
+        self.assertIsInstance(result, DeidentifyFileResponse)
+        self.assertEqual(result.status, "IN_PROGRESS")
+        self.assertEqual(result.run_id, "runid123")
+
+    @patch("skyflow.vault.controller._detect.time.sleep", return_value=None)
+    def test_poll_for_processed_file_wait_time_calculation(self, mock_sleep):
+        """Test wait time calculation in polling loop"""
+        files_api = Mock()
+        files_api.with_raw_response = files_api
+        self.vault_client.get_detect_file_api.return_value = files_api
+
+        calls = []
+
+        def track_sleep(*args):
+            calls.append(args[0])  # Record wait time
+
+        mock_sleep.side_effect = track_sleep
+
+        # Return IN_PROGRESS twice then SUCCESS
+        responses = [
+            Mock(data=Mock(status="IN_PROGRESS")),
+            Mock(data=Mock(status="IN_PROGRESS")),
+            Mock(data=Mock(status="SUCCESS"))
+        ]
+        files_api.get_run.side_effect = responses
+
+        result = self.detect._Detect__poll_for_processed_file("runid123", max_wait_time=4)
+
+        self.assertEqual(calls, [2, 2])
+        self.assertEqual(result.status, "SUCCESS")
+
+
+    def test_parse_deidentify_file_response_output_conversion(self):
+        """Test output conversion in parse_deidentify_file_response"""
+
+        class OutputObj:
+            processed_file = "file123"
+            processed_file_type = "pdf"
+            processed_file_extension = "pdf"
+
+        data = Mock()
+        data.output = [OutputObj()]
+        data.word_character_count = Mock(word_count=1, character_count=1)
+
+        result = self.detect._Detect__parse_deidentify_file_response(data)
+
+        self.assertEqual(result.file, "file123")
+        self.assertEqual(result.type, "pdf")
+        self.assertEqual(result.extension, "pdf")
