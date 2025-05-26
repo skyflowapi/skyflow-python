@@ -293,9 +293,9 @@ class SkyflowMessages:
         GET_DETECT_RUN_TRIGGERED = f"{INFO}: [{error_prefix}] Get detect run triggered."
         VALIDATING_GET_DETECT_RUN_INPUT = f"{INFO}: [{error_prefix}] Validating get detect run input."
         GET_DETECT_RUN_REQUEST_RESOLVED = f"{INFO}: [{error_prefix}] Get detect run request is resolved."
-        GET_DETECT_RUN_SUCCESS = f"{INFO}: [{error_prefix}] Get detect run success." # will see for a better message
+        GET_DETECT_RUN_SUCCESS = f"{INFO}: [{error_prefix}] Get detect run success."
         
-        DETECT_REQUEST_RESOLVED = f"{INFO}: [{error_prefix}] Detect request is resolved." # Whats this for?
+        DETECT_REQUEST_RESOLVED = f"{INFO}: [{error_prefix}] Detect request is resolved."
 
     class ErrorLogs(Enum):
         VAULTID_IS_REQUIRED = f"{ERROR}: [{error_prefix}] Invalid vault config. Vault ID is required."
