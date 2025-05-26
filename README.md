@@ -19,7 +19,7 @@ The Skyflow Python SDK is designed to help with integrating Skyflow into a Pytho
     - [Authenticate](#authenticate)
     - [Initialize the client](#initialize-the-client)
     - [Insert data into the vault](#insert-data-into-the-vault)
-- [Vault](#vault-apis)
+- [Vault](#vault)
     - [Insert data into the vault](#insert-data-into-the-vault)
     - [Detokenize](#detokenize)
     - [Tokenize](#tokenize)
@@ -30,8 +30,12 @@ The Skyflow Python SDK is designed to help with integrating Skyflow into a Pytho
         - [Redaction types](#redaction-types)
     - [Update](#update)
     - [Delete](#delete)
-    - [Invoke Connection](#invoke-connection)
     - [Query](#query)
+- [Detect](#detect)
+    - [Deidentify Text](#deidentify-text)
+    - [Reidentify Text](#reidentify-text)
+    - [Deidentify File](#deidentify-file)
+    - [Get Detect Run](#get-detect-run)
 - [Connections](#connections)
     - [Invoke a connection](#invoke-a-connection)
 - [Authenticate with bearer tokens](#authenticate-with-bearer-tokens)
@@ -39,6 +43,7 @@ The Skyflow Python SDK is designed to help with integrating Skyflow into a Pytho
     - [Generate bearer tokens with context](#generate-bearer-tokens-with-context)
     - [Generate scoped bearer tokens](#generate-scoped-bearer-tokens)
     - [Generate signed data tokens](#generate-signed-data-tokens)
+    - [Bearer token expiry edge case](#bearer-token-expiry-edge-case)
 - [Logging](#logging)
 - [Reporting a Vulnerability](#reporting-a-vulnerability)
 
@@ -1668,6 +1673,479 @@ QueryResponse(
 )
 ```
 
+## Detect
+Skyflow Detect enables you to deidentify and reidentify sensitive data in text and files, supporting advanced privacy-preserving workflows. The Detect API supports the following operations:
+
+### Deidentify Text
+To deidentify text, use the `deidentify_text` method. The `DeidentifyTextRequest` class creates a deidentify text request, which includes the text to be deidentified and options for controlling the deidentification process.
+
+#### Construct a Deidentify Text request
+
+```python
+from skyflow.error import SkyflowError
+from skyflow.utils.enums import DetectEntities, TokenType
+from skyflow.vault.detect import DeidentifyTextRequest, TokenFormat, Transformations
+"""
+This example demonstrates how to deidentify text, along with corresponding DeidentifyTextRequest schema. 
+"""
+try:
+    # Initialize Skyflow client
+    # Step 1: Create request with text to deidentify
+    request = DeidentifyTextRequest(
+        text="<TEXT_TO_DEIDENTIFY>",
+        entities=[DetectEntities.SSN, DetectEntities.CREDIT_CARD],  # Entities to detect
+        token_format = TokenFormat(       # Specify the token format for deidentified entities
+            default=TokenType.VAULT_TOKEN,
+        ),
+        transformations=Transformations(  # Specify custom transformations for entities
+            shift_dates={
+                "max_days": 30,
+                "min_days": 10,
+                "entities": [DetectEntities.DOB]
+            }
+        ),
+        allow_regex_list=["<REGEX_PATTERN>"],  # Optional regex patterns to allow
+        restrict_regex_list=["<REGEX_PATTERN>"]  # Optional regex patterns to restrict
+    )
+
+    # Step 2: Call deidentify_text
+    deidentify_text_response = skyflow_client.detect('<VAULT_ID>').deidentify_text(request)
+    # Replace <VAULT_ID> with your actual Skyflow vault ID
+    
+    # Step 3: Print the deidentified text response
+    print('Response: ', deidentify_text_response)
+
+
+except SkyflowError as error:
+    # Step 4: Handle any exceptions that may occur during the insert operation
+    print('Skyflow Specific Error: ', {
+        'code': error.http_code,
+        'message': error.message,
+        'details': error.details
+    })
+except Exception as error:
+    print('Unexpected Error:', error)  # Print the stack trace for debugging purposes
+```
+
+#### An example of Deidentify Text call
+
+```python
+from skyflow.error import SkyflowError
+from skyflow.utils.enums import DetectEntities, TokenType
+from skyflow.vault.detect import DeidentifyTextRequest, TokenFormat, Transformations
+"""
+ * Skyflow Text De-identification Example
+ * 
+ * This example demonstrates how to:
+ * 1. Configure Skyflow client credentials
+ * 2. Set up vault configuration
+ * 3. Create a deidentify text request with all available options
+ * 4. Handle response and errors
+"""
+try:
+    # Initialize Skyflow Client
+    # Step 1: Create request with sample text containing sensitive data
+    request = DeidentifyTextRequest(
+        text="My SSN is 123-45-6789 and my card is 4111 1111 1111 1111.",
+        entities=[
+            DetectEntities.SSN,
+            DetectEntities.CREDIT_CARD
+        ],
+        token_format = TokenFormat(       # Specify the token format for deidentified entities
+            default=TokenType.VAULT_TOKEN,
+        ),
+        transformations=Transformations(  # Specify custom transformations for entities
+            shift_dates={
+                "max_days": 30,
+                "min_days": 30,
+                "entities": [DetectEntities.DOB]
+            }
+        )
+    )
+
+    # Step 2: Call deidentify_text
+    deidentify_text_response = skyflow_client.detect('<VAULT_ID>').deidentify_text(request)
+    # Replace <VAULT_ID> with your actual Skyflow vault ID
+    
+    # Step 3: Print the deidentified text response
+    print('Response: ', deidentify_text_response)
+
+except SkyflowError as error:
+    # Step 4: Handle any exceptions that may occur during the insert operation
+    print('Skyflow Specific Error: ', {
+        'code': error.http_code,
+        'message': error.message,
+        'details': error.details
+    })
+except Exception as error:
+    print('Unexpected Error:', error)  # Print the stack trace for debugging purposes
+```
+
+Sample Response:
+```python
+DeidentifyTextResponse(
+    processed_text='My SSN is [SSN_VqLazzA] and my card is [CREDIT_CARD_54lAgtk].',
+    entities=[
+        EntityInfo(
+            token='SSN_VqLazzA',
+            value='123-45-6789',
+            text_index=TextIndex(start=10, end=21),
+            processed_index=TextIndex(start=10, end=23),
+            entity='SSN',
+            scores={'SSN': 0.9383999705314636}
+        ),
+        EntityInfo(
+            token='CREDIT_CARD_54lAgtk',
+            value='4111 1111 1111 1111',
+            text_index=TextIndex(start=37, end=56),
+            processed_index=TextIndex(start=39, end=60),
+            entity='CREDIT_CARD',
+            scores={'CREDIT_CARD': 0.9050999879837036}
+        )
+    ],
+    word_count=9,
+    char_count=57
+)
+```
+
+### Reidentify Text
+
+To reidentify text, use the `reidentify_text` method. The `ReidentifyTextRequest` class creates a reidentify text request, which includes the redacted or deidentified text to be reidentified.
+
+#### Construct a Reidentify Text request
+
+```python
+from skyflow.error import SkyflowError
+from skyflow.vault.detect import ReidentifyTextRequest, ReidentifyFormat
+"""
+This example demonstrates how to reidentify text, along with corresponding ReidentifyTextRequest schema. 
+"""
+try:
+    # Initialize Skyflow client
+    # Step 1: Create request to reidentify
+    request = ReidentifyTextRequest(
+        text="<YOUR_REDACTED_TEXT>",  # Text containing tokens to reidentify
+        redacted_entities=["<ENTITY_TYPE>"],  # Entities to show redacted
+        masked_entities=["<ENTITY_TYPE>"],    # Entities to show masked
+        plain_text_entities=["<ENTITY_TYPE>"]  # Entities to show as plain text
+    )
+    
+    # Step 2: Call reidentify_text
+    reidentify_text_response = skyflow_client.detect('<VAULT_ID>').reidentify_text(request)
+    # Replace <VAULT_ID> with your actual Skyflow vault ID
+    
+    # Step 3: Print the reidentified text response
+    print('Response: ', reidentify_text_response)
+
+except SkyflowError as error:
+    # Step 4: Handle any exceptions that may occur during the insert operation
+    print('Skyflow Specific Error: ', {
+        'code': error.http_code,
+        'message': error.message,
+        'details': error.details
+    })
+except Exception as error:
+    print('Unexpected Error:', error)  # Print the stack trace for debugging purposes
+```
+
+#### An example for Reidentify Text call
+
+```python
+from skyflow.error import SkyflowError
+from skyflow.vault.detect import ReidentifyTextRequest, ReidentifyFormat
+from skyflow.utils.enums import DetectEntities
+"""
+ * Skyflow Text Re-identification Example
+ * 
+ * This example demonstrates how to:
+ * 1. Configure credentials
+ * 2. Set up vault configuration
+ * 3. Create a reidentify text request
+ * 4. Use all available options for reidentification
+ * 5. Handle response and errors
+"""
+try:
+    # Initialize Skyflow Client
+    # Step 1: Create request with deidentified text
+    request = ReidentifyTextRequest(
+        text="My SSN is [SSN_VqLazzA] and my card is [CREDIT_CARD_54lAgtk].",
+    )
+    
+    # Step 2: Call reidentify_text
+    reidentify_text_response = skyflow_client.detect('<VAULT_ID>').reidentify_text(request)
+    # Replace <VAULT_ID> with your actual Skyflow vault ID
+
+    # Step 3: Print the reidentified text response
+    print('Response: ', reidentify_text_response)
+
+except SkyflowError as error:
+    # Step 4: Handle any exceptions that may occur during the insert operation
+    print('Skyflow Specific Error: ', {
+        'code': error.http_code,
+        'message': error.message,
+        'details': error.details
+    })
+except Exception as error:
+    print('Unexpected Error:', error)  # Print the stack trace for debugging purposes
+```
+
+Sample Response:
+```python
+ReidentifyTextResponse(
+    processed_text='My SSN is 123-45-6789 and my card is 4111 1111 1111 1111.'
+)
+```
+
+### Deidentify File
+To deidentify files, use the `deidentify_file` method. The `DeidentifyFileRequest` class creates a deidentify file request, which includes the file to be deidentified and various configuration options.
+
+#### Construct a Deidentify File request
+```python
+from skyflow.error import SkyflowError 
+from skyflow.utils.enums import DetectEntities, MaskingMethod, DetectOutputTranscriptions
+from skyflow.vault.detect import DeidentifyFileRequest, TokenFormat, Transformations, Bleep
+"""
+This example demonstrates how to deidentify file, along with corresponding DeidentifyFileRequest schema. 
+"""
+try:
+    # Initialize Skyflow client
+    # Step 1: Open file for deidentification
+    file = open('<FILE_PATH>', 'rb')  # Open the file in read-binary mode
+    # Step 2: Create deidentify file request
+    request = DeidentifyFileRequest(
+        file=file,  # File object to deidentify
+        entities=[DetectEntities.SSN, DetectEntities.CREDIT_CARD],  # Entities to detect
+        
+        # Token format configuration
+        token_format=TokenFormat(
+            default=True,
+            vault_token=[DetectEntities.SSN]
+        ),
+
+        # Output configuration 
+        output_directory='<OUTPUT_DIRECTORY_PATH>',  # Output directory for saving the deidentified file
+        wait_time=15,  # Max wait time in seconds (max 64)
+
+        # Image-specific options
+        # output_processed_image=True,  # Include processed image
+        # output_ocr_text=True,  # Include OCR text
+        # masking_method=MaskingMethod.BLACKOUT,  # Masking method
+
+        # PDF-specific options
+        # pixel_density=1.5,  # PDF processing density
+        # max_resolution=2000,  # Max PDF resolution
+
+        # Audio-specific options
+        # output_processed_audio=True,  # Include processed audio
+        # output_transcription=DetectOutputTranscriptions.PLAINTEXT,  # Transcription type
+
+        # Audio bleep configuration
+        # bleep=Bleep(
+        #     gain=5,  # Loudness in dB
+        #     frequency=1000,  # Pitch in Hz
+        #     start_padding=0.1,  # Start padding in seconds
+        #     stop_padding=0.2  # End padding in seconds
+        # )
+    )
+
+    # Step 3: Call deidentify_file
+    deidentify_file_response = skyflow_client.detect('<VAULT_ID>').deidentify_file(request)
+    # Replace <VAULT_ID> with your actual Skyflow vault ID
+    
+    # Step 3: Print the reidentified text response
+    print('Response: ', deidentify_file_response)
+
+except SkyflowError as error:
+    # Step 4: Handle any exceptions that may occur during the insert operation
+    print('Skyflow Specific Error: ', {
+        'code': error.http_code,
+        'message': error.message,
+        'details': error.details
+    })
+except Exception as error:
+    print('Unexpected Error:', error)  # Print the stack trace for debugging purposes
+```
+
+#### An example for Deidentify File call
+
+```python
+from skyflow.error import SkyflowError
+from skyflow.utils.enums import DetectEntities, MaskingMethod, DetectOutputTranscriptions
+from skyflow.vault.detect import DeidentifyFileRequest, TokenFormat, Bleep
+"""
+ * Skyflow Deidentify File Example
+ * 
+ * This sample demonstrates how to use all available options for deidentifying files.
+ * Supported file types: images (jpg, png, etc.), pdf, audio (mp3, wav), documents, 
+ * spreadsheets, presentations, structured text.
+"""
+try:
+    # Initialize Skyflow client
+    # Step 1: Open file for deidentification
+    file = open('sensitive_document.txt', 'rb') # Open the file in read-binary mode
+    # Step 2: Create deidentify file request
+    request = DeidentifyFileRequest(
+        file=file,    # File object to deidentify
+        entities=[
+            DetectEntities.SSN,
+            DetectEntities.CREDIT_CARD
+        ],
+        # Token format configuration
+        token_format=TokenFormat(
+            default=True,
+            vault_token=[DetectEntities.SSN]
+        ),
+        output_directory="/tmp/processed",  # Output directory for saving the deidentified file
+        wait_time=30, # Max wait time in seconds (max 64)
+    )
+    
+    # Step 3: Call deidentify_file
+    deidentify_file_response = skyflow_client.detect('<VAULT_ID>').deidentify_file(request)
+    # Replace <VAULT_ID> with your actual Skyflow vault ID
+    
+    # Step 3: Print the reidentified text response
+    print('Response: ', deidentify_file_response)
+
+except SkyflowError as error:
+    # Step 4: Handle any exceptions that may occur during the insert operation
+    print('Skyflow Specific Error: ', {
+        'code': error.http_code,
+        'message': error.message,
+        'details': error.details
+    })
+except Exception as error:
+    print('Unexpected Error:', error)  # Print the stack trace for debugging purposes
+```
+
+Sample Response
+```python
+DeidentifyFileResponse(
+    file='TXkgY2FyZCBudW1iZXIgaXMgW0NSRURJVF9DQVJEXQpteSBzZWNvbmQ…',  # Base64 encoded file content
+    type='redacted_file',
+    extension='txt',
+    word_count=19,
+    char_count=111,
+    size_in_kb=0.11,
+    duration_in_seconds=None,
+    page_count=None,
+    slide_count=None,
+    entities=[
+        {
+            'file': 'W3sicHJvY2Vzc2VleHQiOiJDUkVESVRfQ0FSRCIsInRleHQiOiIxMjM0NTY0Nzg5MDEyMzQ1NiIsImxvY2F0aW9uIjp7InN0dF9pZHgiOjE4LCJlbmRfaWR4IjozNSwic3R0X2lkeF9wcm9jZXNzZWR…', # Base64 encoded JSON string of entities
+            'type': 'entities',
+            'extension': 'json'
+        }
+    ],
+    run_id='83abcdef-2b61-4a83-a4e0-cbc71ffabffd',
+    status='SUCCESS',
+    errors=[]
+)
+```
+
+### Get Detect Run
+To retrieve the results of a previously started file deidentification operation, use the `get_detect_run` method. The `GetDetectRunRequest` class is initialized with the run_id returned from a prior `deidentify_file` call.
+
+#### Construct a Get Detect Run request
+
+```python
+from skyflow.error import SkyflowError
+from skyflow.vault.detect import GetDetectRunRequest
+
+"""
+Example program to demonstrate get detect run using run id, along with corresponding GetDetectRunRequest schema.
+"""
+
+try:
+    # Initialize Skyflow client
+    # Step 1: Create GetDetectRunRequest 
+    request = GetDetectRunRequest(
+        run_id='<RUN_ID_FROM_DEIDENTIFY_FILE>'  # Replace with runId from deidentify_file
+    )
+
+    # Step 2: Call get_detect_run
+    get_detect_run_response = skyflow_client.detect('<VAULT_ID>').get_detect_run(request)
+    # Replace <VAULT_ID> with your actual vault ID
+
+    # Print the response from the get detect run operation
+    print('Response: ', get_detect_run_response)
+
+except SkyflowError as error:
+    # Step 3: Handle any exceptions that may occur during the insert operation
+    print('Skyflow Specific Error: ', {
+        'code': error.http_code,
+        'message': error.message,
+        'details': error.details
+    })
+except Exception as error:
+    print('Unexpected Error:', error)  # Print the stack trace for debugging purposes
+
+```
+
+#### An example for Get Detect Run Call
+
+```python
+from skyflow.error import SkyflowError
+from skyflow.vault.detect import GetDetectRunRequest
+"""
+ * Skyflow Get Detect Run Example
+ * 
+ * This example demonstrates how to:
+ * 1. Configure credentials
+ * 2. Set up vault configuration
+ * 3. Create a get detect run request
+ * 4. Call getDetectRun to poll for file processing results
+ * 5. Handle response and errors
+"""
+try:
+    # Initialize Skyflow client
+    # Step 1: Create GetDetectRunRequest
+    request = GetDetectRunRequest(
+        run_id="48ec05ba-96ec-4641-a8e2-35e066afef95"
+    )
+    
+    # Step 2: Call get_detect_run
+    get_detect_run_response = skyflow_client.detect('<VAULT_ID>').get_detect_run(request)
+    # Replace <VAULT_ID> with your actual vault ID
+
+    # Print the response from the get detect run operation
+    print('Response: ', get_detect_run_response)
+
+except SkyflowError as error:
+    # Step 3: Handle any exceptions that may occur during the insert operation
+    print('Skyflow Specific Error: ', {
+        'code': error.http_code,
+        'message': error.message,
+        'details': error.details
+    })
+except Exception as error:
+    print('Unexpected Error:', error)  # Print the stack trace for debugging purposes
+```
+
+Sample Response
+```python
+DeidentifyFileResponse(
+    file='TXkgY2FyZCBudW1iZXIgaXMgW0NSRURJVF9DQVJEXQpteSBzZWNvbmQ…',  # Base64 encoded file content
+    type='redacted_file',
+    extension='txt',
+    word_count=19,
+    char_count=111,
+    size_in_kb=0.11,
+    duration_in_seconds=None,
+    page_count=None,
+    slide_count=None,
+    entities=[
+        {
+            'file': 'W3sicHJvY2Vzc2VleHQiOiJDUkVESVRfQ0FSRCIsInRleHQiOiIxMjM0NTY0Nzg5MDEyMzQ1NiIsImxvY2F0aW9uIjp7InN0dF9pZHgiOjE4LCJlbmRfaWR4IjozNSwic3R0X2lkeF9wcm9jZXNzZWR…', # Base64 encoded JSON string of entities
+            'type': 'entities',
+            'extension': 'json'
+        }
+    ],
+    run_id='48ec05ba-96ec-4641-a8e2-35e066afef95',
+    status='SUCCESS',
+    errors=[]
+)
+```
+
 ### Connections
 
 Skyflow Connections is a gateway service that uses tokenization to securely send and receive data between your systems and first- or third-party services. The [connections](https://github.com/skyflowapi/skyflow-python/tree/v2/skyflow/vault/connection) module invokes both inbound and/or outbound connections.
@@ -2141,6 +2619,130 @@ except Exception as e:
 Notes:
 - The `time_to_live` (TTL) value should be specified in seconds.
 - By default, the TTL value is set to 60 seconds.
+
+#### Bearer token expiry edge case
+When you use bearer tokens for authentication and API requests in SDKs, there's the potential for a token to expire after the token is verified as valid but before the actual API call is made, causing the request to fail unexpectedly due to the token's expiration. An error from this edge case would look something like this:
+
+```txt
+message: Authentication failed. Bearer token is expired. Use a valid bearer token. See https://docs.skyflow.com/api-authentication/
+```
+
+If you encounter this kind of error, retry the request. During the retry, the SDK detects that the previous bearer token has expired and generates a new one for the current and subsequent requests.
+
+#### [Example](https://github.com/skyflowapi/skyflow-python/blob/v2/samples/service_account/bearer_token_expiry_example.py):
+```python
+import json
+from skyflow.error import SkyflowError
+from skyflow import Env
+from skyflow import Skyflow, LogLevel
+from skyflow.utils.enums import RedactionType
+from skyflow.vault.tokens import DetokenizeRequest
+
+"""
+  * This example demonstrates how to configure and use the Skyflow SDK
+  * to detokenize sensitive data stored in a Skyflow vault.
+  * It includes setting up credentials, configuring the vault, and
+  * making a detokenization request. The code also implements a retry
+  * mechanism to handle unauthorized access errors (HTTP 401).
+"""
+
+
+def detokenize_data(skyflow_client, vault_id):
+    try:
+        # Creating a list of tokens to be detokenized
+        detokenize_data = [
+            {
+                'token': '<TOKEN1>',
+                'redaction': RedactionType.REDACTED
+            },
+            {
+                'token': '<TOKEN2>',
+                'redaction': RedactionType.MASKED
+            }
+        ]
+
+        # Building a detokenization request
+        detokenize_request = DetokenizeRequest(
+            data=detokenize_data,
+            continue_on_error=False
+        )
+
+        # Sending the detokenization request and receiving the response
+        response = skyflow_client.vault(vault_id).detokenize(detokenize_request)
+
+        # Printing the detokenized response
+        print('Detokenization successful:', response)
+
+    except SkyflowError as error:
+        print("Skyflow error occurred:", error)
+        raise
+
+    except Exception as error:
+        print("Unexpected error occurred:", error)
+        raise
+
+
+def perform_detokenization():
+    try:
+        # Setting up credentials for accessing the Skyflow vault
+        cred = {
+            'clientID': '<YOUR_CLIENT_ID>',
+            'clientName': '<YOUR_CLIENT_NAME>',
+            'tokenURI': '<YOUR_TOKEN_URI>',
+            'keyID': '<YOUR_KEY_ID>',
+            'privateKey': '<YOUR_PRIVATE_KEY>',
+        }
+
+        skyflow_credentials = {
+            'credentials_string': json.dumps(cred)  # Credentials string for authentication
+        }
+
+        credentials = {
+            'token': '<YOUR_TOKEN>'
+        }
+
+        # Configuring the Skyflow vault with necessary details
+        primary_vault_config = {
+            'vault_id': '<YOUR_VAULT_ID1>',      # Vault ID
+            'cluster_id': '<YOUR_CLUSTER_ID1>',  # Cluster ID
+            'env': Env.PROD,                     # Environment set to PROD
+            'credentials': credentials           # Setting credentials
+        }
+
+        # Creating a Skyflow client instance with the configured vault
+        skyflow_client = (
+            Skyflow.builder()
+            .add_vault_config(primary_vault_config)
+            .add_skyflow_credentials(skyflow_credentials)
+            .set_log_level(LogLevel.ERROR)      # Setting log level to ERROR
+            .build()
+        )
+
+        # Attempting to detokenize data using the Skyflow client
+        try:
+            detokenize_data(skyflow_client, primary_vault_config.get('vault_id'))
+        except SkyflowError as err:
+            # Retry detokenization if the error is due to unauthorized access (HTTP 401)
+            if err.http_code == 401:
+                print("Unauthorized access detected. Retrying...")
+                detokenize_data(skyflow_client, primary_vault_config.get('vault_id'))
+            else:
+                # Rethrow the exception for other error codes
+                raise err
+
+    except SkyflowError as error:
+        print('Skyflow Specific Error:', {
+            'code': error.http_code,
+            'message': error.message,
+            'details': error.details
+        })
+    except Exception as error:
+        print('Unexpected Error:', error)
+
+
+# Invoke the function
+perform_detokenization()
+```
 
 ## Logging
 
