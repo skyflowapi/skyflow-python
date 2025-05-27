@@ -171,8 +171,6 @@ class Detect:
         self.__initialize()
         detect_api = self.__vault_client.get_detect_text_api()
         deidentify_text_body = self.___build_deidentify_text_body(request)
-
-        print("trans : ", deidentify_text_body['transformations'])
         
         try:
             log_info(SkyflowMessages.Info.DEIDENTIFY_TEXT_TRIGGERED.value, self.__vault_client.get_logger())
