@@ -61,6 +61,7 @@ class Detect:
         return filename.split('.')[-1].lower() if '.' in filename else ''
 
     def __poll_for_processed_file(self, run_id, max_wait_time=64):
+        max_wait_time = 64 if max_wait_time is None else max_wait_time
         files_api = self.__vault_client.get_detect_file_api().with_raw_response
         current_wait_time = 1  # Start with 1 second
         try:

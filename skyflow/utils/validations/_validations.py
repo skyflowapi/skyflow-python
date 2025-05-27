@@ -355,7 +355,7 @@ def validate_deidentify_file_request(logger, request: DeidentifyFileRequest):
     if hasattr(request, 'wait_time') and request.wait_time is not None:
         if not isinstance(request.wait_time, (int, float)):
             raise SkyflowError(SkyflowMessages.Error.INVALID_WAIT_TIME.value, invalid_input_error_code)
-        if request.wait_time > 64:
+        if request.wait_time < 0 and request.wait_time > 64:
             raise SkyflowError(SkyflowMessages.Error.WAIT_TIME_GREATER_THEN_64.value, invalid_input_error_code)
 
 def validate_insert_request(logger, request):
