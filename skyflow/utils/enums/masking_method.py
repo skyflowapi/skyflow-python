@@ -1,5 +1,5 @@
 from enum import Enum
 
 class MaskingMethod(Enum):
-    BLACKOUT= "blackout"
+    BLACKBOX= "blackbox"
     BLUR= "blur"
