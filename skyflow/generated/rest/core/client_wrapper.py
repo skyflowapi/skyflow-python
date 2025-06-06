@@ -22,7 +22,7 @@ class BaseClientWrapper:
         headers: typing.Dict[str, str] = {
             "X-Fern-Language": "Python",
             "X-Fern-SDK-Name": "skyflow.generated.rest",
-            "X-Fern-SDK-Version": "0.0.200",
+            "X-Fern-SDK-Version": "0.0.209",
         }
         headers["Authorization"] = f"Bearer {self._get_token()}"
         return headers
