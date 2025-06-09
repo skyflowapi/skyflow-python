@@ -65,7 +65,7 @@ def perform_file_deidentification():
             # Image-specific options
             output_processed_image=True,  # Include processed image in output
             output_ocr_text=True,  # Include OCR text in response
-            masking_method=MaskingMethod.BLACKOUT,  # Masking method for images
+            masking_method=MaskingMethod.BLACKBOX,  # Masking method for images
 
             # PDF-specific options
             pixel_density=15,  # Pixel density for PDF processing
