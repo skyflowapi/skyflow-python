@@ -1929,7 +1929,7 @@ try:
         # Image-specific options
         # output_processed_image=True,  # Include processed image
         # output_ocr_text=True,  # Include OCR text
-        # masking_method=MaskingMethod.BLACKOUT,  # Masking method
+        # masking_method=MaskingMethod.BLACKBOX,  # Masking method
 
         # PDF-specific options
         # pixel_density=1.5,  # PDF processing density
