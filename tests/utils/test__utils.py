@@ -7,11 +7,13 @@ from urllib.parse import quote
 from requests import PreparedRequest
 from requests.models import HTTPError
 from skyflow.error import SkyflowError
+from skyflow.generated.rest import ErrorResponse
 from skyflow.utils import get_credentials, SkyflowMessages, get_vault_url, construct_invoke_connection_request, \
     parse_insert_response, parse_update_record_response, parse_delete_response, parse_get_response, \
     parse_detokenize_response, parse_tokenize_response, parse_query_response, parse_invoke_connection_response, \
-    handle_exception, validate_api_key, encode_column_values
-from skyflow.utils._utils import parse_path_params, to_lowercase_keys, get_metrics
+    handle_exception, validate_api_key, encode_column_values, parse_deidentify_text_response, \
+    parse_reidentify_text_response, convert_detected_entity_to_entity_info
+from skyflow.utils._utils import parse_path_params, to_lowercase_keys, get_metrics, handle_json_error
 from skyflow.utils.enums import EnvUrls, Env, ContentType
 from skyflow.vault.connection import InvokeConnectionResponse
 from skyflow.vault.data import InsertResponse, DeleteResponse, GetResponse, QueryResponse
@@ -65,6 +67,65 @@ class TestUtils(unittest.TestCase):
         with self.assertRaises(SkyflowError) as context:
             url = get_vault_url(valid_cluster_id, valid_env, valid_vault_id)
         self.assertEqual(context.exception.message, SkyflowMessages.Error.INVALID_ENV.value.format(valid_vault_id))
+
+    @patch("skyflow.utils._utils.log_and_reject_error")
+    def test_handle_json_error_with_dict_data(self, mock_log_and_reject_error):
+        """Test handling JSON error when data is already a dict."""
+        error_dict = {
+            "error": {
+                "message": "Dict error message",
+                "http_code": 400,
+                "http_status": "Bad Request",
+                "grpc_code": 3,
+                "details": ["detail1"]
+            }
+        }
+
+        mock_error = Mock()
+        mock_logger = Mock()
+        request_id = "test-request-id"
+
+        handle_json_error(mock_error, error_dict, request_id, mock_logger)
+
+        mock_log_and_reject_error.assert_called_once_with(
+            "Dict error message",
+            400,
+            request_id,
+            "Bad Request",
+            3,
+            ["detail1"],
+            logger=mock_logger
+        )
+
+    @patch("skyflow.utils._utils.log_and_reject_error")
+    def test_handle_json_error_with_error_response_object(self, mock_log_and_reject_error):
+        """Test handling JSON error when data is an ErrorResponse object."""
+        mock_error_response = Mock(spec=ErrorResponse)
+        mock_error_response.dict.return_value = {
+            "error": {
+                "message": "ErrorResponse message",
+                "http_code": 403,
+                "http_status": "Forbidden",
+                "grpc_code": 7,
+                "details": ["detail2"]
+            }
+        }
+
+        mock_error = Mock()
+        mock_logger = Mock()
+        request_id = "test-request-id-2"
+
+        handle_json_error(mock_error, mock_error_response, request_id, mock_logger)
+
+        mock_log_and_reject_error.assert_called_once_with(
+            "ErrorResponse message",
+            403,
+            request_id,
+            "Forbidden",
+            7,
+            ["detail2"],
+            logger=mock_logger
+        )
 
     def test_parse_path_params(self):
         url = "https://example.com/{param1}/{param2}"
@@ -418,3 +479,114 @@ class TestUtils(unittest.TestCase):
 
         result = encode_column_values(get_request)
         self.assertEqual(result, expected_encoded_values)
+
+    def test_parse_deidentify_text_response(self):
+        """Test parsing deidentify text response with multiple entities."""
+        mock_entity = Mock()
+        mock_entity.token = "token123"
+        mock_entity.value = "sensitive_value"
+        mock_entity.entity_type = "EMAIL"
+        mock_entity.entity_scores = {"EMAIL": 0.95}
+        mock_entity.location = Mock(
+            start_index=10,
+            end_index=20,
+            start_index_processed=15,
+            end_index_processed=25
+        )
+
+        mock_api_response = Mock()
+        mock_api_response.processed_text = "Sample processed text"
+        mock_api_response.entities = [mock_entity]
+        mock_api_response.word_count = 3
+        mock_api_response.character_count = 20
+
+        result = parse_deidentify_text_response(mock_api_response)
+
+        self.assertEqual(result.processed_text, "Sample processed text")
+        self.assertEqual(result.word_count, 3)
+        self.assertEqual(result.char_count, 20)
+        self.assertEqual(len(result.entities), 1)
+
+        entity = result.entities[0]
+        self.assertEqual(entity.token, "token123")
+        self.assertEqual(entity.value, "sensitive_value")
+        self.assertEqual(entity.entity, "EMAIL")
+        self.assertEqual(entity.scores, {"EMAIL": 0.95})
+        self.assertEqual(entity.text_index.start, 10)
+        self.assertEqual(entity.text_index.end, 20)
+        self.assertEqual(entity.processed_index.start, 15)
+        self.assertEqual(entity.processed_index.end, 25)
+
+    def test_parse_deidentify_text_response_no_entities(self):
+        """Test parsing deidentify text response with no entities."""
+        mock_api_response = Mock()
+        mock_api_response.processed_text = "Sample processed text"
+        mock_api_response.entities = []
+        mock_api_response.word_count = 3
+        mock_api_response.character_count = 20
+
+        result = parse_deidentify_text_response(mock_api_response)
+
+        self.assertEqual(result.processed_text, "Sample processed text")
+        self.assertEqual(result.word_count, 3)
+        self.assertEqual(result.char_count, 20)
+        self.assertEqual(len(result.entities), 0)
+
+    def test_parse_reidentify_text_response(self):
+        """Test parsing reidentify text response."""
+        mock_api_response = Mock()
+        mock_api_response.text = "Reidentified text with actual values"
+
+        result = parse_reidentify_text_response(mock_api_response)
+
+        self.assertEqual(result.processed_text, "Reidentified text with actual values")
+
+    def test__convert_detected_entity_to_entity_info(self):
+        """Test converting detected entity to EntityInfo object."""
+        mock_detected_entity = Mock()
+        mock_detected_entity.token = "token123"
+        mock_detected_entity.value = "sensitive_value"
+        mock_detected_entity.entity_type = "EMAIL"
+        mock_detected_entity.entity_scores = {"EMAIL": 0.95}
+        mock_detected_entity.location = Mock(
+            start_index=10,
+            end_index=20,
+            start_index_processed=15,
+            end_index_processed=25
+        )
+
+        result = convert_detected_entity_to_entity_info(mock_detected_entity)
+
+        self.assertEqual(result.token, "token123")
+        self.assertEqual(result.value, "sensitive_value")
+        self.assertEqual(result.entity, "EMAIL")
+        self.assertEqual(result.scores, {"EMAIL": 0.95})
+        self.assertEqual(result.text_index.start, 10)
+        self.assertEqual(result.text_index.end, 20)
+        self.assertEqual(result.processed_index.start, 15)
+        self.assertEqual(result.processed_index.end, 25)
+
+    def test__convert_detected_entity_to_entity_info_with_minimal_data(self):
+        """Test converting detected entity with minimal required data."""
+        mock_detected_entity = Mock()
+        mock_detected_entity.token = "token123"
+        mock_detected_entity.value = None
+        mock_detected_entity.entity_type = "UNKNOWN"
+        mock_detected_entity.entity_scores = {}
+        mock_detected_entity.location = Mock(
+            start_index=0,
+            end_index=0,
+            start_index_processed=0,
+            end_index_processed=0
+        )
+
+        result = convert_detected_entity_to_entity_info(mock_detected_entity)
+
+        self.assertEqual(result.token, "token123")
+        self.assertIsNone(result.value)
+        self.assertEqual(result.entity, "UNKNOWN")
+        self.assertEqual(result.scores, {})
+        self.assertEqual(result.text_index.start, 0)
+        self.assertEqual(result.text_index.end, 0)
+        self.assertEqual(result.processed_index.start, 0)
+        self.assertEqual(result.processed_index.end, 0)

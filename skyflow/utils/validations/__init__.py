@@ -13,4 +13,8 @@ from ._validations import (
     validate_detokenize_request,
     validate_tokenize_request,
     validate_invoke_connection_params,
+    validate_deidentify_text_request,
+    validate_reidentify_text_request,
+    validate_deidentify_file_request,
+    validate_get_detect_run_request,
 )
