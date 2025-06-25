@@ -3,6 +3,7 @@ from skyflow.utils.enums import DetectEntities
 from skyflow.vault.detect import TokenFormat, Transformations
 from skyflow.vault.detect._audio_bleep import Bleep
 from skyflow.utils.enums import MaskingMethod, DetectOutputTranscriptions
+from skyflow.vault.detect._file_input import FileInput
 
 class DeidentifyFileRequest:
     def __init__(
@@ -24,7 +25,7 @@ class DeidentifyFileRequest:
         output_directory: Optional[str] = None,
         wait_time: Optional[Union[int, float]] = None
     ):
-        self.file: object = file
+        self.file: FileInput = file
         self.entities: Optional[List[DetectEntities]] = entities
         self.allow_regex_list: Optional[List[str]] = allow_regex_list
         self.restrict_regex_list: Optional[List[str]] = restrict_regex_list

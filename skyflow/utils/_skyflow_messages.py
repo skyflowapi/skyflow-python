@@ -197,7 +197,7 @@ class SkyflowMessages:
         INVALID_FILE_OR_ENCODED_FILE= f"{error_prefix} . Error while decoding base64 and saving file"
         INVALID_FILE_TYPE = f"{error_prefix} Validation error. Invalid file type. Specify a valid file type."
         INVALID_FILE_NAME= f"{error_prefix} Validation error. Invalid file name. Specify a valid file name."
-        FILE_READ_ERROR= f"{error_prefix} Validation error. Unable to read file. Verify the file path."
+        INVALID_DEIDENTIFY_FILE_PATH= f"{error_prefix} Validation error. Invalid file path. Specify a valid file path."
         INVALID_BASE64_HEADER= f"{error_prefix} Validation error. Invalid base64 header. Specify a valid base64 header."
         INVALID_WAIT_TIME= f"{error_prefix} Validation error. Invalid wait time. Specify a valid wait time as number and should not be greater than 64 secs."
         INVALID_OUTPUT_DIRECTORY= f"{error_prefix} Validation error. Invalid output directory. Specify a valid output directory as string."
