@@ -134,10 +134,12 @@ class Detect:
                 file_bytes = base64.b64decode(base64_string)
                 file_obj = io.BytesIO(file_bytes)
                 file_obj.name = f"processed_file.{extension}" if extension else "processed_file"
-        
+        else:
+            file_obj = None
+    
         return DeidentifyFileResponse(
             file_base64=base64_string,
-            file=file_obj,
+            file=file_obj,  # File class will be instantiated in DeidentifyFileResponse
             type=first_output.get("type", None),
             extension=extension,
             word_count=word_count,
