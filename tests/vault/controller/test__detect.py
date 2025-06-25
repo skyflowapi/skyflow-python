@@ -11,6 +11,8 @@ from skyflow.vault.detect import DeidentifyTextRequest, ReidentifyTextRequest, \
 from skyflow.utils.enums import DetectEntities, TokenType
 import io
 
+from skyflow.vault.detect._file import File
+
 VAULT_ID = "test_vault_id"
 
 class TestDetect(unittest.TestCase):
@@ -151,18 +153,38 @@ class TestDetect(unittest.TestCase):
         with patch.object(self.detect, "_Detect__poll_for_processed_file",
                           return_value=processed_response) as mock_poll, \
                 patch.object(self.detect, "_Detect__parse_deidentify_file_response",
-                             return_value=DeidentifyFileResponse(file_base64="dGVzdCBjb250ZW50", file=io.BytesIO(b"test content"), type="txt", extension="txt",
+                             return_value=DeidentifyFileResponse(file_base64="dGVzdCBjb250ZW50",
+                                                                 file=io.BytesIO(b"test content"), type="txt",
+                                                                 extension="txt",
                                                                  word_count=1, char_count=1, size_in_kb=1,
                                                                  duration_in_seconds=None, page_count=None,
                                                                  slide_count=None, entities=[], run_id="runid123",
                                                                  status="SUCCESS", errors=[])) as mock_parse:
             result = self.detect.deidentify_file(req)
+
             mock_validate.assert_called_once()
             files_api.deidentify_text.assert_called_once()
             mock_poll.assert_called_once()
             mock_parse.assert_called_once()
+
             self.assertIsInstance(result, DeidentifyFileResponse)
             self.assertEqual(result.status, "SUCCESS")
+            self.assertEqual(result.run_id, "runid123")
+            self.assertEqual(result.file_base64, "dGVzdCBjb250ZW50")
+            self.assertEqual(result.type, "txt")
+            self.assertEqual(result.extension, "txt")
+
+            self.assertIsInstance(result.file, File)
+            result.file.seek(0)
+            self.assertEqual(result.file.read(), b"test content")
+            self.assertEqual(result.word_count, 1)
+            self.assertEqual(result.char_count, 1)
+            self.assertEqual(result.size_in_kb, 1)
+            self.assertIsNone(result.duration_in_seconds)
+            self.assertIsNone(result.page_count)
+            self.assertIsNone(result.slide_count)
+            self.assertEqual(result.entities, [])
+            self.assertEqual(result.errors, [])
 
     @patch("skyflow.vault.controller._detect.validate_deidentify_file_request")
     @patch("skyflow.vault.controller._detect.base64")
@@ -194,7 +216,9 @@ class TestDetect(unittest.TestCase):
         with patch.object(self.detect, "_Detect__poll_for_processed_file",
                           return_value=processed_response) as mock_poll, \
                 patch.object(self.detect, "_Detect__parse_deidentify_file_response",
-                             return_value=DeidentifyFileResponse(file_base64="YXVkaW8gYnl0ZXM=", file=io.BytesIO(b"audio bytes"), type="mp3", extension="mp3",
+                             return_value=DeidentifyFileResponse(file_base64="YXVkaW8gYnl0ZXM=",
+                                                                 file=io.BytesIO(b"audio bytes"), type="mp3",
+                                                                 extension="mp3",
                                                                  word_count=1, char_count=1, size_in_kb=1,
                                                                  duration_in_seconds=1, page_count=None,
                                                                  slide_count=None, entities=[], run_id="runid456",
@@ -328,13 +352,13 @@ class TestDetect(unittest.TestCase):
 
                 # Actually run the method
                 result = self.detect.deidentify_file(req)
-                
+
                 # Verify the result
                 self.assertIsInstance(result, DeidentifyFileResponse)
                 self.assertEqual(result.status, "SUCCESS")
                 self.assertEqual(result.run_id, "runid123")
                 self.assertEqual(result.file_base64, "dGVzdCBjb250ZW50")
-                self.assertIsInstance(result.file, io.BytesIO)
+                self.assertIsInstance(result.file, File)
                 result.file.seek(0)  # Reset file pointer before reading
                 self.assertEqual(result.file.read(), b"test content")
                 self.assertEqual(result.type, "pdf")
@@ -453,10 +477,8 @@ class TestDetect(unittest.TestCase):
         result = self.detect._Detect__parse_deidentify_file_response(obj_data, "runid", "SUCCESS")
         self.assertIsInstance(result, DeidentifyFileResponse)
         self.assertEqual(result.file_base64, "YWJj")
-        self.assertIsInstance(result.file, io.BytesIO)
+        self.assertIsInstance(result.file, File)
         self.assertEqual(result.file.read(), b"abc")
-
-    
     def test_get_token_format_missing_attribute(self):
         """Test __get_token_format when token_format attribute is missing"""
         class DummyRequest:
@@ -590,15 +612,101 @@ class TestDetect(unittest.TestCase):
 
         # Check base64 string
         self.assertEqual(result.file_base64, "YWJjMTIz")
-        
-        # Check BytesIO object
-        self.assertIsInstance(result.file, io.BytesIO)
+        # Check File object
+        self.assertIsInstance(result.file, File)
         self.assertEqual(result.file.read(), b"abc123")
-        
         # Check other attributes
         self.assertEqual(result.type, "pdf")
         self.assertEqual(result.extension, "pdf")
-        
         # Reset file pointer and verify content again
         result.file.seek(0)
         self.assertEqual(result.file.read(), b"abc123")
+
+    @patch("skyflow.vault.controller._detect.validate_deidentify_file_request")
+    @patch("skyflow.vault.controller._detect.base64")
+    @patch("skyflow.vault.controller._detect.os.path.basename")
+    @patch("skyflow.vault.controller._detect.open", create=True)
+    def test_deidentify_file_using_file_path(self, mock_open, mock_basename, mock_base64, mock_validate):
+        # Setup mock file context
+        mock_file = MagicMock()
+        mock_file.read.return_value = b"test content from file path"
+        mock_file.name = "/path/to/test.txt"
+        mock_file.__enter__.return_value = mock_file  # Mock context manager
+        mock_open.return_value = mock_file
+        mock_basename.return_value = "test.txt"
+        mock_base64.b64encode.return_value = b"dGVzdCBjb250ZW50IGZyb20gZmlsZSBwYXRo"  # base64 of "test content from file path"
+        mock_base64.b64decode.return_value = b"test content from file path"
+        # Create request with file_path
+        req = DeidentifyFileRequest(file=FileInput(file_path="/path/to/test.txt"))
+        req.entities = []
+        req.token_format = Mock(default="default", entity_unique_counter=[], entity_only=[])
+        req.allow_regex_list = []
+        req.restrict_regex_list = []
+        req.transformations = None
+        req.output_directory = "/tmp"
+
+        # Setup API mock
+        files_api = Mock()
+        files_api.with_raw_response = files_api
+        files_api.deidentify_text = Mock()
+        self.vault_client.get_detect_file_api.return_value = files_api
+        api_response = Mock()
+        api_response.data = Mock(run_id="runid123")
+        files_api.deidentify_text.return_value = api_response
+
+        # Setup processed response
+        processed_response = Mock()
+        processed_response.status = "SUCCESS"
+        processed_response.output = []
+        processed_response.word_character_count = Mock(word_count=1, character_count=1)
+
+        # Test the method
+        with patch.object(self.detect, "_Detect__poll_for_processed_file",
+                         return_value=processed_response) as mock_poll, \
+             patch.object(self.detect, "_Detect__parse_deidentify_file_response",
+                         return_value=DeidentifyFileResponse(
+                             file_base64="dGVzdCBjb250ZW50IGZyb20gZmlsZSBwYXRo",
+                             file=io.BytesIO(b"test content from file path"),
+                             type="txt",
+                             extension="txt",
+                             word_count=1,
+                             char_count=1,
+                             size_in_kb=1,
+                             duration_in_seconds=None,
+                             page_count=None,
+                             slide_count=None,
+                             entities=[],
+                             run_id="runid123",
+                             status="SUCCESS",
+                             errors=[]
+                         )) as mock_parse:
+            
+            result = self.detect.deidentify_file(req)
+
+            mock_file.read.assert_called_once()
+            mock_basename.assert_called_with("/path/to/test.txt")
+
+            mock_validate.assert_called_once()
+            files_api.deidentify_text.assert_called_once()
+            mock_poll.assert_called_once()
+            mock_parse.assert_called_once()
+
+            # Response assertions
+            self.assertIsInstance(result, DeidentifyFileResponse)
+            self.assertEqual(result.status, "SUCCESS")
+            self.assertEqual(result.run_id, "runid123")
+            self.assertEqual(result.file_base64, "dGVzdCBjb250ZW50IGZyb20gZmlsZSBwYXRo")
+            self.assertEqual(result.type, "txt")
+            self.assertEqual(result.extension, "txt")
+
+            self.assertIsInstance(result.file, File)
+            result.file.seek(0)
+            self.assertEqual(result.file.read(), b"test content from file path")
+            self.assertEqual(result.word_count, 1)
+            self.assertEqual(result.char_count, 1)
+            self.assertEqual(result.size_in_kb, 1)
+            self.assertIsNone(result.duration_in_seconds)
+            self.assertIsNone(result.page_count)
+            self.assertIsNone(result.slide_count)
+            self.assertEqual(result.entities, [])
+            self.assertEqual(result.errors, [])
