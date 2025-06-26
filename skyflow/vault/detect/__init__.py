@@ -11,3 +11,4 @@ from ._deidentify_file_request import DeidentifyFileRequest
 from ._audio_bleep import Bleep
 from ._deidentify_file_response import DeidentifyFileResponse
 from ._get_detect_run_request import GetDetectRunRequest
+from ._file_input import FileInput

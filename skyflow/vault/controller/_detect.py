@@ -1,3 +1,4 @@
+import io
 import json
 import os
 from skyflow.error import SkyflowError
@@ -19,6 +20,7 @@ from typing import Dict, Any
 from skyflow.generated.rest.strings.types.reidentify_string_request_format import ReidentifyStringRequestFormat
 from skyflow.vault.detect import DeidentifyTextRequest, DeidentifyTextResponse, ReidentifyTextRequest, \
     ReidentifyTextResponse, DeidentifyFileRequest, DeidentifyFileResponse, GetDetectRunRequest
+
 
 class Detect:
     def __init__(self, vault_client):
@@ -124,10 +126,22 @@ class Detect:
         word_count = getattr(word_character_count, "word_count", None)
         char_count = getattr(word_character_count, "character_count", None)
 
+        base64_string = first_output.get("file", None)
+        extension = first_output.get("extension", None)
+
+        file_obj = None
+        if base64_string is not None:
+                file_bytes = base64.b64decode(base64_string)
+                file_obj = io.BytesIO(file_bytes)
+                file_obj.name = f"deidentified.{extension}" if extension else "processed_file"
+        else:
+            file_obj = None
+    
         return DeidentifyFileResponse(
-            file=first_output.get("file", None),
+            file_base64=base64_string,
+            file=file_obj,  # File class will be instantiated in DeidentifyFileResponse
             type=first_output.get("type", None),
-            extension=first_output.get("extension", None),
+            extension=extension,
             word_count=word_count,
             char_count=char_count,
             size_in_kb=size,
@@ -216,16 +230,26 @@ class Detect:
             log_error_log(SkyflowMessages.ErrorLogs.REIDENTIFY_TEXT_REQUEST_REJECTED.value, self.__vault_client.get_logger())
             handle_exception(e, self.__vault_client.get_logger())
 
+    def __get_file_from_request(self, request: DeidentifyFileRequest):
+        file_input = request.file
+        
+        # Check for file
+        if hasattr(file_input, 'file') and file_input.file is not None:
+            return file_input.file
+            
+        # Check for file_path if file is not provided
+        if hasattr(file_input, 'file_path') and file_input.file_path is not None:
+                return open(file_input.file_path, 'rb')
+
     def deidentify_file(self, request: DeidentifyFileRequest):
         log_info(SkyflowMessages.Info.DETECT_FILE_TRIGGERED.value, self.__vault_client.get_logger())
         validate_deidentify_file_request(self.__vault_client.get_logger(), request)
         self.__initialize()
         files_api = self.__vault_client.get_detect_file_api().with_raw_response
-        file_obj = request.file
+        file_obj = self.__get_file_from_request(request)
         file_name = getattr(file_obj, 'name', None)
         file_extension = self._get_file_extension(file_name) if file_name else None
         file_content = file_obj.read()
-
         base64_string = base64.b64encode(file_content).decode('utf-8')
 
         try:
@@ -375,7 +399,7 @@ class Detect:
                 file_name_only = 'processed-'+os.path.basename(file_name)
                 output_file_path = f"{request.output_directory}/{file_name_only}"
                 with open(output_file_path, 'wb') as output_file:
-                    output_file.write(base64.b64decode(parsed_response.file))
+                    output_file.write(base64.b64decode(parsed_response.file_base64))
             log_info(SkyflowMessages.Info.DETECT_FILE_SUCCESS.value, self.__vault_client.get_logger())
             return parsed_response
 
