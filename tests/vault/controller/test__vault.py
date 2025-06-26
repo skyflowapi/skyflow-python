@@ -123,7 +123,7 @@ class TestVault(unittest.TestCase):
 
         # Assert that the result matches the expected InsertResponse
         self.assertEqual(result.inserted_fields, expected_inserted_fields)
-        self.assertEqual(result.errors, [])  # No errors expected
+        self.assertEqual(result.errors, None)  # No errors expected
 
     @patch("skyflow.vault.controller._vault.validate_insert_request")
     def test_insert_handles_generic_error(self, mock_validate):
@@ -181,7 +181,7 @@ class TestVault(unittest.TestCase):
 
         # Assert that the result matches the expected InsertResponse
         self.assertEqual(result.inserted_fields, expected_inserted_fields)
-        self.assertEqual(result.errors, [])  # No errors expected
+        self.assertEqual(result.errors, None)  # No errors expected
 
     @patch("skyflow.vault.controller._vault.validate_update_request")
     @patch("skyflow.vault.controller._vault.parse_update_record_response")
@@ -223,7 +223,7 @@ class TestVault(unittest.TestCase):
 
         # Check that the result matches the expected UpdateResponse
         self.assertEqual(result.updated_field, expected_updated_field)
-        self.assertEqual(result.errors, [])  # No errors expected
+        self.assertEqual(result.errors, None)  # No errors expected
 
     @patch("skyflow.vault.controller._vault.validate_update_request")
     def test_update_handles_generic_error(self, mock_validate):
@@ -257,7 +257,7 @@ class TestVault(unittest.TestCase):
 
         # Expected parsed response
         expected_deleted_ids = ["12345", "67890"]
-        expected_response = DeleteResponse(deleted_ids=expected_deleted_ids, errors=[])
+        expected_response = DeleteResponse(deleted_ids=expected_deleted_ids, errors=None)
 
         # Set the return value for the parse response
         mock_parse_response.return_value = expected_response
@@ -273,7 +273,7 @@ class TestVault(unittest.TestCase):
 
         # Check that the result matches the expected DeleteResponse
         self.assertEqual(result.deleted_ids, expected_deleted_ids)
-        self.assertEqual(result.errors, [])  # No errors expected
+        self.assertEqual(result.errors, None)  # No errors expected
 
     @patch("skyflow.vault.controller._vault.validate_delete_request")
     def test_delete_handles_generic_exception(self, mock_validate):
@@ -330,7 +330,7 @@ class TestVault(unittest.TestCase):
             {"field1": "value1", "field2": "value2"},
             {"field1": "value3", "field2": "value4"}
         ]
-        expected_response = GetResponse(data=expected_data, errors=[])
+        expected_response = GetResponse(data=expected_data, errors=None)
 
         # Set the return value for parse_get_response
         mock_parse_response.return_value = expected_response
@@ -346,7 +346,7 @@ class TestVault(unittest.TestCase):
 
         # Check that the result matches the expected GetResponse
         self.assertEqual(result.data, expected_data)
-        self.assertEqual(result.errors, [])  # No errors expected
+        self.assertEqual(result.errors, None)  # No errors expected
 
     @patch("skyflow.vault.controller._vault.validate_get_request")
     @patch("skyflow.vault.controller._vault.parse_get_response")
@@ -381,7 +381,7 @@ class TestVault(unittest.TestCase):
             {"field1": "value1", "field2": "value2"},
             {"field1": "value3", "field2": "value4"}
         ]
-        expected_response = GetResponse(data=expected_data, errors=[])
+        expected_response = GetResponse(data=expected_data, errors=None)
 
         # Set the return value for parse_get_response
         mock_parse_response.return_value = expected_response
@@ -397,7 +397,7 @@ class TestVault(unittest.TestCase):
 
         # Check that the result matches the expected GetResponse
         self.assertEqual(result.data, expected_data)
-        self.assertEqual(result.errors, [])  # No errors expected
+        self.assertEqual(result.errors, None)  # No errors expected
 
     @patch("skyflow.vault.controller._vault.validate_get_request")
     def test_get_handles_generic_error(self, mock_validate):
@@ -446,7 +446,7 @@ class TestVault(unittest.TestCase):
 
         # Check that the result matches the expected QueryResponse
         self.assertEqual(result.fields, expected_fields)
-        self.assertEqual(result.errors, [])  # No errors expected
+        self.assertEqual(result.errors, None)  # No errors expected
 
     @patch("skyflow.vault.controller._vault.validate_query_request")
     def test_query_handles_generic_error(self, mock_validate):
@@ -495,7 +495,7 @@ class TestVault(unittest.TestCase):
             {"token": "token1", "value": "value1", "type": "STRING"},
             {"token": "token2", "value": "value2", "type": "STRING"}
         ]
-        expected_response = DetokenizeResponse(detokenized_fields=expected_fields, errors=[])
+        expected_response = DetokenizeResponse(detokenized_fields=expected_fields, errors=None)
 
         # Set the return value for parse_detokenize_response
         mock_parse_response.return_value = expected_response
@@ -511,7 +511,7 @@ class TestVault(unittest.TestCase):
 
         # Check that the result matches the expected DetokenizeResponse
         self.assertEqual(result.detokenized_fields, expected_fields)
-        self.assertEqual(result.errors, [])  # No errors expected
+        self.assertEqual(result.errors, None)  # No errors expected
 
     @patch("skyflow.vault.controller._vault.validate_detokenize_request")
     def test_detokenize_handles_generic_error(self, mock_validate):

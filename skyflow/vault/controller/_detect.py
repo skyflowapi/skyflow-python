@@ -137,7 +137,7 @@ class Detect:
             entities=entities,
             run_id=run_id_val,
             status=status_val,
-            errors=[]
+            errors=None
         )
 
     def __get_token_format(self, request):

@@ -13,7 +13,7 @@ class DeidentifyFileResponse:
         entities: list = None,  # list of dicts with keys 'file' and 'extension'
         run_id: str = None,
         status: str = None,
-        errors: list = [],
+        errors: list = None,
     ):
         self.file = file
         self.type = type

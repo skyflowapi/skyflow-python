@@ -153,7 +153,7 @@ class TestDetect(unittest.TestCase):
                                                                  word_count=1, char_count=1, size_in_kb=1,
                                                                  duration_in_seconds=None, page_count=None,
                                                                  slide_count=None, entities=[], run_id="runid123",
-                                                                 status="SUCCESS", errors=[])) as mock_parse:
+                                                                 status="SUCCESS", errors=None)) as mock_parse:
             result = self.detect.deidentify_file(req)
             mock_validate.assert_called_once()
             files_api.deidentify_text.assert_called_once()
@@ -196,7 +196,7 @@ class TestDetect(unittest.TestCase):
                                                                  word_count=1, char_count=1, size_in_kb=1,
                                                                  duration_in_seconds=1, page_count=None,
                                                                  slide_count=None, entities=[], run_id="runid456",
-                                                                 status="SUCCESS", errors=[])) as mock_parse:
+                                                                 status="SUCCESS", errors=None)) as mock_parse:
             result = self.detect.deidentify_file(req)
             mock_validate.assert_called_once()
             files_api.deidentify_audio.assert_called_once()
@@ -238,7 +238,7 @@ class TestDetect(unittest.TestCase):
                                                               char_count=1, size_in_kb=1, duration_in_seconds=None,
                                                               page_count=None, slide_count=None, entities=[],
                                                               run_id="runid789", status="SUCCESS",
-                                                              errors=[])) as mock_parse:
+                                                              errors=None)) as mock_parse:
             result = self.detect.get_detect_run(req)
             mock_validate.assert_called_once()
             files_api.get_run.assert_called_once()
@@ -289,7 +289,7 @@ class TestDetect(unittest.TestCase):
                               file="dGVzdCBjb250ZW50", type="pdf", extension="pdf",
                               word_count=1, char_count=1, size_in_kb=1,
                               duration_in_seconds=1, page_count=1, slide_count=1,
-                              entities=[], run_id="runid123", status="SUCCESS", errors=[]
+                              entities=[], run_id="runid123", status="SUCCESS", errors=None
                           )) as mock_parse:
             # Test configuration for different file types
             test_cases = [
