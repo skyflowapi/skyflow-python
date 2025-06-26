@@ -133,7 +133,7 @@ class Detect:
         if base64_string is not None:
                 file_bytes = base64.b64decode(base64_string)
                 file_obj = io.BytesIO(file_bytes)
-                file_obj.name = f"processed_file.{extension}" if extension else "processed_file"
+                file_obj.name = f"deidentified.{extension}" if extension else "processed_file"
         else:
             file_obj = None
     

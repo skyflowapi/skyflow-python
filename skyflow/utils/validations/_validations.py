@@ -267,7 +267,7 @@ def validate_file_from_request(file_input: FileInput):
     
     # Must provide exactly one of file or file_path
     if (has_file and has_file_path) or (not has_file and not has_file_path):
-        raise SkyflowError(SkyflowMessages.Error.INVALID_DEIDENTIFY_FILE_REQUEST.value, invalid_input_error_code)
+        raise SkyflowError(SkyflowMessages.Error.INVALID_DEIDENTIFY_FILE_INPUT.value, invalid_input_error_code)
     
     if has_file:
         file = file_input.file
