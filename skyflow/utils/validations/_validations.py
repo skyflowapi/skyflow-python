@@ -9,6 +9,7 @@ from skyflow.utils import SkyflowMessages
 from skyflow.utils.logger import log_info, log_error_log
 from skyflow.vault.detect import DeidentifyTextRequest, ReidentifyTextRequest, TokenFormat, Transformations, \
     GetDetectRunRequest, Bleep, DeidentifyFileRequest
+from skyflow.vault.detect._file_input import FileInput
 
 valid_vault_config_keys = ["vault_id", "cluster_id", "credentials", "env"]
 valid_connection_config_keys = ["connection_id", "connection_url", "credentials"]
@@ -257,9 +258,42 @@ def validate_update_connection_config(logger, config):
 
     return True
 
+def validate_file_from_request(file_input: FileInput):
+    if file_input is None:
+        raise SkyflowError(SkyflowMessages.Error.INVALID_FILE_INPUT.value, invalid_input_error_code)
+    
+    has_file = hasattr(file_input, 'file') and file_input.file is not None
+    has_file_path = hasattr(file_input, 'file_path') and file_input.file_path is not None
+    
+    # Must provide exactly one of file or file_path
+    if (has_file and has_file_path) or (not has_file and not has_file_path):
+        raise SkyflowError(SkyflowMessages.Error.INVALID_DEIDENTIFY_FILE_INPUT.value, invalid_input_error_code)
+    
+    if has_file:
+        file = file_input.file
+        # Validate file object has required attributes
+        if not hasattr(file, 'name') or not isinstance(file.name, str) or not file.name.strip():
+            raise SkyflowError(SkyflowMessages.Error.INVALID_FILE_TYPE.value, invalid_input_error_code)
+        
+        # Validate file name
+        file_name = os.path.splitext(file.name)[0]
+        if not file_name or not file_name.strip():
+            raise SkyflowError(SkyflowMessages.Error.INVALID_FILE_NAME.value, invalid_input_error_code)
+            
+    elif has_file_path:
+        file_path = file_input.file_path
+        if not isinstance(file_path, str) or not file_path.strip():
+            raise SkyflowError(SkyflowMessages.Error.INVALID_DEIDENTIFY_FILE_PATH.value, invalid_input_error_code)
+        
+        if not os.path.exists(file_path) or not os.path.isfile(file_path):
+            raise SkyflowError(SkyflowMessages.Error.INVALID_DEIDENTIFY_FILE_PATH.value, invalid_input_error_code)
+
 def validate_deidentify_file_request(logger, request: DeidentifyFileRequest):
     if not hasattr(request, 'file') or request.file is None:
         raise SkyflowError(SkyflowMessages.Error.INVALID_FILE_INPUT.value, invalid_input_error_code)
+    
+    # Validate file input first
+    validate_file_from_request(request.file)
 
     # Optional: entities
     if hasattr(request, 'entities') and request.entities is not None:
