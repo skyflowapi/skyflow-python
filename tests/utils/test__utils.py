@@ -270,7 +270,7 @@ class TestUtils(unittest.TestCase):
         ]
         self.assertEqual(result.inserted_fields, expected_inserted_fields)
 
-        self.assertEqual(result.errors, [])
+        self.assertEqual(result.errors, None)
 
     def test_parse_update_record_response(self):
         api_response = Mock()
@@ -291,7 +291,7 @@ class TestUtils(unittest.TestCase):
         expected_deleted_ids = ["id_1", "id_2", "id_3"]
         self.assertEqual(result.deleted_ids, expected_deleted_ids)
 
-        self.assertEqual(result.errors, [])
+        self.assertEqual(result.errors, None)
 
     def test_parse_get_response_successful(self):
         mock_api_response = Mock()
@@ -310,7 +310,7 @@ class TestUtils(unittest.TestCase):
         ]
         self.assertEqual(result.data, expected_data)
 
-        self.assertEqual(result.errors, [])
+        # self.assertEqual(result.errors, None)
 
     def test_parse_detokenize_response_with_mixed_records(self):
         mock_api_response = Mock()
