@@ -38,39 +38,16 @@ class File:
             return int(time.time() * 1000)
         return None
 
-    def get_file(self) -> dict:
-        """Get file and its metadata"""
-        if not self.file:
-            return None
-        return {
-            "file": self.file,
-            "name": self.name,
-            "size": self.size,
-            "type": self.type,
-            "last_modified": self.last_modified
-        }
-
-    # Add file-like interface methods that delegate to the underlying BytesIO
     def seek(self, offset, whence=0):
-        """Delegate seek operation to underlying BytesIO"""
         if self.file:
             return self.file.seek(offset, whence)
-        raise AttributeError("No file available")
 
     def read(self, size=-1):
-        """Delegate read operation to underlying BytesIO"""
         if self.file:
             return self.file.read(size)
-        raise AttributeError("No file available")
 
-    def tell(self):
-        """Delegate tell operation to underlying BytesIO"""
-        if self.file:
-            return self.file.tell()
-        raise AttributeError("No file available")
-
-    def write(self, data):
-        """Delegate write operation to underlying BytesIO"""
-        if self.file:
-            return self.file.write(data)
-        raise AttributeError("No file available")
+    def __repr__(self):
+        return (
+            f"File(name={self.name!r}, size={self.size!r}, type={self.type!r}, "
+            f"last_modified={self.last_modified!r})"
+        )    

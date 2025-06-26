@@ -37,7 +37,7 @@ class DeidentifyFileResponse:
     def __repr__(self):
         return (
             f"DeidentifyFileResponse("
-            f"file_base64={self.file_base64!r}, file={self.file.get_file() if self.file else None}, type={self.type!r}, "
+            f"file_base64={self.file_base64!r}, file={self.file!r}, type={self.type!r}, "
             f"extension={self.extension!r}, word_count={self.word_count!r}, "
             f"char_count={self.char_count!r}, size_in_kb={self.size_in_kb!r}, "
             f"duration_in_seconds={self.duration_in_seconds!r}, page_count={self.page_count!r}, "
