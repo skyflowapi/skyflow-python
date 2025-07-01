@@ -238,7 +238,8 @@ def parse_insert_response(api_response, continue_on_error):
                 error = {
                     'request_index': idx,
                     'request_id': request_id,
-                    'error': response['Body']['error']
+                    'error': response['Body']['error'],
+                    'http_code': response['Status'],
                 }
                 errors.append(error)
 
@@ -352,7 +353,7 @@ def parse_invoke_connection_response(api_response: requests.Response):
             if 'x-request-id' in api_response.headers:
                 metadata['request_id'] = api_response.headers['x-request-id']
 
-            return InvokeConnectionResponse(data=data, metadata=metadata)
+            return InvokeConnectionResponse(data=data, metadata=metadata, errors=None)
         except Exception as e:
             raise SkyflowError(SkyflowMessages.Error.RESPONSE_NOT_JSON.value.format(content), status_code)
     except HTTPError:
