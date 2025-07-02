@@ -1,7 +1,7 @@
 class QueryResponse:
     def __init__(self):
         self.fields = []
-        self.errors = []
+        self.errors = None
 
     def __repr__(self):
         return f"QueryResponse(fields={self.fields}, errors={self.errors})"

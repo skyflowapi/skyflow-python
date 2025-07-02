@@ -17,7 +17,7 @@ class DeidentifyFileResponse:
         entities: list = None,  # list of dicts with keys 'file' and 'extension'
         run_id: str = None,
         status: str = None,
-        errors: list = [],
+        errors: list = None,
     ):
         self.file_base64 = file_base64
         self.file = File(file) if file else None

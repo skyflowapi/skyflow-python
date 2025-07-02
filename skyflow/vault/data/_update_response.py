@@ -1,7 +1,7 @@
 class UpdateResponse:
     def __init__(self, updated_field = None, errors=None):
         self.updated_field = updated_field
-        self.errors = errors if errors is not None else []
+        self.errors = errors
 
     def __repr__(self):
         return f"UpdateResponse(updated_field={self.updated_field}, errors={self.errors})"
