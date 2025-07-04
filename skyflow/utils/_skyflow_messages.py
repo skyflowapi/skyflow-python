@@ -169,6 +169,7 @@ class SkyflowMessages:
         INVALID_PLAIN_TEXT_ENTITIES_IN_REIDENTIFY= f"{error_prefix} Validation error. The plainTextEntities field must be an array of DetectEntities enums. Specify a valid plainTextEntities."
 
         INVALID_DEIDENTIFY_FILE_REQUEST= f"{error_prefix} Validation error. Invalid deidentify file request. Specify a valid deidentify file request."
+        INVALID_DEIDENTIFY_FILE_INPUT= f"{error_prefix} Validation error. Invalid deidentify file input. Please provide either a file or a file path."
         EMPTY_FILE_OBJECT= f"{error_prefix} Validation error. File object cannot be empty. Specify a valid file object."
         INVALID_FILE_FORMAT= f"{error_prefix} Validation error. Invalid file format. Specify a valid file format."
         MISSING_FILE_SOURCE= f"{error_prefix} Validation error. Provide exactly one of filePath, base64, or fileObject."
@@ -197,7 +198,7 @@ class SkyflowMessages:
         INVALID_FILE_OR_ENCODED_FILE= f"{error_prefix} . Error while decoding base64 and saving file"
         INVALID_FILE_TYPE = f"{error_prefix} Validation error. Invalid file type. Specify a valid file type."
         INVALID_FILE_NAME= f"{error_prefix} Validation error. Invalid file name. Specify a valid file name."
-        FILE_READ_ERROR= f"{error_prefix} Validation error. Unable to read file. Verify the file path."
+        INVALID_DEIDENTIFY_FILE_PATH= f"{error_prefix} Validation error. Invalid file path. Specify a valid file path."
         INVALID_BASE64_HEADER= f"{error_prefix} Validation error. Invalid base64 header. Specify a valid base64 header."
         INVALID_WAIT_TIME= f"{error_prefix} Validation error. Invalid wait time. Specify a valid wait time as number and should not be greater than 64 secs."
         INVALID_OUTPUT_DIRECTORY= f"{error_prefix} Validation error. Invalid output directory. Specify a valid output directory as string."
