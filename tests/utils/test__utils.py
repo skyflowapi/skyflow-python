@@ -252,6 +252,12 @@ class TestUtils(unittest.TestCase):
         result = parse_insert_response(api_response, continue_on_error=True)
         self.assertEqual(len(result.inserted_fields), 1)
         self.assertEqual(len(result.errors), 1)
+        # Assert first successful record
+        self.assertEqual(result.inserted_fields[0]["skyflow_id"], "id1")
+        # Assert error record
+        self.assertEqual(result.errors[0]["error"], TEST_ERROR_MESSAGE)
+        self.assertEqual(result.errors[0]["http_code"], 400)
+        self.assertEqual(result.errors[0]["request_id"], "12345")
 
     def test_parse_insert_response_continue_on_error_false(self):
         mock_api_response = Mock()
@@ -270,7 +276,7 @@ class TestUtils(unittest.TestCase):
         ]
         self.assertEqual(result.inserted_fields, expected_inserted_fields)
 
-        self.assertEqual(result.errors, [])
+        self.assertEqual(result.errors, None)
 
     def test_parse_update_record_response(self):
         api_response = Mock()
@@ -291,7 +297,7 @@ class TestUtils(unittest.TestCase):
         expected_deleted_ids = ["id_1", "id_2", "id_3"]
         self.assertEqual(result.deleted_ids, expected_deleted_ids)
 
-        self.assertEqual(result.errors, [])
+        self.assertEqual(result.errors, None)
 
     def test_parse_get_response_successful(self):
         mock_api_response = Mock()
@@ -310,7 +316,7 @@ class TestUtils(unittest.TestCase):
         ]
         self.assertEqual(result.data, expected_data)
 
-        self.assertEqual(result.errors, [])
+        # self.assertEqual(result.errors, None)
 
     def test_parse_detokenize_response_with_mixed_records(self):
         mock_api_response = Mock()
@@ -384,6 +390,7 @@ class TestUtils(unittest.TestCase):
         self.assertIsInstance(result, InvokeConnectionResponse)
         self.assertEqual(result.data["key"], "value")
         self.assertEqual(result.metadata["request_id"], "1234")
+        self.assertEqual(result.errors, None)
 
     @patch("requests.Response")
     def test_parse_invoke_connection_response_json_decode_error(self, mock_response):

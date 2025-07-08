@@ -211,7 +211,6 @@ def get_metrics():
     }
     return details_dic
 
-
 def parse_insert_response(api_response, continue_on_error):
     # Retrieve the headers and data from the API response
     api_response_headers = api_response.headers
@@ -239,13 +238,13 @@ def parse_insert_response(api_response, continue_on_error):
                 error = {
                     'request_index': idx,
                     'request_id': request_id,
-                    'error': response['Body']['error']
+                    'error': response['Body']['error'],
+                    'http_code': response['Status'],
                 }
                 errors.append(error)
 
             insert_response.inserted_fields = inserted_fields
-            insert_response.errors = errors
-
+            insert_response.errors = errors if len(errors) > 0 else None
     else:
         for record in api_response_data.records:
             field_data = {
@@ -257,6 +256,7 @@ def parse_insert_response(api_response, continue_on_error):
 
             inserted_fields.append(field_data)
         insert_response.inserted_fields = inserted_fields
+        insert_response.errors = None
 
     return insert_response
 
@@ -275,21 +275,17 @@ def parse_delete_response(api_response: V1BulkDeleteRecordResponse):
     delete_response = DeleteResponse()
     deleted_ids = api_response.record_id_response
     delete_response.deleted_ids = deleted_ids
-    delete_response.errors = []
+    delete_response.errors = None
     return delete_response
-
 
 def parse_get_response(api_response: V1BulkGetRecordResponse):
     get_response = GetResponse()
     data = []
-    errors = []
     for record in api_response.records:
         field_data = {field: value for field, value in record.fields.items()}
         data.append(field_data)
 
     get_response.data = data
-    get_response.errors = errors
-
     return get_response
 
 def parse_detokenize_response(api_response: HttpResponse[V1DetokenizeResponse]):
@@ -320,7 +316,7 @@ def parse_detokenize_response(api_response: HttpResponse[V1DetokenizeResponse]):
     errors = errors
     detokenize_response = DetokenizeResponse()
     detokenize_response.detokenized_fields = detokenized_fields
-    detokenize_response.errors = errors
+    detokenize_response.errors = errors if len(errors) > 0 else None
 
     return detokenize_response
 
@@ -357,7 +353,7 @@ def parse_invoke_connection_response(api_response: requests.Response):
             if 'x-request-id' in api_response.headers:
                 metadata['request_id'] = api_response.headers['x-request-id']
 
-            return InvokeConnectionResponse(data=data, metadata=metadata)
+            return InvokeConnectionResponse(data=data, metadata=metadata, errors=None)
         except Exception as e:
             raise SkyflowError(SkyflowMessages.Error.RESPONSE_NOT_JSON.value.format(content), status_code)
     except HTTPError:

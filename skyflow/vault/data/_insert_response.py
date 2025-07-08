@@ -1,7 +1,5 @@
 class InsertResponse:
     def __init__(self, inserted_fields = None, errors=None):
-        if errors is None:
-            errors = list()
         self.inserted_fields = inserted_fields
         self.errors = errors
 
