@@ -1,12 +1,4 @@
-python_dateutil >= 2.5.3
-setuptools >= 21.0.0
-urllib3 >= 1.25.3, < 2.1.0
-pydantic >= 2
-typing-extensions >= 4.7.1
-DateTime~=5.5
-PyJWT~=2.9.0
-requests~=2.32.3
-coverage
-cryptography
-python-dotenv~=1.0.1
-httpx
+httpx>=0.21.2
+pydantic>= 1.9.2
+pydantic-core>=2.18.2
+typing_extensions>= 4.0.0
