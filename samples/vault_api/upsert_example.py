@@ -1,4 +1,4 @@
-from src.skyflow import Skyflow, V1InsertRecordData, V1Upsert, FlowEnumUpdateType
+from skyflow import Skyflow, V1InsertRecordData, V1Upsert, FlowEnumUpdateType
 import httpx
 
 """

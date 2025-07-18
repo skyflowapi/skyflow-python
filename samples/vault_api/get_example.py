@@ -32,7 +32,7 @@ def get_records_by_ids():
         response = client.flowservice.get(
             vault_id="<VAULT_ID>",
             table_name="<TABLE_NAME>",
-            skyflow_ids=["<SKYFLOW_ID_1>", "<SKYFLOW_ID_2>"]
+            skyflow_i_ds=["<SKYFLOW_ID_1>", "<SKYFLOW_ID_2>"],
         )
 
         # Step 5: Print the response

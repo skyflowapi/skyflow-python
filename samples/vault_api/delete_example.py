@@ -1,4 +1,4 @@
-from src.skyflow import Skyflow
+from skyflow import Skyflow
 import httpx
 
 """
@@ -33,7 +33,8 @@ def perform_record_deletion():
         # Step 4: Perform the delete operation with one or more Skyflow IDs
         response = client.flowservice.delete(
             vault_id="<VAULT_ID>",
-            skyflow_i_ds=["<SKYFLOW_ID_1>", "<SKYFLOW_ID_2>"]
+            skyflow_i_ds=["<SKYFLOW_ID_1>", "<SKYFLOW_ID_2>"],
+            table_name="<TABLE_NAME>"
         )
 
         # Step 5: Print the delete response

@@ -1,4 +1,4 @@
-from src.skyflow import Skyflow
+from skyflow import Skyflow
 import httpx
 
 """

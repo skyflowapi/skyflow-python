@@ -1,4 +1,4 @@
-from src.skyflow import Skyflow, V1UpdateRecordData
+from skyflow import Skyflow, V1UpdateRecordData
 import httpx
 
 """
