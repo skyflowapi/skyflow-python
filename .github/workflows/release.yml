@@ -9,6 +9,12 @@ on:
       - "*.md"
       - "src/skyflow/version.py"
 
+workflow_dispatch:
+  inputs:
+    branch:
+      description: "Branch to run on"
+      required: true
+
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
@@ -16,9 +22,9 @@ jobs:
       - uses: actions/checkout@v2
         with:
           token: ${{ secrets.PAT_ACTIONS }}
-          ref: main
+          ref: ${{ github.event.inputs.branch }}
           fetch-depth: 0
-      
+
       - uses: actions/setup-python@v2
       - name: Install dependencies
         run: |
