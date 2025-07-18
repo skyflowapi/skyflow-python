@@ -1,5 +1,5 @@
 '''
-	Copyright (c) 2022 Skyflow, Inc.
+	Copyright (c) 2025 Skyflow, Inc.
 '''
 from setuptools import setup, find_packages
 import sys
@@ -10,15 +10,15 @@ if sys.version_info < (3, 8):
 current_version = '1.0.0'
 
 setup(
-    name='skyflow-vault',
+    name='skyflow-python-vault',
     version=current_version,
     author='Skyflow',
     author_email='service-ops@skyflow.com',
     packages=find_packages(where='src'),
     package_dir={'': 'src'},
-    url='https://github.com/skyflowapi/skyflow-python-vault/',
+    url='https://github.com/skyflowapi/skyflow-python/',
     license='LICENSE',
-    description='Skyflow FlowDB SDK for the Python programming language',
+    description='Skyflow  SDK for the Python programming language',
     install_requires=[
         'python_dateutil >= 2.5.3',
     	'setuptools >= 21.0.0',
