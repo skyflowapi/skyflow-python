@@ -9,11 +9,11 @@ on:
       - "*.md"
       - "src/skyflow/version.py"
 
-workflow_dispatch:
-  inputs:
-    branch:
-      description: "Branch to run on"
-      required: true
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: "Branch to run on"
+        required: true
 
 jobs:
   build-and-deploy:
