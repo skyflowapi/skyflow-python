@@ -19,10 +19,11 @@ jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           token: ${{ secrets.PAT_ACTIONS }}
-          ref: ${{ github.event.inputs.branch }}
+          repository: ${{ github.repository }}
+          ref: ${{ github.event.inputs.branch || github.ref }}
           fetch-depth: 0
 
       - uses: actions/setup-python@v2
