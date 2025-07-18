@@ -2,7 +2,7 @@ from src.skyflow import Skyflow
 import httpx
 
 """
-Example demonstrating how to use the Skyflow Python SDK to delete records from a FlowDB vault using Skyflow IDs.
+Example demonstrating how to use the Skyflow Python SDK to delete records from a VaultLH vault using Skyflow IDs.
 
 Steps:
 1. Set up the HTTP client with Bearer token authentication.

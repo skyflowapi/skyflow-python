@@ -2,7 +2,7 @@ from src.skyflow import Skyflow
 import httpx
 
 """
-Example demonstrating how to use the Skyflow Python SDK to query records from a FlowDB vault.
+Example demonstrating how to use the Skyflow Python SDK to query records from a VaultLH vault.
 
 Steps:
 1. Set up the HTTP client with Bearer token authentication.

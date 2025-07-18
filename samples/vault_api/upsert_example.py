@@ -2,7 +2,7 @@ from src.skyflow import Skyflow, V1InsertRecordData, V1Upsert, FlowEnumUpdateTyp
 import httpx
 
 """
-Example demonstrating how to use the Skyflow Python SDK to insert records into a FlowDB vault with upsert support.
+Example demonstrating how to use the Skyflow Python SDK to insert records into a VaultLH vault with upsert support.
 
 Steps:
 1. Set up the HTTP client with Bearer token authentication.

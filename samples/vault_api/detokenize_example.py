@@ -3,7 +3,7 @@ import httpx
 
 
 """
-Example demonstrating how to use the Skyflow Python SDK to detokenize values from a FlowDB vault.
+Example demonstrating how to use the Skyflow Python SDK to detokenize values from a VaultLH vault.
 
 Steps:
 1. Set up the HTTP client with Bearer token authentication.

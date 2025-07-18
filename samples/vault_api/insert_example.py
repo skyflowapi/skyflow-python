@@ -1,19 +1,17 @@
-from src.skyflow import Skyflow, V1UpdateRecordData
+from skyflow import Skyflow, V1InsertRecordData
 import httpx
 
 """
-Example demonstrating how to use the Skyflow Python SDK to update records in a FlowDB vault.
+Example demonstrating how to use the Skyflow Python SDK to insert records into a VaultLH vault.
 
 Steps:
 1. Set up the HTTP client with Bearer token authentication.
 2. Create a Skyflow API client using the base URL and HTTP client.
-3. Prepare the record data with Skyflow ID and updated values.
-4. Call the update API with vault ID, table name, and updated records.
+3. Prepare the record data to be inserted.
+4. Call the insert API with vault ID, table name, and records.
 5. Handle and print the response.
 """
-
-
-def perform_update():
+def perform_secure_data_insertion():
     try:
         # Step 1: Replace with your actual token and vault URL
         bearer_token = "<BEARER_TOKEN>"
@@ -32,32 +30,28 @@ def perform_update():
             httpx_client=httpx_client
         )
 
-        # Step 4: Prepare the update record with Skyflow ID and new values
-        record = V1UpdateRecordData(
-            skyflow_id="<SKYFLOW_ID>",
-            data={
-                "<COLUMN_NAME>": "<COLUMN_VALUE>",
-            },
-            tokens={
-                "<COLUMN_NAME>": "<TOKEN_VALUE>",
-            }
-        )
+        # Step 4: Prepare record data for insertion
+        record_data = {
+            "<COLUMN_NAME_1>": "<COLUMN_VALUE_1>",
+            "<COLUMN_NAME_2>": "<COLUMN_VALUE_2>"
+        }
+        record = V1InsertRecordData(data=record_data)
 
-        # Step 5: Perform the update operation
-        response = client.flowservice.update(
+        # Step 5: Perform the insert operation
+        response = client.flowservice.insert(
             vault_id="<VAULT_ID>",
             table_name="<TABLE_NAME>",
             records=[record]
         )
 
-        # Step 6: Print the update response
-        print("Update Response:")
+        # Step 6: Print the insert response
+        print("Insert Response:")
         print(response)
 
     except Exception as e:
-        print("Error occurred during update operation:")
+        print("Error occurred during insert operation:")
         print(e)
 
 
-# Invoke the update function
-perform_update()
+# Invoke the secure data insertion function
+perform_secure_data_insertion()
