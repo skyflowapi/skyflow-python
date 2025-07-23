@@ -306,6 +306,7 @@ class TestDetect(unittest.TestCase):
         processed_response.slides = 1
         processed_response.message = ""
         processed_response.run_id = "runid123"
+        processed_response.word_character_count = {"wordCount": 1, "characterCount": 1}
         mock_poll.return_value = processed_response
 
         # Test configuration for different file types
