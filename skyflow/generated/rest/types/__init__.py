@@ -2,11 +2,7 @@
 
 # isort: skip_file
 
-from .advanced_options_column_mapping import AdvancedOptionsColumnMapping
-from .advanced_options_entity_column_map import AdvancedOptionsEntityColumnMap
-from .advanced_options_vault_schema import AdvancedOptionsVaultSchema
 from .allow_regex import AllowRegex
-from .audio_config_transcription_type import AudioConfigTranscriptionType
 from .audit_event_audit_resource_type import AuditEventAuditResourceType
 from .audit_event_context import AuditEventContext
 from .audit_event_data import AuditEventData
@@ -24,10 +20,6 @@ from .deidentify_status_response import DeidentifyStatusResponse
 from .deidentify_status_response_output_type import DeidentifyStatusResponseOutputType
 from .deidentify_status_response_status import DeidentifyStatusResponseStatus
 from .deidentify_string_response import DeidentifyStringResponse
-from .detect_data_accuracy import DetectDataAccuracy
-from .detect_data_entities import DetectDataEntities
-from .detect_file_request_data_type import DetectFileRequestDataType
-from .detect_request_deidentify_option import DetectRequestDeidentifyOption
 from .detected_entity import DetectedEntity
 from .detokenize_record_response_value_type import DetokenizeRecordResponseValueType
 from .entity_location import EntityLocation
@@ -37,7 +29,6 @@ from .error_response import ErrorResponse
 from .error_response_error import ErrorResponseError
 from .error_string import ErrorString
 from .googlerpc_status import GooglerpcStatus
-from .processed_file_output_processed_file_type import ProcessedFileOutputProcessedFileType
 from .protobuf_any import ProtobufAny
 from .redaction_enum_redaction import RedactionEnumRedaction
 from .reidentify_file_response import ReidentifyFileResponse
@@ -89,11 +80,7 @@ from .v_1_vault_schema_config import V1VaultSchemaConfig
 from .vault_id import VaultId
 
 __all__ = [
-    "AdvancedOptionsColumnMapping",
-    "AdvancedOptionsEntityColumnMap",
-    "AdvancedOptionsVaultSchema",
     "AllowRegex",
-    "AudioConfigTranscriptionType",
     "AuditEventAuditResourceType",
     "AuditEventContext",
     "AuditEventData",
@@ -111,10 +98,6 @@ __all__ = [
     "DeidentifyStatusResponseOutputType",
     "DeidentifyStatusResponseStatus",
     "DeidentifyStringResponse",
-    "DetectDataAccuracy",
-    "DetectDataEntities",
-    "DetectFileRequestDataType",
-    "DetectRequestDeidentifyOption",
     "DetectedEntity",
     "DetokenizeRecordResponseValueType",
     "EntityLocation",
@@ -124,7 +107,6 @@ __all__ = [
     "ErrorResponseError",
     "ErrorString",
     "GooglerpcStatus",
-    "ProcessedFileOutputProcessedFileType",
     "ProtobufAny",
     "RedactionEnumRedaction",
     "ReidentifyFileResponse",

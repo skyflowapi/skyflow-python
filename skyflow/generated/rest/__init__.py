@@ -3,11 +3,7 @@
 # isort: skip_file
 
 from .types import (
-    AdvancedOptionsColumnMapping,
-    AdvancedOptionsEntityColumnMap,
-    AdvancedOptionsVaultSchema,
     AllowRegex,
-    AudioConfigTranscriptionType,
     AuditEventAuditResourceType,
     AuditEventContext,
     AuditEventData,
@@ -25,10 +21,6 @@ from .types import (
     DeidentifyStatusResponseOutputType,
     DeidentifyStatusResponseStatus,
     DeidentifyStringResponse,
-    DetectDataAccuracy,
-    DetectDataEntities,
-    DetectFileRequestDataType,
-    DetectRequestDeidentifyOption,
     DetectedEntity,
     DetokenizeRecordResponseValueType,
     EntityLocation,
@@ -38,7 +30,6 @@ from .types import (
     ErrorResponseError,
     ErrorString,
     GooglerpcStatus,
-    ProcessedFileOutputProcessedFileType,
     ProtobufAny,
     RedactionEnumRedaction,
     ReidentifyFileResponse,
@@ -133,12 +124,8 @@ from .strings import ReidentifyStringRequestFormat
 from .version import __version__
 
 __all__ = [
-    "AdvancedOptionsColumnMapping",
-    "AdvancedOptionsEntityColumnMap",
-    "AdvancedOptionsVaultSchema",
     "AllowRegex",
     "AsyncSkyflow",
-    "AudioConfigTranscriptionType",
     "AuditEventAuditResourceType",
     "AuditEventContext",
     "AuditEventData",
@@ -181,10 +168,6 @@ __all__ = [
     "DeidentifyStructuredTextRequestFile",
     "DeidentifyStructuredTextRequestFileDataFormat",
     "DeidentifyTextRequestFile",
-    "DetectDataAccuracy",
-    "DetectDataEntities",
-    "DetectFileRequestDataType",
-    "DetectRequestDeidentifyOption",
     "DetectedEntity",
     "DetokenizeRecordResponseValueType",
     "EntityLocation",
@@ -196,7 +179,6 @@ __all__ = [
     "GooglerpcStatus",
     "InternalServerError",
     "NotFoundError",
-    "ProcessedFileOutputProcessedFileType",
     "ProtobufAny",
     "RecordServiceBulkGetRecordRequestOrderBy",
     "RecordServiceBulkGetRecordRequestRedaction",
