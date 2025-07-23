@@ -1,3 +1,1 @@
-from importlib import metadata
-
-__version__ = metadata.version("skyflow_vault")
+__version__ = "2.0.9"
