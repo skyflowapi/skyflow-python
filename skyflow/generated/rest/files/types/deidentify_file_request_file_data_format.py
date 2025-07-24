@@ -6,6 +6,7 @@ DeidentifyFileRequestFileDataFormat = typing.Union[
     typing.Literal[
         "bmp",
         "csv",
+        "dcm",
         "doc",
         "docx",
         "jpeg",

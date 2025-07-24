@@ -21,6 +21,9 @@ from .types import (
     DeidentifyStructuredTextRequestFile,
     DeidentifyStructuredTextRequestFileDataFormat,
     DeidentifyTextRequestFile,
+    ReidentifyFileRequestFile,
+    ReidentifyFileRequestFileDataFormat,
+    ReidentifyFileRequestFormat,
 )
 
 __all__ = [
@@ -42,4 +45,7 @@ __all__ = [
     "DeidentifyStructuredTextRequestFile",
     "DeidentifyStructuredTextRequestFileDataFormat",
     "DeidentifyTextRequestFile",
+    "ReidentifyFileRequestFile",
+    "ReidentifyFileRequestFileDataFormat",
+    "ReidentifyFileRequestFormat",
 ]

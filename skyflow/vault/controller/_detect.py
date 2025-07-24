@@ -1,10 +1,6 @@
 import io
 import json
 import os
-from skyflow.error import SkyflowError
-from skyflow.generated.rest.types.token_type import TokenType
-from skyflow.generated.rest.types.transformations import Transformations
-from skyflow.generated.rest.types.transformations_shift_dates import TransformationsShiftDates
 import base64
 import time
 from skyflow.generated.rest import DeidentifyTextRequestFile, DeidentifyAudioRequestFile, DeidentifyPdfRequestFile, \
@@ -88,19 +84,27 @@ class Detect:
             raise e
 
     def __parse_deidentify_file_response(self, data, run_id=None, status=None):
-
         output = getattr(data, "output", [])
-        output_type = getattr(data, "output_type", None)
-        word_character_count = getattr(data, "word_character_count", None)
-        size = getattr(data, "size", None)
-        duration = getattr(data, "duration", None)
-        pages = getattr(data, "pages", None)
-        slides = getattr(data, "slides", None)
-        message = getattr(data, "message", None)
         status_val = getattr(data, "status", None) or status
         run_id_val = getattr(data, "run_id", None) or run_id
 
-        # Convert output to list of dicts if it's a list of objects
+        word_count = None
+        char_count = None
+
+        word_character_count = getattr(data, "wordCharacterCount", None)
+        if word_character_count and isinstance(word_character_count, dict):
+            word_count = word_character_count.get("wordCount")
+            char_count = word_character_count.get("characterCount")
+
+        size = getattr(data, "size", None)
+
+        size = float(size) if size is not None else None
+
+        duration = getattr(data, "duration", None)
+        pages = getattr(data, "pages", None)
+        slides = getattr(data, "slides", None)
+
+        # Convert output to list of dicts, prefer camelCase keys
         def output_to_dict_list(output):
             result = []
             for o in output:
@@ -112,9 +116,11 @@ class Detect:
                     })
                 else:
                     result.append({
-                        "file": getattr(o, "processed_file", None),
-                        "type": getattr(o, "processed_file_type", None),
-                        "extension": getattr(o, "processed_file_extension", None)
+                        "file": getattr(o, "processedFile", None) or getattr(o, "processed_file", None),
+                        "type": getattr(o, "processedFileType", None) or getattr(o, "processed_file_type", None),
+                        "extension": getattr(o, "processedFileExtension", None) or getattr(o,
+                                                                                           "processed_file_extension",
+                                                                                           None)
                     })
             return result
 
@@ -123,13 +129,9 @@ class Detect:
 
         entities = [o for o in output_list if o.get("type") == "entities"]
 
-        word_count = getattr(word_character_count, "word_count", None)
-        char_count = getattr(word_character_count, "character_count", None)
-
         base64_string = first_output.get("file", None)
         extension = first_output.get("extension", None)
 
-        file_obj = None
         if base64_string is not None:
                 file_bytes = base64.b64decode(base64_string)
                 file_obj = io.BytesIO(file_bytes)

@@ -5,9 +5,11 @@ import typing
 from ..core.client_wrapper import AsyncClientWrapper, SyncClientWrapper
 from ..core.request_options import RequestOptions
 from ..types.allow_regex import AllowRegex
+from ..types.configuration_id import ConfigurationId
 from ..types.deidentify_file_response import DeidentifyFileResponse
 from ..types.deidentify_status_response import DeidentifyStatusResponse
 from ..types.entity_types import EntityTypes
+from ..types.reidentify_file_response import ReidentifyFileResponse
 from ..types.resource_id import ResourceId
 from ..types.restrict_regex import RestrictRegex
 from ..types.token_type_without_vault import TokenTypeWithoutVault
@@ -26,6 +28,8 @@ from .types.deidentify_presentation_request_file import DeidentifyPresentationRe
 from .types.deidentify_spreadsheet_request_file import DeidentifySpreadsheetRequestFile
 from .types.deidentify_structured_text_request_file import DeidentifyStructuredTextRequestFile
 from .types.deidentify_text_request_file import DeidentifyTextRequestFile
+from .types.reidentify_file_request_file import ReidentifyFileRequestFile
+from .types.reidentify_file_request_format import ReidentifyFileRequestFormat
 
 # this is used as the default value for optional parameters
 OMIT = typing.cast(typing.Any, ...)
@@ -51,6 +55,7 @@ class FilesClient:
         *,
         vault_id: VaultId,
         file: DeidentifyFileRequestFile,
+        configuration_id: typing.Optional[ConfigurationId] = OMIT,
         entity_types: typing.Optional[EntityTypes] = OMIT,
         token_type: typing.Optional[TokenTypeWithoutVault] = OMIT,
         allow_regex: typing.Optional[AllowRegex] = OMIT,
@@ -67,6 +72,8 @@ class FilesClient:
 
         file : DeidentifyFileRequestFile
             File to de-identify. Files are specified as Base64-encoded data.
+
+        configuration_id : typing.Optional[ConfigurationId]
 
         entity_types : typing.Optional[EntityTypes]
 
@@ -105,6 +112,7 @@ class FilesClient:
         _response = self._raw_client.deidentify_file(
             vault_id=vault_id,
             file=file,
+            configuration_id=configuration_id,
             entity_types=entity_types,
             token_type=token_type,
             allow_regex=allow_regex,
@@ -119,6 +127,7 @@ class FilesClient:
         *,
         vault_id: VaultId,
         file: DeidentifyDocumentRequestFile,
+        configuration_id: typing.Optional[ConfigurationId] = OMIT,
         entity_types: typing.Optional[EntityTypes] = OMIT,
         token_type: typing.Optional[TokenTypeWithoutVault] = OMIT,
         allow_regex: typing.Optional[AllowRegex] = OMIT,
@@ -135,6 +144,8 @@ class FilesClient:
 
         file : DeidentifyDocumentRequestFile
             File to de-identify. Files are specified as Base64-encoded data.
+
+        configuration_id : typing.Optional[ConfigurationId]
 
         entity_types : typing.Optional[EntityTypes]
 
@@ -173,6 +184,7 @@ class FilesClient:
         _response = self._raw_client.deidentify_document(
             vault_id=vault_id,
             file=file,
+            configuration_id=configuration_id,
             entity_types=entity_types,
             token_type=token_type,
             allow_regex=allow_regex,
@@ -187,6 +199,7 @@ class FilesClient:
         *,
         vault_id: VaultId,
         file: DeidentifyPdfRequestFile,
+        configuration_id: typing.Optional[ConfigurationId] = OMIT,
         density: typing.Optional[int] = OMIT,
         max_resolution: typing.Optional[int] = OMIT,
         entity_types: typing.Optional[EntityTypes] = OMIT,
@@ -205,6 +218,8 @@ class FilesClient:
 
         file : DeidentifyPdfRequestFile
             File to de-identify. Files are specified as Base64-encoded data.
+
+        configuration_id : typing.Optional[ConfigurationId]
 
         density : typing.Optional[int]
             Pixel density at which to process the PDF file.
@@ -248,6 +263,7 @@ class FilesClient:
         _response = self._raw_client.deidentify_pdf(
             vault_id=vault_id,
             file=file,
+            configuration_id=configuration_id,
             density=density,
             max_resolution=max_resolution,
             entity_types=entity_types,
@@ -264,6 +280,7 @@ class FilesClient:
         *,
         vault_id: VaultId,
         file: DeidentifyImageRequestFile,
+        configuration_id: typing.Optional[ConfigurationId] = OMIT,
         output_processed_image: typing.Optional[bool] = OMIT,
         output_ocr_text: typing.Optional[bool] = OMIT,
         masking_method: typing.Optional[DeidentifyImageRequestMaskingMethod] = OMIT,
@@ -283,6 +300,8 @@ class FilesClient:
 
         file : DeidentifyImageRequestFile
             File to de-identify. Files are specified as Base64-encoded data.
+
+        configuration_id : typing.Optional[ConfigurationId]
 
         output_processed_image : typing.Optional[bool]
             If `true`, includes processed image in the output.
@@ -330,6 +349,7 @@ class FilesClient:
         _response = self._raw_client.deidentify_image(
             vault_id=vault_id,
             file=file,
+            configuration_id=configuration_id,
             output_processed_image=output_processed_image,
             output_ocr_text=output_ocr_text,
             masking_method=masking_method,
@@ -347,6 +367,7 @@ class FilesClient:
         *,
         vault_id: VaultId,
         file: DeidentifyTextRequestFile,
+        configuration_id: typing.Optional[ConfigurationId] = OMIT,
         entity_types: typing.Optional[EntityTypes] = OMIT,
         token_type: typing.Optional[TokenTypeWithoutVault] = OMIT,
         allow_regex: typing.Optional[AllowRegex] = OMIT,
@@ -363,6 +384,8 @@ class FilesClient:
 
         file : DeidentifyTextRequestFile
             File to de-identify. Files are specified as Base64-encoded data.
+
+        configuration_id : typing.Optional[ConfigurationId]
 
         entity_types : typing.Optional[EntityTypes]
 
@@ -400,6 +423,7 @@ class FilesClient:
         _response = self._raw_client.deidentify_text(
             vault_id=vault_id,
             file=file,
+            configuration_id=configuration_id,
             entity_types=entity_types,
             token_type=token_type,
             allow_regex=allow_regex,
@@ -414,6 +438,7 @@ class FilesClient:
         *,
         vault_id: VaultId,
         file: DeidentifyStructuredTextRequestFile,
+        configuration_id: typing.Optional[ConfigurationId] = OMIT,
         entity_types: typing.Optional[EntityTypes] = OMIT,
         token_type: typing.Optional[TokenTypeWithoutVault] = OMIT,
         allow_regex: typing.Optional[AllowRegex] = OMIT,
@@ -430,6 +455,8 @@ class FilesClient:
 
         file : DeidentifyStructuredTextRequestFile
             File to de-identify. Files are specified as Base64-encoded data.
+
+        configuration_id : typing.Optional[ConfigurationId]
 
         entity_types : typing.Optional[EntityTypes]
 
@@ -468,6 +495,7 @@ class FilesClient:
         _response = self._raw_client.deidentify_structured_text(
             vault_id=vault_id,
             file=file,
+            configuration_id=configuration_id,
             entity_types=entity_types,
             token_type=token_type,
             allow_regex=allow_regex,
@@ -482,6 +510,7 @@ class FilesClient:
         *,
         vault_id: VaultId,
         file: DeidentifySpreadsheetRequestFile,
+        configuration_id: typing.Optional[ConfigurationId] = OMIT,
         entity_types: typing.Optional[EntityTypes] = OMIT,
         token_type: typing.Optional[TokenTypeWithoutVault] = OMIT,
         allow_regex: typing.Optional[AllowRegex] = OMIT,
@@ -498,6 +527,8 @@ class FilesClient:
 
         file : DeidentifySpreadsheetRequestFile
             File to de-identify. Files are specified as Base64-encoded data.
+
+        configuration_id : typing.Optional[ConfigurationId]
 
         entity_types : typing.Optional[EntityTypes]
 
@@ -536,6 +567,7 @@ class FilesClient:
         _response = self._raw_client.deidentify_spreadsheet(
             vault_id=vault_id,
             file=file,
+            configuration_id=configuration_id,
             entity_types=entity_types,
             token_type=token_type,
             allow_regex=allow_regex,
@@ -550,6 +582,7 @@ class FilesClient:
         *,
         vault_id: VaultId,
         file: DeidentifyPresentationRequestFile,
+        configuration_id: typing.Optional[ConfigurationId] = OMIT,
         entity_types: typing.Optional[EntityTypes] = OMIT,
         token_type: typing.Optional[TokenTypeWithoutVault] = OMIT,
         allow_regex: typing.Optional[AllowRegex] = OMIT,
@@ -566,6 +599,8 @@ class FilesClient:
 
         file : DeidentifyPresentationRequestFile
             File to de-identify. Files are specified as Base64-encoded data.
+
+        configuration_id : typing.Optional[ConfigurationId]
 
         entity_types : typing.Optional[EntityTypes]
 
@@ -604,6 +639,7 @@ class FilesClient:
         _response = self._raw_client.deidentify_presentation(
             vault_id=vault_id,
             file=file,
+            configuration_id=configuration_id,
             entity_types=entity_types,
             token_type=token_type,
             allow_regex=allow_regex,
@@ -618,6 +654,7 @@ class FilesClient:
         *,
         vault_id: VaultId,
         file: DeidentifyAudioRequestFile,
+        configuration_id: typing.Optional[ConfigurationId] = OMIT,
         output_processed_audio: typing.Optional[bool] = OMIT,
         output_transcription: typing.Optional[DeidentifyAudioRequestOutputTranscription] = OMIT,
         bleep_gain: typing.Optional[float] = OMIT,
@@ -640,6 +677,8 @@ class FilesClient:
 
         file : DeidentifyAudioRequestFile
             File to de-identify. Files are specified as Base64-encoded data.
+
+        configuration_id : typing.Optional[ConfigurationId]
 
         output_processed_audio : typing.Optional[bool]
             If `true`, includes processed audio file in the response.
@@ -696,6 +735,7 @@ class FilesClient:
         _response = self._raw_client.deidentify_audio(
             vault_id=vault_id,
             file=file,
+            configuration_id=configuration_id,
             output_processed_audio=output_processed_audio,
             output_transcription=output_transcription,
             bleep_gain=bleep_gain,
@@ -748,6 +788,56 @@ class FilesClient:
         _response = self._raw_client.get_run(run_id, vault_id=vault_id, request_options=request_options)
         return _response.data
 
+    def reidentify_file(
+        self,
+        *,
+        vault_id: VaultId,
+        file: ReidentifyFileRequestFile,
+        format: typing.Optional[ReidentifyFileRequestFormat] = OMIT,
+        request_options: typing.Optional[RequestOptions] = None,
+    ) -> ReidentifyFileResponse:
+        """
+        Re-identifies tokens in a file.
+
+        Parameters
+        ----------
+        vault_id : VaultId
+
+        file : ReidentifyFileRequestFile
+            File to re-identify. Files are specified as Base64-encoded data or an EFS path.
+
+        format : typing.Optional[ReidentifyFileRequestFormat]
+            Mapping of preferred data formatting options to entity types. Returned values are dependent on the configuration of the vault storing the data and the permissions of the user or account making the request.
+
+        request_options : typing.Optional[RequestOptions]
+            Request-specific configuration.
+
+        Returns
+        -------
+        ReidentifyFileResponse
+            A successful response.
+
+        Examples
+        --------
+        from skyflow import Skyflow
+        from skyflow.files import ReidentifyFileRequestFile
+
+        client = Skyflow(
+            token="YOUR_TOKEN",
+        )
+        client.files.reidentify_file(
+            vault_id="f4b3b3b33b3b3b3b3b3b3b3b3b3b3b3b",
+            file=ReidentifyFileRequestFile(
+                base_64="Zm9vYmFy",
+                data_format="txt",
+            ),
+        )
+        """
+        _response = self._raw_client.reidentify_file(
+            vault_id=vault_id, file=file, format=format, request_options=request_options
+        )
+        return _response.data
+
 
 class AsyncFilesClient:
     def __init__(self, *, client_wrapper: AsyncClientWrapper):
@@ -769,6 +859,7 @@ class AsyncFilesClient:
         *,
         vault_id: VaultId,
         file: DeidentifyFileRequestFile,
+        configuration_id: typing.Optional[ConfigurationId] = OMIT,
         entity_types: typing.Optional[EntityTypes] = OMIT,
         token_type: typing.Optional[TokenTypeWithoutVault] = OMIT,
         allow_regex: typing.Optional[AllowRegex] = OMIT,
@@ -785,6 +876,8 @@ class AsyncFilesClient:
 
         file : DeidentifyFileRequestFile
             File to de-identify. Files are specified as Base64-encoded data.
+
+        configuration_id : typing.Optional[ConfigurationId]
 
         entity_types : typing.Optional[EntityTypes]
 
@@ -831,6 +924,7 @@ class AsyncFilesClient:
         _response = await self._raw_client.deidentify_file(
             vault_id=vault_id,
             file=file,
+            configuration_id=configuration_id,
             entity_types=entity_types,
             token_type=token_type,
             allow_regex=allow_regex,
@@ -845,6 +939,7 @@ class AsyncFilesClient:
         *,
         vault_id: VaultId,
         file: DeidentifyDocumentRequestFile,
+        configuration_id: typing.Optional[ConfigurationId] = OMIT,
         entity_types: typing.Optional[EntityTypes] = OMIT,
         token_type: typing.Optional[TokenTypeWithoutVault] = OMIT,
         allow_regex: typing.Optional[AllowRegex] = OMIT,
@@ -861,6 +956,8 @@ class AsyncFilesClient:
 
         file : DeidentifyDocumentRequestFile
             File to de-identify. Files are specified as Base64-encoded data.
+
+        configuration_id : typing.Optional[ConfigurationId]
 
         entity_types : typing.Optional[EntityTypes]
 
@@ -907,6 +1004,7 @@ class AsyncFilesClient:
         _response = await self._raw_client.deidentify_document(
             vault_id=vault_id,
             file=file,
+            configuration_id=configuration_id,
             entity_types=entity_types,
             token_type=token_type,
             allow_regex=allow_regex,
@@ -921,6 +1019,7 @@ class AsyncFilesClient:
         *,
         vault_id: VaultId,
         file: DeidentifyPdfRequestFile,
+        configuration_id: typing.Optional[ConfigurationId] = OMIT,
         density: typing.Optional[int] = OMIT,
         max_resolution: typing.Optional[int] = OMIT,
         entity_types: typing.Optional[EntityTypes] = OMIT,
@@ -939,6 +1038,8 @@ class AsyncFilesClient:
 
         file : DeidentifyPdfRequestFile
             File to de-identify. Files are specified as Base64-encoded data.
+
+        configuration_id : typing.Optional[ConfigurationId]
 
         density : typing.Optional[int]
             Pixel density at which to process the PDF file.
@@ -990,6 +1091,7 @@ class AsyncFilesClient:
         _response = await self._raw_client.deidentify_pdf(
             vault_id=vault_id,
             file=file,
+            configuration_id=configuration_id,
             density=density,
             max_resolution=max_resolution,
             entity_types=entity_types,
@@ -1006,6 +1108,7 @@ class AsyncFilesClient:
         *,
         vault_id: VaultId,
         file: DeidentifyImageRequestFile,
+        configuration_id: typing.Optional[ConfigurationId] = OMIT,
         output_processed_image: typing.Optional[bool] = OMIT,
         output_ocr_text: typing.Optional[bool] = OMIT,
         masking_method: typing.Optional[DeidentifyImageRequestMaskingMethod] = OMIT,
@@ -1025,6 +1128,8 @@ class AsyncFilesClient:
 
         file : DeidentifyImageRequestFile
             File to de-identify. Files are specified as Base64-encoded data.
+
+        configuration_id : typing.Optional[ConfigurationId]
 
         output_processed_image : typing.Optional[bool]
             If `true`, includes processed image in the output.
@@ -1080,6 +1185,7 @@ class AsyncFilesClient:
         _response = await self._raw_client.deidentify_image(
             vault_id=vault_id,
             file=file,
+            configuration_id=configuration_id,
             output_processed_image=output_processed_image,
             output_ocr_text=output_ocr_text,
             masking_method=masking_method,
@@ -1097,6 +1203,7 @@ class AsyncFilesClient:
         *,
         vault_id: VaultId,
         file: DeidentifyTextRequestFile,
+        configuration_id: typing.Optional[ConfigurationId] = OMIT,
         entity_types: typing.Optional[EntityTypes] = OMIT,
         token_type: typing.Optional[TokenTypeWithoutVault] = OMIT,
         allow_regex: typing.Optional[AllowRegex] = OMIT,
@@ -1113,6 +1220,8 @@ class AsyncFilesClient:
 
         file : DeidentifyTextRequestFile
             File to de-identify. Files are specified as Base64-encoded data.
+
+        configuration_id : typing.Optional[ConfigurationId]
 
         entity_types : typing.Optional[EntityTypes]
 
@@ -1158,6 +1267,7 @@ class AsyncFilesClient:
         _response = await self._raw_client.deidentify_text(
             vault_id=vault_id,
             file=file,
+            configuration_id=configuration_id,
             entity_types=entity_types,
             token_type=token_type,
             allow_regex=allow_regex,
@@ -1172,6 +1282,7 @@ class AsyncFilesClient:
         *,
         vault_id: VaultId,
         file: DeidentifyStructuredTextRequestFile,
+        configuration_id: typing.Optional[ConfigurationId] = OMIT,
         entity_types: typing.Optional[EntityTypes] = OMIT,
         token_type: typing.Optional[TokenTypeWithoutVault] = OMIT,
         allow_regex: typing.Optional[AllowRegex] = OMIT,
@@ -1188,6 +1299,8 @@ class AsyncFilesClient:
 
         file : DeidentifyStructuredTextRequestFile
             File to de-identify. Files are specified as Base64-encoded data.
+
+        configuration_id : typing.Optional[ConfigurationId]
 
         entity_types : typing.Optional[EntityTypes]
 
@@ -1234,6 +1347,7 @@ class AsyncFilesClient:
         _response = await self._raw_client.deidentify_structured_text(
             vault_id=vault_id,
             file=file,
+            configuration_id=configuration_id,
             entity_types=entity_types,
             token_type=token_type,
             allow_regex=allow_regex,
@@ -1248,6 +1362,7 @@ class AsyncFilesClient:
         *,
         vault_id: VaultId,
         file: DeidentifySpreadsheetRequestFile,
+        configuration_id: typing.Optional[ConfigurationId] = OMIT,
         entity_types: typing.Optional[EntityTypes] = OMIT,
         token_type: typing.Optional[TokenTypeWithoutVault] = OMIT,
         allow_regex: typing.Optional[AllowRegex] = OMIT,
@@ -1264,6 +1379,8 @@ class AsyncFilesClient:
 
         file : DeidentifySpreadsheetRequestFile
             File to de-identify. Files are specified as Base64-encoded data.
+
+        configuration_id : typing.Optional[ConfigurationId]
 
         entity_types : typing.Optional[EntityTypes]
 
@@ -1310,6 +1427,7 @@ class AsyncFilesClient:
         _response = await self._raw_client.deidentify_spreadsheet(
             vault_id=vault_id,
             file=file,
+            configuration_id=configuration_id,
             entity_types=entity_types,
             token_type=token_type,
             allow_regex=allow_regex,
@@ -1324,6 +1442,7 @@ class AsyncFilesClient:
         *,
         vault_id: VaultId,
         file: DeidentifyPresentationRequestFile,
+        configuration_id: typing.Optional[ConfigurationId] = OMIT,
         entity_types: typing.Optional[EntityTypes] = OMIT,
         token_type: typing.Optional[TokenTypeWithoutVault] = OMIT,
         allow_regex: typing.Optional[AllowRegex] = OMIT,
@@ -1340,6 +1459,8 @@ class AsyncFilesClient:
 
         file : DeidentifyPresentationRequestFile
             File to de-identify. Files are specified as Base64-encoded data.
+
+        configuration_id : typing.Optional[ConfigurationId]
 
         entity_types : typing.Optional[EntityTypes]
 
@@ -1386,6 +1507,7 @@ class AsyncFilesClient:
         _response = await self._raw_client.deidentify_presentation(
             vault_id=vault_id,
             file=file,
+            configuration_id=configuration_id,
             entity_types=entity_types,
             token_type=token_type,
             allow_regex=allow_regex,
@@ -1400,6 +1522,7 @@ class AsyncFilesClient:
         *,
         vault_id: VaultId,
         file: DeidentifyAudioRequestFile,
+        configuration_id: typing.Optional[ConfigurationId] = OMIT,
         output_processed_audio: typing.Optional[bool] = OMIT,
         output_transcription: typing.Optional[DeidentifyAudioRequestOutputTranscription] = OMIT,
         bleep_gain: typing.Optional[float] = OMIT,
@@ -1422,6 +1545,8 @@ class AsyncFilesClient:
 
         file : DeidentifyAudioRequestFile
             File to de-identify. Files are specified as Base64-encoded data.
+
+        configuration_id : typing.Optional[ConfigurationId]
 
         output_processed_audio : typing.Optional[bool]
             If `true`, includes processed audio file in the response.
@@ -1486,6 +1611,7 @@ class AsyncFilesClient:
         _response = await self._raw_client.deidentify_audio(
             vault_id=vault_id,
             file=file,
+            configuration_id=configuration_id,
             output_processed_audio=output_processed_audio,
             output_transcription=output_transcription,
             bleep_gain=bleep_gain,
@@ -1544,4 +1670,62 @@ class AsyncFilesClient:
         asyncio.run(main())
         """
         _response = await self._raw_client.get_run(run_id, vault_id=vault_id, request_options=request_options)
+        return _response.data
+
+    async def reidentify_file(
+        self,
+        *,
+        vault_id: VaultId,
+        file: ReidentifyFileRequestFile,
+        format: typing.Optional[ReidentifyFileRequestFormat] = OMIT,
+        request_options: typing.Optional[RequestOptions] = None,
+    ) -> ReidentifyFileResponse:
+        """
+        Re-identifies tokens in a file.
+
+        Parameters
+        ----------
+        vault_id : VaultId
+
+        file : ReidentifyFileRequestFile
+            File to re-identify. Files are specified as Base64-encoded data or an EFS path.
+
+        format : typing.Optional[ReidentifyFileRequestFormat]
+            Mapping of preferred data formatting options to entity types. Returned values are dependent on the configuration of the vault storing the data and the permissions of the user or account making the request.
+
+        request_options : typing.Optional[RequestOptions]
+            Request-specific configuration.
+
+        Returns
+        -------
+        ReidentifyFileResponse
+            A successful response.
+
+        Examples
+        --------
+        import asyncio
+
+        from skyflow import AsyncSkyflow
+        from skyflow.files import ReidentifyFileRequestFile
+
+        client = AsyncSkyflow(
+            token="YOUR_TOKEN",
+        )
+
+
+        async def main() -> None:
+            await client.files.reidentify_file(
+                vault_id="f4b3b3b33b3b3b3b3b3b3b3b3b3b3b3b",
+                file=ReidentifyFileRequestFile(
+                    base_64="Zm9vYmFy",
+                    data_format="txt",
+                ),
+            )
+
+
+        asyncio.run(main())
+        """
+        _response = await self._raw_client.reidentify_file(
+            vault_id=vault_id, file=file, format=format, request_options=request_options
+        )
         return _response.data
