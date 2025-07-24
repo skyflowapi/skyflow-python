@@ -13,6 +13,7 @@ from ..errors.bad_request_error import BadRequestError
 from ..errors.internal_server_error import InternalServerError
 from ..errors.unauthorized_error import UnauthorizedError
 from ..types.allow_regex import AllowRegex
+from ..types.configuration_id import ConfigurationId
 from ..types.deidentify_string_response import DeidentifyStringResponse
 from ..types.entity_types import EntityTypes
 from ..types.error_response import ErrorResponse
@@ -36,6 +37,7 @@ class RawStringsClient:
         *,
         vault_id: VaultId,
         text: str,
+        configuration_id: typing.Optional[ConfigurationId] = OMIT,
         entity_types: typing.Optional[EntityTypes] = OMIT,
         token_type: typing.Optional[TokenType] = OMIT,
         allow_regex: typing.Optional[AllowRegex] = OMIT,
@@ -52,6 +54,8 @@ class RawStringsClient:
 
         text : str
             String to de-identify.
+
+        configuration_id : typing.Optional[ConfigurationId]
 
         entity_types : typing.Optional[EntityTypes]
 
@@ -77,6 +81,7 @@ class RawStringsClient:
             json={
                 "vault_id": vault_id,
                 "text": text,
+                "configuration_id": configuration_id,
                 "entity_types": entity_types,
                 "token_type": convert_and_respect_annotation_metadata(
                     object_=token_type, annotation=TokenType, direction="write"
@@ -245,6 +250,7 @@ class AsyncRawStringsClient:
         *,
         vault_id: VaultId,
         text: str,
+        configuration_id: typing.Optional[ConfigurationId] = OMIT,
         entity_types: typing.Optional[EntityTypes] = OMIT,
         token_type: typing.Optional[TokenType] = OMIT,
         allow_regex: typing.Optional[AllowRegex] = OMIT,
@@ -261,6 +267,8 @@ class AsyncRawStringsClient:
 
         text : str
             String to de-identify.
+
+        configuration_id : typing.Optional[ConfigurationId]
 
         entity_types : typing.Optional[EntityTypes]
 
@@ -286,6 +294,7 @@ class AsyncRawStringsClient:
             json={
                 "vault_id": vault_id,
                 "text": text,
+                "configuration_id": configuration_id,
                 "entity_types": entity_types,
                 "token_type": convert_and_respect_annotation_metadata(
                     object_=token_type, annotation=TokenType, direction="write"

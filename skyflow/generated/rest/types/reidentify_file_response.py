@@ -4,22 +4,26 @@ import typing
 
 import pydantic
 from ..core.pydantic_utilities import IS_PYDANTIC_V2, UniversalBaseModel
+from .reidentify_file_response_output import ReidentifyFileResponseOutput
+from .reidentify_file_response_status import ReidentifyFileResponseStatus
 
 
-class V1ImageOptions(UniversalBaseModel):
+class ReidentifyFileResponse(UniversalBaseModel):
     """
-    How to handle image files.
-    """
-
-    output_processed_image: typing.Optional[bool] = pydantic.Field(default=None)
-    """
-    If `true`, includes processed image in the output.
+    Response to re-identify a file.
     """
 
-    output_ocr_text: typing.Optional[bool] = pydantic.Field(default=None)
+    status: ReidentifyFileResponseStatus = pydantic.Field()
     """
-    If `true`, includes OCR text output in the response.
+    Status of the re-identify operation.
     """
+
+    output_type: typing.Literal["BASE64"] = pydantic.Field(default="BASE64")
+    """
+    Format of the output file.
+    """
+
+    output: ReidentifyFileResponseOutput
 
     if IS_PYDANTIC_V2:
         model_config: typing.ClassVar[pydantic.ConfigDict] = pydantic.ConfigDict(extra="allow", frozen=True)  # type: ignore # Pydantic v2

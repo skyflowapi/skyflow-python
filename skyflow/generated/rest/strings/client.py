@@ -5,6 +5,7 @@ import typing
 from ..core.client_wrapper import AsyncClientWrapper, SyncClientWrapper
 from ..core.request_options import RequestOptions
 from ..types.allow_regex import AllowRegex
+from ..types.configuration_id import ConfigurationId
 from ..types.deidentify_string_response import DeidentifyStringResponse
 from ..types.entity_types import EntityTypes
 from ..types.reidentify_string_response import ReidentifyStringResponse
@@ -39,6 +40,7 @@ class StringsClient:
         *,
         vault_id: VaultId,
         text: str,
+        configuration_id: typing.Optional[ConfigurationId] = OMIT,
         entity_types: typing.Optional[EntityTypes] = OMIT,
         token_type: typing.Optional[TokenType] = OMIT,
         allow_regex: typing.Optional[AllowRegex] = OMIT,
@@ -55,6 +57,8 @@ class StringsClient:
 
         text : str
             String to de-identify.
+
+        configuration_id : typing.Optional[ConfigurationId]
 
         entity_types : typing.Optional[EntityTypes]
 
@@ -89,6 +93,7 @@ class StringsClient:
         _response = self._raw_client.deidentify_string(
             vault_id=vault_id,
             text=text,
+            configuration_id=configuration_id,
             entity_types=entity_types,
             token_type=token_type,
             allow_regex=allow_regex,
@@ -166,6 +171,7 @@ class AsyncStringsClient:
         *,
         vault_id: VaultId,
         text: str,
+        configuration_id: typing.Optional[ConfigurationId] = OMIT,
         entity_types: typing.Optional[EntityTypes] = OMIT,
         token_type: typing.Optional[TokenType] = OMIT,
         allow_regex: typing.Optional[AllowRegex] = OMIT,
@@ -182,6 +188,8 @@ class AsyncStringsClient:
 
         text : str
             String to de-identify.
+
+        configuration_id : typing.Optional[ConfigurationId]
 
         entity_types : typing.Optional[EntityTypes]
 
@@ -224,6 +232,7 @@ class AsyncStringsClient:
         _response = await self._raw_client.deidentify_string(
             vault_id=vault_id,
             text=text,
+            configuration_id=configuration_id,
             entity_types=entity_types,
             token_type=token_type,
             allow_regex=allow_regex,

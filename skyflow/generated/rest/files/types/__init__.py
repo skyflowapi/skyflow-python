@@ -20,6 +20,9 @@ from .deidentify_spreadsheet_request_file_data_format import DeidentifySpreadshe
 from .deidentify_structured_text_request_file import DeidentifyStructuredTextRequestFile
 from .deidentify_structured_text_request_file_data_format import DeidentifyStructuredTextRequestFileDataFormat
 from .deidentify_text_request_file import DeidentifyTextRequestFile
+from .reidentify_file_request_file import ReidentifyFileRequestFile
+from .reidentify_file_request_file_data_format import ReidentifyFileRequestFileDataFormat
+from .reidentify_file_request_format import ReidentifyFileRequestFormat
 
 __all__ = [
     "DeidentifyAudioRequestFile",
@@ -40,4 +43,7 @@ __all__ = [
     "DeidentifyStructuredTextRequestFile",
     "DeidentifyStructuredTextRequestFileDataFormat",
     "DeidentifyTextRequestFile",
+    "ReidentifyFileRequestFile",
+    "ReidentifyFileRequestFileDataFormat",
+    "ReidentifyFileRequestFormat",
 ]
