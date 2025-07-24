@@ -88,6 +88,9 @@ class Detect:
         status_val = getattr(data, "status", None) or status
         run_id_val = getattr(data, "run_id", None) or run_id
 
+        word_count = None
+        char_count = None
+
         word_character_count = getattr(data, "wordCharacterCount", None)
         if word_character_count and isinstance(word_character_count, dict):
             word_count = word_character_count.get("wordCount")

@@ -42,8 +42,8 @@ class TestDetect(unittest.TestCase):
                     'scores': {'confidence': 0.9}
                 }
             ],
-            'word_count': 4,
-            'char_count': 20
+            'wordCount': 4,
+            'charCount': 20
         }
 
         # Create request
@@ -149,7 +149,7 @@ class TestDetect(unittest.TestCase):
         processed_response = Mock()
         processed_response.status = "SUCCESS"
         processed_response.output = []
-        processed_response.word_character_count = Mock(word_count=1, character_count=1)
+        processed_response.wordCharacterCount = Mock(wordCount=1, characterCount=1)
         with patch.object(self.detect, "_Detect__poll_for_processed_file",
                           return_value=processed_response) as mock_poll, \
                 patch.object(self.detect, "_Detect__parse_deidentify_file_response",
@@ -212,7 +212,7 @@ class TestDetect(unittest.TestCase):
         processed_response = Mock()
         processed_response.status = "SUCCESS"
         processed_response.output = []
-        processed_response.word_character_count = Mock(word_count=1, character_count=1)
+        processed_response.wordCharacterCount = Mock(wordCount=1, characterCount=1)
         with patch.object(self.detect, "_Detect__poll_for_processed_file",
                           return_value=processed_response) as mock_poll, \
                 patch.object(self.detect, "_Detect__parse_deidentify_file_response",
@@ -257,7 +257,7 @@ class TestDetect(unittest.TestCase):
         response = Mock()
         response.status = "SUCCESS"
         response.output = []
-        response.word_character_count = Mock(word_count=1, character_count=1)
+        response.wordCharacterCount = Mock(wordCount=1, characterCount=1)
         files_api.get_run.return_value = response
         with patch.object(self.detect, "_Detect__parse_deidentify_file_response",
                           return_value=DeidentifyFileResponse(file="file", type="txt", extension="txt", word_count=1,
@@ -299,14 +299,14 @@ class TestDetect(unittest.TestCase):
         processed_response.output = [
             {"processedFile": "dGVzdCBjb250ZW50", "processedFileType": "pdf", "processedFileExtension": "pdf"}
         ]
-        processed_response.word_character_count = Mock(word_count=1, character_count=1)
+        processed_response.wordCharacterCount = Mock(wordCount=1, characterCount=1)
         processed_response.size = 1
         processed_response.duration = 1
         processed_response.pages = 1
         processed_response.slides = 1
         processed_response.message = ""
         processed_response.run_id = "runid123"
-        processed_response.word_character_count = {"wordCount": 1, "characterCount": 1}
+        processed_response.wordCharacterCount = {"wordCount": 1, "characterCount": 1}
         mock_poll.return_value = processed_response
 
         # Test configuration for different file types
@@ -442,7 +442,7 @@ class TestDetect(unittest.TestCase):
                 {"processedFile": "YWJj", "processedFileType": "pdf", "processedFileExtension": "pdf"},  # base64 for "abc"
                 {"processedFile": "ZGVm", "processedFileType": "entities", "processedFileExtension": "json"}  # base64 for "def"
             ],
-            "word_character_count": {"word_count": 5, "character_count": 10},
+            "wordCharacterCount": {"wordCount": 5, "characterCount": 10},
             "size": 1,
             "duration": 2,
             "pages": 3,
@@ -455,8 +455,8 @@ class TestDetect(unittest.TestCase):
 
         # Object input
         class DummyWordChar:
-            word_count = 7
-            character_count = 14
+            wordCount = 7
+            characterCount = 14
 
         class DummyData:
             output = [
@@ -606,7 +606,8 @@ class TestDetect(unittest.TestCase):
 
         data = Mock()
         data.output = [OutputObj()]
-        data.word_character_count = Mock(word_count=1, character_count=1)
+        data.size = 1
+        data.wordCharacterCount = Mock(wordCount=1, characterCount=1)
 
         result = self.detect._Detect__parse_deidentify_file_response(data)
 
@@ -658,7 +659,7 @@ class TestDetect(unittest.TestCase):
         processed_response = Mock()
         processed_response.status = "SUCCESS"
         processed_response.output = []
-        processed_response.word_character_count = Mock(word_count=1, character_count=1)
+        processed_response.wordCharacterCount = Mock(wordCount=1, characterCount=1)
 
         # Test the method
         with patch.object(self.detect, "_Detect__poll_for_processed_file",
