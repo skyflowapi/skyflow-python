@@ -53,7 +53,7 @@ class Vault:
             records_list = self.__build_batch_field_records(
                 request.values,
                 request.tokens,
-                request.table_name,
+                request.table,
                 request.return_tokens,
                 request.upsert
             )
@@ -85,7 +85,7 @@ class Vault:
 
             else:
                 api_response = records_api.record_service_insert_record(self.__vault_client.get_vault_id(),
-                                                                        request.table_name, records=insert_body,tokenization= request.return_tokens, upsert=request.upsert, homogeneous=request.homogeneous, byot=request.token_mode.value, request_options=self.__get_headers())
+                                                                        request.table, records=insert_body,tokenization= request.return_tokens, upsert=request.upsert, homogeneous=request.homogeneous, byot=request.token_mode.value, request_options=self.__get_headers())
 
             insert_response = parse_insert_response(api_response, request.continue_on_error)
             log_info(SkyflowMessages.Info.INSERT_SUCCESS.value, self.__vault_client.get_logger())

@@ -28,7 +28,7 @@ class TestVault(unittest.TestCase):
 
         # Mock request
         request = InsertRequest(
-            table_name=TABLE_NAME,
+            table=TABLE_NAME,
             values=[{"field": "value"}],
             tokens=None,
             return_tokens=True,
@@ -87,7 +87,7 @@ class TestVault(unittest.TestCase):
 
         # Mock request with continue_on_error set to False
         request = InsertRequest(
-            table_name=TABLE_NAME,
+            table=TABLE_NAME,
             values=[{"field": "value"}],
             tokens=None,
             return_tokens=True,
@@ -127,7 +127,7 @@ class TestVault(unittest.TestCase):
 
     @patch("skyflow.vault.controller._vault.validate_insert_request")
     def test_insert_handles_generic_error(self, mock_validate):
-        request = InsertRequest(table_name="test_table", values=[{"column_name": "value"}], return_tokens=False,
+        request = InsertRequest(table="test_table", values=[{"column_name": "value"}], return_tokens=False,
                                 upsert=False,
                                 homogeneous=False, continue_on_error=False, token_mode=Mock())
         records_api = self.vault_client.get_records_api.return_value
@@ -145,7 +145,7 @@ class TestVault(unittest.TestCase):
 
         # Mock request with continue_on_error set to False
         request = InsertRequest(
-            table_name=TABLE_NAME,
+            table=TABLE_NAME,
             values=[{"field": "value"}],
             tokens=[{"token_field": "token_val1"}],
             return_tokens=True,

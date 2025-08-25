@@ -393,10 +393,10 @@ def validate_deidentify_file_request(logger, request: DeidentifyFileRequest):
             raise SkyflowError(SkyflowMessages.Error.WAIT_TIME_GREATER_THEN_64.value, invalid_input_error_code)
 
 def validate_insert_request(logger, request):
-    if not isinstance(request.table_name, str):
+    if not isinstance(request.table, str):
         log_error_log(SkyflowMessages.ErrorLogs.TABLE_IS_REQUIRED.value.format("INSERT"), logger = logger)
         raise SkyflowError(SkyflowMessages.Error.INVALID_TABLE_NAME_IN_INSERT.value, invalid_input_error_code)
-    if not request.table_name.strip():
+    if not request.table.strip():
         log_error_log(SkyflowMessages.ErrorLogs.EMPTY_TABLE_NAME.value.format("INSERT"), logger = logger)
         raise SkyflowError(SkyflowMessages.Error.MISSING_TABLE_NAME_IN_INSERT.value, invalid_input_error_code)
 

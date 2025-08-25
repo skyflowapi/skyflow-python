@@ -215,7 +215,7 @@ table_name = '<SENSITIVE_DATA_TABLE>' # Replace with your actual table name
 
 # Create Insert Request
 insert_request = InsertRequest(
-   table_name=table_name,
+   table=table_name,
    values=insert_data,
    return_tokens=True, # Optional: Get tokens for inserted data
    continue_on_error=True # Optional: Continue on partial errors
@@ -273,7 +273,7 @@ options = InsertOptions(
 
 ```python
 insert_request = InsertRequest(
-   table_name=table_name,        # Replace with the table name
+   table=table_name,        # Replace with the table name
    values=insert_data,
    return_tokens=False,          # Do not return tokens
    continue_on_error=False,      # Stop inserting if any record fails
@@ -474,7 +474,7 @@ try:
 
     # Step 2: Create Insert Request
     insert_request = InsertRequest(
-        table_name='table1',  # Specify the table in the vault where the data will be inserted
+        table='table1',  # Specify the table in the vault where the data will be inserted
         values=insert_data,   # Attach the data (records) to be inserted
         return_tokens=True,   # Specify if tokens should be returned upon successful insertion
         continue_on_error=True  # Optional: Continue on partial errors
@@ -551,7 +551,7 @@ try:
 
     # Step 2: Build an InsertRequest object with the table name and the data to insert
     insert_request = InsertRequest(
-        table_name='<TABLE_NAME>',  # Replace with the actual table name in your Skyflow vault
+        table='<TABLE_NAME>',  # Replace with the actual table name in your Skyflow vault
         values=insert_data,         # Attach the data to be inserted
     )
 
@@ -608,7 +608,7 @@ try:
 
     # Step 4: Build the InsertRequest object with the data records to insert
     insert_request = InsertRequest(
-        table_name='table1',  # Specify the table in the vault where the data will be inserted
+        table='table1',  # Specify the table in the vault where the data will be inserted
         values=insert_data,   # Attach the data (records) to be inserted
         return_tokens=True,   # Specify if tokens should be returned upon successful insertion
         continue_on_error=True  # Specify to continue inserting records even if an error occurs for some records
@@ -686,7 +686,7 @@ try:
 
     # Step 3: Build the InsertRequest object with the upsertData
     insert_request = InsertRequest(
-        table_name='table1',      # Specify the table in the vault where the data will be inserted
+        table='table1',      # Specify the table in the vault where the data will be inserted
         values=insert_data,       # Attach the data (records) to be inserted
         return_tokens=True,       # Specify if tokens should be returned upon successful insertion
         upsert='cardholder_name'  # Specify the field to be used for upsert operations (e.g., cardholder_name)
