@@ -24,7 +24,7 @@ class DeidentifyStatusResponse(UniversalBaseModel):
     How the input file was specified.
     """
 
-    output_type: typing.Optional[DeidentifyStatusResponseOutputType] = pydantic.Field(default=None)
+    output_type: DeidentifyStatusResponseOutputType = pydantic.Field()
     """
     How the output file is specified.
     """
@@ -49,7 +49,7 @@ class DeidentifyStatusResponse(UniversalBaseModel):
     Size of the processed text in kilobytes (KB).
     """
 
-    duration: typing.Optional[int] = pydantic.Field(default=None)
+    duration: typing.Optional[float] = pydantic.Field(default=None)
     """
     Duration of the processed audio in seconds.
     """
