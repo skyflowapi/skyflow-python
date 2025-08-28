@@ -6,6 +6,7 @@ from skyflow.utils import SkyflowMessages, parse_insert_response, \
     parse_tokenize_response, parse_query_response, parse_get_response, encode_column_values, get_metrics
 from skyflow.utils.constants import SKY_META_DATA_HEADER
 from skyflow.utils.enums import RequestMethod
+from skyflow.utils.enums.redaction_type import RedactionType
 from skyflow.utils.logger import log_info, log_error_log
 from skyflow.utils.validations import validate_insert_request, validate_delete_request, validate_query_request, \
     validate_get_request, validate_update_request, validate_detokenize_request, validate_tokenize_request
@@ -201,7 +202,7 @@ class Vault:
         tokens_list = [
             V1DetokenizeRecordRequest(
                 token=item.get('token'),
-                redaction=item.get('redaction', None)
+                redaction=item.get('redaction', RedactionType.DEFAULT)
             )
             for item in request.data
         ]

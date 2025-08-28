@@ -411,9 +411,9 @@ class Detect:
             handle_exception(e, self.__vault_client.get_logger())
 
     def get_detect_run(self, request: GetDetectRunRequest):
+        log_info(SkyflowMessages.Info.GET_DETECT_RUN_TRIGGERED.value,self.__vault_client.get_logger())
         log_info(SkyflowMessages.Info.VALIDATING_GET_DETECT_RUN_INPUT.value, self.__vault_client.get_logger())
         validate_get_detect_run_request(self.__vault_client.get_logger(), request)
-        log_info(SkyflowMessages.Info.DEIDENTIFY_TEXT_REQUEST_RESOLVED.value, self.__vault_client.get_logger())
         self.__initialize()
 
         files_api = self.__vault_client.get_detect_file_api().with_raw_response
@@ -428,6 +428,7 @@ class Detect:
                 parsed_response = self.__parse_deidentify_file_response(DeidentifyFileResponse(run_id=run_id, status='IN_PROGRESS'))
             else:
                 parsed_response = self.__parse_deidentify_file_response(response.data, run_id, response.data.status)
+            log_info(SkyflowMessages.Info.GET_DETECT_RUN_SUCCESS.value,self.__vault_client.get_logger())
             return parsed_response
         except Exception as e:
             log_error_log(SkyflowMessages.ErrorLogs.DETECT_FILE_REQUEST_REJECTED.value,
