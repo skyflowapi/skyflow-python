@@ -68,10 +68,8 @@ class GuardrailsClient:
             token="YOUR_TOKEN",
         )
         client.guardrails.check_guardrails(
-            vault_id="VAULT_ID",
-            text="I love to play cricket.",
-            check_toxicity=True,
-            deny_topics=["sports"],
+            vault_id="vault_id",
+            text="text",
         )
         """
         _response = self._raw_client.check_guardrails(
@@ -145,10 +143,8 @@ class AsyncGuardrailsClient:
 
         async def main() -> None:
             await client.guardrails.check_guardrails(
-                vault_id="VAULT_ID",
-                text="I love to play cricket.",
-                check_toxicity=True,
-                deny_topics=["sports"],
+                vault_id="vault_id",
+                text="text",
             )
 
 

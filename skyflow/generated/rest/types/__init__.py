@@ -27,12 +27,12 @@ from .entity_type import EntityType
 from .entity_types import EntityTypes
 from .error_response import ErrorResponse
 from .error_response_error import ErrorResponseError
-from .error_string import ErrorString
 from .googlerpc_status import GooglerpcStatus
 from .protobuf_any import ProtobufAny
 from .redaction_enum_redaction import RedactionEnumRedaction
 from .reidentify_file_response import ReidentifyFileResponse
 from .reidentify_file_response_output import ReidentifyFileResponseOutput
+from .reidentify_file_response_output_type import ReidentifyFileResponseOutputType
 from .reidentify_file_response_status import ReidentifyFileResponseStatus
 from .reidentify_string_response import ReidentifyStringResponse
 from .request_action_type import RequestActionType
@@ -45,6 +45,7 @@ from .token_type_without_vault_default import TokenTypeWithoutVaultDefault
 from .transformations import Transformations
 from .transformations_shift_dates import TransformationsShiftDates
 from .transformations_shift_dates_entity_types_item import TransformationsShiftDatesEntityTypesItem
+from .upload_file_v_2_response import UploadFileV2Response
 from .uuid_ import Uuid
 from .v_1_audit_after_options import V1AuditAfterOptions
 from .v_1_audit_event_response import V1AuditEventResponse
@@ -105,12 +106,12 @@ __all__ = [
     "EntityTypes",
     "ErrorResponse",
     "ErrorResponseError",
-    "ErrorString",
     "GooglerpcStatus",
     "ProtobufAny",
     "RedactionEnumRedaction",
     "ReidentifyFileResponse",
     "ReidentifyFileResponseOutput",
+    "ReidentifyFileResponseOutputType",
     "ReidentifyFileResponseStatus",
     "ReidentifyStringResponse",
     "RequestActionType",
@@ -123,6 +124,7 @@ __all__ = [
     "Transformations",
     "TransformationsShiftDates",
     "TransformationsShiftDatesEntityTypesItem",
+    "UploadFileV2Response",
     "Uuid",
     "V1AuditAfterOptions",
     "V1AuditEventResponse",

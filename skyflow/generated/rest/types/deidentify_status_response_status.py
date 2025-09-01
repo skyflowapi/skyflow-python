@@ -2,4 +2,4 @@
 
 import typing
 
-DeidentifyStatusResponseStatus = typing.Union[typing.Literal["failed", "in_progress", "success"], typing.Any]
+DeidentifyStatusResponseStatus = typing.Union[typing.Literal["FAILED", "IN_PROGRESS", "SUCCESS", "UNKNOWN"], typing.Any]
