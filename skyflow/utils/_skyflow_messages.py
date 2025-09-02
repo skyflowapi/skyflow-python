@@ -100,6 +100,8 @@ class SkyflowMessages:
         INVALID_TABLE_VALUE = f"{error_prefix} Validation error. Invalid type of table. Specify table as a string"
         EMPTY_RECORD_IDS_IN_DELETE = f"{error_prefix} Validation error. 'record ids' array can't be empty. Specify one or more record ids."
         BULK_DELETE_FAILURE = f"{error_prefix} Delete operation failed."
+        EMPTY_SKYFLOW_ID= f"{error_prefix} Validation error. Skyflow id can't be empty."
+        INVALID_FILE_COLUMN_NAME= f"{error_prefix} Validation error. 'column_name' can't be empty."
 
         INVALID_QUERY_TYPE = f"{error_prefix} Validation error. Query parameter is of type {{}}. Specify as a string."
         EMPTY_QUERY = f"{error_prefix} Validation error. Query parameter can't be empty. Specify as a string."

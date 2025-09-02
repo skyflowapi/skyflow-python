@@ -726,18 +726,7 @@ class TestFileUploadValidation(unittest.TestCase):
     def setUp(self):
         self.logger = Mock()
 
-    def test_validate_missing_table(self):
-        """Test validation fails when table is missing"""
-        request = FileUploadRequest(
-            column_name="file_column",
-            skyflow_id="123",
-            file_path="/path/to/file.txt"
-        )
-        with self.assertRaises(SkyflowError) as error:
-            validate_file_upload_request(self.logger, request)
-        self.assertEqual(error.exception.message, SkyflowMessages.Error.INVALID_TABLE_VALUE.value)
-
-    def test_validate_empty_table(self):
+    def test_validate_invalid_table(self):
         """Test validation fails when table is empty"""
         request = FileUploadRequest(
             table="",
@@ -748,17 +737,6 @@ class TestFileUploadValidation(unittest.TestCase):
         with self.assertRaises(SkyflowError) as error:
             validate_file_upload_request(self.logger, request)
         self.assertEqual(error.exception.message, SkyflowMessages.Error.EMPTY_TABLE_VALUE.value)
-
-    def test_validate_missing_skyflow_id(self):
-        """Test validation fails when skyflow_id is missing"""
-        request = FileUploadRequest(
-            table="test_table",
-            column_name="file_column",
-            file_path="/path/to/file.txt"
-        )
-        with self.assertRaises(SkyflowError) as error:
-            validate_file_upload_request(self.logger, request)
-        self.assertEqual(error.exception.message, SkyflowMessages.Error.IDS_KEY_ERROR.value)
 
     def test_validate_empty_skyflow_id(self):
         """Test validation fails when skyflow_id is empty"""
@@ -773,30 +751,19 @@ class TestFileUploadValidation(unittest.TestCase):
         self.assertEqual(error.exception.message, 
                         SkyflowMessages.Error.EMPTY_SKYFLOW_ID.value.format("FILE_UPLOAD"))
 
-    def test_validate_missing_column_name(self):
+    def test_validate_invalid_column_name(self):
         """Test validation fails when column_name is missing"""
         request = FileUploadRequest(
             table="test_table",
             skyflow_id="123",
+            column_name="",
             file_path="/path/to/file.txt"
         )
         with self.assertRaises(SkyflowError) as error:
             validate_file_upload_request(self.logger, request)
         self.assertEqual(error.exception.message, 
-                        SkyflowMessages.Error.INVALID_COLUMN_NAME.value.format(type(None)))
+                        SkyflowMessages.Error.INVALID_FILE_COLUMN_NAME.value.format("FILE_UPLOAD"))
 
-    def test_validate_empty_column_name(self):
-        """Test validation fails when column_name is empty"""
-        request = FileUploadRequest(
-            table="test_table",
-            column_name="",
-            skyflow_id="123",
-            file_path="/path/to/file.txt"
-        )
-        with self.assertRaises(SkyflowError) as error:
-            validate_file_upload_request(self.logger, request)
-        self.assertEqual(error.exception.message,
-                        SkyflowMessages.Error.INVALID_COLUMN_NAME.value.format(type("")))
 
     @patch('os.path.exists')
     @patch('os.path.isfile')

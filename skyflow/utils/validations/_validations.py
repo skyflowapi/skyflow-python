@@ -714,10 +714,10 @@ def validate_file_upload_request(logger, request):
     # Column Name
     column_name = getattr(request, "column_name", None)
     if column_name is None:
-        raise SkyflowError(SkyflowMessages.Error.INVALID_COLUMN_NAME.value.format(type(column_name)), invalid_input_error_code)
+        raise SkyflowError(SkyflowMessages.Error.INVALID_FILE_COLUMN_NAME.value.format(type(column_name)), invalid_input_error_code)
     elif column_name.strip() == "":
         logger.error("Empty column name in FILE_UPLOAD")
-        raise SkyflowError(SkyflowMessages.Error.INVALID_COLUMN_NAME.value.format(type(column_name)), invalid_input_error_code)
+        raise SkyflowError(SkyflowMessages.Error.INVALID_FILE_COLUMN_NAME.value.format(type(column_name)), invalid_input_error_code)
 
     # File-related attributes
     file_path = getattr(request, "file_path", None)
