@@ -198,6 +198,7 @@ class SkyflowMessages:
         INVALID_FILE_OR_ENCODED_FILE= f"{error_prefix} . Error while decoding base64 and saving file"
         INVALID_FILE_TYPE = f"{error_prefix} Validation error. Invalid file type. Specify a valid file type."
         INVALID_FILE_NAME= f"{error_prefix} Validation error. Invalid file name. Specify a valid file name."
+        INVALID_FILE_PATH= f"{error_prefix} Validation error. Invalid file path. Specify a valid file path."
         INVALID_DEIDENTIFY_FILE_PATH= f"{error_prefix} Validation error. Invalid file path. Specify a valid file path."
         INVALID_BASE64_HEADER= f"{error_prefix} Validation error. Invalid base64 header. Specify a valid base64 header."
         INVALID_WAIT_TIME= f"{error_prefix} Validation error. Invalid wait time. Specify a valid wait time as number and should not be greater than 64 secs."
@@ -270,6 +271,12 @@ class SkyflowMessages:
         VALIDATING_TOKENIZE_REQUEST = f"{INFO}: [{error_prefix}] Validating tokenize request."
         TOKENIZE_REQUEST_RESOLVED = f"{INFO}: [{error_prefix}] Tokenize request resolved."
         TOKENIZE_SUCCESS = f"{INFO}: [{error_prefix}] Data tokenized."
+
+        FILE_UPLOAD_TRIGGERED = f"{INFO}: [{error_prefix}] File upload method triggered."
+        VALIDATING_FILE_UPLOAD_REQUEST = f"{INFO}: [{error_prefix}] Validating file upload request."
+        FILE_UPLOAD_REQUEST_RESOLVED = f"{INFO}: [{error_prefix}] File upload request resolved."
+        FILE_UPLOAD_SUCCESS = f"{INFO}: [{error_prefix}] File uploaded successfully."
+        FILE_UPLOAD_REQUEST_REJECTED = f"{ERROR}: [{error_prefix}] File upload failed."
 
         INVOKE_CONNECTION_TRIGGERED = f"{INFO}: [{error_prefix}] Invoke connection method triggered."
         VALIDATING_INVOKE_CONNECTION_REQUEST = f"{INFO}: [{error_prefix}] Validating invoke connection request."
