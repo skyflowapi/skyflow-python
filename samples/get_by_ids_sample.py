@@ -32,5 +32,7 @@ try:
 
     response = client.get_by_id(data)
     print('Response:', response)
-except SkyflowError as e:
-    print('Error Occurred:', e)
+except SkyflowError as skyflow_error:
+    print('Skyflow Error Occurred:', skyflow_error)
+except Exception as general_error:
+    print('Unexpected Error Occurred:', general_error)

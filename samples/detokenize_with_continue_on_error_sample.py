@@ -21,15 +21,19 @@ def detokenize(client, data):
     try:
         response = client.detokenize(data, DetokenizeOptions(continueOnError=True))
         print('Response:', response)
-    except SkyflowError as e:
-        print('Error Occurred:', e)
+    except SkyflowError as skyflow_error:
+        print('Skyflow Error Occurred:', skyflow_error)
+    except Exception as general_error:
+        print('Unexpected Error Occurred:', general_error)
 
 def bulkDetokenize(client, data):
     try:
         response = client.detokenize(data, DetokenizeOptions(continueOnError=False))
         print('Response:', response)
-    except SkyflowError as e:
-        print('Error Occurred:', e)
+    except SkyflowError as skyflow_error:
+        print('Skyflow Error Occurred:', skyflow_error)
+    except Exception as general_error:
+        print('Unexpected Error Occurred:', general_error)
 
 try:
     config = Configuration(
@@ -50,5 +54,7 @@ try:
     
     detokenize(client, data)
     bulkDetokenize(client, data)
-except Exception as e:
-    print('Something went wrong:', e)
+except SkyflowError as skyflow_error:
+    print('Skyflow Error Occurred:', skyflow_error)
+except Exception as general_error:
+    print('Unexpected Error Occurred:', general_error)
