@@ -41,5 +41,7 @@ try:
     accessToken, tokenType = token_provider()
     print("Access Token:", accessToken)
     print("Type of token:", tokenType)
-except SkyflowError as e:
-    print(e)
+except SkyflowError as skyflow_error:
+    print('Skyflow Error Occurred:', skyflow_error)
+except Exception as general_error:
+    print('Unexpected Error Occurred:', general_error)

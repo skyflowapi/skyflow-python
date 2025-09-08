@@ -28,8 +28,7 @@ try:
     }
     response = client.query(data)
     print('Response:', response)
-except SkyflowError as e:
-    if(e.data):
-        print('Error Occurred:', e.data)
-    else:
-        print('Error Occurred:', e.message)
+except SkyflowError as skyflow_error:
+    print('Skyflow Error Occurred:', skyflow_error)
+except Exception as general_error:
+    print('Unexpected Error Occurred:', general_error)
