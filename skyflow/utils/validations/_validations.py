@@ -1,3 +1,4 @@
+import base64
 import json
 import os
 from skyflow.generated.rest import TokenType
@@ -736,7 +737,6 @@ def validate_file_upload_request(logger, request):
         if is_none_or_empty(file_name):
             raise SkyflowError(SkyflowMessages.Error.INVALID_FILE_NAME.value, invalid_input_error_code)
         try:
-            import base64
             base64.b64decode(base64_str)
         except Exception:
             raise SkyflowError(SkyflowMessages.Error.INVALID_BASE64_STRING.value, invalid_input_error_code)
