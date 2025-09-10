@@ -1,12 +1,14 @@
 import unittest
-from unittest.mock import Mock, patch
+from unittest.mock import Mock, patch, mock_open as mock_open_func, mock_open
 from skyflow.generated.rest import V1BatchRecord, V1FieldRecords, V1DetokenizeRecordRequest, V1TokenizeRecordRequest
+from skyflow.utils._skyflow_messages import SkyflowMessages
 from skyflow.utils.enums import RedactionType, TokenMode
 from skyflow.vault.controller import Vault
 from skyflow.vault.data import InsertRequest, InsertResponse, UpdateResponse, UpdateRequest, DeleteResponse, \
-    DeleteRequest, GetRequest, GetResponse, QueryRequest, QueryResponse
+    DeleteRequest, GetRequest, GetResponse, QueryRequest, QueryResponse, FileUploadRequest
 from skyflow.vault.tokens import DetokenizeRequest, DetokenizeResponse, TokenizeResponse, TokenizeRequest
-
+from skyflow.error import SkyflowError
+from skyflow.utils.validations import validate_file_upload_request
 VAULT_ID = "test_vault_id"
 TABLE_NAME = "test_table"
 
@@ -598,3 +600,277 @@ class TestVault(unittest.TestCase):
             self.vault.tokenize(request)
 
         tokens_api.record_service_tokenize.assert_called_once()
+
+    @patch("skyflow.vault.controller._vault.validate_file_upload_request") 
+    def test_upload_file_with_file_path_successful(self, mock_validate):
+        """Test upload_file functionality using file path."""
+        
+        request = FileUploadRequest(
+            table="test_table",
+            column_name="file_column",
+            skyflow_id="123",
+            file_path="/path/to/test.txt",
+        )
+
+        # Mock file open
+        mocked_open = mock_open_func(read_data=b"test file content")
+        
+        # Mock API response
+        mock_api_response = Mock()
+        mock_api_response.data = Mock(skyflow_id="123")
+
+        records_api = self.vault_client.get_records_api.return_value
+        records_api.with_raw_response.upload_file_v_2.return_value = mock_api_response
+
+        with patch('builtins.open', mocked_open):
+            result = self.vault.upload_file(request)
+            mock_validate.assert_called_once_with(self.vault_client.get_logger(), request)
+            mocked_open.assert_called_once_with("/path/to/test.txt", "rb")
+            self.assertEqual(result.skyflow_id, "123")
+            self.assertIsNone(result.errors)
+
+    @patch("skyflow.vault.controller._vault.validate_file_upload_request")
+    def test_upload_file_with_base64_successful(self, mock_validate):
+        """Test upload_file functionality using base64 content."""
+        
+        request = FileUploadRequest(
+            table="test_table",
+            column_name="file_column",
+            skyflow_id="123",
+            base64="dGVzdCBmaWxlIGNvbnRlbnQ=",  # "test file content" in base64
+            file_name="test.txt"
+        )
+
+        # Mock API response
+        mock_api_response = Mock()
+        mock_api_response.data = Mock(skyflow_id="123")
+
+        records_api = self.vault_client.get_records_api.return_value
+        records_api.with_raw_response.upload_file_v_2.return_value = mock_api_response
+
+        # Call upload_file
+        result = self.vault.upload_file(request)
+        mock_validate.assert_called_once_with(self.vault_client.get_logger(), request)
+        self.assertEqual(result.skyflow_id, "123")
+        self.assertIsNone(result.errors)
+
+    @patch("skyflow.vault.controller._vault.validate_file_upload_request")
+    def test_upload_file_with_file_object_successful(self, mock_validate):
+        """Test upload_file functionality using file object."""
+        
+        # Create mock file object
+        mock_file = Mock()
+        mock_file.name = "test.txt"
+        
+        request = FileUploadRequest(
+            table="test_table",
+            column_name="file_column",
+            skyflow_id="123",
+            file_object=mock_file
+        )
+
+        # Mock API response
+        mock_api_response = Mock()
+        mock_api_response.data = Mock(skyflow_id="123")
+
+        records_api = self.vault_client.get_records_api.return_value
+        records_api.with_raw_response.upload_file_v_2.return_value = mock_api_response
+
+        # Call upload_file
+        result = self.vault.upload_file(request)
+        mock_validate.assert_called_once_with(self.vault_client.get_logger(), request)
+        self.assertEqual(result.skyflow_id, "123")
+        self.assertIsNone(result.errors)
+
+    @patch("skyflow.vault.controller._vault.validate_file_upload_request")
+    def test_upload_file_handles_api_error(self, mock_validate):
+        """Test upload_file error handling for API errors."""
+        
+        request = FileUploadRequest(
+            table="test_table",
+            column_name="file_column",
+            skyflow_id="123",
+            file_path="/path/to/test.txt"
+        )
+
+        # Mock API error
+        records_api = self.vault_client.get_records_api.return_value
+        records_api.with_raw_response.upload_file_v_2.side_effect = Exception("Upload failed")
+
+        # Assert that the exception is propagated
+        with patch('builtins.open', mock_open(read_data=b"test content")):
+            with self.assertRaises(Exception):
+                self.vault.upload_file(request)
+            mock_validate.assert_called_once_with(self.vault_client.get_logger(), request)
+
+    @patch("skyflow.vault.controller._vault.validate_file_upload_request")
+    def test_upload_file_with_missing_file_source(self, mock_validate):
+        """Test upload_file with no file source specified."""
+        
+        request = FileUploadRequest(
+            table="test_table",
+            column_name="file_column",
+            skyflow_id="123"
+        )
+
+        mock_validate.side_effect = SkyflowError(SkyflowMessages.Error.MISSING_FILE_SOURCE.value, 
+                                               SkyflowMessages.ErrorCodes.INVALID_INPUT.value)
+
+        with self.assertRaises(SkyflowError) as error:
+            self.vault.upload_file(request)
+
+        self.assertEqual(error.exception.message, SkyflowMessages.Error.MISSING_FILE_SOURCE.value)
+        mock_validate.assert_called_once_with(self.vault_client.get_logger(), request)
+
+class TestFileUploadValidation(unittest.TestCase):
+    def setUp(self):
+        self.logger = Mock()
+
+    def test_validate_invalid_table(self):
+        """Test validation fails when table is empty"""
+        request = FileUploadRequest(
+            table="",
+            column_name="file_column", 
+            skyflow_id="123",
+            file_path="/path/to/file.txt"
+        )
+        with self.assertRaises(SkyflowError) as error:
+            validate_file_upload_request(self.logger, request)
+        self.assertEqual(error.exception.message, SkyflowMessages.Error.EMPTY_TABLE_VALUE.value)
+
+    def test_validate_empty_skyflow_id(self):
+        """Test validation fails when skyflow_id is empty"""
+        request = FileUploadRequest(
+            table="test_table",
+            column_name="file_column",
+            skyflow_id="",
+            file_path="/path/to/file.txt"
+        )
+        with self.assertRaises(SkyflowError) as error:
+            validate_file_upload_request(self.logger, request)
+        self.assertEqual(error.exception.message, 
+                        SkyflowMessages.Error.EMPTY_SKYFLOW_ID.value.format("FILE_UPLOAD"))
+
+    def test_validate_invalid_column_name(self):
+        """Test validation fails when column_name is missing"""
+        request = FileUploadRequest(
+            table="test_table",
+            skyflow_id="123",
+            column_name="",
+            file_path="/path/to/file.txt"
+        )
+        with self.assertRaises(SkyflowError) as error:
+            validate_file_upload_request(self.logger, request)
+        self.assertEqual(error.exception.message, 
+                        SkyflowMessages.Error.INVALID_FILE_COLUMN_NAME.value.format("FILE_UPLOAD"))
+
+
+    @patch('os.path.exists')
+    @patch('os.path.isfile')
+    def test_validate_file_path_success(self, mock_isfile, mock_exists):
+        """Test validation succeeds with valid file path"""
+        mock_exists.return_value = True
+        mock_isfile.return_value = True
+        
+        request = FileUploadRequest(
+            table="test_table",
+            column_name="file_column",
+            skyflow_id="123",
+            file_path="/path/to/file.txt"
+        )
+        validate_file_upload_request(self.logger, request)
+        mock_exists.assert_called_once_with("/path/to/file.txt")
+        mock_isfile.assert_called_once_with("/path/to/file.txt")
+
+    @patch('os.path.exists')
+    def test_validate_invalid_file_path(self, mock_exists):
+        """Test validation fails with invalid file path"""
+        mock_exists.return_value = False
+        
+        request = FileUploadRequest(
+            table="test_table",
+            column_name="file_column",
+            skyflow_id="123",
+            file_path="/invalid/path.txt"
+        )
+        with self.assertRaises(SkyflowError) as error:
+            validate_file_upload_request(self.logger, request)
+        self.assertEqual(error.exception.message, SkyflowMessages.Error.INVALID_FILE_PATH.value)
+
+    def test_validate_base64_success(self):
+        """Test validation succeeds with valid base64"""
+        request = FileUploadRequest(
+            table="test_table",
+            column_name="file_column",
+            skyflow_id="123",
+            base64="dGVzdCBmaWxlIGNvbnRlbnQ=",
+            file_name="test.txt"
+        )
+        validate_file_upload_request(self.logger, request)
+
+    def test_validate_base64_without_filename(self):
+        """Test validation fails with base64 but no filename"""
+        request = FileUploadRequest(
+            table="test_table",
+            column_name="file_column",
+            skyflow_id="123",
+            base64="dGVzdCBmaWxlIGNvbnRlbnQ="
+        )
+        with self.assertRaises(SkyflowError) as error:
+            validate_file_upload_request(self.logger, request)
+        self.assertEqual(error.exception.message, SkyflowMessages.Error.INVALID_FILE_NAME.value)
+
+    def test_validate_invalid_base64(self):
+        """Test validation fails with invalid base64"""
+        request = FileUploadRequest(
+            table="test_table",
+            column_name="file_column",
+            skyflow_id="123",
+            base64="invalid-base64",
+            file_name="test.txt"
+        )
+        with self.assertRaises(SkyflowError) as error:
+            validate_file_upload_request(self.logger, request)
+        self.assertEqual(error.exception.message, SkyflowMessages.Error.INVALID_BASE64_STRING.value)
+
+    def test_validate_file_object_success(self):
+        """Test validation succeeds with valid file object"""
+        mock_file = Mock()
+        mock_file.seek = Mock()  # Add seek method
+        
+        request = FileUploadRequest(
+            table="test_table",
+            column_name="file_column",
+            skyflow_id="123",
+            file_object=mock_file
+        )
+        validate_file_upload_request(self.logger, request)
+
+    def test_validate_invalid_file_object(self):
+        """Test validation fails with invalid file object"""
+        mock_file = Mock()
+        mock_file.seek = Mock(side_effect=Exception())  # Make seek fail
+        
+        request = FileUploadRequest(
+            table="test_table",
+            column_name="file_column",
+            skyflow_id="123",
+            file_object=mock_file
+        )
+        with self.assertRaises(SkyflowError) as error:
+            validate_file_upload_request(self.logger, request)
+        self.assertEqual(error.exception.message, SkyflowMessages.Error.INVALID_FILE_OBJECT.value)
+
+    def test_validate_missing_file_source(self):
+        """Test validation fails when no file source is provided"""
+        request = FileUploadRequest(
+            table="test_table",
+            column_name="file_column",
+            skyflow_id="123"
+        )
+        with self.assertRaises(SkyflowError) as error:
+            validate_file_upload_request(self.logger, request)
+        self.assertEqual(error.exception.message, SkyflowMessages.Error.MISSING_FILE_SOURCE.value)
+        with self.assertRaises(SkyflowError) as error:
+            validate_file_upload_request(self.logger, request)
+        self.assertEqual(error.exception.message, SkyflowMessages.Error.MISSING_FILE_SOURCE.value)

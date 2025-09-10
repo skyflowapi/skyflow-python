@@ -5,6 +5,7 @@ import typing
 import pydantic
 from ..core.pydantic_utilities import IS_PYDANTIC_V2, UniversalBaseModel
 from .reidentify_file_response_output import ReidentifyFileResponseOutput
+from .reidentify_file_response_output_type import ReidentifyFileResponseOutputType
 from .reidentify_file_response_status import ReidentifyFileResponseStatus
 
 
@@ -18,7 +19,7 @@ class ReidentifyFileResponse(UniversalBaseModel):
     Status of the re-identify operation.
     """
 
-    output_type: typing.Literal["BASE64"] = pydantic.Field(default="BASE64")
+    output_type: ReidentifyFileResponseOutputType = pydantic.Field()
     """
     Format of the output file.
     """
