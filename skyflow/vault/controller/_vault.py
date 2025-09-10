@@ -1,7 +1,7 @@
 import base64
 import json
 import os
-from typing import BinaryIO, Optional, Tuple
+from typing import Optional
 from skyflow.generated.rest import V1FieldRecords, V1BatchRecord, V1TokenizeRecordRequest, \
     V1DetokenizeRecordRequest
 from skyflow.generated.rest.core.file import File
