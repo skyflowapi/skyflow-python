@@ -2,4 +2,4 @@
 
 import typing
 
-DeidentifyStatusResponseOutputType = typing.Union[typing.Literal["BASE64", "UNKNOWN"], typing.Any]
+DeidentifyStatusResponseOutputType = typing.Union[typing.Literal["base64", "efs_path"], typing.Any]

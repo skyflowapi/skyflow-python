@@ -11,7 +11,7 @@ class ReidentifyStringResponse(UniversalBaseModel):
     Re-identify string response.
     """
 
-    text: typing.Optional[str] = pydantic.Field(default=None)
+    processed_text: typing.Optional[str] = pydantic.Field(default=None)
     """
     Re-identified text.
     """

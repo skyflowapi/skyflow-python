@@ -287,8 +287,8 @@ class RawFilesClient:
         vault_id: VaultId,
         file: DeidentifyPdfRequestFile,
         configuration_id: typing.Optional[ConfigurationId] = OMIT,
-        density: typing.Optional[float] = OMIT,
-        max_resolution: typing.Optional[float] = OMIT,
+        density: typing.Optional[int] = OMIT,
+        max_resolution: typing.Optional[int] = OMIT,
         entity_types: typing.Optional[EntityTypes] = OMIT,
         token_type: typing.Optional[TokenTypeWithoutVault] = OMIT,
         allow_regex: typing.Optional[AllowRegex] = OMIT,
@@ -308,10 +308,10 @@ class RawFilesClient:
 
         configuration_id : typing.Optional[ConfigurationId]
 
-        density : typing.Optional[float]
+        density : typing.Optional[int]
             Pixel density at which to process the PDF file.
 
-        max_resolution : typing.Optional[float]
+        max_resolution : typing.Optional[int]
             Max resolution at which to process the PDF file.
 
         entity_types : typing.Optional[EntityTypes]
@@ -1575,8 +1575,8 @@ class AsyncRawFilesClient:
         vault_id: VaultId,
         file: DeidentifyPdfRequestFile,
         configuration_id: typing.Optional[ConfigurationId] = OMIT,
-        density: typing.Optional[float] = OMIT,
-        max_resolution: typing.Optional[float] = OMIT,
+        density: typing.Optional[int] = OMIT,
+        max_resolution: typing.Optional[int] = OMIT,
         entity_types: typing.Optional[EntityTypes] = OMIT,
         token_type: typing.Optional[TokenTypeWithoutVault] = OMIT,
         allow_regex: typing.Optional[AllowRegex] = OMIT,
@@ -1596,10 +1596,10 @@ class AsyncRawFilesClient:
 
         configuration_id : typing.Optional[ConfigurationId]
 
-        density : typing.Optional[float]
+        density : typing.Optional[int]
             Pixel density at which to process the PDF file.
 
-        max_resolution : typing.Optional[float]
+        max_resolution : typing.Optional[int]
             Max resolution at which to process the PDF file.
 
         entity_types : typing.Optional[EntityTypes]
