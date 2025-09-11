@@ -374,6 +374,7 @@ class SkyflowMessages:
         DEIDENTIFY_FILE_REQUEST_REJECTED = f"{ERROR}: [{error_prefix}] Deidentify file resulted in failure."
         DETECT_RUN_REQUEST_REJECTED = f"{ERROR}: [{error_prefix}] Detect get run resulted in failure."
         DEIDENTIFY_TEXT_REQUEST_REJECTED = f"{ERROR}: [{error_prefix}] Deidentify text resulted in failure."
+        SAVING_DEIDENTIFY_FILE_FAILED = f"{ERROR}: [{error_prefix}] Error while saving deidentified file to output directory."
         REIDENTIFY_TEXT_REQUEST_REJECTED = f"{ERROR}: [{error_prefix}] Reidentify text resulted in failure."
         DETECT_FILE_REQUEST_REJECTED = f"{ERROR}: [{error_prefix}] Deidentify file resulted in failure."
 

@@ -1897,23 +1897,24 @@ ReidentifyTextResponse(
 ```
 
 ### Deidentify File
-To deidentify files, use the `deidentify_file` method. The `DeidentifyFileRequest` class creates a deidentify file request, which includes the file to be deidentified and various configuration options.
+To deidentify files, use the `deidentify_file` method. The `DeidentifyFileRequest` class creates a deidentify file request, supports providing either a file or a file path in class FileInput for de-identification, along with various configuration options.
 
 #### Construct a Deidentify File request
 ```python
 from skyflow.error import SkyflowError 
 from skyflow.utils.enums import DetectEntities, MaskingMethod, DetectOutputTranscriptions
-from skyflow.vault.detect import DeidentifyFileRequest, TokenFormat, Transformations, Bleep
+from skyflow.vault.detect import DeidentifyFileRequest, TokenFormat, Transformations, Bleep, FileInput
 """
 This example demonstrates how to deidentify file, along with corresponding DeidentifyFileRequest schema. 
 """
 try:
     # Initialize Skyflow client
     # Step 1: Open file for deidentification
-    file = open('<FILE_PATH>', 'rb')  # Open the file in read-binary mode
+    file_path="<FILE_PATH>"
+    file = open(file_path, 'rb')  # Open the file in read-binary mode
     # Step 2: Create deidentify file request
     request = DeidentifyFileRequest(
-        file=file,  # File object to deidentify
+        file=FileInput(file),  # File to de-identify (can also provide a file path)
         entities=[DetectEntities.SSN, DetectEntities.CREDIT_CARD],  # Entities to detect
         
         # Token format configuration
@@ -1971,7 +1972,7 @@ except Exception as error:
 ```python
 from skyflow.error import SkyflowError
 from skyflow.utils.enums import DetectEntities, MaskingMethod, DetectOutputTranscriptions
-from skyflow.vault.detect import DeidentifyFileRequest, TokenFormat, Bleep
+from skyflow.vault.detect import DeidentifyFileRequest, TokenFormat, Bleep, FileInput
 """
  * Skyflow Deidentify File Example
  * 
@@ -1985,7 +1986,7 @@ try:
     file = open('sensitive_document.txt', 'rb') # Open the file in read-binary mode
     # Step 2: Create deidentify file request
     request = DeidentifyFileRequest(
-        file=file,    # File object to deidentify
+        file=FileInput(file),  # File to de-identify (can also provide a file path)
         entities=[
             DetectEntities.SSN,
             DetectEntities.CREDIT_CARD
@@ -2038,7 +2039,6 @@ DeidentifyFileResponse(
     ],
     run_id='83abcdef-2b61-4a83-a4e0-cbc71ffabffd',
     status='SUCCESS',
-    errors=[]
 )
 ```
 
@@ -2121,7 +2121,7 @@ except Exception as error:
     print('Unexpected Error:', error)  # Print the stack trace for debugging purposes
 ```
 
-Sample Response
+Sample Response:
 ```python
 DeidentifyFileResponse(
     file='TXkgY2FyZCBudW1iZXIgaXMgW0NSRURJVF9DQVJEXQpteSBzZWNvbmQ…',  # Base64 encoded file content
@@ -2142,7 +2142,26 @@ DeidentifyFileResponse(
     ],
     run_id='48ec05ba-96ec-4641-a8e2-35e066afef95',
     status='SUCCESS',
-    errors=[]
+)
+```
+
+Incase of invalid/expired RunId:
+
+```python
+DeidentifyFileResponse(
+    file_base64=None,
+    file=None,
+    type='UNKNOWN',
+    extension=None,
+    word_count=None,
+    char_count=None,
+    size_in_kb=0.0,
+    duration_in_seconds=None,
+    page_count=None,
+    slide_count=None,
+    entities=[],
+    run_id='1e9f321f-dd51-4ab1-a014-21212fsdfsd',
+    status='UNKNOWN'
 )
 ```
 

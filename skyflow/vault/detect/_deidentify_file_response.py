@@ -17,7 +17,6 @@ class DeidentifyFileResponse:
         entities: list = None,  # list of dicts with keys 'file' and 'extension'
         run_id: str = None,
         status: str = None,
-        errors: list = None,
     ):
         self.file_base64 = file_base64
         self.file = File(file) if file else None
@@ -32,7 +31,6 @@ class DeidentifyFileResponse:
         self.entities = entities if entities is not None else []
         self.run_id = run_id
         self.status = status
-        self.errors = errors
 
     def __repr__(self):
         return (
@@ -42,7 +40,7 @@ class DeidentifyFileResponse:
             f"char_count={self.char_count!r}, size_in_kb={self.size_in_kb!r}, "
             f"duration_in_seconds={self.duration_in_seconds!r}, page_count={self.page_count!r}, "
             f"slide_count={self.slide_count!r}, entities={self.entities!r}, "
-            f"run_id={self.run_id!r}, status={self.status!r}, errors={self.errors!r})"
+            f"run_id={self.run_id!r}, status={self.status!r})"
         )
 
     def __str__(self):

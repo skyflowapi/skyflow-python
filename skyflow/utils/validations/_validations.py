@@ -276,7 +276,7 @@ def validate_file_from_request(file_input: FileInput):
             raise SkyflowError(SkyflowMessages.Error.INVALID_FILE_TYPE.value, invalid_input_error_code)
         
         # Validate file name
-        file_name = os.path.splitext(file.name)[0]
+        file_name, _ = os.path.splitext(os.path.basename(file.name))
         if not file_name or not file_name.strip():
             raise SkyflowError(SkyflowMessages.Error.INVALID_FILE_NAME.value, invalid_input_error_code)
             
