@@ -1,1 +1,1 @@
-SDK_VERSION = '1.15.2'
+SDK_VERSION = '1.15.3'
