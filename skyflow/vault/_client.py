@@ -55,9 +55,9 @@ class Client:
             "Authorization": "Bearer " + self.storedToken,
             "sky-metadata": json.dumps(getMetrics())
         }
-
+        max_retries = 1
         # Use for-loop for retry logic, avoid code repetition
-        for attempt in range(2):
+        for attempt in range(max_retries):
             try:
                 # If jsonBody is a dict, use json=, else use data=
                 if isinstance(jsonBody, dict):
