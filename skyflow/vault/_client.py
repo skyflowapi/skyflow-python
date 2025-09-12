@@ -55,15 +55,12 @@ class Client:
             "Authorization": "Bearer " + self.storedToken,
             "sky-metadata": json.dumps(getMetrics())
         }
-        max_retries = 1
+        max_retries = 3
         # Use for-loop for retry logic, avoid code repetition
-        for attempt in range(max_retries):
+        for attempt in range(max_retries+1):
             try:
                 # If jsonBody is a dict, use json=, else use data=
-                if isinstance(jsonBody, dict):
-                    response = requests.post(requestURL, json=jsonBody, headers=headers)
-                else:
-                    response = requests.post(requestURL, data=jsonBody, headers=headers)
+                response = requests.post(requestURL, data=jsonBody, headers=headers)
                 processedResponse = processResponse(response)
                 result, partial = convertResponse(records, processedResponse, options)
                 if partial:
@@ -75,16 +72,10 @@ class Client:
                 log_info(InfoMessages.INSERT_DATA_SUCCESS.value, interface)
                 return result
             except requests.exceptions.ConnectionError as err:
-                log_error(f'Connection error inserting record: {err}', interface)
-                if attempt == 0:
-                    log_info("Retrying record...", interface)
+                if attempt < max_retries:
                     continue
                 else:
-                    raise SkyflowError(SkyflowErrorCodes.SERVER_ERROR, f"Connection error after retry: {err}", interface=interface)
-            except Exception as err:
-                log_error(f'Unexpected error in insert: {err}', interface)
-                raise
-        
+                    raise SkyflowError(SkyflowErrorCodes.SERVER_ERROR, f"Error occurred: {err}", interface=interface)
 
     def detokenize(self, records: dict, options: DetokenizeOptions = DetokenizeOptions()):
         interface = InterfaceName.DETOKENIZE.value
