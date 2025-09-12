@@ -656,7 +656,11 @@ class TestDetect(unittest.TestCase):
         # Setup processed response
         processed_response = Mock()
         processed_response.status = "SUCCESS"
-        processed_response.output = []
+        processed_response.output = [
+            Mock(processedFile="dGVzdCBjb250ZW",
+                 processedFileType="txt",
+                 processedFileExtension="txt")
+        ]
         processed_response.wordCharacterCount = Mock(wordCount=1, characterCount=1)
 
         # Test the method
@@ -682,10 +686,9 @@ class TestDetect(unittest.TestCase):
             result = self.detect.deidentify_file(req)
 
             mock_file.read.assert_called_once()
-            mock_basename.assert_called_with("/path/to/test.txt")
-
             mock_validate.assert_called_once()
             files_api.deidentify_text.assert_called_once()
+            mock_basename.assert_called_with("/path/to/test.txt")
             mock_poll.assert_called_once()
             mock_parse.assert_called_once()
 
