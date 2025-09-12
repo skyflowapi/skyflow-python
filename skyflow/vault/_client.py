@@ -45,7 +45,6 @@ class Client:
     def insert(self, records: dict, options: InsertOptions = InsertOptions()):
         interface = InterfaceName.INSERT.value
         log_info(InfoMessages.INSERT_TRIGGERED.value, interface=interface)
-
         self._checkConfig(interface)
 
         jsonBody = getInsertRequestBody(records, options)
@@ -57,16 +56,35 @@ class Client:
             "sky-metadata": json.dumps(getMetrics())
         }
 
-        response = requests.post(requestURL, data=jsonBody, headers=headers)
-        processedResponse = processResponse(response)
-        result, partial = convertResponse(records, processedResponse, options)
-        if partial:
-            log_error(SkyflowErrorMessages.BATCH_INSERT_PARTIAL_SUCCESS.value, interface)
-        elif 'records' not in result:
-            log_error(SkyflowErrorMessages.BATCH_INSERT_FAILURE.value, interface)
-        else:
-            log_info(InfoMessages.INSERT_DATA_SUCCESS.value, interface)
-        return result
+        # Use for-loop for retry logic, avoid code repetition
+        for attempt in range(2):
+            try:
+                # If jsonBody is a dict, use json=, else use data=
+                if isinstance(jsonBody, dict):
+                    response = requests.post(requestURL, json=jsonBody, headers=headers)
+                else:
+                    response = requests.post(requestURL, data=jsonBody, headers=headers)
+                processedResponse = processResponse(response)
+                result, partial = convertResponse(records, processedResponse, options)
+                if partial:
+                    log_error(SkyflowErrorMessages.BATCH_INSERT_PARTIAL_SUCCESS.value, interface)
+                    raise SkyflowError(SkyflowErrorCodes.PARTIAL_SUCCESS, SkyflowErrorMessages.BATCH_INSERT_PARTIAL_SUCCESS.value, result, interface=interface)
+                if 'records' not in result:
+                    log_error(SkyflowErrorMessages.BATCH_INSERT_FAILURE.value, interface)
+                    raise SkyflowError(SkyflowErrorCodes.SERVER_ERROR, SkyflowErrorMessages.BATCH_INSERT_FAILURE.value, result, interface=interface)
+                log_info(InfoMessages.INSERT_DATA_SUCCESS.value, interface)
+                return result
+            except requests.exceptions.ConnectionError as err:
+                log_error(f'Connection error inserting record: {err}', interface)
+                if attempt == 0:
+                    log_info("Retrying record...", interface)
+                    continue
+                else:
+                    raise SkyflowError(SkyflowErrorCodes.SERVER_ERROR, f"Connection error after retry: {err}", interface=interface)
+            except Exception as err:
+                log_error(f'Unexpected error in insert: {err}', interface)
+                raise
+        
 
     def detokenize(self, records: dict, options: DetokenizeOptions = DetokenizeOptions()):
         interface = InterfaceName.DETOKENIZE.value
