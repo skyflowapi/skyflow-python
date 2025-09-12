@@ -71,7 +71,7 @@ class Client:
                     raise SkyflowError(SkyflowErrorCodes.SERVER_ERROR, SkyflowErrorMessages.BATCH_INSERT_FAILURE.value, result, interface=interface)
                 log_info(InfoMessages.INSERT_DATA_SUCCESS.value, interface)
                 return result
-            except requests.exceptions.ConnectionError as err:
+            except Exception as err:
                 if attempt < max_retries:
                     continue
                 else:
