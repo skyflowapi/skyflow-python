@@ -75,7 +75,10 @@ class Client:
                 if attempt < max_retries:
                     continue
                 else:
-                    raise SkyflowError(SkyflowErrorCodes.SERVER_ERROR, f"Error occurred: {err}", interface=interface)
+                    if isinstance(err, SkyflowError):
+                        raise err
+                    else:
+                        raise SkyflowError(SkyflowErrorCodes.SERVER_ERROR, f"Error occurred: {err}", interface=interface)
 
     def detokenize(self, records: dict, options: DetokenizeOptions = DetokenizeOptions()):
         interface = InterfaceName.DETOKENIZE.value
