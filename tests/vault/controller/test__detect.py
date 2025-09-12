@@ -159,7 +159,7 @@ class TestDetect(unittest.TestCase):
                                                                  word_count=1, char_count=1, size_in_kb=1,
                                                                  duration_in_seconds=None, page_count=None,
                                                                  slide_count=None, entities=[], run_id="runid123",
-                                                                 status="SUCCESS", errors=None)) as mock_parse:
+                                                                 status="SUCCESS")) as mock_parse:
             result = self.detect.deidentify_file(req)
 
             mock_validate.assert_called_once()
@@ -184,7 +184,6 @@ class TestDetect(unittest.TestCase):
             self.assertIsNone(result.page_count)
             self.assertIsNone(result.slide_count)
             self.assertEqual(result.entities, [])
-            self.assertEqual(result.errors, None)
 
     @patch("skyflow.vault.controller._detect.validate_deidentify_file_request")
     @patch("skyflow.vault.controller._detect.base64")
@@ -222,7 +221,7 @@ class TestDetect(unittest.TestCase):
                                                                  word_count=1, char_count=1, size_in_kb=1,
                                                                  duration_in_seconds=1, page_count=None,
                                                                  slide_count=None, entities=[], run_id="runid456",
-                                                                 status="SUCCESS", errors=None)) as mock_parse:
+                                                                 status="SUCCESS")) as mock_parse:
             result = self.detect.deidentify_file(req)
             mock_validate.assert_called_once()
             files_api.deidentify_audio.assert_called_once()
@@ -263,8 +262,7 @@ class TestDetect(unittest.TestCase):
                           return_value=DeidentifyFileResponse(file="file", type="txt", extension="txt", word_count=1,
                                                               char_count=1, size_in_kb=1, duration_in_seconds=None,
                                                               page_count=None, slide_count=None, entities=[],
-                                                              run_id="runid789", status="SUCCESS",
-                                                              errors=None)) as mock_parse:
+                                                              run_id="runid789", status="SUCCESS")) as mock_parse:
             result = self.detect.get_detect_run(req)
             mock_validate.assert_called_once()
             files_api.get_run.assert_called_once()
@@ -679,7 +677,6 @@ class TestDetect(unittest.TestCase):
                              entities=[],
                              run_id="runid123",
                              status="SUCCESS",
-                             errors=None
                          )) as mock_parse:
             
             result = self.detect.deidentify_file(req)
@@ -710,4 +707,3 @@ class TestDetect(unittest.TestCase):
             self.assertIsNone(result.page_count)
             self.assertIsNone(result.slide_count)
             self.assertEqual(result.entities, [])
-            self.assertEqual(result.errors, None)
