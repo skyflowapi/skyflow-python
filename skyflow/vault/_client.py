@@ -40,12 +40,14 @@ class Client:
 
         retry_strategy = Retry(
             total=3,
+            connect=5,
             backoff_factor=0.5,
             status_forcelist=[500, 502, 503, 504],
+            raise_on_status=True,
         )
 
         self.session = requests.Session()
-        adapter = HTTPAdapter(pool_connections=1, pool_maxsize=20, pool_block=True, max_retries=retry_strategy)
+        adapter = HTTPAdapter(pool_connections=1, pool_maxsize=20, pool_block=False, max_retries=retry_strategy)
         self.session.mount("https://", adapter)
 
         self.vaultID = config.vaultID
@@ -65,16 +67,18 @@ class Client:
             self.storedToken, self.tokenProvider, interface)
         headers = {
             "Authorization": "Bearer " + self.storedToken,
-            "sky-metadata": json.dumps(getMetrics())
+            "sky-metadata": json.dumps(getMetrics()),
+            # "User-Agent": 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36'
         }
         # response = requests.post(requestURL, data=jsonBody, headers=headers)
         response = self.session.post(
             requestURL,
             data=jsonBody,
             headers=headers,
+            # timeout=(5, 300),
         )
         processedResponse = processResponse(response)
-        print(">>> processedResponse", processedResponse)
+        print(">>> processedResponse local: ", processedResponse)
         result, partial = convertResponse(records, processedResponse, options)
         if partial:
             log_error(SkyflowErrorMessages.BATCH_INSERT_PARTIAL_SUCCESS.value, interface)
