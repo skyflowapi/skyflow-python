@@ -2,7 +2,6 @@ import unittest
 from unittest.mock import Mock, patch, MagicMock
 import tempfile
 import os
-from build.lib.skyflow.vault.detect import DeidentifyFileRequest
 from skyflow.error import SkyflowError
 from skyflow.utils.validations._validations import (
     validate_required_field, validate_api_key, validate_credentials,
@@ -17,6 +16,7 @@ from skyflow.utils.validations._validations import (
 from skyflow.utils import SkyflowMessages
 from skyflow.utils.enums import DetectEntities
 from skyflow.vault.detect import DeidentifyTextRequest, Transformations, DateTransformation, ReidentifyTextRequest, FileInput
+from skyflow.vault.detect._deidentify_file_request import DeidentifyFileRequest
 
 
 class TestValidations(unittest.TestCase):
