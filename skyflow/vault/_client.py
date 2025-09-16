@@ -5,6 +5,8 @@ import json
 import types
 import requests
 import asyncio
+from urllib3.util.retry import Retry
+from requests.adapters import HTTPAdapter
 from skyflow.vault._insert import getInsertRequestBody, processResponse, convertResponse
 from skyflow.vault._update import sendUpdateRequests, createUpdateResponseBody
 from skyflow.vault._config import Configuration, ConnectionConfig, DeleteOptions, DetokenizeOptions, GetOptions, InsertOptions, UpdateOptions, QueryOptions
@@ -36,6 +38,18 @@ class Client:
             raise SkyflowError(SkyflowErrorCodes.INVALID_INPUT, SkyflowErrorMessages.TOKEN_PROVIDER_ERROR.value % (
                 str(type(config.tokenProvider))), interface=interface)
 
+        retry_strategy = Retry(
+            total=3,
+            connect=5,
+            backoff_factor=0.5,
+            status_forcelist=[500, 502, 503, 504],
+            raise_on_status=True,
+        )
+
+        self.session = requests.Session()
+        adapter = HTTPAdapter(pool_connections=1, pool_maxsize=20, pool_block=False, max_retries=retry_strategy)
+        self.session.mount("https://", adapter)
+
         self.vaultID = config.vaultID
         self.vaultURL = config.vaultURL.rstrip('/')
         self.tokenProvider = config.tokenProvider
@@ -53,32 +67,27 @@ class Client:
             self.storedToken, self.tokenProvider, interface)
         headers = {
             "Authorization": "Bearer " + self.storedToken,
-            "sky-metadata": json.dumps(getMetrics())
+            "sky-metadata": json.dumps(getMetrics()),
+            # "User-Agent": 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36'
         }
-        max_retries = 3
-        # Use for-loop for retry logic, avoid code repetition
-        for attempt in range(max_retries+1):
-            try:
-                # If jsonBody is a dict, use json=, else use data=
-                response = requests.post(requestURL, data=jsonBody, headers=headers)
-                processedResponse = processResponse(response)
-                result, partial = convertResponse(records, processedResponse, options)
-                if partial:
-                    log_error(SkyflowErrorMessages.BATCH_INSERT_PARTIAL_SUCCESS.value, interface)
-                    raise SkyflowError(SkyflowErrorCodes.PARTIAL_SUCCESS, SkyflowErrorMessages.BATCH_INSERT_PARTIAL_SUCCESS.value, result, interface=interface)
-                if 'records' not in result:
-                    log_error(SkyflowErrorMessages.BATCH_INSERT_FAILURE.value, interface)
-                    raise SkyflowError(SkyflowErrorCodes.SERVER_ERROR, SkyflowErrorMessages.BATCH_INSERT_FAILURE.value, result, interface=interface)
-                log_info(InfoMessages.INSERT_DATA_SUCCESS.value, interface)
-                return result
-            except Exception as err:
-                if attempt < max_retries:
-                    continue
-                else:
-                    if isinstance(err, SkyflowError):
-                        raise err
-                    else:
-                        raise SkyflowError(SkyflowErrorCodes.SERVER_ERROR, f"Error occurred: {err}", interface=interface)
+        # response = requests.post(requestURL, data=jsonBody, headers=headers)
+        response = self.session.post(
+            requestURL,
+            data=jsonBody,
+            headers=headers,
+            # timeout=(5, 300),
+        )
+        print(">>> raw response: ", response.history)
+        processedResponse = processResponse(response)
+        print(">>> processedResponse local: ", processedResponse)
+        result, partial = convertResponse(records, processedResponse, options)
+        if partial:
+            log_error(SkyflowErrorMessages.BATCH_INSERT_PARTIAL_SUCCESS.value, interface)
+        elif 'records' not in result:
+            log_error(SkyflowErrorMessages.BATCH_INSERT_FAILURE.value, interface)
+        else:
+            log_info(InfoMessages.INSERT_DATA_SUCCESS.value, interface)
+        return result
 
     def detokenize(self, records: dict, options: DetokenizeOptions = DetokenizeOptions()):
         interface = InterfaceName.DETOKENIZE.value
