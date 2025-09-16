@@ -5,7 +5,7 @@ import json
 import types
 import requests
 import asyncio
-from requests.packages.urllib3.util.retry import Retry
+from urllib3.util.retry import Retry
 from requests.adapters import HTTPAdapter
 from skyflow.vault._insert import getInsertRequestBody, processResponse, convertResponse
 from skyflow.vault._update import sendUpdateRequests, createUpdateResponseBody
@@ -77,6 +77,7 @@ class Client:
             headers=headers,
             # timeout=(5, 300),
         )
+        print(">>> raw response: ", response.history)
         processedResponse = processResponse(response)
         print(">>> processedResponse local: ", processedResponse)
         result, partial = convertResponse(records, processedResponse, options)
