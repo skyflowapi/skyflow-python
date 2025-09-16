@@ -16,6 +16,7 @@ class SkyflowErrorCodes(Enum):
 
 class SkyflowErrorMessages(Enum):
     API_ERROR = "Server returned status code %s"
+    NETWORK_ERROR = "Network error occurred: %s"
 
     FILE_NOT_FOUND = "File at %s not found"
     FILE_INVALID_JSON = "File at %s is not in JSON format"
