@@ -2,6 +2,7 @@ import unittest
 from unittest.mock import Mock, patch, MagicMock
 import tempfile
 import os
+
 from skyflow.error import SkyflowError
 from skyflow.utils.validations._validations import (
     validate_required_field, validate_api_key, validate_credentials,
@@ -14,10 +15,12 @@ from skyflow.utils.validations._validations import (
     validate_deidentify_text_request, validate_reidentify_text_request, validate_deidentify_file_request
 )
 from skyflow.utils import SkyflowMessages
-from skyflow.utils.enums import DetectEntities
-from skyflow.vault.detect import DeidentifyTextRequest, Transformations, DateTransformation, ReidentifyTextRequest, FileInput
-from skyflow.vault.detect._deidentify_file_request import DeidentifyFileRequest
-
+from skyflow.utils.enums import DetectEntities, RedactionType
+from skyflow.vault.data import GetRequest, UpdateRequest
+from skyflow.vault.detect import DeidentifyTextRequest, Transformations, DateTransformation, ReidentifyTextRequest, \
+    FileInput, DeidentifyFileRequest
+from skyflow.vault.tokens import DetokenizeRequest
+from skyflow.vault.connection._invoke_connection_request import InvokeConnectionRequest
 
 class TestValidations(unittest.TestCase):
     @classmethod
@@ -154,6 +157,10 @@ class TestValidations(unittest.TestCase):
             validate_log_level(self.logger, invalid_log_level)
         self.assertEqual(context.exception.message, SkyflowMessages.Error.INVALID_LOG_LEVEL.value)
 
+    def test_validate_log_level_none(self):
+        with self.assertRaises(SkyflowError) as context:
+            validate_log_level(self.logger, None)
+        self.assertEqual(context.exception.message, SkyflowMessages.Error.INVALID_LOG_LEVEL.value)
 
     def test_validate_keys_valid(self):
         config = {"vault_id": "test_id", "cluster_id": "test_cluster"}
@@ -389,7 +396,7 @@ class TestValidations(unittest.TestCase):
 
     def test_validate_query_request_invalid_query_type(self):
         request = MagicMock()
-        request.query = 123  # Invalid type
+        request.query = 123
         with self.assertRaises(SkyflowError) as context:
             validate_query_request(self.logger, request)
         self.assertEqual(context.exception.message, SkyflowMessages.Error.INVALID_QUERY_TYPE.value.format(str(type(123))))
@@ -438,7 +445,7 @@ class TestValidations(unittest.TestCase):
 
     def test_validate_get_request_invalid_table_type(self):
         request = MagicMock()
-        request.table = 123  # Invalid type
+        request.table = 123
         with self.assertRaises(SkyflowError) as context:
             validate_get_request(self.logger, request)
         self.assertEqual(context.exception.message, SkyflowMessages.Error.INVALID_TABLE_VALUE.value)
@@ -450,6 +457,63 @@ class TestValidations(unittest.TestCase):
             validate_get_request(self.logger, request)
         self.assertEqual(context.exception.message, SkyflowMessages.Error.EMPTY_TABLE_VALUE.value)
 
+    def test_validate_get_request_invalid_redaction_type(self):
+        request = GetRequest(
+            table="test_table",
+            fields="invalid",
+            ids=["id1", "id2"],
+            redaction_type="invalid"
+        )
+
+        with self.assertRaises(SkyflowError) as context:
+            validate_get_request(self.logger, request)
+        self.assertEqual(context.exception.message,
+            SkyflowMessages.Error.INVALID_REDACTION_TYPE.value.format(type(request.redaction_type)))
+
+    def test_validate_get_request_invalid_fields_type(self):
+        request= GetRequest(
+            table="test_table",
+            fields="invalid"
+        )
+        with self.assertRaises(SkyflowError) as context:
+            validate_get_request(self.logger, request)
+        self.assertEqual(context.exception.message,
+            SkyflowMessages.Error.INVALID_FIELDS_VALUE.value.format(type(request.fields)))
+
+    def test_validate_get_request_empty_fields(self):
+        request = GetRequest(
+            table="test_table",
+            ids=[],
+            fields=[]
+        )
+        with self.assertRaises(SkyflowError) as context:
+            validate_get_request(self.logger, request)
+        self.assertEqual(context.exception.message,
+            SkyflowMessages.Error.INVALID_FIELDS_VALUE.value.format(type(request.fields)))
+        
+    def test_validate_get_request_invalid_column_values_type(self):
+        request = GetRequest(
+            table="test_table",
+            column_name="test_column",
+            column_values="invalid",
+        )
+
+        with self.assertRaises(SkyflowError) as context:
+            validate_get_request(self.logger, request)
+        self.assertEqual(context.exception.message,
+            SkyflowMessages.Error.INVALID_COLUMN_VALUE.value.format(type(request.column_values)))
+
+    def test_validate_get_request_tokens_with_redaction(self):
+        request = GetRequest(
+            table="test_table",
+            return_tokens=True,
+            redaction_type = RedactionType.PLAIN_TEXT
+        )
+
+        with self.assertRaises(SkyflowError) as context:
+            validate_get_request(self.logger, request)
+        self.assertEqual(context.exception.message,
+            SkyflowMessages.Error.REDACTION_WITH_TOKENS_NOT_SUPPORTED.value)
 
     def test_validate_query_request_valid_complex(self):
         request = MagicMock()
@@ -473,16 +537,25 @@ class TestValidations(unittest.TestCase):
         request.token_mode = None
         request.tokens = None
         validate_update_request(self.logger, request)
-        
 
     def test_validate_update_request_invalid_table_type(self):
-        request = MagicMock()
-        request.table = 123  # Invalid type
-        request.data = {"skyflow_id": "id123"}
+        request = UpdateRequest(
+            table=123,
+             data = {"skyflow_id": "id123"}
+        )
         with self.assertRaises(SkyflowError) as context:
             validate_update_request(self.logger, request)
         self.assertEqual(context.exception.message, SkyflowMessages.Error.INVALID_TABLE_VALUE.value)
 
+    def test_validate_update_request_invalid_token_mode(self):
+        request = UpdateRequest(
+            table="test_table",
+            data = {"skyflow_id": "id123", "field1": "value1"},
+            token_mode = "invalid"
+        )
+        with self.assertRaises(SkyflowError) as context:
+            validate_update_request(self.logger, request)
+        self.assertEqual(context.exception.message, SkyflowMessages.Error.INVALID_TOKEN_MODE_TYPE.value)
 
     def test_validate_detokenize_request_valid(self):
         request = MagicMock()
@@ -500,7 +573,7 @@ class TestValidations(unittest.TestCase):
 
     def test_validate_detokenize_request_invalid_token(self):
         request = MagicMock()
-        request.data = [{"token": 123}]
+        request.data = [{"token": 123}]  # Invalid token type
         request.continue_on_error = False
         with self.assertRaises(SkyflowError) as context:
             validate_detokenize_request(self.logger, request)
@@ -515,7 +588,7 @@ class TestValidations(unittest.TestCase):
 
     def test_validate_tokenize_request_invalid_values_type(self):
         request = MagicMock()
-        request.values = "invalid"
+        request.values = "invalid"  # Should be list
         with self.assertRaises(SkyflowError) as context:
             validate_tokenize_request(self.logger, request)
         self.assertEqual(context.exception.message,
@@ -523,7 +596,7 @@ class TestValidations(unittest.TestCase):
 
     def test_validate_tokenize_request_empty_values(self):
         request = MagicMock()
-        request.values = []
+        request.values = []  # Empty list
         with self.assertRaises(SkyflowError) as context:
             validate_tokenize_request(self.logger, request)
         self.assertEqual(context.exception.message, SkyflowMessages.Error.EMPTY_TOKENIZE_PARAMETERS.value)
@@ -541,18 +614,56 @@ class TestValidations(unittest.TestCase):
         path_params = {"path1": "value1"}
         validate_invoke_connection_params(self.logger, query_params, path_params)
         
-    def test_validate_invoke_connection_params_invalid_path_params(self):
-        query_params = {"param1": "value1"}
-        path_params = "invalid"  # Should be dict
+    def test_validate_invoke_connection_params_invalid_path_params_type(self):
+        request = InvokeConnectionRequest(
+            method="GET",
+            query_params={"param1": "value1"},
+            path_params="invalid"
+        )
         with self.assertRaises(SkyflowError) as context:
-            validate_invoke_connection_params(self.logger, query_params, path_params)
+            validate_invoke_connection_params(self.logger, request.query_params, request.path_params)
         self.assertEqual(context.exception.message, SkyflowMessages.Error.INVALID_PATH_PARAMS.value)
 
-    def test_validate_invoke_connection_params_invalid_query_params(self):
-        query_params = "invalid"  # Should be dict
-        path_params = {"path1": "value1"}
+    def test_validate_invoke_connection_params_invalid_query_params_type(self):
+        request = InvokeConnectionRequest(
+            method="GET",
+            query_params="invalid",
+            path_params={"path1": "value1"}
+        )
         with self.assertRaises(SkyflowError) as context:
-            validate_invoke_connection_params(self.logger, query_params, path_params)
+            validate_invoke_connection_params(self.logger, request.query_params, request.path_params)
+        self.assertEqual(context.exception.message, SkyflowMessages.Error.INVALID_QUERY_PARAMS.value)
+
+    def test_validate_invoke_connection_params_non_string_path_param(self):
+        request = InvokeConnectionRequest(
+            method="GET",
+            query_params={"param1": "value1"},
+            path_params={1: "value1"}
+        )
+        with self.assertRaises(SkyflowError) as context:
+            validate_invoke_connection_params(self.logger, request.query_params, request.path_params)
+        self.assertEqual(context.exception.message, SkyflowMessages.Error.INVALID_PATH_PARAMS.value)
+
+    def test_validate_invoke_connection_params_non_string_query_param_key(self):
+        request = InvokeConnectionRequest(
+            method="GET",
+            query_params={1: "value1"},
+            path_params={"path1": "value1"}
+        )
+        with self.assertRaises(SkyflowError) as context:
+            validate_invoke_connection_params(self.logger, request.query_params, request.path_params)
+        self.assertEqual(context.exception.message, SkyflowMessages.Error.INVALID_QUERY_PARAMS.value)
+
+    def test_validate_invoke_connection_params_non_serializable_query_params(self):
+        class NonSerializable:
+            pass
+        request = InvokeConnectionRequest(
+            method="GET",
+            query_params={"param1": NonSerializable()},
+            path_params={"path1": "value1"}
+        )
+        with self.assertRaises(SkyflowError) as context:
+            validate_invoke_connection_params(self.logger, request.query_params, request.path_params)
         self.assertEqual(context.exception.message, SkyflowMessages.Error.INVALID_QUERY_PARAMS.value)
 
     def test_validate_deidentify_text_request_valid(self):
@@ -716,6 +827,16 @@ class TestValidations(unittest.TestCase):
             validate_reidentify_text_request(self.logger, request)
         self.assertEqual(context.exception.message,
             SkyflowMessages.Error.INVALID_REDACTED_ENTITIES_IN_REIDENTIFY.value)
+
+    def test_validate_reidentify_text_request_invalid_plain_text_entities(self):
+        request = ReidentifyTextRequest(
+            text="test text",
+            plain_text_entities="invalid"
+        )
+        with self.assertRaises(SkyflowError) as context:
+            validate_reidentify_text_request(self.logger, request)
+        self.assertEqual(context.exception.message,
+            SkyflowMessages.Error.INVALID_PLAIN_TEXT_ENTITIES_IN_REIDENTIFY.value)
 
     def test_validate_deidentify_file_request_valid(self):
         file_input = FileInput(file_path=self.temp_file_path)
@@ -886,3 +1007,40 @@ class TestValidations(unittest.TestCase):
         with self.assertRaises(SkyflowError) as context:
             validate_deidentify_file_request(self.logger, request)
         self.assertEqual(context.exception.message, SkyflowMessages.Error.INVALID_WAIT_TIME.value)
+
+    def test_validate_detokenize_request_valid(self):
+        request = DetokenizeRequest(
+            data=[{"token": "token123", "redaction": RedactionType.PLAIN_TEXT}],
+            continue_on_error=False
+        )
+        validate_detokenize_request(self.logger, request)
+
+    def test_validate_detokenize_request_empty_data(self):
+        request = DetokenizeRequest(data=[], continue_on_error=False)
+        with self.assertRaises(SkyflowError) as context:
+            validate_detokenize_request(self.logger, request)
+        self.assertEqual(context.exception.message, SkyflowMessages.Error.EMPTY_TOKENS_LIST_VALUE.value)
+
+    def test_validate_detokenize_request_invalid_token_type(self):
+        request = DetokenizeRequest(data=[{"token": 123}], continue_on_error=False)
+        with self.assertRaises(SkyflowError) as context:
+            validate_detokenize_request(self.logger, request)
+        self.assertEqual(context.exception.message, SkyflowMessages.Error.INVALID_TOKEN_TYPE.value.format("DETOKENIZE"))
+
+    def test_validate_detokenize_request_missing_token_key(self):
+        request = DetokenizeRequest(data=[{"not_token": "value"}], continue_on_error=False)
+        with self.assertRaises(SkyflowError) as context:
+            validate_detokenize_request(self.logger, request)
+        self.assertEqual(context.exception.message, SkyflowMessages.Error.INVALID_TOKENS_LIST_VALUE.value.format(str(type(request.data))))
+
+    def test_validate_detokenize_request_invalid_continue_on_error_type(self):
+        request = DetokenizeRequest(data=[{"token": "token123"}], continue_on_error="invalid")
+        with self.assertRaises(SkyflowError) as context:
+            validate_detokenize_request(self.logger, request)
+        self.assertEqual(context.exception.message, SkyflowMessages.Error.INVALID_CONTINUE_ON_ERROR_TYPE.value)
+
+    def test_validate_detokenize_request_invalid_redaction_type(self):
+        request = DetokenizeRequest(data=[{"token": "token123", "redaction": "invalid"}], continue_on_error=False)
+        with self.assertRaises(SkyflowError) as context:
+            validate_detokenize_request(self.logger, request)
+        self.assertEqual(context.exception.message, SkyflowMessages.Error.INVALID_REDACTION_TYPE.value.format(str(type("invalid"))))
