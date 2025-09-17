@@ -6,8 +6,9 @@ import time
 from skyflow.generated.rest import DeidentifyTextRequestFile, DeidentifyAudioRequestFile, DeidentifyPdfRequestFile, \
     DeidentifyImageRequestFile, DeidentifyPresentationRequestFile, DeidentifySpreadsheetRequestFile, \
     DeidentifyDocumentRequestFile, DeidentifyFileRequestFile
+from skyflow.generated.rest.types.deidentify_status_response import DeidentifyStatusResponse
 from skyflow.utils._skyflow_messages import SkyflowMessages
-from skyflow.utils._utils import get_metrics, handle_exception, parse_deidentify_text_response, parse_reidentify_text_response
+from skyflow.utils._utils import get_attribute, get_metrics, handle_exception, parse_deidentify_text_response, parse_reidentify_text_response
 from skyflow.utils.constants import SKY_META_DATA_HEADER
 from skyflow.utils.logger import log_info, log_error_log
 from skyflow.utils.validations import validate_deidentify_file_request, validate_get_detect_run_request
@@ -83,6 +84,43 @@ class Detect:
         except Exception as e:
             raise e
 
+    def __save_deidentify_file_response_output(self, response: DeidentifyStatusResponse, output_directory: str, original_file_name: str, name_without_ext: str):
+        if not response or not hasattr(response, 'output') or not response.output or not output_directory:
+            return
+
+        if not os.path.exists(output_directory):
+            return
+
+        deidentify_file_prefix = "processed-"
+        output_list = response.output
+
+        base_original_filename = os.path.basename(original_file_name)
+        base_name_without_ext = os.path.splitext(base_original_filename)[0]
+
+        for idx, output in enumerate(output_list):
+            try:
+                processed_file = get_attribute(output, 'processedFile', 'processed_file')
+                processed_file_type = get_attribute(output, 'processedFileType', 'processed_file_type')
+                processed_file_extension = get_attribute(output, 'processedFileExtension', 'processed_file_extension')
+
+                if not processed_file:
+                    continue
+
+                decoded_data = base64.b64decode(processed_file)
+                
+                if idx == 0 or processed_file_type == 'redacted_file':
+                    output_file_name = os.path.join(output_directory, deidentify_file_prefix + base_original_filename)
+                    if processed_file_extension:
+                        output_file_name = os.path.join(output_directory, f"{deidentify_file_prefix}{base_name_without_ext}.{processed_file_extension}")
+                else:
+                    output_file_name = os.path.join(output_directory, f"{deidentify_file_prefix}{base_name_without_ext}.{processed_file_extension}")
+                
+                with open(output_file_name, 'wb') as f:
+                    f.write(decoded_data)
+            except Exception as e:
+                log_error_log(SkyflowMessages.ErrorLogs.SAVING_DEIDENTIFY_FILE_FAILED.value, self.__vault_client.get_logger())
+                handle_exception(e, self.__vault_client.get_logger())
+
     def __parse_deidentify_file_response(self, data, run_id=None, status=None):
         output = getattr(data, "output", [])
         status_val = getattr(data, "status", None) or status
@@ -141,8 +179,8 @@ class Detect:
     
         return DeidentifyFileResponse(
             file_base64=base64_string,
-            file=file_obj,  # File class will be instantiated in DeidentifyFileResponse
-            type=first_output.get("type", None),
+            file=file_obj,
+            type=first_output.get("type", "UNKNOWN"),
             extension=extension,
             word_count=word_count,
             char_count=char_count,
@@ -153,7 +191,6 @@ class Detect:
             entities=entities,
             run_id=run_id_val,
             status=status_val,
-            errors=None
         )
 
     def __get_token_format(self, request):
@@ -396,12 +433,11 @@ class Detect:
             run_id = getattr(api_response.data, 'run_id', None)
 
             processed_response = self.__poll_for_processed_file(run_id, request.wait_time)
-            parsed_response = self.__parse_deidentify_file_response(processed_response, run_id)
             if request.output_directory and processed_response.status == 'SUCCESS':
-                file_name_only = 'processed-'+os.path.basename(file_name)
-                output_file_path = f"{request.output_directory}/{file_name_only}"
-                with open(output_file_path, 'wb') as output_file:
-                    output_file.write(base64.b64decode(parsed_response.file_base64))
+                name_without_ext, _ = os.path.splitext(file_name)
+                self.__save_deidentify_file_response_output(processed_response, request.output_directory, file_name, name_without_ext)
+
+            parsed_response = self.__parse_deidentify_file_response(processed_response, run_id)
             log_info(SkyflowMessages.Info.DETECT_FILE_SUCCESS.value, self.__vault_client.get_logger())
             return parsed_response
 
@@ -411,9 +447,9 @@ class Detect:
             handle_exception(e, self.__vault_client.get_logger())
 
     def get_detect_run(self, request: GetDetectRunRequest):
+        log_info(SkyflowMessages.Info.GET_DETECT_RUN_TRIGGERED.value,self.__vault_client.get_logger())
         log_info(SkyflowMessages.Info.VALIDATING_GET_DETECT_RUN_INPUT.value, self.__vault_client.get_logger())
         validate_get_detect_run_request(self.__vault_client.get_logger(), request)
-        log_info(SkyflowMessages.Info.DEIDENTIFY_TEXT_REQUEST_RESOLVED.value, self.__vault_client.get_logger())
         self.__initialize()
 
         files_api = self.__vault_client.get_detect_file_api().with_raw_response
@@ -428,6 +464,7 @@ class Detect:
                 parsed_response = self.__parse_deidentify_file_response(DeidentifyFileResponse(run_id=run_id, status='IN_PROGRESS'))
             else:
                 parsed_response = self.__parse_deidentify_file_response(response.data, run_id, response.data.status)
+            log_info(SkyflowMessages.Info.GET_DETECT_RUN_SUCCESS.value,self.__vault_client.get_logger())
             return parsed_response
         except Exception as e:
             log_error_log(SkyflowMessages.ErrorLogs.DETECT_FILE_REQUEST_REJECTED.value,

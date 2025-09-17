@@ -447,3 +447,6 @@ def encode_column_values(get_request):
         encoded_column_values.append(quote(column))
 
     return encoded_column_values
+
+def get_attribute(obj, camel_case, snake_case):
+    return getattr(obj, camel_case, None) or getattr(obj, snake_case, None)
