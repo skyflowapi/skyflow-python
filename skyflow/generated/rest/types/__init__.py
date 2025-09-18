@@ -27,12 +27,12 @@ from .entity_type import EntityType
 from .entity_types import EntityTypes
 from .error_response import ErrorResponse
 from .error_response_error import ErrorResponseError
+from .error_string import ErrorString
 from .googlerpc_status import GooglerpcStatus
 from .protobuf_any import ProtobufAny
 from .redaction_enum_redaction import RedactionEnumRedaction
 from .reidentify_file_response import ReidentifyFileResponse
 from .reidentify_file_response_output import ReidentifyFileResponseOutput
-from .reidentify_file_response_output_type import ReidentifyFileResponseOutputType
 from .reidentify_file_response_status import ReidentifyFileResponseStatus
 from .reidentify_string_response import ReidentifyStringResponse
 from .request_action_type import RequestActionType
@@ -106,12 +106,12 @@ __all__ = [
     "EntityTypes",
     "ErrorResponse",
     "ErrorResponseError",
+    "ErrorString",
     "GooglerpcStatus",
     "ProtobufAny",
     "RedactionEnumRedaction",
     "ReidentifyFileResponse",
     "ReidentifyFileResponseOutput",
-    "ReidentifyFileResponseOutputType",
     "ReidentifyFileResponseStatus",
     "ReidentifyStringResponse",
     "RequestActionType",
