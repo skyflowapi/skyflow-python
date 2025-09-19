@@ -24,7 +24,7 @@ class DeidentifyStatusResponse(UniversalBaseModel):
     How the input file was specified.
     """
 
-    output_type: DeidentifyStatusResponseOutputType = pydantic.Field()
+    output_type: typing.Optional[DeidentifyStatusResponseOutputType] = pydantic.Field(default=None)
     """
     How the output file is specified.
     """
