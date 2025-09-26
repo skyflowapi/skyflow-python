@@ -78,8 +78,10 @@ try:
     accessToken, tokenType = token_provider()
     print("Access Token:", accessToken)
     print("Type of token:", tokenType)
-except SkyflowError as e:
-    print(e)
+except SkyflowError as skyflow_error:
+    print('Skyflow Error Occurred:', skyflow_error)
+except Exception as general_error:
+    print('Unexpected Error Occurred:', general_error)
 
 ```
 
@@ -114,8 +116,10 @@ try:
     accessToken, tokenType = token_provider()
     print("Access Token:", accessToken)
     print("Type of token:", tokenType)
-except SkyflowError as e:
-    print(e)
+except SkyflowError as skyflow_error:
+    print('Skyflow Error Occurred:', skyflow_error)
+except Exception as general_error:
+    print('Unexpected Error Occurred:', general_error)
 
 ```
 
@@ -183,8 +187,10 @@ try:
     }
     response = client.insert(data, options=options)
     print("Response:", response)
-except SkyflowError as e:
-    print("Error Occurred:", e)
+except SkyflowError as skyflow_error:
+    print('Skyflow Error Occurred:', skyflow_error)
+except Exception as general_error:
+    print('Unexpected Error Occurred:', general_error)
 ```
 
 **Insert call [example](https://github.com/skyflowapi/skyflow-python/blob/main/samples/insert_sample.py)**
@@ -358,6 +364,8 @@ except SkyflowError as e:
         print(e.data) # see note below
     else:
         print(e)
+except Exception as general_error:
+    print('Unexpected Error Occurred:', general_error)
 ```
 
 Sample response:
@@ -408,6 +416,8 @@ except SkyflowError as e:
         print(e.data) # see note below
     else:
         print(e)
+except Exception as general_error:
+    print('Unexpected Error Occurred:', general_error)
 ```
 
 Sample response:
@@ -490,6 +500,8 @@ except SkyflowError as e:
        print(e.data)
    else:
        print(e)
+except Exception as general_error:
+    print('Unexpected Error Occurred:', general_error)
 ```
 
 Sample response:
@@ -551,6 +563,8 @@ except SkyflowError as e:
        print(e.data)
    else:
        print(e)
+except Exception as general_error:
+    print('Unexpected Error Occurred:', general_error)
 ```
 
 Sample response:
@@ -626,6 +640,8 @@ except SkyflowError as e:
         print(e.data) # see note below
     else:
         print(e)
+except Exception as general_error:
+    print('Unexpected Error Occurred:', general_error)
 ```
 
 Sample response:
@@ -713,6 +729,8 @@ except SkyflowError as e:
        print(e.data)
    else:
        print(e)
+except Exception as general_error:
+    print('Unexpected Error Occurred:', general_error)
 ```
 
 Sample response
@@ -804,6 +822,8 @@ except SkyflowError as e:
         print(e.data) # see note below
     else:
         print(e)
+except Exception as general_error:
+    print('Unexpected Error Occurred:', general_error)
 ```
 
 Sample response:
@@ -886,8 +906,10 @@ try:
 
     response = client.invoke_connection(connectionConfig)
     print('Response:', response)
-except SkyflowError as e:
-    print('Error Occurred:', e)
+except SkyflowError as skyflow_error:
+    print('Skyflow Error Occurred:', skyflow_error)
+except Exception as general_error:
+    print('Unexpected Error Occurred:', general_error)
 ```
 
 Sample response:
@@ -928,6 +950,8 @@ except SkyflowError as e:
         print(e.data)
     else:
         print(e.message)
+except Exception as general_error:
+    print('Unexpected Error Occurred:', general_error)
 ```
 
 Sample Response
