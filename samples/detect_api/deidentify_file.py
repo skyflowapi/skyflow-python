@@ -1,7 +1,7 @@
 from skyflow.error import SkyflowError
 from skyflow import Env, Skyflow, LogLevel
 from skyflow.utils.enums import DetectEntities, MaskingMethod, DetectOutputTranscriptions
-from skyflow.vault.detect import DeidentifyFileRequest, TokenFormat, Transformations, DateTransformation, Bleep
+from skyflow.vault.detect import DeidentifyFileRequest, TokenFormat, Transformations, DateTransformation, Bleep, FileInput
 
 """
  * Skyflow Deidentify File Example
@@ -39,7 +39,7 @@ def perform_file_deidentification():
         file = open(file_path, 'rb')
         # Step 5: Configure Deidentify File Request with all options
         deidentify_request = DeidentifyFileRequest(
-            file=file,  # File object to deidentify
+            file=FileInput(file),  # File to de-identify (can also provide a file path)
             entities=[DetectEntities.SSN, DetectEntities.CREDIT_CARD],  # Entities to detect
             allow_regex_list=['<YOUR_REGEX_PATTERN>'],  # Optional: Patterns to allow
             restrict_regex_list=['<YOUR_REGEX_PATTERN>'],  # Optional: Patterns to restrict

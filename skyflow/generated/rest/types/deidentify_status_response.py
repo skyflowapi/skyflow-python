@@ -49,7 +49,7 @@ class DeidentifyStatusResponse(UniversalBaseModel):
     Size of the processed text in kilobytes (KB).
     """
 
-    duration: typing.Optional[int] = pydantic.Field(default=None)
+    duration: typing.Optional[float] = pydantic.Field(default=None)
     """
     Duration of the processed audio in seconds.
     """

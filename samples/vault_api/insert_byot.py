@@ -70,7 +70,7 @@ def perform_secure_data_insertion_with_byot():
         ]
 
         insert_request = InsertRequest(
-            table_name=table_name,
+            table=table_name,
             values=insert_data,
             token_mode=TokenMode.ENABLE,  # Enable Bring Your Own Token (BYOT)
             tokens=tokens,                # Specify tokens to use for BYOT

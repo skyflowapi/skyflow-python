@@ -2,7 +2,7 @@ from skyflow.utils.enums import TokenMode
 
 class InsertRequest:
     def __init__(self,
-                 table_name,
+                 table,
                  values,
                  tokens = None,
                  upsert = None,
@@ -10,7 +10,7 @@ class InsertRequest:
                  token_mode = TokenMode.DISABLE,
                  return_tokens = True,
                  continue_on_error = False):
-        self.table_name = table_name
+        self.table = table
         self.values = values
         self.tokens = tokens
         self.upsert = upsert

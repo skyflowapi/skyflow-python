@@ -47,7 +47,7 @@ def perform_secure_data_insertion():
 
         # Step 5: Create Insert Request
         insert_request = InsertRequest(
-            table_name=table_name,
+            table=table_name,
             values=insert_data,
             return_tokens=True, # Optional: Get tokens for inserted data
             continue_on_error=True # Optional: Continue on partial errors

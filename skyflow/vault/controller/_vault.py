@@ -1,15 +1,20 @@
+import base64
 import json
+import os
+from typing import Optional
 from skyflow.generated.rest import V1FieldRecords, V1BatchRecord, V1TokenizeRecordRequest, \
     V1DetokenizeRecordRequest
+from skyflow.generated.rest.core.file import File
 from skyflow.utils import SkyflowMessages, parse_insert_response, \
     handle_exception, parse_update_record_response, parse_delete_response, parse_detokenize_response, \
     parse_tokenize_response, parse_query_response, parse_get_response, encode_column_values, get_metrics
 from skyflow.utils.constants import SKY_META_DATA_HEADER
 from skyflow.utils.enums import RequestMethod
+from skyflow.utils.enums.redaction_type import RedactionType
 from skyflow.utils.logger import log_info, log_error_log
 from skyflow.utils.validations import validate_insert_request, validate_delete_request, validate_query_request, \
-    validate_get_request, validate_update_request, validate_detokenize_request, validate_tokenize_request
-from skyflow.vault.data import InsertRequest, UpdateRequest, DeleteRequest, GetRequest, QueryRequest
+    validate_get_request, validate_update_request, validate_detokenize_request, validate_tokenize_request, validate_file_upload_request
+from skyflow.vault.data import InsertRequest, UpdateRequest, DeleteRequest, GetRequest, QueryRequest, FileUploadRequest, FileUploadResponse
 from skyflow.vault.tokens import DetokenizeRequest, TokenizeRequest
 
 class Vault:
@@ -53,7 +58,7 @@ class Vault:
             records_list = self.__build_batch_field_records(
                 request.values,
                 request.tokens,
-                request.table_name,
+                request.table,
                 request.return_tokens,
                 request.upsert
             )
@@ -62,7 +67,27 @@ class Vault:
         else:
             records_list = self.__build_bulk_field_records(request.values, request.tokens)
             return records_list
+        
+    def __get_file_for_file_upload(self, request: FileUploadRequest) -> Optional[File]:
+        if request.file_path:
+            if not request.file_name:
+                request.file_name = os.path.basename(request.file_path)
 
+            with open(request.file_path, "rb") as f:
+                file_bytes = f.read()
+            return (request.file_name, file_bytes)
+
+        elif request.base64 and request.file_name:
+            decoded_bytes = base64.b64decode(request.base64)
+            return (request.file_name, decoded_bytes)
+
+        elif request.file_object is not None:
+            if hasattr(request.file_object, "name") and request.file_object.name:
+                file_name = os.path.basename(request.file_object.name)
+                return (file_name, request.file_object)
+
+        return None
+    
     def __get_headers(self):
         headers = {
             SKY_META_DATA_HEADER: json.dumps(get_metrics())
@@ -85,7 +110,7 @@ class Vault:
 
             else:
                 api_response = records_api.record_service_insert_record(self.__vault_client.get_vault_id(),
-                                                                        request.table_name, records=insert_body,tokenization= request.return_tokens, upsert=request.upsert, homogeneous=request.homogeneous, byot=request.token_mode.value, request_options=self.__get_headers())
+                                                                        request.table, records=insert_body,tokenization= request.return_tokens, upsert=request.upsert, homogeneous=request.homogeneous, byot=request.token_mode.value, request_options=self.__get_headers())
 
             insert_response = parse_insert_response(api_response, request.continue_on_error)
             log_info(SkyflowMessages.Info.INSERT_SUCCESS.value, self.__vault_client.get_logger())
@@ -201,7 +226,7 @@ class Vault:
         tokens_list = [
             V1DetokenizeRecordRequest(
                 token=item.get('token'),
-                redaction=item.get('redaction', None)
+                redaction=item.get('redaction', RedactionType.DEFAULT)
             )
             for item in request.data
         ]
@@ -244,4 +269,31 @@ class Vault:
             return tokenize_response
         except Exception as e:
             log_error_log(SkyflowMessages.ErrorLogs.TOKENIZE_REQUEST_REJECTED.value, logger = self.__vault_client.get_logger())
+            handle_exception(e, self.__vault_client.get_logger())
+
+    def upload_file(self, request: FileUploadRequest):
+        log_info(SkyflowMessages.Info.FILE_UPLOAD_TRIGGERED.value, self.__vault_client.get_logger())
+        log_info(SkyflowMessages.Info.VALIDATING_FILE_UPLOAD_REQUEST.value, self.__vault_client.get_logger())
+        validate_file_upload_request(self.__vault_client.get_logger(), request)
+        self.__initialize()
+        file_upload_api = self.__vault_client.get_records_api().with_raw_response
+        try:
+            api_response = file_upload_api.upload_file_v_2(
+                self.__vault_client.get_vault_id(),
+                table_name=request.table,
+                column_name=request.column_name,
+                file=self.__get_file_for_file_upload(request),
+                skyflow_id=request.skyflow_id,
+                return_file_metadata= False,
+                request_options=self.__get_headers()
+            )
+            log_info(SkyflowMessages.Info.FILE_UPLOAD_REQUEST_RESOLVED.value, self.__vault_client.get_logger())            
+            log_info(SkyflowMessages.Info.FILE_UPLOAD_SUCCESS.value, self.__vault_client.get_logger())
+            upload_response = FileUploadResponse(
+                skyflow_id=api_response.data.skyflow_id,
+                errors=None
+            )
+            return upload_response
+        except Exception as e:
+            log_error_log(SkyflowMessages.ErrorLogs.FILE_UPLOAD_REQUEST_REJECTED.value, logger = self.__vault_client.get_logger())
             handle_exception(e, self.__vault_client.get_logger())
