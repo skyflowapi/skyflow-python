@@ -44,6 +44,7 @@ jobs:
         echo SKYFLOW_ID1=${{secrets.SKYFLOW_ID1}} >> .env
         echo SKYFLOW_ID2=${{secrets.SKYFLOW_ID2}} >> .env
         echo SKYFLOW_ID3=${{secrets.SKYFLOW_ID3}} >> .env
+        echo MOCK_TOKEN=${{secrets.MOCK_TOKEN}} >> .env
 
     - name: 'Run Tests'
       run: |

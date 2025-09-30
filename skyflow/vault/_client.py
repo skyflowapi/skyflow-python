@@ -64,11 +64,10 @@ class Client:
                 result, partial = convertResponse(records, processedResponse, options)
                 if partial:
                     log_error(SkyflowErrorMessages.BATCH_INSERT_PARTIAL_SUCCESS.value, interface)
-                    raise SkyflowError(SkyflowErrorCodes.PARTIAL_SUCCESS, SkyflowErrorMessages.BATCH_INSERT_PARTIAL_SUCCESS.value, result, interface=interface)
-                if 'records' not in result:
+                elif 'records' not in result:
                     log_error(SkyflowErrorMessages.BATCH_INSERT_FAILURE.value, interface)
-                    raise SkyflowError(SkyflowErrorCodes.SERVER_ERROR, SkyflowErrorMessages.BATCH_INSERT_FAILURE.value, result, interface=interface)
-                log_info(InfoMessages.INSERT_DATA_SUCCESS.value, interface)
+                else:
+                    log_info(InfoMessages.INSERT_DATA_SUCCESS.value, interface)
                 return result
             except Exception as err:
                 if attempt < max_retries:
