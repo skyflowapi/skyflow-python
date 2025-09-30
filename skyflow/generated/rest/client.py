@@ -7,9 +7,9 @@ from .audit.client import AsyncAuditClient, AuditClient
 from .authentication.client import AsyncAuthenticationClient, AuthenticationClient
 from .bin_lookup.client import AsyncBinLookupClient, BinLookupClient
 from .core.client_wrapper import AsyncClientWrapper, SyncClientWrapper
-from .deprecated.client import AsyncDeprecatedClient, DeprecatedClient
 from .environment import SkyflowEnvironment
 from .files.client import AsyncFilesClient, FilesClient
+from .guardrails.client import AsyncGuardrailsClient, GuardrailsClient
 from .query.client import AsyncQueryClient, QueryClient
 from .records.client import AsyncRecordsClient, RecordsClient
 from .strings.client import AsyncStringsClient, StringsClient
@@ -35,6 +35,9 @@ class Skyflow:
 
 
     token : typing.Union[str, typing.Callable[[], str]]
+    headers : typing.Optional[typing.Dict[str, str]]
+        Additional headers to send with every request.
+
     timeout : typing.Optional[float]
         The timeout to be used, in seconds, for requests. By default the timeout is 60 seconds, unless a custom httpx client is used, in which case this default is not enforced.
 
@@ -59,6 +62,7 @@ class Skyflow:
         base_url: typing.Optional[str] = None,
         environment: SkyflowEnvironment = SkyflowEnvironment.PRODUCTION,
         token: typing.Union[str, typing.Callable[[], str]],
+        headers: typing.Optional[typing.Dict[str, str]] = None,
         timeout: typing.Optional[float] = None,
         follow_redirects: typing.Optional[bool] = True,
         httpx_client: typing.Optional[httpx.Client] = None,
@@ -69,6 +73,7 @@ class Skyflow:
         self._client_wrapper = SyncClientWrapper(
             base_url=_get_base_url(base_url=base_url, environment=environment),
             token=token,
+            headers=headers,
             httpx_client=httpx_client
             if httpx_client is not None
             else httpx.Client(timeout=_defaulted_timeout, follow_redirects=follow_redirects)
@@ -82,7 +87,7 @@ class Skyflow:
         self.tokens = TokensClient(client_wrapper=self._client_wrapper)
         self.query = QueryClient(client_wrapper=self._client_wrapper)
         self.authentication = AuthenticationClient(client_wrapper=self._client_wrapper)
-        self.deprecated = DeprecatedClient(client_wrapper=self._client_wrapper)
+        self.guardrails = GuardrailsClient(client_wrapper=self._client_wrapper)
         self.strings = StringsClient(client_wrapper=self._client_wrapper)
         self.files = FilesClient(client_wrapper=self._client_wrapper)
 
@@ -106,6 +111,9 @@ class AsyncSkyflow:
 
 
     token : typing.Union[str, typing.Callable[[], str]]
+    headers : typing.Optional[typing.Dict[str, str]]
+        Additional headers to send with every request.
+
     timeout : typing.Optional[float]
         The timeout to be used, in seconds, for requests. By default the timeout is 60 seconds, unless a custom httpx client is used, in which case this default is not enforced.
 
@@ -130,6 +138,7 @@ class AsyncSkyflow:
         base_url: typing.Optional[str] = None,
         environment: SkyflowEnvironment = SkyflowEnvironment.PRODUCTION,
         token: typing.Union[str, typing.Callable[[], str]],
+        headers: typing.Optional[typing.Dict[str, str]] = None,
         timeout: typing.Optional[float] = None,
         follow_redirects: typing.Optional[bool] = True,
         httpx_client: typing.Optional[httpx.AsyncClient] = None,
@@ -140,6 +149,7 @@ class AsyncSkyflow:
         self._client_wrapper = AsyncClientWrapper(
             base_url=_get_base_url(base_url=base_url, environment=environment),
             token=token,
+            headers=headers,
             httpx_client=httpx_client
             if httpx_client is not None
             else httpx.AsyncClient(timeout=_defaulted_timeout, follow_redirects=follow_redirects)
@@ -153,7 +163,7 @@ class AsyncSkyflow:
         self.tokens = AsyncTokensClient(client_wrapper=self._client_wrapper)
         self.query = AsyncQueryClient(client_wrapper=self._client_wrapper)
         self.authentication = AsyncAuthenticationClient(client_wrapper=self._client_wrapper)
-        self.deprecated = AsyncDeprecatedClient(client_wrapper=self._client_wrapper)
+        self.guardrails = AsyncGuardrailsClient(client_wrapper=self._client_wrapper)
         self.strings = AsyncStringsClient(client_wrapper=self._client_wrapper)
         self.files = AsyncFilesClient(client_wrapper=self._client_wrapper)
 

@@ -3,9 +3,7 @@
 import typing
 
 import pydantic
-import typing_extensions
 from ..core.pydantic_utilities import IS_PYDANTIC_V2, UniversalBaseModel
-from ..core.serialization import FieldMetadata
 from .deidentify_file_output_processed_file_type import DeidentifyFileOutputProcessedFileType
 
 
@@ -14,23 +12,17 @@ class DeidentifyFileOutput(UniversalBaseModel):
     Details and contents of the processed file.
     """
 
-    processed_file: typing_extensions.Annotated[typing.Optional[str], FieldMetadata(alias="processedFile")] = (
-        pydantic.Field(default=None)
-    )
+    processed_file: typing.Optional[str] = pydantic.Field(default=None)
     """
     URL or base64-encoded data of the output.
     """
 
-    processed_file_type: typing_extensions.Annotated[
-        typing.Optional[DeidentifyFileOutputProcessedFileType], FieldMetadata(alias="processedFileType")
-    ] = pydantic.Field(default=None)
+    processed_file_type: typing.Optional[DeidentifyFileOutputProcessedFileType] = pydantic.Field(default=None)
     """
     Type of the processed file.
     """
 
-    processed_file_extension: typing_extensions.Annotated[
-        typing.Optional[str], FieldMetadata(alias="processedFileExtension")
-    ] = pydantic.Field(default=None)
+    processed_file_extension: typing.Optional[str] = pydantic.Field(default=None)
     """
     Extension of the processed file.
     """

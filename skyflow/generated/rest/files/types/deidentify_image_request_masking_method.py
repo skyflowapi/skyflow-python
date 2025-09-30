@@ -2,4 +2,4 @@
 
 import typing
 
-DeidentifyImageRequestMaskingMethod = typing.Union[typing.Literal["blackbox", "blur"], typing.Any]
+DeidentifyImageRequestMaskingMethod = typing.Union[typing.Literal["blackout", "blur"], typing.Any]

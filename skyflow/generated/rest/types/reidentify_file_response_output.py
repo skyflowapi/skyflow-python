@@ -6,19 +6,20 @@ import pydantic
 from ..core.pydantic_utilities import IS_PYDANTIC_V2, UniversalBaseModel
 
 
-class V1PdfOptions(UniversalBaseModel):
+class ReidentifyFileResponseOutput(UniversalBaseModel):
+    processed_file: str = pydantic.Field()
     """
-    How to handle PDF files.
-    """
-
-    density: typing.Optional[int] = pydantic.Field(default=None)
-    """
-    Pixel density at which to process the PDF file.
+    Re-identified file content in base64 format.
     """
 
-    max_resolution: typing.Optional[int] = pydantic.Field(default=None)
+    processed_file_type: typing.Literal["reidentified_file"] = pydantic.Field(default="reidentified_file")
     """
-    Max resolution at which to process the PDF file.
+    Type of the processed file.
+    """
+
+    processed_file_extension: str = pydantic.Field()
+    """
+    Extension of the processed file.
     """
 
     if IS_PYDANTIC_V2:
