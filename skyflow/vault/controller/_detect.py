@@ -3,11 +3,9 @@ import json
 import os
 import base64
 import time
-
 from skyflow.generated.rest import FileDataDeidentifyText, FileDataDeidentifyPdf, FileDataDeidentifyPresentation, \
     FileDataDeidentifySpreadsheet, FileDataDeidentifyDocument, FileDataDeidentifyStructuredText, FileData, \
     FileDataDeidentifyImage, Format, FileDataDeidentifyAudio, WordCharacterCount, DetectRunsResponse
-
 from skyflow.utils._skyflow_messages import SkyflowMessages
 from skyflow.utils._utils import get_attribute, get_metrics, handle_exception, parse_deidentify_text_response, parse_reidentify_text_response
 from skyflow.utils.constants import SKY_META_DATA_HEADER
@@ -17,7 +15,6 @@ from skyflow.utils.validations._validations import validate_deidentify_text_requ
 from typing import Dict, Any
 from skyflow.vault.detect import DeidentifyTextRequest, DeidentifyTextResponse, ReidentifyTextRequest, \
     ReidentifyTextResponse, DeidentifyFileRequest, DeidentifyFileResponse, GetDetectRunRequest
-
 
 class Detect:
     def __init__(self, vault_client):
