@@ -4,18 +4,15 @@ import typing
 
 import pydantic
 from ..core.pydantic_utilities import IS_PYDANTIC_V2, UniversalBaseModel
-from .transformations_shift_dates import TransformationsShiftDates
+from .shift_dates import ShiftDates
 
 
 class Transformations(UniversalBaseModel):
     """
-    Transformations to apply to the detected entities.
+    Transformations to apply to detected entities.
     """
 
-    shift_dates: typing.Optional[TransformationsShiftDates] = pydantic.Field(default=None)
-    """
-    Shift dates by a specified number of days.
-    """
+    shift_dates: typing.Optional[ShiftDates] = None
 
     if IS_PYDANTIC_V2:
         model_config: typing.ClassVar[pydantic.ConfigDict] = pydantic.ConfigDict(extra="allow", frozen=True)  # type: ignore # Pydantic v2

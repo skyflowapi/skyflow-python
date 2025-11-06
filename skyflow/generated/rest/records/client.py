@@ -192,6 +192,13 @@ class RecordsClient:
         client.records.record_service_bulk_get_record(
             vault_id="vaultID",
             object_name="objectName",
+            redaction="DEFAULT",
+            tokenization=True,
+            offset="offset",
+            limit="limit",
+            download_url=True,
+            column_name="column_name",
+            order_by="ASCENDING",
         )
         """
         _response = self._raw_client.record_service_bulk_get_record(
@@ -409,6 +416,9 @@ class RecordsClient:
             vault_id="vaultID",
             object_name="objectName",
             id="ID",
+            redaction="DEFAULT",
+            tokenization=True,
+            download_url=True,
         )
         """
         _response = self._raw_client.record_service_get_record(
@@ -947,6 +957,13 @@ class AsyncRecordsClient:
             await client.records.record_service_bulk_get_record(
                 vault_id="vaultID",
                 object_name="objectName",
+                redaction="DEFAULT",
+                tokenization=True,
+                offset="offset",
+                limit="limit",
+                download_url=True,
+                column_name="column_name",
+                order_by="ASCENDING",
             )
 
 
@@ -1188,6 +1205,9 @@ class AsyncRecordsClient:
                 vault_id="vaultID",
                 object_name="objectName",
                 id="ID",
+                redaction="DEFAULT",
+                tokenization=True,
+                download_url=True,
             )
 
 

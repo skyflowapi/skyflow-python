@@ -2,4 +2,4 @@
 
 import typing
 
-ReidentifyFileResponseOutputType = typing.Union[typing.Literal["BASE64", "UNKNOWN"], typing.Any]
+ReidentifyFileResponseOutputType = typing.Union[typing.Literal["UNKNOWN", "BASE64"], typing.Any]

@@ -1,7 +1,6 @@
 import base64
 import json
 import os
-from skyflow.generated.rest import TokenType
 from skyflow.service_account import is_expired
 from skyflow.utils.enums import LogLevel, Env, RedactionType, TokenMode, DetectEntities, DetectOutputTranscriptions, \
     MaskingMethod

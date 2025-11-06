@@ -10,7 +10,7 @@ class BaseClientWrapper:
     def __init__(
         self,
         *,
-        token: typing.Union[str, typing.Callable[[], str]],
+        token: typing.Optional[typing.Union[str, typing.Callable[[], str]]] = None,
         headers: typing.Optional[typing.Dict[str, str]] = None,
         base_url: str,
         timeout: typing.Optional[float] = None,
@@ -22,16 +22,19 @@ class BaseClientWrapper:
 
     def get_headers(self) -> typing.Dict[str, str]:
         headers: typing.Dict[str, str] = {
+            "User-Agent": "skyflow/1.16.1",
             "X-Fern-Language": "Python",
-            "X-Fern-SDK-Name": "skyflow_vault",
-            "X-Fern-SDK-Version": "0.0.252",
+            "X-Fern-SDK-Name": "skyflow",
+            "X-Fern-SDK-Version": "1.16.1",
             **(self.get_custom_headers() or {}),
         }
-        headers["Authorization"] = f"Bearer {self._get_token()}"
+        token = self._get_token()
+        if token is not None:
+            headers["Authorization"] = f"Bearer {token}"
         return headers
 
-    def _get_token(self) -> str:
-        if isinstance(self._token, str):
+    def _get_token(self) -> typing.Optional[str]:
+        if isinstance(self._token, str) or self._token is None:
             return self._token
         else:
             return self._token()
@@ -50,7 +53,7 @@ class SyncClientWrapper(BaseClientWrapper):
     def __init__(
         self,
         *,
-        token: typing.Union[str, typing.Callable[[], str]],
+        token: typing.Optional[typing.Union[str, typing.Callable[[], str]]] = None,
         headers: typing.Optional[typing.Dict[str, str]] = None,
         base_url: str,
         timeout: typing.Optional[float] = None,
@@ -69,7 +72,7 @@ class AsyncClientWrapper(BaseClientWrapper):
     def __init__(
         self,
         *,
-        token: typing.Union[str, typing.Callable[[], str]],
+        token: typing.Optional[typing.Union[str, typing.Callable[[], str]]] = None,
         headers: typing.Optional[typing.Dict[str, str]] = None,
         base_url: str,
         timeout: typing.Optional[float] = None,

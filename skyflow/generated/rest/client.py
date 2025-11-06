@@ -34,7 +34,7 @@ class Skyflow:
 
 
 
-    token : typing.Union[str, typing.Callable[[], str]]
+    token : typing.Optional[typing.Union[str, typing.Callable[[], str]]]
     headers : typing.Optional[typing.Dict[str, str]]
         Additional headers to send with every request.
 
@@ -61,7 +61,7 @@ class Skyflow:
         *,
         base_url: typing.Optional[str] = None,
         environment: SkyflowEnvironment = SkyflowEnvironment.PRODUCTION,
-        token: typing.Union[str, typing.Callable[[], str]],
+        token: typing.Optional[typing.Union[str, typing.Callable[[], str]]] = None,
         headers: typing.Optional[typing.Dict[str, str]] = None,
         timeout: typing.Optional[float] = None,
         follow_redirects: typing.Optional[bool] = True,
@@ -87,9 +87,9 @@ class Skyflow:
         self.tokens = TokensClient(client_wrapper=self._client_wrapper)
         self.query = QueryClient(client_wrapper=self._client_wrapper)
         self.authentication = AuthenticationClient(client_wrapper=self._client_wrapper)
-        self.guardrails = GuardrailsClient(client_wrapper=self._client_wrapper)
-        self.strings = StringsClient(client_wrapper=self._client_wrapper)
         self.files = FilesClient(client_wrapper=self._client_wrapper)
+        self.strings = StringsClient(client_wrapper=self._client_wrapper)
+        self.guardrails = GuardrailsClient(client_wrapper=self._client_wrapper)
 
 
 class AsyncSkyflow:
@@ -110,7 +110,7 @@ class AsyncSkyflow:
 
 
 
-    token : typing.Union[str, typing.Callable[[], str]]
+    token : typing.Optional[typing.Union[str, typing.Callable[[], str]]]
     headers : typing.Optional[typing.Dict[str, str]]
         Additional headers to send with every request.
 
@@ -137,7 +137,7 @@ class AsyncSkyflow:
         *,
         base_url: typing.Optional[str] = None,
         environment: SkyflowEnvironment = SkyflowEnvironment.PRODUCTION,
-        token: typing.Union[str, typing.Callable[[], str]],
+        token: typing.Optional[typing.Union[str, typing.Callable[[], str]]] = None,
         headers: typing.Optional[typing.Dict[str, str]] = None,
         timeout: typing.Optional[float] = None,
         follow_redirects: typing.Optional[bool] = True,
@@ -163,9 +163,9 @@ class AsyncSkyflow:
         self.tokens = AsyncTokensClient(client_wrapper=self._client_wrapper)
         self.query = AsyncQueryClient(client_wrapper=self._client_wrapper)
         self.authentication = AsyncAuthenticationClient(client_wrapper=self._client_wrapper)
-        self.guardrails = AsyncGuardrailsClient(client_wrapper=self._client_wrapper)
-        self.strings = AsyncStringsClient(client_wrapper=self._client_wrapper)
         self.files = AsyncFilesClient(client_wrapper=self._client_wrapper)
+        self.strings = AsyncStringsClient(client_wrapper=self._client_wrapper)
+        self.guardrails = AsyncGuardrailsClient(client_wrapper=self._client_wrapper)
 
 
 def _get_base_url(*, base_url: typing.Optional[str] = None, environment: SkyflowEnvironment) -> str:

@@ -4,6 +4,7 @@ import typing
 
 import pydantic
 from ..core.pydantic_utilities import IS_PYDANTIC_V2, UniversalBaseModel
+from .http_code import HttpCode
 
 
 class ErrorResponseError(UniversalBaseModel):
@@ -12,16 +13,8 @@ class ErrorResponseError(UniversalBaseModel):
     gRPC status codes. See https://grpc.io/docs/guides/status-codes.
     """
 
-    http_code: int = pydantic.Field()
-    """
-    HTTP status codes. See https://developer.mozilla.org/en-US/docs/Web/HTTP/Status.
-    """
-
-    http_status: str = pydantic.Field()
-    """
-    HTTP status message.
-    """
-
+    http_code: HttpCode
+    http_status: str
     message: str
     details: typing.Optional[typing.List[typing.Dict[str, typing.Optional[typing.Any]]]] = None
 

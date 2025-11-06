@@ -4,7 +4,7 @@ import typing
 
 import pydantic
 from ..core.pydantic_utilities import IS_PYDANTIC_V2, UniversalBaseModel
-from .detected_entity import DetectedEntity
+from .string_response_entities import StringResponseEntities
 
 
 class DeidentifyStringResponse(UniversalBaseModel):
@@ -12,22 +12,22 @@ class DeidentifyStringResponse(UniversalBaseModel):
     Response to deidentify a string.
     """
 
-    processed_text: str = pydantic.Field()
+    processed_text: typing.Optional[str] = pydantic.Field(default=None)
     """
     De-identified text.
     """
 
-    entities: typing.List[DetectedEntity] = pydantic.Field()
+    entities: typing.Optional[typing.List[StringResponseEntities]] = pydantic.Field(default=None)
     """
     Detected entities.
     """
 
-    word_count: int = pydantic.Field()
+    word_count: typing.Optional[int] = pydantic.Field(default=None)
     """
     Number of words from the input text.
     """
 
-    character_count: int = pydantic.Field()
+    character_count: typing.Optional[int] = pydantic.Field(default=None)
     """
     Number of characters from the input text.
     """

@@ -4,32 +4,54 @@ import typing
 
 from ..core.client_wrapper import AsyncClientWrapper, SyncClientWrapper
 from ..core.request_options import RequestOptions
-from ..types.allow_regex import AllowRegex
-from ..types.configuration_id import ConfigurationId
 from ..types.deidentify_file_response import DeidentifyFileResponse
-from ..types.deidentify_status_response import DeidentifyStatusResponse
-from ..types.entity_types import EntityTypes
+from ..types.detect_runs_response import DetectRunsResponse
+from ..types.file_data import FileData
+from ..types.file_data_deidentify_audio import FileDataDeidentifyAudio
+from ..types.file_data_deidentify_document import FileDataDeidentifyDocument
+from ..types.file_data_deidentify_image import FileDataDeidentifyImage
+from ..types.file_data_deidentify_pdf import FileDataDeidentifyPdf
+from ..types.file_data_deidentify_presentation import FileDataDeidentifyPresentation
+from ..types.file_data_deidentify_spreadsheet import FileDataDeidentifySpreadsheet
+from ..types.file_data_deidentify_structured_text import FileDataDeidentifyStructuredText
+from ..types.file_data_deidentify_text import FileDataDeidentifyText
+from ..types.file_data_reidentify_file import FileDataReidentifyFile
+from ..types.format import Format
 from ..types.reidentify_file_response import ReidentifyFileResponse
-from ..types.resource_id import ResourceId
-from ..types.restrict_regex import RestrictRegex
-from ..types.token_type_without_vault import TokenTypeWithoutVault
+from ..types.token_type_mapping import TokenTypeMapping
 from ..types.transformations import Transformations
-from ..types.uuid_ import Uuid
-from ..types.vault_id import VaultId
 from .raw_client import AsyncRawFilesClient, RawFilesClient
-from .types.deidentify_audio_request_file import DeidentifyAudioRequestFile
-from .types.deidentify_audio_request_output_transcription import DeidentifyAudioRequestOutputTranscription
-from .types.deidentify_document_request_file import DeidentifyDocumentRequestFile
-from .types.deidentify_file_request_file import DeidentifyFileRequestFile
-from .types.deidentify_image_request_file import DeidentifyImageRequestFile
-from .types.deidentify_image_request_masking_method import DeidentifyImageRequestMaskingMethod
-from .types.deidentify_pdf_request_file import DeidentifyPdfRequestFile
-from .types.deidentify_presentation_request_file import DeidentifyPresentationRequestFile
-from .types.deidentify_spreadsheet_request_file import DeidentifySpreadsheetRequestFile
-from .types.deidentify_structured_text_request_file import DeidentifyStructuredTextRequestFile
-from .types.deidentify_text_request_file import DeidentifyTextRequestFile
-from .types.reidentify_file_request_file import ReidentifyFileRequestFile
-from .types.reidentify_file_request_format import ReidentifyFileRequestFormat
+from .types.deidentify_file_audio_request_deidentify_audio_entity_types_item import (
+    DeidentifyFileAudioRequestDeidentifyAudioEntityTypesItem,
+)
+from .types.deidentify_file_audio_request_deidentify_audio_output_transcription import (
+    DeidentifyFileAudioRequestDeidentifyAudioOutputTranscription,
+)
+from .types.deidentify_file_document_pdf_request_deidentify_pdf_entity_types_item import (
+    DeidentifyFileDocumentPdfRequestDeidentifyPdfEntityTypesItem,
+)
+from .types.deidentify_file_image_request_deidentify_image_entity_types_item import (
+    DeidentifyFileImageRequestDeidentifyImageEntityTypesItem,
+)
+from .types.deidentify_file_image_request_deidentify_image_masking_method import (
+    DeidentifyFileImageRequestDeidentifyImageMaskingMethod,
+)
+from .types.deidentify_file_request_deidentify_document_entity_types_item import (
+    DeidentifyFileRequestDeidentifyDocumentEntityTypesItem,
+)
+from .types.deidentify_file_request_deidentify_presentation_entity_types_item import (
+    DeidentifyFileRequestDeidentifyPresentationEntityTypesItem,
+)
+from .types.deidentify_file_request_deidentify_spreadsheet_entity_types_item import (
+    DeidentifyFileRequestDeidentifySpreadsheetEntityTypesItem,
+)
+from .types.deidentify_file_request_deidentify_structured_text_entity_types_item import (
+    DeidentifyFileRequestDeidentifyStructuredTextEntityTypesItem,
+)
+from .types.deidentify_file_request_deidentify_text_entity_types_item import (
+    DeidentifyFileRequestDeidentifyTextEntityTypesItem,
+)
+from .types.deidentify_file_request_entity_types_item import DeidentifyFileRequestEntityTypesItem
 
 # this is used as the default value for optional parameters
 OMIT = typing.cast(typing.Any, ...)
@@ -53,14 +75,14 @@ class FilesClient:
     def deidentify_file(
         self,
         *,
-        vault_id: VaultId,
-        file: DeidentifyFileRequestFile,
-        configuration_id: typing.Optional[ConfigurationId] = OMIT,
-        entity_types: typing.Optional[EntityTypes] = OMIT,
-        token_type: typing.Optional[TokenTypeWithoutVault] = OMIT,
-        allow_regex: typing.Optional[AllowRegex] = OMIT,
-        restrict_regex: typing.Optional[RestrictRegex] = OMIT,
+        file: FileData,
+        vault_id: str,
+        entity_types: typing.Optional[typing.Sequence[DeidentifyFileRequestEntityTypesItem]] = OMIT,
+        token_type: typing.Optional[TokenTypeMapping] = OMIT,
+        allow_regex: typing.Optional[typing.Sequence[str]] = OMIT,
+        restrict_regex: typing.Optional[typing.Sequence[str]] = OMIT,
         transformations: typing.Optional[Transformations] = OMIT,
+        configuration_id: typing.Optional[str] = OMIT,
         request_options: typing.Optional[RequestOptions] = None,
     ) -> DeidentifyFileResponse:
         """
@@ -68,22 +90,26 @@ class FilesClient:
 
         Parameters
         ----------
-        vault_id : VaultId
+        file : FileData
 
-        file : DeidentifyFileRequestFile
-            File to de-identify. Files are specified as Base64-encoded data.
+        vault_id : str
+            ID of a vault that you have Detect Invoker or Vault Owner permissions for.
 
-        configuration_id : typing.Optional[ConfigurationId]
+        entity_types : typing.Optional[typing.Sequence[DeidentifyFileRequestEntityTypesItem]]
+            Entities to detect and de-identify.
 
-        entity_types : typing.Optional[EntityTypes]
+        token_type : typing.Optional[TokenTypeMapping]
 
-        token_type : typing.Optional[TokenTypeWithoutVault]
+        allow_regex : typing.Optional[typing.Sequence[str]]
+            Regular expressions to display in plaintext. Entities appear in plaintext if an expression matches either the entirety of a detected entity or a substring of it. Expressions don't match across entity boundaries. If a string or entity matches both `allow_regex` and `restrict_regex`, the entity is displayed in plaintext.
 
-        allow_regex : typing.Optional[AllowRegex]
-
-        restrict_regex : typing.Optional[RestrictRegex]
+        restrict_regex : typing.Optional[typing.Sequence[str]]
+            Regular expressions to replace with '[RESTRICTED]'. Expressions must match the entirety of a detected entity, not just a substring, for the entity to be restricted. Expressions don't match across entity boundaries. If a string or entity matches both `allow_regex` and `restrict_regex`, the entity is displayed in plaintext. If a string is detected as an entity and a `restrict_regex` pattern matches the entire detected entity, the entity is replaced with '[RESTRICTED]'. If a string is detected as an entity but a `restrict_regex` pattern only matches a substring of it, the `restrict_regex` pattern is ignored, and the entity is processed according to the specified tokenization and transformation settings.
 
         transformations : typing.Optional[Transformations]
+
+        configuration_id : typing.Optional[str]
+            ID of the Detect configuration to use for de-identification. Can't be specified with fields other than `vault_id`, `text`, and `file`.
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
@@ -91,33 +117,137 @@ class FilesClient:
         Returns
         -------
         DeidentifyFileResponse
-            A successful response.
+            OK
 
         Examples
         --------
-        from skyflow import Skyflow
-        from skyflow.files import DeidentifyFileRequestFile
+        from skyflow import FileData, Skyflow
 
         client = Skyflow(
             token="YOUR_TOKEN",
         )
         client.files.deidentify_file(
-            vault_id="f4b3b3b33b3b3b3b3b3b3b3b3b3b3b3b",
-            file=DeidentifyFileRequestFile(
-                base_64="Zm9vYmFy",
-                data_format="txt",
+            file=FileData(
+                base_64="base64",
+                data_format="mp3",
             ),
+            vault_id="vault_id",
         )
         """
         _response = self._raw_client.deidentify_file(
-            vault_id=vault_id,
             file=file,
-            configuration_id=configuration_id,
+            vault_id=vault_id,
             entity_types=entity_types,
             token_type=token_type,
             allow_regex=allow_regex,
             restrict_regex=restrict_regex,
             transformations=transformations,
+            configuration_id=configuration_id,
+            request_options=request_options,
+        )
+        return _response.data
+
+    def deidentify_audio(
+        self,
+        *,
+        file: FileDataDeidentifyAudio,
+        vault_id: str,
+        output_transcription: typing.Optional[DeidentifyFileAudioRequestDeidentifyAudioOutputTranscription] = OMIT,
+        output_processed_audio: typing.Optional[bool] = OMIT,
+        bleep_start_padding: typing.Optional[float] = OMIT,
+        bleep_stop_padding: typing.Optional[float] = OMIT,
+        bleep_frequency: typing.Optional[int] = OMIT,
+        bleep_gain: typing.Optional[int] = OMIT,
+        entity_types: typing.Optional[typing.Sequence[DeidentifyFileAudioRequestDeidentifyAudioEntityTypesItem]] = OMIT,
+        token_type: typing.Optional[TokenTypeMapping] = OMIT,
+        allow_regex: typing.Optional[typing.Sequence[str]] = OMIT,
+        restrict_regex: typing.Optional[typing.Sequence[str]] = OMIT,
+        transformations: typing.Optional[Transformations] = OMIT,
+        configuration_id: typing.Optional[str] = OMIT,
+        request_options: typing.Optional[RequestOptions] = None,
+    ) -> DeidentifyFileResponse:
+        """
+        De-identifies sensitive data from an audio file. This operation includes options applicable to all supported audio file types.<br/><br/>For broader file type support, see <a href='#deidentify_file'>De-identify File</a>.
+
+        Parameters
+        ----------
+        file : FileDataDeidentifyAudio
+
+        vault_id : str
+            ID of a vault that you have Detect Invoker or Vault Owner permissions for.
+
+        output_transcription : typing.Optional[DeidentifyFileAudioRequestDeidentifyAudioOutputTranscription]
+            Type of transcription to output.
+
+        output_processed_audio : typing.Optional[bool]
+            Whether to include the processed audio file in the response.
+
+        bleep_start_padding : typing.Optional[float]
+            Padding added to the beginning of a bleep, in seconds.
+
+        bleep_stop_padding : typing.Optional[float]
+            Padding added to the end of a bleep, in seconds.
+
+        bleep_frequency : typing.Optional[int]
+            The pitch of the bleep sound, in Hz. The higher the number, the higher the pitch.
+
+        bleep_gain : typing.Optional[int]
+            Relative loudness of the bleep in dB. Positive values increase its loudness, and negative values decrease it.
+
+        entity_types : typing.Optional[typing.Sequence[DeidentifyFileAudioRequestDeidentifyAudioEntityTypesItem]]
+            Entities to detect and de-identify.
+
+        token_type : typing.Optional[TokenTypeMapping]
+
+        allow_regex : typing.Optional[typing.Sequence[str]]
+            Regular expressions to display in plaintext. Entities appear in plaintext if an expression matches either the entirety of a detected entity or a substring of it. Expressions don't match across entity boundaries. If a string or entity matches both `allow_regex` and `restrict_regex`, the entity is displayed in plaintext.
+
+        restrict_regex : typing.Optional[typing.Sequence[str]]
+            Regular expressions to replace with '[RESTRICTED]'. Expressions must match the entirety of a detected entity, not just a substring, for the entity to be restricted. Expressions don't match across entity boundaries. If a string or entity matches both `allow_regex` and `restrict_regex`, the entity is displayed in plaintext. If a string is detected as an entity and a `restrict_regex` pattern matches the entire detected entity, the entity is replaced with '[RESTRICTED]'. If a string is detected as an entity but a `restrict_regex` pattern only matches a substring of it, the `restrict_regex` pattern is ignored, and the entity is processed according to the specified tokenization and transformation settings.
+
+        transformations : typing.Optional[Transformations]
+
+        configuration_id : typing.Optional[str]
+            ID of the Detect configuration to use for de-identification. Can't be specified with fields other than `vault_id`, `text`, and `file`.
+
+        request_options : typing.Optional[RequestOptions]
+            Request-specific configuration.
+
+        Returns
+        -------
+        DeidentifyFileResponse
+            OK
+
+        Examples
+        --------
+        from skyflow import FileDataDeidentifyAudio, Skyflow
+
+        client = Skyflow(
+            token="YOUR_TOKEN",
+        )
+        client.files.deidentify_audio(
+            file=FileDataDeidentifyAudio(
+                base_64="base64",
+                data_format="mp3",
+            ),
+            vault_id="vault_id",
+        )
+        """
+        _response = self._raw_client.deidentify_audio(
+            file=file,
+            vault_id=vault_id,
+            output_transcription=output_transcription,
+            output_processed_audio=output_processed_audio,
+            bleep_start_padding=bleep_start_padding,
+            bleep_stop_padding=bleep_stop_padding,
+            bleep_frequency=bleep_frequency,
+            bleep_gain=bleep_gain,
+            entity_types=entity_types,
+            token_type=token_type,
+            allow_regex=allow_regex,
+            restrict_regex=restrict_regex,
+            transformations=transformations,
+            configuration_id=configuration_id,
             request_options=request_options,
         )
         return _response.data
@@ -125,14 +255,14 @@ class FilesClient:
     def deidentify_document(
         self,
         *,
-        vault_id: VaultId,
-        file: DeidentifyDocumentRequestFile,
-        configuration_id: typing.Optional[ConfigurationId] = OMIT,
-        entity_types: typing.Optional[EntityTypes] = OMIT,
-        token_type: typing.Optional[TokenTypeWithoutVault] = OMIT,
-        allow_regex: typing.Optional[AllowRegex] = OMIT,
-        restrict_regex: typing.Optional[RestrictRegex] = OMIT,
+        file: FileDataDeidentifyDocument,
+        vault_id: str,
+        entity_types: typing.Optional[typing.Sequence[DeidentifyFileRequestDeidentifyDocumentEntityTypesItem]] = OMIT,
+        token_type: typing.Optional[TokenTypeMapping] = OMIT,
+        allow_regex: typing.Optional[typing.Sequence[str]] = OMIT,
+        restrict_regex: typing.Optional[typing.Sequence[str]] = OMIT,
         transformations: typing.Optional[Transformations] = OMIT,
+        configuration_id: typing.Optional[str] = OMIT,
         request_options: typing.Optional[RequestOptions] = None,
     ) -> DeidentifyFileResponse:
         """
@@ -140,22 +270,26 @@ class FilesClient:
 
         Parameters
         ----------
-        vault_id : VaultId
+        file : FileDataDeidentifyDocument
 
-        file : DeidentifyDocumentRequestFile
-            File to de-identify. Files are specified as Base64-encoded data.
+        vault_id : str
+            ID of a vault that you have Detect Invoker or Vault Owner permissions for.
 
-        configuration_id : typing.Optional[ConfigurationId]
+        entity_types : typing.Optional[typing.Sequence[DeidentifyFileRequestDeidentifyDocumentEntityTypesItem]]
+            Entities to detect and de-identify.
 
-        entity_types : typing.Optional[EntityTypes]
+        token_type : typing.Optional[TokenTypeMapping]
 
-        token_type : typing.Optional[TokenTypeWithoutVault]
+        allow_regex : typing.Optional[typing.Sequence[str]]
+            Regular expressions to display in plaintext. Entities appear in plaintext if an expression matches either the entirety of a detected entity or a substring of it. Expressions don't match across entity boundaries. If a string or entity matches both `allow_regex` and `restrict_regex`, the entity is displayed in plaintext.
 
-        allow_regex : typing.Optional[AllowRegex]
-
-        restrict_regex : typing.Optional[RestrictRegex]
+        restrict_regex : typing.Optional[typing.Sequence[str]]
+            Regular expressions to replace with '[RESTRICTED]'. Expressions must match the entirety of a detected entity, not just a substring, for the entity to be restricted. Expressions don't match across entity boundaries. If a string or entity matches both `allow_regex` and `restrict_regex`, the entity is displayed in plaintext. If a string is detected as an entity and a `restrict_regex` pattern matches the entire detected entity, the entity is replaced with '[RESTRICTED]'. If a string is detected as an entity but a `restrict_regex` pattern only matches a substring of it, the `restrict_regex` pattern is ignored, and the entity is processed according to the specified tokenization and transformation settings.
 
         transformations : typing.Optional[Transformations]
+
+        configuration_id : typing.Optional[str]
+            ID of the Detect configuration to use for de-identification. Can't be specified with fields other than `vault_id`, `text`, and `file`.
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
@@ -163,33 +297,32 @@ class FilesClient:
         Returns
         -------
         DeidentifyFileResponse
-            A successful response.
+            OK
 
         Examples
         --------
-        from skyflow import Skyflow
-        from skyflow.files import DeidentifyDocumentRequestFile
+        from skyflow import FileDataDeidentifyDocument, Skyflow
 
         client = Skyflow(
             token="YOUR_TOKEN",
         )
         client.files.deidentify_document(
-            vault_id="f4b3b3b33b3b3b3b3b3b3b3b3b3b3b3b",
-            file=DeidentifyDocumentRequestFile(
-                base_64="SGkgaSBhbSBEZXZhbnNodSwgbGl2...aW5nIGluIGNhbGlmb3JuaWEuIA==",
-                data_format="docx",
+            file=FileDataDeidentifyDocument(
+                base_64="base64",
+                data_format="pdf",
             ),
+            vault_id="vault_id",
         )
         """
         _response = self._raw_client.deidentify_document(
-            vault_id=vault_id,
             file=file,
-            configuration_id=configuration_id,
+            vault_id=vault_id,
             entity_types=entity_types,
             token_type=token_type,
             allow_regex=allow_regex,
             restrict_regex=restrict_regex,
             transformations=transformations,
+            configuration_id=configuration_id,
             request_options=request_options,
         )
         return _response.data
@@ -197,16 +330,18 @@ class FilesClient:
     def deidentify_pdf(
         self,
         *,
-        vault_id: VaultId,
-        file: DeidentifyPdfRequestFile,
-        configuration_id: typing.Optional[ConfigurationId] = OMIT,
-        density: typing.Optional[float] = OMIT,
-        max_resolution: typing.Optional[float] = OMIT,
-        entity_types: typing.Optional[EntityTypes] = OMIT,
-        token_type: typing.Optional[TokenTypeWithoutVault] = OMIT,
-        allow_regex: typing.Optional[AllowRegex] = OMIT,
-        restrict_regex: typing.Optional[RestrictRegex] = OMIT,
+        file: FileDataDeidentifyPdf,
+        vault_id: str,
+        density: typing.Optional[int] = OMIT,
+        max_resolution: typing.Optional[int] = OMIT,
+        entity_types: typing.Optional[
+            typing.Sequence[DeidentifyFileDocumentPdfRequestDeidentifyPdfEntityTypesItem]
+        ] = OMIT,
+        token_type: typing.Optional[TokenTypeMapping] = OMIT,
+        allow_regex: typing.Optional[typing.Sequence[str]] = OMIT,
+        restrict_regex: typing.Optional[typing.Sequence[str]] = OMIT,
         transformations: typing.Optional[Transformations] = OMIT,
+        configuration_id: typing.Optional[str] = OMIT,
         request_options: typing.Optional[RequestOptions] = None,
     ) -> DeidentifyFileResponse:
         """
@@ -214,28 +349,32 @@ class FilesClient:
 
         Parameters
         ----------
-        vault_id : VaultId
+        file : FileDataDeidentifyPdf
 
-        file : DeidentifyPdfRequestFile
-            File to de-identify. Files are specified as Base64-encoded data.
+        vault_id : str
+            ID of a vault that you have Detect Invoker or Vault Owner permissions for.
 
-        configuration_id : typing.Optional[ConfigurationId]
-
-        density : typing.Optional[float]
+        density : typing.Optional[int]
             Pixel density at which to process the PDF file.
 
-        max_resolution : typing.Optional[float]
+        max_resolution : typing.Optional[int]
             Max resolution at which to process the PDF file.
 
-        entity_types : typing.Optional[EntityTypes]
+        entity_types : typing.Optional[typing.Sequence[DeidentifyFileDocumentPdfRequestDeidentifyPdfEntityTypesItem]]
+            Entities to detect and de-identify.
 
-        token_type : typing.Optional[TokenTypeWithoutVault]
+        token_type : typing.Optional[TokenTypeMapping]
 
-        allow_regex : typing.Optional[AllowRegex]
+        allow_regex : typing.Optional[typing.Sequence[str]]
+            Regular expressions to display in plaintext. Entities appear in plaintext if an expression matches either the entirety of a detected entity or a substring of it. Expressions don't match across entity boundaries. If a string or entity matches both `allow_regex` and `restrict_regex`, the entity is displayed in plaintext.
 
-        restrict_regex : typing.Optional[RestrictRegex]
+        restrict_regex : typing.Optional[typing.Sequence[str]]
+            Regular expressions to replace with '[RESTRICTED]'. Expressions must match the entirety of a detected entity, not just a substring, for the entity to be restricted. Expressions don't match across entity boundaries. If a string or entity matches both `allow_regex` and `restrict_regex`, the entity is displayed in plaintext. If a string is detected as an entity and a `restrict_regex` pattern matches the entire detected entity, the entity is replaced with '[RESTRICTED]'. If a string is detected as an entity but a `restrict_regex` pattern only matches a substring of it, the `restrict_regex` pattern is ignored, and the entity is processed according to the specified tokenization and transformation settings.
 
         transformations : typing.Optional[Transformations]
+
+        configuration_id : typing.Optional[str]
+            ID of the Detect configuration to use for de-identification. Can't be specified with fields other than `vault_id`, `text`, and `file`.
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
@@ -243,27 +382,25 @@ class FilesClient:
         Returns
         -------
         DeidentifyFileResponse
-            A successful response.
+            OK
 
         Examples
         --------
-        from skyflow import Skyflow
-        from skyflow.files import DeidentifyPdfRequestFile
+        from skyflow import FileDataDeidentifyPdf, Skyflow
 
         client = Skyflow(
             token="YOUR_TOKEN",
         )
         client.files.deidentify_pdf(
-            vault_id="f4b3b3b33b3b3b3b3b3b3b3b3b3b3b3b",
-            file=DeidentifyPdfRequestFile(
-                base_64="SGkgaSBhbSBEZXZhbnNodSwgbGl2...aW5nIGluIGNhbGlmb3JuaWEuIA==",
+            file=FileDataDeidentifyPdf(
+                base_64="base64",
             ),
+            vault_id="vault_id",
         )
         """
         _response = self._raw_client.deidentify_pdf(
-            vault_id=vault_id,
             file=file,
-            configuration_id=configuration_id,
+            vault_id=vault_id,
             density=density,
             max_resolution=max_resolution,
             entity_types=entity_types,
@@ -271,6 +408,7 @@ class FilesClient:
             allow_regex=allow_regex,
             restrict_regex=restrict_regex,
             transformations=transformations,
+            configuration_id=configuration_id,
             request_options=request_options,
         )
         return _response.data
@@ -278,17 +416,17 @@ class FilesClient:
     def deidentify_image(
         self,
         *,
-        vault_id: VaultId,
-        file: DeidentifyImageRequestFile,
-        configuration_id: typing.Optional[ConfigurationId] = OMIT,
+        file: FileDataDeidentifyImage,
+        vault_id: str,
         output_processed_image: typing.Optional[bool] = OMIT,
         output_ocr_text: typing.Optional[bool] = OMIT,
-        masking_method: typing.Optional[DeidentifyImageRequestMaskingMethod] = OMIT,
-        entity_types: typing.Optional[EntityTypes] = OMIT,
-        token_type: typing.Optional[TokenTypeWithoutVault] = OMIT,
-        allow_regex: typing.Optional[AllowRegex] = OMIT,
-        restrict_regex: typing.Optional[RestrictRegex] = OMIT,
+        masking_method: typing.Optional[DeidentifyFileImageRequestDeidentifyImageMaskingMethod] = OMIT,
+        entity_types: typing.Optional[typing.Sequence[DeidentifyFileImageRequestDeidentifyImageEntityTypesItem]] = OMIT,
+        token_type: typing.Optional[TokenTypeMapping] = OMIT,
+        allow_regex: typing.Optional[typing.Sequence[str]] = OMIT,
+        restrict_regex: typing.Optional[typing.Sequence[str]] = OMIT,
         transformations: typing.Optional[Transformations] = OMIT,
+        configuration_id: typing.Optional[str] = OMIT,
         request_options: typing.Optional[RequestOptions] = None,
     ) -> DeidentifyFileResponse:
         """
@@ -296,31 +434,35 @@ class FilesClient:
 
         Parameters
         ----------
-        vault_id : VaultId
+        file : FileDataDeidentifyImage
 
-        file : DeidentifyImageRequestFile
-            File to de-identify. Files are specified as Base64-encoded data.
-
-        configuration_id : typing.Optional[ConfigurationId]
+        vault_id : str
+            ID of a vault that you have Detect Invoker or Vault Owner permissions for.
 
         output_processed_image : typing.Optional[bool]
             If `true`, includes processed image in the output.
 
         output_ocr_text : typing.Optional[bool]
-            If `true`, includes OCR text output in the response.
+            If `true`, includes text detected by OCR in the response.
 
-        masking_method : typing.Optional[DeidentifyImageRequestMaskingMethod]
+        masking_method : typing.Optional[DeidentifyFileImageRequestDeidentifyImageMaskingMethod]
             Method to mask the entities in the image.
 
-        entity_types : typing.Optional[EntityTypes]
+        entity_types : typing.Optional[typing.Sequence[DeidentifyFileImageRequestDeidentifyImageEntityTypesItem]]
+            Entities to detect and de-identify.
 
-        token_type : typing.Optional[TokenTypeWithoutVault]
+        token_type : typing.Optional[TokenTypeMapping]
 
-        allow_regex : typing.Optional[AllowRegex]
+        allow_regex : typing.Optional[typing.Sequence[str]]
+            Regular expressions to display in plaintext. Entities appear in plaintext if an expression matches either the entirety of a detected entity or a substring of it. Expressions don't match across entity boundaries. If a string or entity matches both `allow_regex` and `restrict_regex`, the entity is displayed in plaintext.
 
-        restrict_regex : typing.Optional[RestrictRegex]
+        restrict_regex : typing.Optional[typing.Sequence[str]]
+            Regular expressions to replace with '[RESTRICTED]'. Expressions must match the entirety of a detected entity, not just a substring, for the entity to be restricted. Expressions don't match across entity boundaries. If a string or entity matches both `allow_regex` and `restrict_regex`, the entity is displayed in plaintext. If a string is detected as an entity and a `restrict_regex` pattern matches the entire detected entity, the entity is replaced with '[RESTRICTED]'. If a string is detected as an entity but a `restrict_regex` pattern only matches a substring of it, the `restrict_regex` pattern is ignored, and the entity is processed according to the specified tokenization and transformation settings.
 
         transformations : typing.Optional[Transformations]
+
+        configuration_id : typing.Optional[str]
+            ID of the Detect configuration to use for de-identification. Can't be specified with fields other than `vault_id`, `text`, and `file`.
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
@@ -328,28 +470,26 @@ class FilesClient:
         Returns
         -------
         DeidentifyFileResponse
-            A successful response.
+            OK
 
         Examples
         --------
-        from skyflow import Skyflow
-        from skyflow.files import DeidentifyImageRequestFile
+        from skyflow import FileDataDeidentifyImage, Skyflow
 
         client = Skyflow(
             token="YOUR_TOKEN",
         )
         client.files.deidentify_image(
-            vault_id="f4b3b3b33b3b3b3b3b3b3b3b3b3b3b3b",
-            file=DeidentifyImageRequestFile(
-                base_64="SGkgaSBhbSBEZXZhbnNodSwgbGl2...aW5nIGluIGNhbGlmb3JuaWEuIA==",
+            file=FileDataDeidentifyImage(
+                base_64="base64",
                 data_format="jpg",
             ),
+            vault_id="vault_id",
         )
         """
         _response = self._raw_client.deidentify_image(
-            vault_id=vault_id,
             file=file,
-            configuration_id=configuration_id,
+            vault_id=vault_id,
             output_processed_image=output_processed_image,
             output_ocr_text=output_ocr_text,
             masking_method=masking_method,
@@ -358,221 +498,7 @@ class FilesClient:
             allow_regex=allow_regex,
             restrict_regex=restrict_regex,
             transformations=transformations,
-            request_options=request_options,
-        )
-        return _response.data
-
-    def deidentify_text(
-        self,
-        *,
-        vault_id: VaultId,
-        file: DeidentifyTextRequestFile,
-        configuration_id: typing.Optional[ConfigurationId] = OMIT,
-        entity_types: typing.Optional[EntityTypes] = OMIT,
-        token_type: typing.Optional[TokenTypeWithoutVault] = OMIT,
-        allow_regex: typing.Optional[AllowRegex] = OMIT,
-        restrict_regex: typing.Optional[RestrictRegex] = OMIT,
-        transformations: typing.Optional[Transformations] = OMIT,
-        request_options: typing.Optional[RequestOptions] = None,
-    ) -> DeidentifyFileResponse:
-        """
-        De-identifies sensitive data from a text file. This operation includes options applicable to all supported image text types.<br/><br/>For broader file type support, see <a href='#deidentify_file'>De-identify File</a>.
-
-        Parameters
-        ----------
-        vault_id : VaultId
-
-        file : DeidentifyTextRequestFile
-            File to de-identify. Files are specified as Base64-encoded data.
-
-        configuration_id : typing.Optional[ConfigurationId]
-
-        entity_types : typing.Optional[EntityTypes]
-
-        token_type : typing.Optional[TokenTypeWithoutVault]
-
-        allow_regex : typing.Optional[AllowRegex]
-
-        restrict_regex : typing.Optional[RestrictRegex]
-
-        transformations : typing.Optional[Transformations]
-
-        request_options : typing.Optional[RequestOptions]
-            Request-specific configuration.
-
-        Returns
-        -------
-        DeidentifyFileResponse
-            A successful response.
-
-        Examples
-        --------
-        from skyflow import Skyflow
-        from skyflow.files import DeidentifyTextRequestFile
-
-        client = Skyflow(
-            token="YOUR_TOKEN",
-        )
-        client.files.deidentify_text(
-            vault_id="f4b3b3b33b3b3b3b3b3b3b3b3b3b3b3b",
-            file=DeidentifyTextRequestFile(
-                base_64="Zm9vYmFy",
-            ),
-        )
-        """
-        _response = self._raw_client.deidentify_text(
-            vault_id=vault_id,
-            file=file,
             configuration_id=configuration_id,
-            entity_types=entity_types,
-            token_type=token_type,
-            allow_regex=allow_regex,
-            restrict_regex=restrict_regex,
-            transformations=transformations,
-            request_options=request_options,
-        )
-        return _response.data
-
-    def deidentify_structured_text(
-        self,
-        *,
-        vault_id: VaultId,
-        file: DeidentifyStructuredTextRequestFile,
-        configuration_id: typing.Optional[ConfigurationId] = OMIT,
-        entity_types: typing.Optional[EntityTypes] = OMIT,
-        token_type: typing.Optional[TokenTypeWithoutVault] = OMIT,
-        allow_regex: typing.Optional[AllowRegex] = OMIT,
-        restrict_regex: typing.Optional[RestrictRegex] = OMIT,
-        transformations: typing.Optional[Transformations] = OMIT,
-        request_options: typing.Optional[RequestOptions] = None,
-    ) -> DeidentifyFileResponse:
-        """
-        De-identifies sensitive data from a structured text file. This operation includes options applicable to all supported structured text file types.<br/><br/>For broader file type support, see <a href='#deidentify_file'>De-identify File</a>.
-
-        Parameters
-        ----------
-        vault_id : VaultId
-
-        file : DeidentifyStructuredTextRequestFile
-            File to de-identify. Files are specified as Base64-encoded data.
-
-        configuration_id : typing.Optional[ConfigurationId]
-
-        entity_types : typing.Optional[EntityTypes]
-
-        token_type : typing.Optional[TokenTypeWithoutVault]
-
-        allow_regex : typing.Optional[AllowRegex]
-
-        restrict_regex : typing.Optional[RestrictRegex]
-
-        transformations : typing.Optional[Transformations]
-
-        request_options : typing.Optional[RequestOptions]
-            Request-specific configuration.
-
-        Returns
-        -------
-        DeidentifyFileResponse
-            A successful response.
-
-        Examples
-        --------
-        from skyflow import Skyflow
-        from skyflow.files import DeidentifyStructuredTextRequestFile
-
-        client = Skyflow(
-            token="YOUR_TOKEN",
-        )
-        client.files.deidentify_structured_text(
-            vault_id="f4b3b3b33b3b3b3b3b3b3b3b3b3b3b3b",
-            file=DeidentifyStructuredTextRequestFile(
-                base_64="SGkgaSBhbSBEZXZhbnNodSwgbGl2...aW5nIGluIGNhbGlmb3JuaWEuIA==",
-                data_format="json",
-            ),
-        )
-        """
-        _response = self._raw_client.deidentify_structured_text(
-            vault_id=vault_id,
-            file=file,
-            configuration_id=configuration_id,
-            entity_types=entity_types,
-            token_type=token_type,
-            allow_regex=allow_regex,
-            restrict_regex=restrict_regex,
-            transformations=transformations,
-            request_options=request_options,
-        )
-        return _response.data
-
-    def deidentify_spreadsheet(
-        self,
-        *,
-        vault_id: VaultId,
-        file: DeidentifySpreadsheetRequestFile,
-        configuration_id: typing.Optional[ConfigurationId] = OMIT,
-        entity_types: typing.Optional[EntityTypes] = OMIT,
-        token_type: typing.Optional[TokenTypeWithoutVault] = OMIT,
-        allow_regex: typing.Optional[AllowRegex] = OMIT,
-        restrict_regex: typing.Optional[RestrictRegex] = OMIT,
-        transformations: typing.Optional[Transformations] = OMIT,
-        request_options: typing.Optional[RequestOptions] = None,
-    ) -> DeidentifyFileResponse:
-        """
-        De-identifies sensitive data from a spreadsheet file. This operation includes options applicable to all supported spreadsheet file types.<br/><br/>For broader file type support, see <a href='#deidentify_file'>De-identify File</a>.
-
-        Parameters
-        ----------
-        vault_id : VaultId
-
-        file : DeidentifySpreadsheetRequestFile
-            File to de-identify. Files are specified as Base64-encoded data.
-
-        configuration_id : typing.Optional[ConfigurationId]
-
-        entity_types : typing.Optional[EntityTypes]
-
-        token_type : typing.Optional[TokenTypeWithoutVault]
-
-        allow_regex : typing.Optional[AllowRegex]
-
-        restrict_regex : typing.Optional[RestrictRegex]
-
-        transformations : typing.Optional[Transformations]
-
-        request_options : typing.Optional[RequestOptions]
-            Request-specific configuration.
-
-        Returns
-        -------
-        DeidentifyFileResponse
-            A successful response.
-
-        Examples
-        --------
-        from skyflow import Skyflow
-        from skyflow.files import DeidentifySpreadsheetRequestFile
-
-        client = Skyflow(
-            token="YOUR_TOKEN",
-        )
-        client.files.deidentify_spreadsheet(
-            vault_id="f4b3b3b33b3b3b3b3b3b3b3b3b3b3b3b",
-            file=DeidentifySpreadsheetRequestFile(
-                base_64="SGkgaSBhbSBEZXZhbnNodSwgbGl2...aW5nIGluIGNhbGlmb3JuaWEuIA==",
-                data_format="csv",
-            ),
-        )
-        """
-        _response = self._raw_client.deidentify_spreadsheet(
-            vault_id=vault_id,
-            file=file,
-            configuration_id=configuration_id,
-            entity_types=entity_types,
-            token_type=token_type,
-            allow_regex=allow_regex,
-            restrict_regex=restrict_regex,
-            transformations=transformations,
             request_options=request_options,
         )
         return _response.data
@@ -580,14 +506,16 @@ class FilesClient:
     def deidentify_presentation(
         self,
         *,
-        vault_id: VaultId,
-        file: DeidentifyPresentationRequestFile,
-        configuration_id: typing.Optional[ConfigurationId] = OMIT,
-        entity_types: typing.Optional[EntityTypes] = OMIT,
-        token_type: typing.Optional[TokenTypeWithoutVault] = OMIT,
-        allow_regex: typing.Optional[AllowRegex] = OMIT,
-        restrict_regex: typing.Optional[RestrictRegex] = OMIT,
+        file: FileDataDeidentifyPresentation,
+        vault_id: str,
+        entity_types: typing.Optional[
+            typing.Sequence[DeidentifyFileRequestDeidentifyPresentationEntityTypesItem]
+        ] = OMIT,
+        token_type: typing.Optional[TokenTypeMapping] = OMIT,
+        allow_regex: typing.Optional[typing.Sequence[str]] = OMIT,
+        restrict_regex: typing.Optional[typing.Sequence[str]] = OMIT,
         transformations: typing.Optional[Transformations] = OMIT,
+        configuration_id: typing.Optional[str] = OMIT,
         request_options: typing.Optional[RequestOptions] = None,
     ) -> DeidentifyFileResponse:
         """
@@ -595,22 +523,26 @@ class FilesClient:
 
         Parameters
         ----------
-        vault_id : VaultId
+        file : FileDataDeidentifyPresentation
 
-        file : DeidentifyPresentationRequestFile
-            File to de-identify. Files are specified as Base64-encoded data.
+        vault_id : str
+            ID of a vault that you have Detect Invoker or Vault Owner permissions for.
 
-        configuration_id : typing.Optional[ConfigurationId]
+        entity_types : typing.Optional[typing.Sequence[DeidentifyFileRequestDeidentifyPresentationEntityTypesItem]]
+            Entities to detect and de-identify.
 
-        entity_types : typing.Optional[EntityTypes]
+        token_type : typing.Optional[TokenTypeMapping]
 
-        token_type : typing.Optional[TokenTypeWithoutVault]
+        allow_regex : typing.Optional[typing.Sequence[str]]
+            Regular expressions to display in plaintext. Entities appear in plaintext if an expression matches either the entirety of a detected entity or a substring of it. Expressions don't match across entity boundaries. If a string or entity matches both `allow_regex` and `restrict_regex`, the entity is displayed in plaintext.
 
-        allow_regex : typing.Optional[AllowRegex]
-
-        restrict_regex : typing.Optional[RestrictRegex]
+        restrict_regex : typing.Optional[typing.Sequence[str]]
+            Regular expressions to replace with '[RESTRICTED]'. Expressions must match the entirety of a detected entity, not just a substring, for the entity to be restricted. Expressions don't match across entity boundaries. If a string or entity matches both `allow_regex` and `restrict_regex`, the entity is displayed in plaintext. If a string is detected as an entity and a `restrict_regex` pattern matches the entire detected entity, the entity is replaced with '[RESTRICTED]'. If a string is detected as an entity but a `restrict_regex` pattern only matches a substring of it, the `restrict_regex` pattern is ignored, and the entity is processed according to the specified tokenization and transformation settings.
 
         transformations : typing.Optional[Transformations]
+
+        configuration_id : typing.Optional[str]
+            ID of the Detect configuration to use for de-identification. Can't be specified with fields other than `vault_id`, `text`, and `file`.
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
@@ -618,95 +550,76 @@ class FilesClient:
         Returns
         -------
         DeidentifyFileResponse
-            A successful response.
+            OK
 
         Examples
         --------
-        from skyflow import Skyflow
-        from skyflow.files import DeidentifyPresentationRequestFile
+        from skyflow import FileDataDeidentifyPresentation, Skyflow
 
         client = Skyflow(
             token="YOUR_TOKEN",
         )
         client.files.deidentify_presentation(
-            vault_id="f4b3b3b33b3b3b3b3b3b3b3b3b3b3b3b",
-            file=DeidentifyPresentationRequestFile(
-                base_64="SGkgaSBhbSBEZXZhbnNodSwgbGl2...aW5nIGluIGNhbGlmb3JuaWEuIA==",
-                data_format="pptx",
+            file=FileDataDeidentifyPresentation(
+                base_64="base64",
+                data_format="ppt",
             ),
+            vault_id="vault_id",
         )
         """
         _response = self._raw_client.deidentify_presentation(
-            vault_id=vault_id,
             file=file,
-            configuration_id=configuration_id,
+            vault_id=vault_id,
             entity_types=entity_types,
             token_type=token_type,
             allow_regex=allow_regex,
             restrict_regex=restrict_regex,
             transformations=transformations,
+            configuration_id=configuration_id,
             request_options=request_options,
         )
         return _response.data
 
-    def deidentify_audio(
+    def deidentify_spreadsheet(
         self,
         *,
-        vault_id: VaultId,
-        file: DeidentifyAudioRequestFile,
-        configuration_id: typing.Optional[ConfigurationId] = OMIT,
-        output_processed_audio: typing.Optional[bool] = OMIT,
-        output_transcription: typing.Optional[DeidentifyAudioRequestOutputTranscription] = OMIT,
-        bleep_gain: typing.Optional[float] = OMIT,
-        bleep_frequency: typing.Optional[float] = OMIT,
-        bleep_start_padding: typing.Optional[float] = OMIT,
-        bleep_stop_padding: typing.Optional[float] = OMIT,
-        entity_types: typing.Optional[EntityTypes] = OMIT,
-        token_type: typing.Optional[TokenTypeWithoutVault] = OMIT,
-        allow_regex: typing.Optional[AllowRegex] = OMIT,
-        restrict_regex: typing.Optional[RestrictRegex] = OMIT,
+        file: FileDataDeidentifySpreadsheet,
+        vault_id: str,
+        entity_types: typing.Optional[
+            typing.Sequence[DeidentifyFileRequestDeidentifySpreadsheetEntityTypesItem]
+        ] = OMIT,
+        token_type: typing.Optional[TokenTypeMapping] = OMIT,
+        allow_regex: typing.Optional[typing.Sequence[str]] = OMIT,
+        restrict_regex: typing.Optional[typing.Sequence[str]] = OMIT,
         transformations: typing.Optional[Transformations] = OMIT,
+        configuration_id: typing.Optional[str] = OMIT,
         request_options: typing.Optional[RequestOptions] = None,
     ) -> DeidentifyFileResponse:
         """
-        De-identifies sensitive data from an audio file. This operation includes options applicable to all supported audio file types.<br/><br/>For broader file type support, see <a href='#deidentify_file'>De-identify File</a>.
+        De-identifies sensitive data from a spreadsheet file. This operation includes options applicable to all supported spreadsheet file types.<br/><br/>For broader file type support, see <a href='#deidentify_file'>De-identify File</a>.
 
         Parameters
         ----------
-        vault_id : VaultId
+        file : FileDataDeidentifySpreadsheet
 
-        file : DeidentifyAudioRequestFile
-            File to de-identify. Files are specified as Base64-encoded data.
+        vault_id : str
+            ID of a vault that you have Detect Invoker or Vault Owner permissions for.
 
-        configuration_id : typing.Optional[ConfigurationId]
+        entity_types : typing.Optional[typing.Sequence[DeidentifyFileRequestDeidentifySpreadsheetEntityTypesItem]]
+            Entities to detect and de-identify.
 
-        output_processed_audio : typing.Optional[bool]
-            If `true`, includes processed audio file in the response.
+        token_type : typing.Optional[TokenTypeMapping]
 
-        output_transcription : typing.Optional[DeidentifyAudioRequestOutputTranscription]
-            Type of transcription to output.
+        allow_regex : typing.Optional[typing.Sequence[str]]
+            Regular expressions to display in plaintext. Entities appear in plaintext if an expression matches either the entirety of a detected entity or a substring of it. Expressions don't match across entity boundaries. If a string or entity matches both `allow_regex` and `restrict_regex`, the entity is displayed in plaintext.
 
-        bleep_gain : typing.Optional[float]
-            Relative loudness of the bleep in dB. Positive values increase its loudness, and negative values decrease it.
-
-        bleep_frequency : typing.Optional[float]
-            The pitch of the bleep sound, in Hz. The higher the number, the higher the pitch.
-
-        bleep_start_padding : typing.Optional[float]
-            Padding added to the beginning of a bleep, in seconds.
-
-        bleep_stop_padding : typing.Optional[float]
-            Padding added to the end of a bleep, in seconds.
-
-        entity_types : typing.Optional[EntityTypes]
-
-        token_type : typing.Optional[TokenTypeWithoutVault]
-
-        allow_regex : typing.Optional[AllowRegex]
-
-        restrict_regex : typing.Optional[RestrictRegex]
+        restrict_regex : typing.Optional[typing.Sequence[str]]
+            Regular expressions to replace with '[RESTRICTED]'. Expressions must match the entirety of a detected entity, not just a substring, for the entity to be restricted. Expressions don't match across entity boundaries. If a string or entity matches both `allow_regex` and `restrict_regex`, the entity is displayed in plaintext. If a string is detected as an entity and a `restrict_regex` pattern matches the entire detected entity, the entity is replaced with '[RESTRICTED]'. If a string is detected as an entity but a `restrict_regex` pattern only matches a substring of it, the `restrict_regex` pattern is ignored, and the entity is processed according to the specified tokenization and transformation settings.
 
         transformations : typing.Optional[Transformations]
+
+        configuration_id : typing.Optional[str]
+            ID of the Detect configuration to use for de-identification. Can't be specified with fields other than `vault_id`, `text`, and `file`.
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
@@ -714,64 +627,258 @@ class FilesClient:
         Returns
         -------
         DeidentifyFileResponse
-            A successful response.
+            OK
 
         Examples
         --------
-        from skyflow import Skyflow
-        from skyflow.files import DeidentifyAudioRequestFile
+        from skyflow import FileDataDeidentifySpreadsheet, Skyflow
 
         client = Skyflow(
             token="YOUR_TOKEN",
         )
-        client.files.deidentify_audio(
-            vault_id="f4b3b3b33b3b3b3b3b3b3b3b3b3b3b3b",
-            file=DeidentifyAudioRequestFile(
-                base_64="SGkgaSBhbSBEZXZhbnNodSwgbGl2...aW5nIGluIGNhbGlmb3JuaWEuIA==",
-                data_format="mp3",
+        client.files.deidentify_spreadsheet(
+            file=FileDataDeidentifySpreadsheet(
+                base_64="base64",
+                data_format="csv",
             ),
+            vault_id="vault_id",
         )
         """
-        _response = self._raw_client.deidentify_audio(
-            vault_id=vault_id,
+        _response = self._raw_client.deidentify_spreadsheet(
             file=file,
-            configuration_id=configuration_id,
-            output_processed_audio=output_processed_audio,
-            output_transcription=output_transcription,
-            bleep_gain=bleep_gain,
-            bleep_frequency=bleep_frequency,
-            bleep_start_padding=bleep_start_padding,
-            bleep_stop_padding=bleep_stop_padding,
+            vault_id=vault_id,
             entity_types=entity_types,
             token_type=token_type,
             allow_regex=allow_regex,
             restrict_regex=restrict_regex,
             transformations=transformations,
+            configuration_id=configuration_id,
             request_options=request_options,
         )
         return _response.data
 
-    def get_run(
-        self, run_id: Uuid, *, vault_id: ResourceId, request_options: typing.Optional[RequestOptions] = None
-    ) -> DeidentifyStatusResponse:
+    def deidentify_structured_text(
+        self,
+        *,
+        file: FileDataDeidentifyStructuredText,
+        vault_id: str,
+        entity_types: typing.Optional[
+            typing.Sequence[DeidentifyFileRequestDeidentifyStructuredTextEntityTypesItem]
+        ] = OMIT,
+        token_type: typing.Optional[TokenTypeMapping] = OMIT,
+        allow_regex: typing.Optional[typing.Sequence[str]] = OMIT,
+        restrict_regex: typing.Optional[typing.Sequence[str]] = OMIT,
+        transformations: typing.Optional[Transformations] = OMIT,
+        configuration_id: typing.Optional[str] = OMIT,
+        request_options: typing.Optional[RequestOptions] = None,
+    ) -> DeidentifyFileResponse:
         """
-        Returns the status of the detect run.
+        De-identifies sensitive data from a structured text file. This operation includes options applicable to all supported structured text file types.<br/><br/>For broader file type support, see <a href='#deidentify_file'>De-identify File</a>.
 
         Parameters
         ----------
-        run_id : Uuid
-            ID of the detect run.
+        file : FileDataDeidentifyStructuredText
 
-        vault_id : ResourceId
-            ID of the vault.
+        vault_id : str
+            ID of a vault that you have Detect Invoker or Vault Owner permissions for.
+
+        entity_types : typing.Optional[typing.Sequence[DeidentifyFileRequestDeidentifyStructuredTextEntityTypesItem]]
+            Entities to detect and de-identify.
+
+        token_type : typing.Optional[TokenTypeMapping]
+
+        allow_regex : typing.Optional[typing.Sequence[str]]
+            Regular expressions to display in plaintext. Entities appear in plaintext if an expression matches either the entirety of a detected entity or a substring of it. Expressions don't match across entity boundaries. If a string or entity matches both `allow_regex` and `restrict_regex`, the entity is displayed in plaintext.
+
+        restrict_regex : typing.Optional[typing.Sequence[str]]
+            Regular expressions to replace with '[RESTRICTED]'. Expressions must match the entirety of a detected entity, not just a substring, for the entity to be restricted. Expressions don't match across entity boundaries. If a string or entity matches both `allow_regex` and `restrict_regex`, the entity is displayed in plaintext. If a string is detected as an entity and a `restrict_regex` pattern matches the entire detected entity, the entity is replaced with '[RESTRICTED]'. If a string is detected as an entity but a `restrict_regex` pattern only matches a substring of it, the `restrict_regex` pattern is ignored, and the entity is processed according to the specified tokenization and transformation settings.
+
+        transformations : typing.Optional[Transformations]
+
+        configuration_id : typing.Optional[str]
+            ID of the Detect configuration to use for de-identification. Can't be specified with fields other than `vault_id`, `text`, and `file`.
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
 
         Returns
         -------
-        DeidentifyStatusResponse
-            A successful response.
+        DeidentifyFileResponse
+            OK
+
+        Examples
+        --------
+        from skyflow import FileDataDeidentifyStructuredText, Skyflow
+
+        client = Skyflow(
+            token="YOUR_TOKEN",
+        )
+        client.files.deidentify_structured_text(
+            file=FileDataDeidentifyStructuredText(
+                base_64="base64",
+                data_format="json",
+            ),
+            vault_id="vault_id",
+        )
+        """
+        _response = self._raw_client.deidentify_structured_text(
+            file=file,
+            vault_id=vault_id,
+            entity_types=entity_types,
+            token_type=token_type,
+            allow_regex=allow_regex,
+            restrict_regex=restrict_regex,
+            transformations=transformations,
+            configuration_id=configuration_id,
+            request_options=request_options,
+        )
+        return _response.data
+
+    def deidentify_text(
+        self,
+        *,
+        file: FileDataDeidentifyText,
+        vault_id: str,
+        entity_types: typing.Optional[typing.Sequence[DeidentifyFileRequestDeidentifyTextEntityTypesItem]] = OMIT,
+        token_type: typing.Optional[TokenTypeMapping] = OMIT,
+        allow_regex: typing.Optional[typing.Sequence[str]] = OMIT,
+        restrict_regex: typing.Optional[typing.Sequence[str]] = OMIT,
+        transformations: typing.Optional[Transformations] = OMIT,
+        configuration_id: typing.Optional[str] = OMIT,
+        request_options: typing.Optional[RequestOptions] = None,
+    ) -> DeidentifyFileResponse:
+        """
+        De-identifies sensitive data from a text file. This operation includes options applicable to all supported image text types.<br/><br/>For broader file type support, see <a href='#deidentify_file'>De-identify File</a>.
+
+        Parameters
+        ----------
+        file : FileDataDeidentifyText
+
+        vault_id : str
+            ID of a vault that you have Detect Invoker or Vault Owner permissions for.
+
+        entity_types : typing.Optional[typing.Sequence[DeidentifyFileRequestDeidentifyTextEntityTypesItem]]
+            Entities to detect and de-identify.
+
+        token_type : typing.Optional[TokenTypeMapping]
+
+        allow_regex : typing.Optional[typing.Sequence[str]]
+            Regular expressions to display in plaintext. Entities appear in plaintext if an expression matches either the entirety of a detected entity or a substring of it. Expressions don't match across entity boundaries. If a string or entity matches both `allow_regex` and `restrict_regex`, the entity is displayed in plaintext.
+
+        restrict_regex : typing.Optional[typing.Sequence[str]]
+            Regular expressions to replace with '[RESTRICTED]'. Expressions must match the entirety of a detected entity, not just a substring, for the entity to be restricted. Expressions don't match across entity boundaries. If a string or entity matches both `allow_regex` and `restrict_regex`, the entity is displayed in plaintext. If a string is detected as an entity and a `restrict_regex` pattern matches the entire detected entity, the entity is replaced with '[RESTRICTED]'. If a string is detected as an entity but a `restrict_regex` pattern only matches a substring of it, the `restrict_regex` pattern is ignored, and the entity is processed according to the specified tokenization and transformation settings.
+
+        transformations : typing.Optional[Transformations]
+
+        configuration_id : typing.Optional[str]
+            ID of the Detect configuration to use for de-identification. Can't be specified with fields other than `vault_id`, `text`, and `file`.
+
+        request_options : typing.Optional[RequestOptions]
+            Request-specific configuration.
+
+        Returns
+        -------
+        DeidentifyFileResponse
+            OK
+
+        Examples
+        --------
+        from skyflow import FileDataDeidentifyText, Skyflow
+
+        client = Skyflow(
+            token="YOUR_TOKEN",
+        )
+        client.files.deidentify_text(
+            file=FileDataDeidentifyText(
+                base_64="base64",
+            ),
+            vault_id="vault_id",
+        )
+        """
+        _response = self._raw_client.deidentify_text(
+            file=file,
+            vault_id=vault_id,
+            entity_types=entity_types,
+            token_type=token_type,
+            allow_regex=allow_regex,
+            restrict_regex=restrict_regex,
+            transformations=transformations,
+            configuration_id=configuration_id,
+            request_options=request_options,
+        )
+        return _response.data
+
+    def reidentify_file(
+        self,
+        *,
+        file: FileDataReidentifyFile,
+        vault_id: str,
+        format: typing.Optional[Format] = OMIT,
+        request_options: typing.Optional[RequestOptions] = None,
+    ) -> ReidentifyFileResponse:
+        """
+        Re-identifies tokens in a file.
+
+        Parameters
+        ----------
+        file : FileDataReidentifyFile
+
+        vault_id : str
+            ID of the vault where the entities are stored.
+
+        format : typing.Optional[Format]
+
+        request_options : typing.Optional[RequestOptions]
+            Request-specific configuration.
+
+        Returns
+        -------
+        ReidentifyFileResponse
+            OK
+
+        Examples
+        --------
+        from skyflow import FileDataReidentifyFile, Skyflow
+
+        client = Skyflow(
+            token="YOUR_TOKEN",
+        )
+        client.files.reidentify_file(
+            file=FileDataReidentifyFile(
+                base_64="base64",
+                data_format="txt",
+            ),
+            vault_id="vault_id",
+        )
+        """
+        _response = self._raw_client.reidentify_file(
+            file=file, vault_id=vault_id, format=format, request_options=request_options
+        )
+        return _response.data
+
+    def get_run(
+        self,
+        run_id: str,
+        *,
+        vault_id: typing.Optional[str] = None,
+        request_options: typing.Optional[RequestOptions] = None,
+    ) -> DetectRunsResponse:
+        """
+        Returns the status of a detect run.
+
+        Parameters
+        ----------
+        run_id : str
+
+        vault_id : typing.Optional[str]
+
+        request_options : typing.Optional[RequestOptions]
+            Request-specific configuration.
+
+        Returns
+        -------
+        DetectRunsResponse
+            OK
 
         Examples
         --------
@@ -786,56 +893,6 @@ class FilesClient:
         )
         """
         _response = self._raw_client.get_run(run_id, vault_id=vault_id, request_options=request_options)
-        return _response.data
-
-    def reidentify_file(
-        self,
-        *,
-        vault_id: VaultId,
-        file: ReidentifyFileRequestFile,
-        format: typing.Optional[ReidentifyFileRequestFormat] = OMIT,
-        request_options: typing.Optional[RequestOptions] = None,
-    ) -> ReidentifyFileResponse:
-        """
-        Re-identifies tokens in a file.
-
-        Parameters
-        ----------
-        vault_id : VaultId
-
-        file : ReidentifyFileRequestFile
-            File to re-identify. Files are specified as Base64-encoded data or an EFS path.
-
-        format : typing.Optional[ReidentifyFileRequestFormat]
-            Mapping of preferred data formatting options to entity types. Returned values are dependent on the configuration of the vault storing the data and the permissions of the user or account making the request.
-
-        request_options : typing.Optional[RequestOptions]
-            Request-specific configuration.
-
-        Returns
-        -------
-        ReidentifyFileResponse
-            A successful response.
-
-        Examples
-        --------
-        from skyflow import Skyflow
-        from skyflow.files import ReidentifyFileRequestFile
-
-        client = Skyflow(
-            token="YOUR_TOKEN",
-        )
-        client.files.reidentify_file(
-            vault_id="f4b3b3b33b3b3b3b3b3b3b3b3b3b3b3b",
-            file=ReidentifyFileRequestFile(
-                base_64="Zm9vYmFy",
-                data_format="txt",
-            ),
-        )
-        """
-        _response = self._raw_client.reidentify_file(
-            vault_id=vault_id, file=file, format=format, request_options=request_options
-        )
         return _response.data
 
 
@@ -857,14 +914,14 @@ class AsyncFilesClient:
     async def deidentify_file(
         self,
         *,
-        vault_id: VaultId,
-        file: DeidentifyFileRequestFile,
-        configuration_id: typing.Optional[ConfigurationId] = OMIT,
-        entity_types: typing.Optional[EntityTypes] = OMIT,
-        token_type: typing.Optional[TokenTypeWithoutVault] = OMIT,
-        allow_regex: typing.Optional[AllowRegex] = OMIT,
-        restrict_regex: typing.Optional[RestrictRegex] = OMIT,
+        file: FileData,
+        vault_id: str,
+        entity_types: typing.Optional[typing.Sequence[DeidentifyFileRequestEntityTypesItem]] = OMIT,
+        token_type: typing.Optional[TokenTypeMapping] = OMIT,
+        allow_regex: typing.Optional[typing.Sequence[str]] = OMIT,
+        restrict_regex: typing.Optional[typing.Sequence[str]] = OMIT,
         transformations: typing.Optional[Transformations] = OMIT,
+        configuration_id: typing.Optional[str] = OMIT,
         request_options: typing.Optional[RequestOptions] = None,
     ) -> DeidentifyFileResponse:
         """
@@ -872,22 +929,26 @@ class AsyncFilesClient:
 
         Parameters
         ----------
-        vault_id : VaultId
+        file : FileData
 
-        file : DeidentifyFileRequestFile
-            File to de-identify. Files are specified as Base64-encoded data.
+        vault_id : str
+            ID of a vault that you have Detect Invoker or Vault Owner permissions for.
 
-        configuration_id : typing.Optional[ConfigurationId]
+        entity_types : typing.Optional[typing.Sequence[DeidentifyFileRequestEntityTypesItem]]
+            Entities to detect and de-identify.
 
-        entity_types : typing.Optional[EntityTypes]
+        token_type : typing.Optional[TokenTypeMapping]
 
-        token_type : typing.Optional[TokenTypeWithoutVault]
+        allow_regex : typing.Optional[typing.Sequence[str]]
+            Regular expressions to display in plaintext. Entities appear in plaintext if an expression matches either the entirety of a detected entity or a substring of it. Expressions don't match across entity boundaries. If a string or entity matches both `allow_regex` and `restrict_regex`, the entity is displayed in plaintext.
 
-        allow_regex : typing.Optional[AllowRegex]
-
-        restrict_regex : typing.Optional[RestrictRegex]
+        restrict_regex : typing.Optional[typing.Sequence[str]]
+            Regular expressions to replace with '[RESTRICTED]'. Expressions must match the entirety of a detected entity, not just a substring, for the entity to be restricted. Expressions don't match across entity boundaries. If a string or entity matches both `allow_regex` and `restrict_regex`, the entity is displayed in plaintext. If a string is detected as an entity and a `restrict_regex` pattern matches the entire detected entity, the entity is replaced with '[RESTRICTED]'. If a string is detected as an entity but a `restrict_regex` pattern only matches a substring of it, the `restrict_regex` pattern is ignored, and the entity is processed according to the specified tokenization and transformation settings.
 
         transformations : typing.Optional[Transformations]
+
+        configuration_id : typing.Optional[str]
+            ID of the Detect configuration to use for de-identification. Can't be specified with fields other than `vault_id`, `text`, and `file`.
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
@@ -895,14 +956,13 @@ class AsyncFilesClient:
         Returns
         -------
         DeidentifyFileResponse
-            A successful response.
+            OK
 
         Examples
         --------
         import asyncio
 
-        from skyflow import AsyncSkyflow
-        from skyflow.files import DeidentifyFileRequestFile
+        from skyflow import AsyncSkyflow, FileData
 
         client = AsyncSkyflow(
             token="YOUR_TOKEN",
@@ -911,608 +971,25 @@ class AsyncFilesClient:
 
         async def main() -> None:
             await client.files.deidentify_file(
-                vault_id="f4b3b3b33b3b3b3b3b3b3b3b3b3b3b3b",
-                file=DeidentifyFileRequestFile(
-                    base_64="Zm9vYmFy",
-                    data_format="txt",
+                file=FileData(
+                    base_64="base64",
+                    data_format="mp3",
                 ),
+                vault_id="vault_id",
             )
 
 
         asyncio.run(main())
         """
         _response = await self._raw_client.deidentify_file(
-            vault_id=vault_id,
             file=file,
-            configuration_id=configuration_id,
+            vault_id=vault_id,
             entity_types=entity_types,
             token_type=token_type,
             allow_regex=allow_regex,
             restrict_regex=restrict_regex,
             transformations=transformations,
-            request_options=request_options,
-        )
-        return _response.data
-
-    async def deidentify_document(
-        self,
-        *,
-        vault_id: VaultId,
-        file: DeidentifyDocumentRequestFile,
-        configuration_id: typing.Optional[ConfigurationId] = OMIT,
-        entity_types: typing.Optional[EntityTypes] = OMIT,
-        token_type: typing.Optional[TokenTypeWithoutVault] = OMIT,
-        allow_regex: typing.Optional[AllowRegex] = OMIT,
-        restrict_regex: typing.Optional[RestrictRegex] = OMIT,
-        transformations: typing.Optional[Transformations] = OMIT,
-        request_options: typing.Optional[RequestOptions] = None,
-    ) -> DeidentifyFileResponse:
-        """
-        De-identifies sensitive data from a document file. This operation includes options applicable to all supported document file types.<br/><br/>For more specific options, see the file type-specific opertions (like <a href='#deidentify_pdf'>De-identify PDF</a>) where they're available. For broader file type support, see <a href='#deidentify_file'>De-identify File</a>.
-
-        Parameters
-        ----------
-        vault_id : VaultId
-
-        file : DeidentifyDocumentRequestFile
-            File to de-identify. Files are specified as Base64-encoded data.
-
-        configuration_id : typing.Optional[ConfigurationId]
-
-        entity_types : typing.Optional[EntityTypes]
-
-        token_type : typing.Optional[TokenTypeWithoutVault]
-
-        allow_regex : typing.Optional[AllowRegex]
-
-        restrict_regex : typing.Optional[RestrictRegex]
-
-        transformations : typing.Optional[Transformations]
-
-        request_options : typing.Optional[RequestOptions]
-            Request-specific configuration.
-
-        Returns
-        -------
-        DeidentifyFileResponse
-            A successful response.
-
-        Examples
-        --------
-        import asyncio
-
-        from skyflow import AsyncSkyflow
-        from skyflow.files import DeidentifyDocumentRequestFile
-
-        client = AsyncSkyflow(
-            token="YOUR_TOKEN",
-        )
-
-
-        async def main() -> None:
-            await client.files.deidentify_document(
-                vault_id="f4b3b3b33b3b3b3b3b3b3b3b3b3b3b3b",
-                file=DeidentifyDocumentRequestFile(
-                    base_64="SGkgaSBhbSBEZXZhbnNodSwgbGl2...aW5nIGluIGNhbGlmb3JuaWEuIA==",
-                    data_format="docx",
-                ),
-            )
-
-
-        asyncio.run(main())
-        """
-        _response = await self._raw_client.deidentify_document(
-            vault_id=vault_id,
-            file=file,
             configuration_id=configuration_id,
-            entity_types=entity_types,
-            token_type=token_type,
-            allow_regex=allow_regex,
-            restrict_regex=restrict_regex,
-            transformations=transformations,
-            request_options=request_options,
-        )
-        return _response.data
-
-    async def deidentify_pdf(
-        self,
-        *,
-        vault_id: VaultId,
-        file: DeidentifyPdfRequestFile,
-        configuration_id: typing.Optional[ConfigurationId] = OMIT,
-        density: typing.Optional[float] = OMIT,
-        max_resolution: typing.Optional[float] = OMIT,
-        entity_types: typing.Optional[EntityTypes] = OMIT,
-        token_type: typing.Optional[TokenTypeWithoutVault] = OMIT,
-        allow_regex: typing.Optional[AllowRegex] = OMIT,
-        restrict_regex: typing.Optional[RestrictRegex] = OMIT,
-        transformations: typing.Optional[Transformations] = OMIT,
-        request_options: typing.Optional[RequestOptions] = None,
-    ) -> DeidentifyFileResponse:
-        """
-        De-identifies sensitive data from a PDF file. This operation includes options specific to PDF files.<br/><br/>For broader file type support, see <a href='#deidentify_document'>De-identify Document</a> and <a href='#deidentify_file'>De-identify File</a>.
-
-        Parameters
-        ----------
-        vault_id : VaultId
-
-        file : DeidentifyPdfRequestFile
-            File to de-identify. Files are specified as Base64-encoded data.
-
-        configuration_id : typing.Optional[ConfigurationId]
-
-        density : typing.Optional[float]
-            Pixel density at which to process the PDF file.
-
-        max_resolution : typing.Optional[float]
-            Max resolution at which to process the PDF file.
-
-        entity_types : typing.Optional[EntityTypes]
-
-        token_type : typing.Optional[TokenTypeWithoutVault]
-
-        allow_regex : typing.Optional[AllowRegex]
-
-        restrict_regex : typing.Optional[RestrictRegex]
-
-        transformations : typing.Optional[Transformations]
-
-        request_options : typing.Optional[RequestOptions]
-            Request-specific configuration.
-
-        Returns
-        -------
-        DeidentifyFileResponse
-            A successful response.
-
-        Examples
-        --------
-        import asyncio
-
-        from skyflow import AsyncSkyflow
-        from skyflow.files import DeidentifyPdfRequestFile
-
-        client = AsyncSkyflow(
-            token="YOUR_TOKEN",
-        )
-
-
-        async def main() -> None:
-            await client.files.deidentify_pdf(
-                vault_id="f4b3b3b33b3b3b3b3b3b3b3b3b3b3b3b",
-                file=DeidentifyPdfRequestFile(
-                    base_64="SGkgaSBhbSBEZXZhbnNodSwgbGl2...aW5nIGluIGNhbGlmb3JuaWEuIA==",
-                ),
-            )
-
-
-        asyncio.run(main())
-        """
-        _response = await self._raw_client.deidentify_pdf(
-            vault_id=vault_id,
-            file=file,
-            configuration_id=configuration_id,
-            density=density,
-            max_resolution=max_resolution,
-            entity_types=entity_types,
-            token_type=token_type,
-            allow_regex=allow_regex,
-            restrict_regex=restrict_regex,
-            transformations=transformations,
-            request_options=request_options,
-        )
-        return _response.data
-
-    async def deidentify_image(
-        self,
-        *,
-        vault_id: VaultId,
-        file: DeidentifyImageRequestFile,
-        configuration_id: typing.Optional[ConfigurationId] = OMIT,
-        output_processed_image: typing.Optional[bool] = OMIT,
-        output_ocr_text: typing.Optional[bool] = OMIT,
-        masking_method: typing.Optional[DeidentifyImageRequestMaskingMethod] = OMIT,
-        entity_types: typing.Optional[EntityTypes] = OMIT,
-        token_type: typing.Optional[TokenTypeWithoutVault] = OMIT,
-        allow_regex: typing.Optional[AllowRegex] = OMIT,
-        restrict_regex: typing.Optional[RestrictRegex] = OMIT,
-        transformations: typing.Optional[Transformations] = OMIT,
-        request_options: typing.Optional[RequestOptions] = None,
-    ) -> DeidentifyFileResponse:
-        """
-        De-identifies sensitive data from an image file. This operation includes options applicable to all supported image file types.<br/><br/>For broader file type support, see <a href='#deidentify_file'>De-identify File</a>.
-
-        Parameters
-        ----------
-        vault_id : VaultId
-
-        file : DeidentifyImageRequestFile
-            File to de-identify. Files are specified as Base64-encoded data.
-
-        configuration_id : typing.Optional[ConfigurationId]
-
-        output_processed_image : typing.Optional[bool]
-            If `true`, includes processed image in the output.
-
-        output_ocr_text : typing.Optional[bool]
-            If `true`, includes OCR text output in the response.
-
-        masking_method : typing.Optional[DeidentifyImageRequestMaskingMethod]
-            Method to mask the entities in the image.
-
-        entity_types : typing.Optional[EntityTypes]
-
-        token_type : typing.Optional[TokenTypeWithoutVault]
-
-        allow_regex : typing.Optional[AllowRegex]
-
-        restrict_regex : typing.Optional[RestrictRegex]
-
-        transformations : typing.Optional[Transformations]
-
-        request_options : typing.Optional[RequestOptions]
-            Request-specific configuration.
-
-        Returns
-        -------
-        DeidentifyFileResponse
-            A successful response.
-
-        Examples
-        --------
-        import asyncio
-
-        from skyflow import AsyncSkyflow
-        from skyflow.files import DeidentifyImageRequestFile
-
-        client = AsyncSkyflow(
-            token="YOUR_TOKEN",
-        )
-
-
-        async def main() -> None:
-            await client.files.deidentify_image(
-                vault_id="f4b3b3b33b3b3b3b3b3b3b3b3b3b3b3b",
-                file=DeidentifyImageRequestFile(
-                    base_64="SGkgaSBhbSBEZXZhbnNodSwgbGl2...aW5nIGluIGNhbGlmb3JuaWEuIA==",
-                    data_format="jpg",
-                ),
-            )
-
-
-        asyncio.run(main())
-        """
-        _response = await self._raw_client.deidentify_image(
-            vault_id=vault_id,
-            file=file,
-            configuration_id=configuration_id,
-            output_processed_image=output_processed_image,
-            output_ocr_text=output_ocr_text,
-            masking_method=masking_method,
-            entity_types=entity_types,
-            token_type=token_type,
-            allow_regex=allow_regex,
-            restrict_regex=restrict_regex,
-            transformations=transformations,
-            request_options=request_options,
-        )
-        return _response.data
-
-    async def deidentify_text(
-        self,
-        *,
-        vault_id: VaultId,
-        file: DeidentifyTextRequestFile,
-        configuration_id: typing.Optional[ConfigurationId] = OMIT,
-        entity_types: typing.Optional[EntityTypes] = OMIT,
-        token_type: typing.Optional[TokenTypeWithoutVault] = OMIT,
-        allow_regex: typing.Optional[AllowRegex] = OMIT,
-        restrict_regex: typing.Optional[RestrictRegex] = OMIT,
-        transformations: typing.Optional[Transformations] = OMIT,
-        request_options: typing.Optional[RequestOptions] = None,
-    ) -> DeidentifyFileResponse:
-        """
-        De-identifies sensitive data from a text file. This operation includes options applicable to all supported image text types.<br/><br/>For broader file type support, see <a href='#deidentify_file'>De-identify File</a>.
-
-        Parameters
-        ----------
-        vault_id : VaultId
-
-        file : DeidentifyTextRequestFile
-            File to de-identify. Files are specified as Base64-encoded data.
-
-        configuration_id : typing.Optional[ConfigurationId]
-
-        entity_types : typing.Optional[EntityTypes]
-
-        token_type : typing.Optional[TokenTypeWithoutVault]
-
-        allow_regex : typing.Optional[AllowRegex]
-
-        restrict_regex : typing.Optional[RestrictRegex]
-
-        transformations : typing.Optional[Transformations]
-
-        request_options : typing.Optional[RequestOptions]
-            Request-specific configuration.
-
-        Returns
-        -------
-        DeidentifyFileResponse
-            A successful response.
-
-        Examples
-        --------
-        import asyncio
-
-        from skyflow import AsyncSkyflow
-        from skyflow.files import DeidentifyTextRequestFile
-
-        client = AsyncSkyflow(
-            token="YOUR_TOKEN",
-        )
-
-
-        async def main() -> None:
-            await client.files.deidentify_text(
-                vault_id="f4b3b3b33b3b3b3b3b3b3b3b3b3b3b3b",
-                file=DeidentifyTextRequestFile(
-                    base_64="Zm9vYmFy",
-                ),
-            )
-
-
-        asyncio.run(main())
-        """
-        _response = await self._raw_client.deidentify_text(
-            vault_id=vault_id,
-            file=file,
-            configuration_id=configuration_id,
-            entity_types=entity_types,
-            token_type=token_type,
-            allow_regex=allow_regex,
-            restrict_regex=restrict_regex,
-            transformations=transformations,
-            request_options=request_options,
-        )
-        return _response.data
-
-    async def deidentify_structured_text(
-        self,
-        *,
-        vault_id: VaultId,
-        file: DeidentifyStructuredTextRequestFile,
-        configuration_id: typing.Optional[ConfigurationId] = OMIT,
-        entity_types: typing.Optional[EntityTypes] = OMIT,
-        token_type: typing.Optional[TokenTypeWithoutVault] = OMIT,
-        allow_regex: typing.Optional[AllowRegex] = OMIT,
-        restrict_regex: typing.Optional[RestrictRegex] = OMIT,
-        transformations: typing.Optional[Transformations] = OMIT,
-        request_options: typing.Optional[RequestOptions] = None,
-    ) -> DeidentifyFileResponse:
-        """
-        De-identifies sensitive data from a structured text file. This operation includes options applicable to all supported structured text file types.<br/><br/>For broader file type support, see <a href='#deidentify_file'>De-identify File</a>.
-
-        Parameters
-        ----------
-        vault_id : VaultId
-
-        file : DeidentifyStructuredTextRequestFile
-            File to de-identify. Files are specified as Base64-encoded data.
-
-        configuration_id : typing.Optional[ConfigurationId]
-
-        entity_types : typing.Optional[EntityTypes]
-
-        token_type : typing.Optional[TokenTypeWithoutVault]
-
-        allow_regex : typing.Optional[AllowRegex]
-
-        restrict_regex : typing.Optional[RestrictRegex]
-
-        transformations : typing.Optional[Transformations]
-
-        request_options : typing.Optional[RequestOptions]
-            Request-specific configuration.
-
-        Returns
-        -------
-        DeidentifyFileResponse
-            A successful response.
-
-        Examples
-        --------
-        import asyncio
-
-        from skyflow import AsyncSkyflow
-        from skyflow.files import DeidentifyStructuredTextRequestFile
-
-        client = AsyncSkyflow(
-            token="YOUR_TOKEN",
-        )
-
-
-        async def main() -> None:
-            await client.files.deidentify_structured_text(
-                vault_id="f4b3b3b33b3b3b3b3b3b3b3b3b3b3b3b",
-                file=DeidentifyStructuredTextRequestFile(
-                    base_64="SGkgaSBhbSBEZXZhbnNodSwgbGl2...aW5nIGluIGNhbGlmb3JuaWEuIA==",
-                    data_format="json",
-                ),
-            )
-
-
-        asyncio.run(main())
-        """
-        _response = await self._raw_client.deidentify_structured_text(
-            vault_id=vault_id,
-            file=file,
-            configuration_id=configuration_id,
-            entity_types=entity_types,
-            token_type=token_type,
-            allow_regex=allow_regex,
-            restrict_regex=restrict_regex,
-            transformations=transformations,
-            request_options=request_options,
-        )
-        return _response.data
-
-    async def deidentify_spreadsheet(
-        self,
-        *,
-        vault_id: VaultId,
-        file: DeidentifySpreadsheetRequestFile,
-        configuration_id: typing.Optional[ConfigurationId] = OMIT,
-        entity_types: typing.Optional[EntityTypes] = OMIT,
-        token_type: typing.Optional[TokenTypeWithoutVault] = OMIT,
-        allow_regex: typing.Optional[AllowRegex] = OMIT,
-        restrict_regex: typing.Optional[RestrictRegex] = OMIT,
-        transformations: typing.Optional[Transformations] = OMIT,
-        request_options: typing.Optional[RequestOptions] = None,
-    ) -> DeidentifyFileResponse:
-        """
-        De-identifies sensitive data from a spreadsheet file. This operation includes options applicable to all supported spreadsheet file types.<br/><br/>For broader file type support, see <a href='#deidentify_file'>De-identify File</a>.
-
-        Parameters
-        ----------
-        vault_id : VaultId
-
-        file : DeidentifySpreadsheetRequestFile
-            File to de-identify. Files are specified as Base64-encoded data.
-
-        configuration_id : typing.Optional[ConfigurationId]
-
-        entity_types : typing.Optional[EntityTypes]
-
-        token_type : typing.Optional[TokenTypeWithoutVault]
-
-        allow_regex : typing.Optional[AllowRegex]
-
-        restrict_regex : typing.Optional[RestrictRegex]
-
-        transformations : typing.Optional[Transformations]
-
-        request_options : typing.Optional[RequestOptions]
-            Request-specific configuration.
-
-        Returns
-        -------
-        DeidentifyFileResponse
-            A successful response.
-
-        Examples
-        --------
-        import asyncio
-
-        from skyflow import AsyncSkyflow
-        from skyflow.files import DeidentifySpreadsheetRequestFile
-
-        client = AsyncSkyflow(
-            token="YOUR_TOKEN",
-        )
-
-
-        async def main() -> None:
-            await client.files.deidentify_spreadsheet(
-                vault_id="f4b3b3b33b3b3b3b3b3b3b3b3b3b3b3b",
-                file=DeidentifySpreadsheetRequestFile(
-                    base_64="SGkgaSBhbSBEZXZhbnNodSwgbGl2...aW5nIGluIGNhbGlmb3JuaWEuIA==",
-                    data_format="csv",
-                ),
-            )
-
-
-        asyncio.run(main())
-        """
-        _response = await self._raw_client.deidentify_spreadsheet(
-            vault_id=vault_id,
-            file=file,
-            configuration_id=configuration_id,
-            entity_types=entity_types,
-            token_type=token_type,
-            allow_regex=allow_regex,
-            restrict_regex=restrict_regex,
-            transformations=transformations,
-            request_options=request_options,
-        )
-        return _response.data
-
-    async def deidentify_presentation(
-        self,
-        *,
-        vault_id: VaultId,
-        file: DeidentifyPresentationRequestFile,
-        configuration_id: typing.Optional[ConfigurationId] = OMIT,
-        entity_types: typing.Optional[EntityTypes] = OMIT,
-        token_type: typing.Optional[TokenTypeWithoutVault] = OMIT,
-        allow_regex: typing.Optional[AllowRegex] = OMIT,
-        restrict_regex: typing.Optional[RestrictRegex] = OMIT,
-        transformations: typing.Optional[Transformations] = OMIT,
-        request_options: typing.Optional[RequestOptions] = None,
-    ) -> DeidentifyFileResponse:
-        """
-        De-identifies sensitive data from a presentation file. This operation includes options applicable to all supported presentation file types.<br/><br/>For broader file type support, see <a href='#deidentify_file'>De-identify File</a>.
-
-        Parameters
-        ----------
-        vault_id : VaultId
-
-        file : DeidentifyPresentationRequestFile
-            File to de-identify. Files are specified as Base64-encoded data.
-
-        configuration_id : typing.Optional[ConfigurationId]
-
-        entity_types : typing.Optional[EntityTypes]
-
-        token_type : typing.Optional[TokenTypeWithoutVault]
-
-        allow_regex : typing.Optional[AllowRegex]
-
-        restrict_regex : typing.Optional[RestrictRegex]
-
-        transformations : typing.Optional[Transformations]
-
-        request_options : typing.Optional[RequestOptions]
-            Request-specific configuration.
-
-        Returns
-        -------
-        DeidentifyFileResponse
-            A successful response.
-
-        Examples
-        --------
-        import asyncio
-
-        from skyflow import AsyncSkyflow
-        from skyflow.files import DeidentifyPresentationRequestFile
-
-        client = AsyncSkyflow(
-            token="YOUR_TOKEN",
-        )
-
-
-        async def main() -> None:
-            await client.files.deidentify_presentation(
-                vault_id="f4b3b3b33b3b3b3b3b3b3b3b3b3b3b3b",
-                file=DeidentifyPresentationRequestFile(
-                    base_64="SGkgaSBhbSBEZXZhbnNodSwgbGl2...aW5nIGluIGNhbGlmb3JuaWEuIA==",
-                    data_format="pptx",
-                ),
-            )
-
-
-        asyncio.run(main())
-        """
-        _response = await self._raw_client.deidentify_presentation(
-            vault_id=vault_id,
-            file=file,
-            configuration_id=configuration_id,
-            entity_types=entity_types,
-            token_type=token_type,
-            allow_regex=allow_regex,
-            restrict_regex=restrict_regex,
-            transformations=transformations,
             request_options=request_options,
         )
         return _response.data
@@ -1520,20 +997,20 @@ class AsyncFilesClient:
     async def deidentify_audio(
         self,
         *,
-        vault_id: VaultId,
-        file: DeidentifyAudioRequestFile,
-        configuration_id: typing.Optional[ConfigurationId] = OMIT,
+        file: FileDataDeidentifyAudio,
+        vault_id: str,
+        output_transcription: typing.Optional[DeidentifyFileAudioRequestDeidentifyAudioOutputTranscription] = OMIT,
         output_processed_audio: typing.Optional[bool] = OMIT,
-        output_transcription: typing.Optional[DeidentifyAudioRequestOutputTranscription] = OMIT,
-        bleep_gain: typing.Optional[float] = OMIT,
-        bleep_frequency: typing.Optional[float] = OMIT,
         bleep_start_padding: typing.Optional[float] = OMIT,
         bleep_stop_padding: typing.Optional[float] = OMIT,
-        entity_types: typing.Optional[EntityTypes] = OMIT,
-        token_type: typing.Optional[TokenTypeWithoutVault] = OMIT,
-        allow_regex: typing.Optional[AllowRegex] = OMIT,
-        restrict_regex: typing.Optional[RestrictRegex] = OMIT,
+        bleep_frequency: typing.Optional[int] = OMIT,
+        bleep_gain: typing.Optional[int] = OMIT,
+        entity_types: typing.Optional[typing.Sequence[DeidentifyFileAudioRequestDeidentifyAudioEntityTypesItem]] = OMIT,
+        token_type: typing.Optional[TokenTypeMapping] = OMIT,
+        allow_regex: typing.Optional[typing.Sequence[str]] = OMIT,
+        restrict_regex: typing.Optional[typing.Sequence[str]] = OMIT,
         transformations: typing.Optional[Transformations] = OMIT,
+        configuration_id: typing.Optional[str] = OMIT,
         request_options: typing.Optional[RequestOptions] = None,
     ) -> DeidentifyFileResponse:
         """
@@ -1541,24 +1018,16 @@ class AsyncFilesClient:
 
         Parameters
         ----------
-        vault_id : VaultId
+        file : FileDataDeidentifyAudio
 
-        file : DeidentifyAudioRequestFile
-            File to de-identify. Files are specified as Base64-encoded data.
+        vault_id : str
+            ID of a vault that you have Detect Invoker or Vault Owner permissions for.
 
-        configuration_id : typing.Optional[ConfigurationId]
-
-        output_processed_audio : typing.Optional[bool]
-            If `true`, includes processed audio file in the response.
-
-        output_transcription : typing.Optional[DeidentifyAudioRequestOutputTranscription]
+        output_transcription : typing.Optional[DeidentifyFileAudioRequestDeidentifyAudioOutputTranscription]
             Type of transcription to output.
 
-        bleep_gain : typing.Optional[float]
-            Relative loudness of the bleep in dB. Positive values increase its loudness, and negative values decrease it.
-
-        bleep_frequency : typing.Optional[float]
-            The pitch of the bleep sound, in Hz. The higher the number, the higher the pitch.
+        output_processed_audio : typing.Optional[bool]
+            Whether to include the processed audio file in the response.
 
         bleep_start_padding : typing.Optional[float]
             Padding added to the beginning of a bleep, in seconds.
@@ -1566,15 +1035,27 @@ class AsyncFilesClient:
         bleep_stop_padding : typing.Optional[float]
             Padding added to the end of a bleep, in seconds.
 
-        entity_types : typing.Optional[EntityTypes]
+        bleep_frequency : typing.Optional[int]
+            The pitch of the bleep sound, in Hz. The higher the number, the higher the pitch.
 
-        token_type : typing.Optional[TokenTypeWithoutVault]
+        bleep_gain : typing.Optional[int]
+            Relative loudness of the bleep in dB. Positive values increase its loudness, and negative values decrease it.
 
-        allow_regex : typing.Optional[AllowRegex]
+        entity_types : typing.Optional[typing.Sequence[DeidentifyFileAudioRequestDeidentifyAudioEntityTypesItem]]
+            Entities to detect and de-identify.
 
-        restrict_regex : typing.Optional[RestrictRegex]
+        token_type : typing.Optional[TokenTypeMapping]
+
+        allow_regex : typing.Optional[typing.Sequence[str]]
+            Regular expressions to display in plaintext. Entities appear in plaintext if an expression matches either the entirety of a detected entity or a substring of it. Expressions don't match across entity boundaries. If a string or entity matches both `allow_regex` and `restrict_regex`, the entity is displayed in plaintext.
+
+        restrict_regex : typing.Optional[typing.Sequence[str]]
+            Regular expressions to replace with '[RESTRICTED]'. Expressions must match the entirety of a detected entity, not just a substring, for the entity to be restricted. Expressions don't match across entity boundaries. If a string or entity matches both `allow_regex` and `restrict_regex`, the entity is displayed in plaintext. If a string is detected as an entity and a `restrict_regex` pattern matches the entire detected entity, the entity is replaced with '[RESTRICTED]'. If a string is detected as an entity but a `restrict_regex` pattern only matches a substring of it, the `restrict_regex` pattern is ignored, and the entity is processed according to the specified tokenization and transformation settings.
 
         transformations : typing.Optional[Transformations]
+
+        configuration_id : typing.Optional[str]
+            ID of the Detect configuration to use for de-identification. Can't be specified with fields other than `vault_id`, `text`, and `file`.
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
@@ -1582,14 +1063,13 @@ class AsyncFilesClient:
         Returns
         -------
         DeidentifyFileResponse
-            A successful response.
+            OK
 
         Examples
         --------
         import asyncio
 
-        from skyflow import AsyncSkyflow
-        from skyflow.files import DeidentifyAudioRequestFile
+        from skyflow import AsyncSkyflow, FileDataDeidentifyAudio
 
         client = AsyncSkyflow(
             token="YOUR_TOKEN",
@@ -1598,56 +1078,726 @@ class AsyncFilesClient:
 
         async def main() -> None:
             await client.files.deidentify_audio(
-                vault_id="f4b3b3b33b3b3b3b3b3b3b3b3b3b3b3b",
-                file=DeidentifyAudioRequestFile(
-                    base_64="SGkgaSBhbSBEZXZhbnNodSwgbGl2...aW5nIGluIGNhbGlmb3JuaWEuIA==",
+                file=FileDataDeidentifyAudio(
+                    base_64="base64",
                     data_format="mp3",
                 ),
+                vault_id="vault_id",
             )
 
 
         asyncio.run(main())
         """
         _response = await self._raw_client.deidentify_audio(
-            vault_id=vault_id,
             file=file,
-            configuration_id=configuration_id,
-            output_processed_audio=output_processed_audio,
+            vault_id=vault_id,
             output_transcription=output_transcription,
-            bleep_gain=bleep_gain,
-            bleep_frequency=bleep_frequency,
+            output_processed_audio=output_processed_audio,
             bleep_start_padding=bleep_start_padding,
             bleep_stop_padding=bleep_stop_padding,
+            bleep_frequency=bleep_frequency,
+            bleep_gain=bleep_gain,
             entity_types=entity_types,
             token_type=token_type,
             allow_regex=allow_regex,
             restrict_regex=restrict_regex,
             transformations=transformations,
+            configuration_id=configuration_id,
             request_options=request_options,
         )
         return _response.data
 
-    async def get_run(
-        self, run_id: Uuid, *, vault_id: ResourceId, request_options: typing.Optional[RequestOptions] = None
-    ) -> DeidentifyStatusResponse:
+    async def deidentify_document(
+        self,
+        *,
+        file: FileDataDeidentifyDocument,
+        vault_id: str,
+        entity_types: typing.Optional[typing.Sequence[DeidentifyFileRequestDeidentifyDocumentEntityTypesItem]] = OMIT,
+        token_type: typing.Optional[TokenTypeMapping] = OMIT,
+        allow_regex: typing.Optional[typing.Sequence[str]] = OMIT,
+        restrict_regex: typing.Optional[typing.Sequence[str]] = OMIT,
+        transformations: typing.Optional[Transformations] = OMIT,
+        configuration_id: typing.Optional[str] = OMIT,
+        request_options: typing.Optional[RequestOptions] = None,
+    ) -> DeidentifyFileResponse:
         """
-        Returns the status of the detect run.
+        De-identifies sensitive data from a document file. This operation includes options applicable to all supported document file types.<br/><br/>For more specific options, see the file type-specific opertions (like <a href='#deidentify_pdf'>De-identify PDF</a>) where they're available. For broader file type support, see <a href='#deidentify_file'>De-identify File</a>.
 
         Parameters
         ----------
-        run_id : Uuid
-            ID of the detect run.
+        file : FileDataDeidentifyDocument
 
-        vault_id : ResourceId
-            ID of the vault.
+        vault_id : str
+            ID of a vault that you have Detect Invoker or Vault Owner permissions for.
+
+        entity_types : typing.Optional[typing.Sequence[DeidentifyFileRequestDeidentifyDocumentEntityTypesItem]]
+            Entities to detect and de-identify.
+
+        token_type : typing.Optional[TokenTypeMapping]
+
+        allow_regex : typing.Optional[typing.Sequence[str]]
+            Regular expressions to display in plaintext. Entities appear in plaintext if an expression matches either the entirety of a detected entity or a substring of it. Expressions don't match across entity boundaries. If a string or entity matches both `allow_regex` and `restrict_regex`, the entity is displayed in plaintext.
+
+        restrict_regex : typing.Optional[typing.Sequence[str]]
+            Regular expressions to replace with '[RESTRICTED]'. Expressions must match the entirety of a detected entity, not just a substring, for the entity to be restricted. Expressions don't match across entity boundaries. If a string or entity matches both `allow_regex` and `restrict_regex`, the entity is displayed in plaintext. If a string is detected as an entity and a `restrict_regex` pattern matches the entire detected entity, the entity is replaced with '[RESTRICTED]'. If a string is detected as an entity but a `restrict_regex` pattern only matches a substring of it, the `restrict_regex` pattern is ignored, and the entity is processed according to the specified tokenization and transformation settings.
+
+        transformations : typing.Optional[Transformations]
+
+        configuration_id : typing.Optional[str]
+            ID of the Detect configuration to use for de-identification. Can't be specified with fields other than `vault_id`, `text`, and `file`.
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
 
         Returns
         -------
-        DeidentifyStatusResponse
-            A successful response.
+        DeidentifyFileResponse
+            OK
+
+        Examples
+        --------
+        import asyncio
+
+        from skyflow import AsyncSkyflow, FileDataDeidentifyDocument
+
+        client = AsyncSkyflow(
+            token="YOUR_TOKEN",
+        )
+
+
+        async def main() -> None:
+            await client.files.deidentify_document(
+                file=FileDataDeidentifyDocument(
+                    base_64="base64",
+                    data_format="pdf",
+                ),
+                vault_id="vault_id",
+            )
+
+
+        asyncio.run(main())
+        """
+        _response = await self._raw_client.deidentify_document(
+            file=file,
+            vault_id=vault_id,
+            entity_types=entity_types,
+            token_type=token_type,
+            allow_regex=allow_regex,
+            restrict_regex=restrict_regex,
+            transformations=transformations,
+            configuration_id=configuration_id,
+            request_options=request_options,
+        )
+        return _response.data
+
+    async def deidentify_pdf(
+        self,
+        *,
+        file: FileDataDeidentifyPdf,
+        vault_id: str,
+        density: typing.Optional[int] = OMIT,
+        max_resolution: typing.Optional[int] = OMIT,
+        entity_types: typing.Optional[
+            typing.Sequence[DeidentifyFileDocumentPdfRequestDeidentifyPdfEntityTypesItem]
+        ] = OMIT,
+        token_type: typing.Optional[TokenTypeMapping] = OMIT,
+        allow_regex: typing.Optional[typing.Sequence[str]] = OMIT,
+        restrict_regex: typing.Optional[typing.Sequence[str]] = OMIT,
+        transformations: typing.Optional[Transformations] = OMIT,
+        configuration_id: typing.Optional[str] = OMIT,
+        request_options: typing.Optional[RequestOptions] = None,
+    ) -> DeidentifyFileResponse:
+        """
+        De-identifies sensitive data from a PDF file. This operation includes options specific to PDF files.<br/><br/>For broader file type support, see <a href='#deidentify_document'>De-identify Document</a> and <a href='#deidentify_file'>De-identify File</a>.
+
+        Parameters
+        ----------
+        file : FileDataDeidentifyPdf
+
+        vault_id : str
+            ID of a vault that you have Detect Invoker or Vault Owner permissions for.
+
+        density : typing.Optional[int]
+            Pixel density at which to process the PDF file.
+
+        max_resolution : typing.Optional[int]
+            Max resolution at which to process the PDF file.
+
+        entity_types : typing.Optional[typing.Sequence[DeidentifyFileDocumentPdfRequestDeidentifyPdfEntityTypesItem]]
+            Entities to detect and de-identify.
+
+        token_type : typing.Optional[TokenTypeMapping]
+
+        allow_regex : typing.Optional[typing.Sequence[str]]
+            Regular expressions to display in plaintext. Entities appear in plaintext if an expression matches either the entirety of a detected entity or a substring of it. Expressions don't match across entity boundaries. If a string or entity matches both `allow_regex` and `restrict_regex`, the entity is displayed in plaintext.
+
+        restrict_regex : typing.Optional[typing.Sequence[str]]
+            Regular expressions to replace with '[RESTRICTED]'. Expressions must match the entirety of a detected entity, not just a substring, for the entity to be restricted. Expressions don't match across entity boundaries. If a string or entity matches both `allow_regex` and `restrict_regex`, the entity is displayed in plaintext. If a string is detected as an entity and a `restrict_regex` pattern matches the entire detected entity, the entity is replaced with '[RESTRICTED]'. If a string is detected as an entity but a `restrict_regex` pattern only matches a substring of it, the `restrict_regex` pattern is ignored, and the entity is processed according to the specified tokenization and transformation settings.
+
+        transformations : typing.Optional[Transformations]
+
+        configuration_id : typing.Optional[str]
+            ID of the Detect configuration to use for de-identification. Can't be specified with fields other than `vault_id`, `text`, and `file`.
+
+        request_options : typing.Optional[RequestOptions]
+            Request-specific configuration.
+
+        Returns
+        -------
+        DeidentifyFileResponse
+            OK
+
+        Examples
+        --------
+        import asyncio
+
+        from skyflow import AsyncSkyflow, FileDataDeidentifyPdf
+
+        client = AsyncSkyflow(
+            token="YOUR_TOKEN",
+        )
+
+
+        async def main() -> None:
+            await client.files.deidentify_pdf(
+                file=FileDataDeidentifyPdf(
+                    base_64="base64",
+                ),
+                vault_id="vault_id",
+            )
+
+
+        asyncio.run(main())
+        """
+        _response = await self._raw_client.deidentify_pdf(
+            file=file,
+            vault_id=vault_id,
+            density=density,
+            max_resolution=max_resolution,
+            entity_types=entity_types,
+            token_type=token_type,
+            allow_regex=allow_regex,
+            restrict_regex=restrict_regex,
+            transformations=transformations,
+            configuration_id=configuration_id,
+            request_options=request_options,
+        )
+        return _response.data
+
+    async def deidentify_image(
+        self,
+        *,
+        file: FileDataDeidentifyImage,
+        vault_id: str,
+        output_processed_image: typing.Optional[bool] = OMIT,
+        output_ocr_text: typing.Optional[bool] = OMIT,
+        masking_method: typing.Optional[DeidentifyFileImageRequestDeidentifyImageMaskingMethod] = OMIT,
+        entity_types: typing.Optional[typing.Sequence[DeidentifyFileImageRequestDeidentifyImageEntityTypesItem]] = OMIT,
+        token_type: typing.Optional[TokenTypeMapping] = OMIT,
+        allow_regex: typing.Optional[typing.Sequence[str]] = OMIT,
+        restrict_regex: typing.Optional[typing.Sequence[str]] = OMIT,
+        transformations: typing.Optional[Transformations] = OMIT,
+        configuration_id: typing.Optional[str] = OMIT,
+        request_options: typing.Optional[RequestOptions] = None,
+    ) -> DeidentifyFileResponse:
+        """
+        De-identifies sensitive data from an image file. This operation includes options applicable to all supported image file types.<br/><br/>For broader file type support, see <a href='#deidentify_file'>De-identify File</a>.
+
+        Parameters
+        ----------
+        file : FileDataDeidentifyImage
+
+        vault_id : str
+            ID of a vault that you have Detect Invoker or Vault Owner permissions for.
+
+        output_processed_image : typing.Optional[bool]
+            If `true`, includes processed image in the output.
+
+        output_ocr_text : typing.Optional[bool]
+            If `true`, includes text detected by OCR in the response.
+
+        masking_method : typing.Optional[DeidentifyFileImageRequestDeidentifyImageMaskingMethod]
+            Method to mask the entities in the image.
+
+        entity_types : typing.Optional[typing.Sequence[DeidentifyFileImageRequestDeidentifyImageEntityTypesItem]]
+            Entities to detect and de-identify.
+
+        token_type : typing.Optional[TokenTypeMapping]
+
+        allow_regex : typing.Optional[typing.Sequence[str]]
+            Regular expressions to display in plaintext. Entities appear in plaintext if an expression matches either the entirety of a detected entity or a substring of it. Expressions don't match across entity boundaries. If a string or entity matches both `allow_regex` and `restrict_regex`, the entity is displayed in plaintext.
+
+        restrict_regex : typing.Optional[typing.Sequence[str]]
+            Regular expressions to replace with '[RESTRICTED]'. Expressions must match the entirety of a detected entity, not just a substring, for the entity to be restricted. Expressions don't match across entity boundaries. If a string or entity matches both `allow_regex` and `restrict_regex`, the entity is displayed in plaintext. If a string is detected as an entity and a `restrict_regex` pattern matches the entire detected entity, the entity is replaced with '[RESTRICTED]'. If a string is detected as an entity but a `restrict_regex` pattern only matches a substring of it, the `restrict_regex` pattern is ignored, and the entity is processed according to the specified tokenization and transformation settings.
+
+        transformations : typing.Optional[Transformations]
+
+        configuration_id : typing.Optional[str]
+            ID of the Detect configuration to use for de-identification. Can't be specified with fields other than `vault_id`, `text`, and `file`.
+
+        request_options : typing.Optional[RequestOptions]
+            Request-specific configuration.
+
+        Returns
+        -------
+        DeidentifyFileResponse
+            OK
+
+        Examples
+        --------
+        import asyncio
+
+        from skyflow import AsyncSkyflow, FileDataDeidentifyImage
+
+        client = AsyncSkyflow(
+            token="YOUR_TOKEN",
+        )
+
+
+        async def main() -> None:
+            await client.files.deidentify_image(
+                file=FileDataDeidentifyImage(
+                    base_64="base64",
+                    data_format="jpg",
+                ),
+                vault_id="vault_id",
+            )
+
+
+        asyncio.run(main())
+        """
+        _response = await self._raw_client.deidentify_image(
+            file=file,
+            vault_id=vault_id,
+            output_processed_image=output_processed_image,
+            output_ocr_text=output_ocr_text,
+            masking_method=masking_method,
+            entity_types=entity_types,
+            token_type=token_type,
+            allow_regex=allow_regex,
+            restrict_regex=restrict_regex,
+            transformations=transformations,
+            configuration_id=configuration_id,
+            request_options=request_options,
+        )
+        return _response.data
+
+    async def deidentify_presentation(
+        self,
+        *,
+        file: FileDataDeidentifyPresentation,
+        vault_id: str,
+        entity_types: typing.Optional[
+            typing.Sequence[DeidentifyFileRequestDeidentifyPresentationEntityTypesItem]
+        ] = OMIT,
+        token_type: typing.Optional[TokenTypeMapping] = OMIT,
+        allow_regex: typing.Optional[typing.Sequence[str]] = OMIT,
+        restrict_regex: typing.Optional[typing.Sequence[str]] = OMIT,
+        transformations: typing.Optional[Transformations] = OMIT,
+        configuration_id: typing.Optional[str] = OMIT,
+        request_options: typing.Optional[RequestOptions] = None,
+    ) -> DeidentifyFileResponse:
+        """
+        De-identifies sensitive data from a presentation file. This operation includes options applicable to all supported presentation file types.<br/><br/>For broader file type support, see <a href='#deidentify_file'>De-identify File</a>.
+
+        Parameters
+        ----------
+        file : FileDataDeidentifyPresentation
+
+        vault_id : str
+            ID of a vault that you have Detect Invoker or Vault Owner permissions for.
+
+        entity_types : typing.Optional[typing.Sequence[DeidentifyFileRequestDeidentifyPresentationEntityTypesItem]]
+            Entities to detect and de-identify.
+
+        token_type : typing.Optional[TokenTypeMapping]
+
+        allow_regex : typing.Optional[typing.Sequence[str]]
+            Regular expressions to display in plaintext. Entities appear in plaintext if an expression matches either the entirety of a detected entity or a substring of it. Expressions don't match across entity boundaries. If a string or entity matches both `allow_regex` and `restrict_regex`, the entity is displayed in plaintext.
+
+        restrict_regex : typing.Optional[typing.Sequence[str]]
+            Regular expressions to replace with '[RESTRICTED]'. Expressions must match the entirety of a detected entity, not just a substring, for the entity to be restricted. Expressions don't match across entity boundaries. If a string or entity matches both `allow_regex` and `restrict_regex`, the entity is displayed in plaintext. If a string is detected as an entity and a `restrict_regex` pattern matches the entire detected entity, the entity is replaced with '[RESTRICTED]'. If a string is detected as an entity but a `restrict_regex` pattern only matches a substring of it, the `restrict_regex` pattern is ignored, and the entity is processed according to the specified tokenization and transformation settings.
+
+        transformations : typing.Optional[Transformations]
+
+        configuration_id : typing.Optional[str]
+            ID of the Detect configuration to use for de-identification. Can't be specified with fields other than `vault_id`, `text`, and `file`.
+
+        request_options : typing.Optional[RequestOptions]
+            Request-specific configuration.
+
+        Returns
+        -------
+        DeidentifyFileResponse
+            OK
+
+        Examples
+        --------
+        import asyncio
+
+        from skyflow import AsyncSkyflow, FileDataDeidentifyPresentation
+
+        client = AsyncSkyflow(
+            token="YOUR_TOKEN",
+        )
+
+
+        async def main() -> None:
+            await client.files.deidentify_presentation(
+                file=FileDataDeidentifyPresentation(
+                    base_64="base64",
+                    data_format="ppt",
+                ),
+                vault_id="vault_id",
+            )
+
+
+        asyncio.run(main())
+        """
+        _response = await self._raw_client.deidentify_presentation(
+            file=file,
+            vault_id=vault_id,
+            entity_types=entity_types,
+            token_type=token_type,
+            allow_regex=allow_regex,
+            restrict_regex=restrict_regex,
+            transformations=transformations,
+            configuration_id=configuration_id,
+            request_options=request_options,
+        )
+        return _response.data
+
+    async def deidentify_spreadsheet(
+        self,
+        *,
+        file: FileDataDeidentifySpreadsheet,
+        vault_id: str,
+        entity_types: typing.Optional[
+            typing.Sequence[DeidentifyFileRequestDeidentifySpreadsheetEntityTypesItem]
+        ] = OMIT,
+        token_type: typing.Optional[TokenTypeMapping] = OMIT,
+        allow_regex: typing.Optional[typing.Sequence[str]] = OMIT,
+        restrict_regex: typing.Optional[typing.Sequence[str]] = OMIT,
+        transformations: typing.Optional[Transformations] = OMIT,
+        configuration_id: typing.Optional[str] = OMIT,
+        request_options: typing.Optional[RequestOptions] = None,
+    ) -> DeidentifyFileResponse:
+        """
+        De-identifies sensitive data from a spreadsheet file. This operation includes options applicable to all supported spreadsheet file types.<br/><br/>For broader file type support, see <a href='#deidentify_file'>De-identify File</a>.
+
+        Parameters
+        ----------
+        file : FileDataDeidentifySpreadsheet
+
+        vault_id : str
+            ID of a vault that you have Detect Invoker or Vault Owner permissions for.
+
+        entity_types : typing.Optional[typing.Sequence[DeidentifyFileRequestDeidentifySpreadsheetEntityTypesItem]]
+            Entities to detect and de-identify.
+
+        token_type : typing.Optional[TokenTypeMapping]
+
+        allow_regex : typing.Optional[typing.Sequence[str]]
+            Regular expressions to display in plaintext. Entities appear in plaintext if an expression matches either the entirety of a detected entity or a substring of it. Expressions don't match across entity boundaries. If a string or entity matches both `allow_regex` and `restrict_regex`, the entity is displayed in plaintext.
+
+        restrict_regex : typing.Optional[typing.Sequence[str]]
+            Regular expressions to replace with '[RESTRICTED]'. Expressions must match the entirety of a detected entity, not just a substring, for the entity to be restricted. Expressions don't match across entity boundaries. If a string or entity matches both `allow_regex` and `restrict_regex`, the entity is displayed in plaintext. If a string is detected as an entity and a `restrict_regex` pattern matches the entire detected entity, the entity is replaced with '[RESTRICTED]'. If a string is detected as an entity but a `restrict_regex` pattern only matches a substring of it, the `restrict_regex` pattern is ignored, and the entity is processed according to the specified tokenization and transformation settings.
+
+        transformations : typing.Optional[Transformations]
+
+        configuration_id : typing.Optional[str]
+            ID of the Detect configuration to use for de-identification. Can't be specified with fields other than `vault_id`, `text`, and `file`.
+
+        request_options : typing.Optional[RequestOptions]
+            Request-specific configuration.
+
+        Returns
+        -------
+        DeidentifyFileResponse
+            OK
+
+        Examples
+        --------
+        import asyncio
+
+        from skyflow import AsyncSkyflow, FileDataDeidentifySpreadsheet
+
+        client = AsyncSkyflow(
+            token="YOUR_TOKEN",
+        )
+
+
+        async def main() -> None:
+            await client.files.deidentify_spreadsheet(
+                file=FileDataDeidentifySpreadsheet(
+                    base_64="base64",
+                    data_format="csv",
+                ),
+                vault_id="vault_id",
+            )
+
+
+        asyncio.run(main())
+        """
+        _response = await self._raw_client.deidentify_spreadsheet(
+            file=file,
+            vault_id=vault_id,
+            entity_types=entity_types,
+            token_type=token_type,
+            allow_regex=allow_regex,
+            restrict_regex=restrict_regex,
+            transformations=transformations,
+            configuration_id=configuration_id,
+            request_options=request_options,
+        )
+        return _response.data
+
+    async def deidentify_structured_text(
+        self,
+        *,
+        file: FileDataDeidentifyStructuredText,
+        vault_id: str,
+        entity_types: typing.Optional[
+            typing.Sequence[DeidentifyFileRequestDeidentifyStructuredTextEntityTypesItem]
+        ] = OMIT,
+        token_type: typing.Optional[TokenTypeMapping] = OMIT,
+        allow_regex: typing.Optional[typing.Sequence[str]] = OMIT,
+        restrict_regex: typing.Optional[typing.Sequence[str]] = OMIT,
+        transformations: typing.Optional[Transformations] = OMIT,
+        configuration_id: typing.Optional[str] = OMIT,
+        request_options: typing.Optional[RequestOptions] = None,
+    ) -> DeidentifyFileResponse:
+        """
+        De-identifies sensitive data from a structured text file. This operation includes options applicable to all supported structured text file types.<br/><br/>For broader file type support, see <a href='#deidentify_file'>De-identify File</a>.
+
+        Parameters
+        ----------
+        file : FileDataDeidentifyStructuredText
+
+        vault_id : str
+            ID of a vault that you have Detect Invoker or Vault Owner permissions for.
+
+        entity_types : typing.Optional[typing.Sequence[DeidentifyFileRequestDeidentifyStructuredTextEntityTypesItem]]
+            Entities to detect and de-identify.
+
+        token_type : typing.Optional[TokenTypeMapping]
+
+        allow_regex : typing.Optional[typing.Sequence[str]]
+            Regular expressions to display in plaintext. Entities appear in plaintext if an expression matches either the entirety of a detected entity or a substring of it. Expressions don't match across entity boundaries. If a string or entity matches both `allow_regex` and `restrict_regex`, the entity is displayed in plaintext.
+
+        restrict_regex : typing.Optional[typing.Sequence[str]]
+            Regular expressions to replace with '[RESTRICTED]'. Expressions must match the entirety of a detected entity, not just a substring, for the entity to be restricted. Expressions don't match across entity boundaries. If a string or entity matches both `allow_regex` and `restrict_regex`, the entity is displayed in plaintext. If a string is detected as an entity and a `restrict_regex` pattern matches the entire detected entity, the entity is replaced with '[RESTRICTED]'. If a string is detected as an entity but a `restrict_regex` pattern only matches a substring of it, the `restrict_regex` pattern is ignored, and the entity is processed according to the specified tokenization and transformation settings.
+
+        transformations : typing.Optional[Transformations]
+
+        configuration_id : typing.Optional[str]
+            ID of the Detect configuration to use for de-identification. Can't be specified with fields other than `vault_id`, `text`, and `file`.
+
+        request_options : typing.Optional[RequestOptions]
+            Request-specific configuration.
+
+        Returns
+        -------
+        DeidentifyFileResponse
+            OK
+
+        Examples
+        --------
+        import asyncio
+
+        from skyflow import AsyncSkyflow, FileDataDeidentifyStructuredText
+
+        client = AsyncSkyflow(
+            token="YOUR_TOKEN",
+        )
+
+
+        async def main() -> None:
+            await client.files.deidentify_structured_text(
+                file=FileDataDeidentifyStructuredText(
+                    base_64="base64",
+                    data_format="json",
+                ),
+                vault_id="vault_id",
+            )
+
+
+        asyncio.run(main())
+        """
+        _response = await self._raw_client.deidentify_structured_text(
+            file=file,
+            vault_id=vault_id,
+            entity_types=entity_types,
+            token_type=token_type,
+            allow_regex=allow_regex,
+            restrict_regex=restrict_regex,
+            transformations=transformations,
+            configuration_id=configuration_id,
+            request_options=request_options,
+        )
+        return _response.data
+
+    async def deidentify_text(
+        self,
+        *,
+        file: FileDataDeidentifyText,
+        vault_id: str,
+        entity_types: typing.Optional[typing.Sequence[DeidentifyFileRequestDeidentifyTextEntityTypesItem]] = OMIT,
+        token_type: typing.Optional[TokenTypeMapping] = OMIT,
+        allow_regex: typing.Optional[typing.Sequence[str]] = OMIT,
+        restrict_regex: typing.Optional[typing.Sequence[str]] = OMIT,
+        transformations: typing.Optional[Transformations] = OMIT,
+        configuration_id: typing.Optional[str] = OMIT,
+        request_options: typing.Optional[RequestOptions] = None,
+    ) -> DeidentifyFileResponse:
+        """
+        De-identifies sensitive data from a text file. This operation includes options applicable to all supported image text types.<br/><br/>For broader file type support, see <a href='#deidentify_file'>De-identify File</a>.
+
+        Parameters
+        ----------
+        file : FileDataDeidentifyText
+
+        vault_id : str
+            ID of a vault that you have Detect Invoker or Vault Owner permissions for.
+
+        entity_types : typing.Optional[typing.Sequence[DeidentifyFileRequestDeidentifyTextEntityTypesItem]]
+            Entities to detect and de-identify.
+
+        token_type : typing.Optional[TokenTypeMapping]
+
+        allow_regex : typing.Optional[typing.Sequence[str]]
+            Regular expressions to display in plaintext. Entities appear in plaintext if an expression matches either the entirety of a detected entity or a substring of it. Expressions don't match across entity boundaries. If a string or entity matches both `allow_regex` and `restrict_regex`, the entity is displayed in plaintext.
+
+        restrict_regex : typing.Optional[typing.Sequence[str]]
+            Regular expressions to replace with '[RESTRICTED]'. Expressions must match the entirety of a detected entity, not just a substring, for the entity to be restricted. Expressions don't match across entity boundaries. If a string or entity matches both `allow_regex` and `restrict_regex`, the entity is displayed in plaintext. If a string is detected as an entity and a `restrict_regex` pattern matches the entire detected entity, the entity is replaced with '[RESTRICTED]'. If a string is detected as an entity but a `restrict_regex` pattern only matches a substring of it, the `restrict_regex` pattern is ignored, and the entity is processed according to the specified tokenization and transformation settings.
+
+        transformations : typing.Optional[Transformations]
+
+        configuration_id : typing.Optional[str]
+            ID of the Detect configuration to use for de-identification. Can't be specified with fields other than `vault_id`, `text`, and `file`.
+
+        request_options : typing.Optional[RequestOptions]
+            Request-specific configuration.
+
+        Returns
+        -------
+        DeidentifyFileResponse
+            OK
+
+        Examples
+        --------
+        import asyncio
+
+        from skyflow import AsyncSkyflow, FileDataDeidentifyText
+
+        client = AsyncSkyflow(
+            token="YOUR_TOKEN",
+        )
+
+
+        async def main() -> None:
+            await client.files.deidentify_text(
+                file=FileDataDeidentifyText(
+                    base_64="base64",
+                ),
+                vault_id="vault_id",
+            )
+
+
+        asyncio.run(main())
+        """
+        _response = await self._raw_client.deidentify_text(
+            file=file,
+            vault_id=vault_id,
+            entity_types=entity_types,
+            token_type=token_type,
+            allow_regex=allow_regex,
+            restrict_regex=restrict_regex,
+            transformations=transformations,
+            configuration_id=configuration_id,
+            request_options=request_options,
+        )
+        return _response.data
+
+    async def reidentify_file(
+        self,
+        *,
+        file: FileDataReidentifyFile,
+        vault_id: str,
+        format: typing.Optional[Format] = OMIT,
+        request_options: typing.Optional[RequestOptions] = None,
+    ) -> ReidentifyFileResponse:
+        """
+        Re-identifies tokens in a file.
+
+        Parameters
+        ----------
+        file : FileDataReidentifyFile
+
+        vault_id : str
+            ID of the vault where the entities are stored.
+
+        format : typing.Optional[Format]
+
+        request_options : typing.Optional[RequestOptions]
+            Request-specific configuration.
+
+        Returns
+        -------
+        ReidentifyFileResponse
+            OK
+
+        Examples
+        --------
+        import asyncio
+
+        from skyflow import AsyncSkyflow, FileDataReidentifyFile
+
+        client = AsyncSkyflow(
+            token="YOUR_TOKEN",
+        )
+
+
+        async def main() -> None:
+            await client.files.reidentify_file(
+                file=FileDataReidentifyFile(
+                    base_64="base64",
+                    data_format="txt",
+                ),
+                vault_id="vault_id",
+            )
+
+
+        asyncio.run(main())
+        """
+        _response = await self._raw_client.reidentify_file(
+            file=file, vault_id=vault_id, format=format, request_options=request_options
+        )
+        return _response.data
+
+    async def get_run(
+        self,
+        run_id: str,
+        *,
+        vault_id: typing.Optional[str] = None,
+        request_options: typing.Optional[RequestOptions] = None,
+    ) -> DetectRunsResponse:
+        """
+        Returns the status of a detect run.
+
+        Parameters
+        ----------
+        run_id : str
+
+        vault_id : typing.Optional[str]
+
+        request_options : typing.Optional[RequestOptions]
+            Request-specific configuration.
+
+        Returns
+        -------
+        DetectRunsResponse
+            OK
 
         Examples
         --------
@@ -1670,62 +1820,4 @@ class AsyncFilesClient:
         asyncio.run(main())
         """
         _response = await self._raw_client.get_run(run_id, vault_id=vault_id, request_options=request_options)
-        return _response.data
-
-    async def reidentify_file(
-        self,
-        *,
-        vault_id: VaultId,
-        file: ReidentifyFileRequestFile,
-        format: typing.Optional[ReidentifyFileRequestFormat] = OMIT,
-        request_options: typing.Optional[RequestOptions] = None,
-    ) -> ReidentifyFileResponse:
-        """
-        Re-identifies tokens in a file.
-
-        Parameters
-        ----------
-        vault_id : VaultId
-
-        file : ReidentifyFileRequestFile
-            File to re-identify. Files are specified as Base64-encoded data or an EFS path.
-
-        format : typing.Optional[ReidentifyFileRequestFormat]
-            Mapping of preferred data formatting options to entity types. Returned values are dependent on the configuration of the vault storing the data and the permissions of the user or account making the request.
-
-        request_options : typing.Optional[RequestOptions]
-            Request-specific configuration.
-
-        Returns
-        -------
-        ReidentifyFileResponse
-            A successful response.
-
-        Examples
-        --------
-        import asyncio
-
-        from skyflow import AsyncSkyflow
-        from skyflow.files import ReidentifyFileRequestFile
-
-        client = AsyncSkyflow(
-            token="YOUR_TOKEN",
-        )
-
-
-        async def main() -> None:
-            await client.files.reidentify_file(
-                vault_id="f4b3b3b33b3b3b3b3b3b3b3b3b3b3b3b",
-                file=ReidentifyFileRequestFile(
-                    base_64="Zm9vYmFy",
-                    data_format="txt",
-                ),
-            )
-
-
-        asyncio.run(main())
-        """
-        _response = await self._raw_client.reidentify_file(
-            vault_id=vault_id, file=file, format=format, request_options=request_options
-        )
         return _response.data

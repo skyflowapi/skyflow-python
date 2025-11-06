@@ -12,34 +12,55 @@ from ..core.request_options import RequestOptions
 from ..core.serialization import convert_and_respect_annotation_metadata
 from ..errors.bad_request_error import BadRequestError
 from ..errors.internal_server_error import InternalServerError
-from ..errors.not_found_error import NotFoundError
 from ..errors.unauthorized_error import UnauthorizedError
-from ..types.allow_regex import AllowRegex
-from ..types.configuration_id import ConfigurationId
 from ..types.deidentify_file_response import DeidentifyFileResponse
-from ..types.deidentify_status_response import DeidentifyStatusResponse
-from ..types.entity_types import EntityTypes
+from ..types.detect_runs_response import DetectRunsResponse
 from ..types.error_response import ErrorResponse
+from ..types.file_data import FileData
+from ..types.file_data_deidentify_audio import FileDataDeidentifyAudio
+from ..types.file_data_deidentify_document import FileDataDeidentifyDocument
+from ..types.file_data_deidentify_image import FileDataDeidentifyImage
+from ..types.file_data_deidentify_pdf import FileDataDeidentifyPdf
+from ..types.file_data_deidentify_presentation import FileDataDeidentifyPresentation
+from ..types.file_data_deidentify_spreadsheet import FileDataDeidentifySpreadsheet
+from ..types.file_data_deidentify_structured_text import FileDataDeidentifyStructuredText
+from ..types.file_data_deidentify_text import FileDataDeidentifyText
+from ..types.file_data_reidentify_file import FileDataReidentifyFile
+from ..types.format import Format
 from ..types.reidentify_file_response import ReidentifyFileResponse
-from ..types.resource_id import ResourceId
-from ..types.restrict_regex import RestrictRegex
-from ..types.token_type_without_vault import TokenTypeWithoutVault
+from ..types.token_type_mapping import TokenTypeMapping
 from ..types.transformations import Transformations
-from ..types.uuid_ import Uuid
-from ..types.vault_id import VaultId
-from .types.deidentify_audio_request_file import DeidentifyAudioRequestFile
-from .types.deidentify_audio_request_output_transcription import DeidentifyAudioRequestOutputTranscription
-from .types.deidentify_document_request_file import DeidentifyDocumentRequestFile
-from .types.deidentify_file_request_file import DeidentifyFileRequestFile
-from .types.deidentify_image_request_file import DeidentifyImageRequestFile
-from .types.deidentify_image_request_masking_method import DeidentifyImageRequestMaskingMethod
-from .types.deidentify_pdf_request_file import DeidentifyPdfRequestFile
-from .types.deidentify_presentation_request_file import DeidentifyPresentationRequestFile
-from .types.deidentify_spreadsheet_request_file import DeidentifySpreadsheetRequestFile
-from .types.deidentify_structured_text_request_file import DeidentifyStructuredTextRequestFile
-from .types.deidentify_text_request_file import DeidentifyTextRequestFile
-from .types.reidentify_file_request_file import ReidentifyFileRequestFile
-from .types.reidentify_file_request_format import ReidentifyFileRequestFormat
+from .types.deidentify_file_audio_request_deidentify_audio_entity_types_item import (
+    DeidentifyFileAudioRequestDeidentifyAudioEntityTypesItem,
+)
+from .types.deidentify_file_audio_request_deidentify_audio_output_transcription import (
+    DeidentifyFileAudioRequestDeidentifyAudioOutputTranscription,
+)
+from .types.deidentify_file_document_pdf_request_deidentify_pdf_entity_types_item import (
+    DeidentifyFileDocumentPdfRequestDeidentifyPdfEntityTypesItem,
+)
+from .types.deidentify_file_image_request_deidentify_image_entity_types_item import (
+    DeidentifyFileImageRequestDeidentifyImageEntityTypesItem,
+)
+from .types.deidentify_file_image_request_deidentify_image_masking_method import (
+    DeidentifyFileImageRequestDeidentifyImageMaskingMethod,
+)
+from .types.deidentify_file_request_deidentify_document_entity_types_item import (
+    DeidentifyFileRequestDeidentifyDocumentEntityTypesItem,
+)
+from .types.deidentify_file_request_deidentify_presentation_entity_types_item import (
+    DeidentifyFileRequestDeidentifyPresentationEntityTypesItem,
+)
+from .types.deidentify_file_request_deidentify_spreadsheet_entity_types_item import (
+    DeidentifyFileRequestDeidentifySpreadsheetEntityTypesItem,
+)
+from .types.deidentify_file_request_deidentify_structured_text_entity_types_item import (
+    DeidentifyFileRequestDeidentifyStructuredTextEntityTypesItem,
+)
+from .types.deidentify_file_request_deidentify_text_entity_types_item import (
+    DeidentifyFileRequestDeidentifyTextEntityTypesItem,
+)
+from .types.deidentify_file_request_entity_types_item import DeidentifyFileRequestEntityTypesItem
 
 # this is used as the default value for optional parameters
 OMIT = typing.cast(typing.Any, ...)
@@ -52,14 +73,14 @@ class RawFilesClient:
     def deidentify_file(
         self,
         *,
-        vault_id: VaultId,
-        file: DeidentifyFileRequestFile,
-        configuration_id: typing.Optional[ConfigurationId] = OMIT,
-        entity_types: typing.Optional[EntityTypes] = OMIT,
-        token_type: typing.Optional[TokenTypeWithoutVault] = OMIT,
-        allow_regex: typing.Optional[AllowRegex] = OMIT,
-        restrict_regex: typing.Optional[RestrictRegex] = OMIT,
+        file: FileData,
+        vault_id: str,
+        entity_types: typing.Optional[typing.Sequence[DeidentifyFileRequestEntityTypesItem]] = OMIT,
+        token_type: typing.Optional[TokenTypeMapping] = OMIT,
+        allow_regex: typing.Optional[typing.Sequence[str]] = OMIT,
+        restrict_regex: typing.Optional[typing.Sequence[str]] = OMIT,
         transformations: typing.Optional[Transformations] = OMIT,
+        configuration_id: typing.Optional[str] = OMIT,
         request_options: typing.Optional[RequestOptions] = None,
     ) -> HttpResponse[DeidentifyFileResponse]:
         """
@@ -67,22 +88,26 @@ class RawFilesClient:
 
         Parameters
         ----------
-        vault_id : VaultId
+        file : FileData
 
-        file : DeidentifyFileRequestFile
-            File to de-identify. Files are specified as Base64-encoded data.
+        vault_id : str
+            ID of a vault that you have Detect Invoker or Vault Owner permissions for.
 
-        configuration_id : typing.Optional[ConfigurationId]
+        entity_types : typing.Optional[typing.Sequence[DeidentifyFileRequestEntityTypesItem]]
+            Entities to detect and de-identify.
 
-        entity_types : typing.Optional[EntityTypes]
+        token_type : typing.Optional[TokenTypeMapping]
 
-        token_type : typing.Optional[TokenTypeWithoutVault]
+        allow_regex : typing.Optional[typing.Sequence[str]]
+            Regular expressions to display in plaintext. Entities appear in plaintext if an expression matches either the entirety of a detected entity or a substring of it. Expressions don't match across entity boundaries. If a string or entity matches both `allow_regex` and `restrict_regex`, the entity is displayed in plaintext.
 
-        allow_regex : typing.Optional[AllowRegex]
-
-        restrict_regex : typing.Optional[RestrictRegex]
+        restrict_regex : typing.Optional[typing.Sequence[str]]
+            Regular expressions to replace with '[RESTRICTED]'. Expressions must match the entirety of a detected entity, not just a substring, for the entity to be restricted. Expressions don't match across entity boundaries. If a string or entity matches both `allow_regex` and `restrict_regex`, the entity is displayed in plaintext. If a string is detected as an entity and a `restrict_regex` pattern matches the entire detected entity, the entity is replaced with '[RESTRICTED]'. If a string is detected as an entity but a `restrict_regex` pattern only matches a substring of it, the `restrict_regex` pattern is ignored, and the entity is processed according to the specified tokenization and transformation settings.
 
         transformations : typing.Optional[Transformations]
+
+        configuration_id : typing.Optional[str]
+            ID of the Detect configuration to use for de-identification. Can't be specified with fields other than `vault_id`, `text`, and `file`.
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
@@ -90,863 +115,24 @@ class RawFilesClient:
         Returns
         -------
         HttpResponse[DeidentifyFileResponse]
-            A successful response.
+            OK
         """
         _response = self._client_wrapper.httpx_client.request(
             "v1/detect/deidentify/file",
             method="POST",
             json={
+                "file": convert_and_respect_annotation_metadata(object_=file, annotation=FileData, direction="write"),
                 "vault_id": vault_id,
-                "file": convert_and_respect_annotation_metadata(
-                    object_=file, annotation=DeidentifyFileRequestFile, direction="write"
-                ),
-                "configuration_id": configuration_id,
                 "entity_types": entity_types,
                 "token_type": convert_and_respect_annotation_metadata(
-                    object_=token_type, annotation=TokenTypeWithoutVault, direction="write"
+                    object_=token_type, annotation=TokenTypeMapping, direction="write"
                 ),
                 "allow_regex": allow_regex,
                 "restrict_regex": restrict_regex,
                 "transformations": convert_and_respect_annotation_metadata(
                     object_=transformations, annotation=Transformations, direction="write"
                 ),
-            },
-            headers={
-                "content-type": "application/json",
-            },
-            request_options=request_options,
-            omit=OMIT,
-        )
-        try:
-            if 200 <= _response.status_code < 300:
-                _data = typing.cast(
-                    DeidentifyFileResponse,
-                    parse_obj_as(
-                        type_=DeidentifyFileResponse,  # type: ignore
-                        object_=_response.json(),
-                    ),
-                )
-                return HttpResponse(response=_response, data=_data)
-            if _response.status_code == 400:
-                raise BadRequestError(
-                    headers=dict(_response.headers),
-                    body=typing.cast(
-                        typing.Optional[typing.Any],
-                        parse_obj_as(
-                            type_=typing.Optional[typing.Any],  # type: ignore
-                            object_=_response.json(),
-                        ),
-                    ),
-                )
-            if _response.status_code == 401:
-                raise UnauthorizedError(
-                    headers=dict(_response.headers),
-                    body=typing.cast(
-                        typing.Optional[typing.Any],
-                        parse_obj_as(
-                            type_=typing.Optional[typing.Any],  # type: ignore
-                            object_=_response.json(),
-                        ),
-                    ),
-                )
-            if _response.status_code == 500:
-                raise InternalServerError(
-                    headers=dict(_response.headers),
-                    body=typing.cast(
-                        ErrorResponse,
-                        parse_obj_as(
-                            type_=ErrorResponse,  # type: ignore
-                            object_=_response.json(),
-                        ),
-                    ),
-                )
-            _response_json = _response.json()
-        except JSONDecodeError:
-            raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)
-        raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
-
-    def deidentify_document(
-        self,
-        *,
-        vault_id: VaultId,
-        file: DeidentifyDocumentRequestFile,
-        configuration_id: typing.Optional[ConfigurationId] = OMIT,
-        entity_types: typing.Optional[EntityTypes] = OMIT,
-        token_type: typing.Optional[TokenTypeWithoutVault] = OMIT,
-        allow_regex: typing.Optional[AllowRegex] = OMIT,
-        restrict_regex: typing.Optional[RestrictRegex] = OMIT,
-        transformations: typing.Optional[Transformations] = OMIT,
-        request_options: typing.Optional[RequestOptions] = None,
-    ) -> HttpResponse[DeidentifyFileResponse]:
-        """
-        De-identifies sensitive data from a document file. This operation includes options applicable to all supported document file types.<br/><br/>For more specific options, see the file type-specific opertions (like <a href='#deidentify_pdf'>De-identify PDF</a>) where they're available. For broader file type support, see <a href='#deidentify_file'>De-identify File</a>.
-
-        Parameters
-        ----------
-        vault_id : VaultId
-
-        file : DeidentifyDocumentRequestFile
-            File to de-identify. Files are specified as Base64-encoded data.
-
-        configuration_id : typing.Optional[ConfigurationId]
-
-        entity_types : typing.Optional[EntityTypes]
-
-        token_type : typing.Optional[TokenTypeWithoutVault]
-
-        allow_regex : typing.Optional[AllowRegex]
-
-        restrict_regex : typing.Optional[RestrictRegex]
-
-        transformations : typing.Optional[Transformations]
-
-        request_options : typing.Optional[RequestOptions]
-            Request-specific configuration.
-
-        Returns
-        -------
-        HttpResponse[DeidentifyFileResponse]
-            A successful response.
-        """
-        _response = self._client_wrapper.httpx_client.request(
-            "v1/detect/deidentify/file/document",
-            method="POST",
-            json={
-                "vault_id": vault_id,
-                "file": convert_and_respect_annotation_metadata(
-                    object_=file, annotation=DeidentifyDocumentRequestFile, direction="write"
-                ),
                 "configuration_id": configuration_id,
-                "entity_types": entity_types,
-                "token_type": convert_and_respect_annotation_metadata(
-                    object_=token_type, annotation=TokenTypeWithoutVault, direction="write"
-                ),
-                "allow_regex": allow_regex,
-                "restrict_regex": restrict_regex,
-                "transformations": convert_and_respect_annotation_metadata(
-                    object_=transformations, annotation=Transformations, direction="write"
-                ),
-            },
-            headers={
-                "content-type": "application/json",
-            },
-            request_options=request_options,
-            omit=OMIT,
-        )
-        try:
-            if 200 <= _response.status_code < 300:
-                _data = typing.cast(
-                    DeidentifyFileResponse,
-                    parse_obj_as(
-                        type_=DeidentifyFileResponse,  # type: ignore
-                        object_=_response.json(),
-                    ),
-                )
-                return HttpResponse(response=_response, data=_data)
-            if _response.status_code == 400:
-                raise BadRequestError(
-                    headers=dict(_response.headers),
-                    body=typing.cast(
-                        typing.Optional[typing.Any],
-                        parse_obj_as(
-                            type_=typing.Optional[typing.Any],  # type: ignore
-                            object_=_response.json(),
-                        ),
-                    ),
-                )
-            if _response.status_code == 401:
-                raise UnauthorizedError(
-                    headers=dict(_response.headers),
-                    body=typing.cast(
-                        typing.Optional[typing.Any],
-                        parse_obj_as(
-                            type_=typing.Optional[typing.Any],  # type: ignore
-                            object_=_response.json(),
-                        ),
-                    ),
-                )
-            if _response.status_code == 500:
-                raise InternalServerError(
-                    headers=dict(_response.headers),
-                    body=typing.cast(
-                        ErrorResponse,
-                        parse_obj_as(
-                            type_=ErrorResponse,  # type: ignore
-                            object_=_response.json(),
-                        ),
-                    ),
-                )
-            _response_json = _response.json()
-        except JSONDecodeError:
-            raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)
-        raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
-
-    def deidentify_pdf(
-        self,
-        *,
-        vault_id: VaultId,
-        file: DeidentifyPdfRequestFile,
-        configuration_id: typing.Optional[ConfigurationId] = OMIT,
-        density: typing.Optional[float] = OMIT,
-        max_resolution: typing.Optional[float] = OMIT,
-        entity_types: typing.Optional[EntityTypes] = OMIT,
-        token_type: typing.Optional[TokenTypeWithoutVault] = OMIT,
-        allow_regex: typing.Optional[AllowRegex] = OMIT,
-        restrict_regex: typing.Optional[RestrictRegex] = OMIT,
-        transformations: typing.Optional[Transformations] = OMIT,
-        request_options: typing.Optional[RequestOptions] = None,
-    ) -> HttpResponse[DeidentifyFileResponse]:
-        """
-        De-identifies sensitive data from a PDF file. This operation includes options specific to PDF files.<br/><br/>For broader file type support, see <a href='#deidentify_document'>De-identify Document</a> and <a href='#deidentify_file'>De-identify File</a>.
-
-        Parameters
-        ----------
-        vault_id : VaultId
-
-        file : DeidentifyPdfRequestFile
-            File to de-identify. Files are specified as Base64-encoded data.
-
-        configuration_id : typing.Optional[ConfigurationId]
-
-        density : typing.Optional[float]
-            Pixel density at which to process the PDF file.
-
-        max_resolution : typing.Optional[float]
-            Max resolution at which to process the PDF file.
-
-        entity_types : typing.Optional[EntityTypes]
-
-        token_type : typing.Optional[TokenTypeWithoutVault]
-
-        allow_regex : typing.Optional[AllowRegex]
-
-        restrict_regex : typing.Optional[RestrictRegex]
-
-        transformations : typing.Optional[Transformations]
-
-        request_options : typing.Optional[RequestOptions]
-            Request-specific configuration.
-
-        Returns
-        -------
-        HttpResponse[DeidentifyFileResponse]
-            A successful response.
-        """
-        _response = self._client_wrapper.httpx_client.request(
-            "v1/detect/deidentify/file/document/pdf",
-            method="POST",
-            json={
-                "vault_id": vault_id,
-                "file": convert_and_respect_annotation_metadata(
-                    object_=file, annotation=DeidentifyPdfRequestFile, direction="write"
-                ),
-                "configuration_id": configuration_id,
-                "density": density,
-                "max_resolution": max_resolution,
-                "entity_types": entity_types,
-                "token_type": convert_and_respect_annotation_metadata(
-                    object_=token_type, annotation=TokenTypeWithoutVault, direction="write"
-                ),
-                "allow_regex": allow_regex,
-                "restrict_regex": restrict_regex,
-                "transformations": convert_and_respect_annotation_metadata(
-                    object_=transformations, annotation=Transformations, direction="write"
-                ),
-            },
-            headers={
-                "content-type": "application/json",
-            },
-            request_options=request_options,
-            omit=OMIT,
-        )
-        try:
-            if 200 <= _response.status_code < 300:
-                _data = typing.cast(
-                    DeidentifyFileResponse,
-                    parse_obj_as(
-                        type_=DeidentifyFileResponse,  # type: ignore
-                        object_=_response.json(),
-                    ),
-                )
-                return HttpResponse(response=_response, data=_data)
-            if _response.status_code == 400:
-                raise BadRequestError(
-                    headers=dict(_response.headers),
-                    body=typing.cast(
-                        typing.Optional[typing.Any],
-                        parse_obj_as(
-                            type_=typing.Optional[typing.Any],  # type: ignore
-                            object_=_response.json(),
-                        ),
-                    ),
-                )
-            if _response.status_code == 401:
-                raise UnauthorizedError(
-                    headers=dict(_response.headers),
-                    body=typing.cast(
-                        typing.Optional[typing.Any],
-                        parse_obj_as(
-                            type_=typing.Optional[typing.Any],  # type: ignore
-                            object_=_response.json(),
-                        ),
-                    ),
-                )
-            if _response.status_code == 500:
-                raise InternalServerError(
-                    headers=dict(_response.headers),
-                    body=typing.cast(
-                        ErrorResponse,
-                        parse_obj_as(
-                            type_=ErrorResponse,  # type: ignore
-                            object_=_response.json(),
-                        ),
-                    ),
-                )
-            _response_json = _response.json()
-        except JSONDecodeError:
-            raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)
-        raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
-
-    def deidentify_image(
-        self,
-        *,
-        vault_id: VaultId,
-        file: DeidentifyImageRequestFile,
-        configuration_id: typing.Optional[ConfigurationId] = OMIT,
-        output_processed_image: typing.Optional[bool] = OMIT,
-        output_ocr_text: typing.Optional[bool] = OMIT,
-        masking_method: typing.Optional[DeidentifyImageRequestMaskingMethod] = OMIT,
-        entity_types: typing.Optional[EntityTypes] = OMIT,
-        token_type: typing.Optional[TokenTypeWithoutVault] = OMIT,
-        allow_regex: typing.Optional[AllowRegex] = OMIT,
-        restrict_regex: typing.Optional[RestrictRegex] = OMIT,
-        transformations: typing.Optional[Transformations] = OMIT,
-        request_options: typing.Optional[RequestOptions] = None,
-    ) -> HttpResponse[DeidentifyFileResponse]:
-        """
-        De-identifies sensitive data from an image file. This operation includes options applicable to all supported image file types.<br/><br/>For broader file type support, see <a href='#deidentify_file'>De-identify File</a>.
-
-        Parameters
-        ----------
-        vault_id : VaultId
-
-        file : DeidentifyImageRequestFile
-            File to de-identify. Files are specified as Base64-encoded data.
-
-        configuration_id : typing.Optional[ConfigurationId]
-
-        output_processed_image : typing.Optional[bool]
-            If `true`, includes processed image in the output.
-
-        output_ocr_text : typing.Optional[bool]
-            If `true`, includes OCR text output in the response.
-
-        masking_method : typing.Optional[DeidentifyImageRequestMaskingMethod]
-            Method to mask the entities in the image.
-
-        entity_types : typing.Optional[EntityTypes]
-
-        token_type : typing.Optional[TokenTypeWithoutVault]
-
-        allow_regex : typing.Optional[AllowRegex]
-
-        restrict_regex : typing.Optional[RestrictRegex]
-
-        transformations : typing.Optional[Transformations]
-
-        request_options : typing.Optional[RequestOptions]
-            Request-specific configuration.
-
-        Returns
-        -------
-        HttpResponse[DeidentifyFileResponse]
-            A successful response.
-        """
-        _response = self._client_wrapper.httpx_client.request(
-            "v1/detect/deidentify/file/image",
-            method="POST",
-            json={
-                "vault_id": vault_id,
-                "file": convert_and_respect_annotation_metadata(
-                    object_=file, annotation=DeidentifyImageRequestFile, direction="write"
-                ),
-                "configuration_id": configuration_id,
-                "output_processed_image": output_processed_image,
-                "output_ocr_text": output_ocr_text,
-                "masking_method": masking_method,
-                "entity_types": entity_types,
-                "token_type": convert_and_respect_annotation_metadata(
-                    object_=token_type, annotation=TokenTypeWithoutVault, direction="write"
-                ),
-                "allow_regex": allow_regex,
-                "restrict_regex": restrict_regex,
-                "transformations": convert_and_respect_annotation_metadata(
-                    object_=transformations, annotation=Transformations, direction="write"
-                ),
-            },
-            headers={
-                "content-type": "application/json",
-            },
-            request_options=request_options,
-            omit=OMIT,
-        )
-        try:
-            if 200 <= _response.status_code < 300:
-                _data = typing.cast(
-                    DeidentifyFileResponse,
-                    parse_obj_as(
-                        type_=DeidentifyFileResponse,  # type: ignore
-                        object_=_response.json(),
-                    ),
-                )
-                return HttpResponse(response=_response, data=_data)
-            if _response.status_code == 400:
-                raise BadRequestError(
-                    headers=dict(_response.headers),
-                    body=typing.cast(
-                        typing.Optional[typing.Any],
-                        parse_obj_as(
-                            type_=typing.Optional[typing.Any],  # type: ignore
-                            object_=_response.json(),
-                        ),
-                    ),
-                )
-            if _response.status_code == 401:
-                raise UnauthorizedError(
-                    headers=dict(_response.headers),
-                    body=typing.cast(
-                        typing.Optional[typing.Any],
-                        parse_obj_as(
-                            type_=typing.Optional[typing.Any],  # type: ignore
-                            object_=_response.json(),
-                        ),
-                    ),
-                )
-            if _response.status_code == 500:
-                raise InternalServerError(
-                    headers=dict(_response.headers),
-                    body=typing.cast(
-                        ErrorResponse,
-                        parse_obj_as(
-                            type_=ErrorResponse,  # type: ignore
-                            object_=_response.json(),
-                        ),
-                    ),
-                )
-            _response_json = _response.json()
-        except JSONDecodeError:
-            raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)
-        raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
-
-    def deidentify_text(
-        self,
-        *,
-        vault_id: VaultId,
-        file: DeidentifyTextRequestFile,
-        configuration_id: typing.Optional[ConfigurationId] = OMIT,
-        entity_types: typing.Optional[EntityTypes] = OMIT,
-        token_type: typing.Optional[TokenTypeWithoutVault] = OMIT,
-        allow_regex: typing.Optional[AllowRegex] = OMIT,
-        restrict_regex: typing.Optional[RestrictRegex] = OMIT,
-        transformations: typing.Optional[Transformations] = OMIT,
-        request_options: typing.Optional[RequestOptions] = None,
-    ) -> HttpResponse[DeidentifyFileResponse]:
-        """
-        De-identifies sensitive data from a text file. This operation includes options applicable to all supported image text types.<br/><br/>For broader file type support, see <a href='#deidentify_file'>De-identify File</a>.
-
-        Parameters
-        ----------
-        vault_id : VaultId
-
-        file : DeidentifyTextRequestFile
-            File to de-identify. Files are specified as Base64-encoded data.
-
-        configuration_id : typing.Optional[ConfigurationId]
-
-        entity_types : typing.Optional[EntityTypes]
-
-        token_type : typing.Optional[TokenTypeWithoutVault]
-
-        allow_regex : typing.Optional[AllowRegex]
-
-        restrict_regex : typing.Optional[RestrictRegex]
-
-        transformations : typing.Optional[Transformations]
-
-        request_options : typing.Optional[RequestOptions]
-            Request-specific configuration.
-
-        Returns
-        -------
-        HttpResponse[DeidentifyFileResponse]
-            A successful response.
-        """
-        _response = self._client_wrapper.httpx_client.request(
-            "v1/detect/deidentify/file/text",
-            method="POST",
-            json={
-                "vault_id": vault_id,
-                "file": convert_and_respect_annotation_metadata(
-                    object_=file, annotation=DeidentifyTextRequestFile, direction="write"
-                ),
-                "configuration_id": configuration_id,
-                "entity_types": entity_types,
-                "token_type": convert_and_respect_annotation_metadata(
-                    object_=token_type, annotation=TokenTypeWithoutVault, direction="write"
-                ),
-                "allow_regex": allow_regex,
-                "restrict_regex": restrict_regex,
-                "transformations": convert_and_respect_annotation_metadata(
-                    object_=transformations, annotation=Transformations, direction="write"
-                ),
-            },
-            headers={
-                "content-type": "application/json",
-            },
-            request_options=request_options,
-            omit=OMIT,
-        )
-        try:
-            if 200 <= _response.status_code < 300:
-                _data = typing.cast(
-                    DeidentifyFileResponse,
-                    parse_obj_as(
-                        type_=DeidentifyFileResponse,  # type: ignore
-                        object_=_response.json(),
-                    ),
-                )
-                return HttpResponse(response=_response, data=_data)
-            if _response.status_code == 400:
-                raise BadRequestError(
-                    headers=dict(_response.headers),
-                    body=typing.cast(
-                        typing.Optional[typing.Any],
-                        parse_obj_as(
-                            type_=typing.Optional[typing.Any],  # type: ignore
-                            object_=_response.json(),
-                        ),
-                    ),
-                )
-            if _response.status_code == 401:
-                raise UnauthorizedError(
-                    headers=dict(_response.headers),
-                    body=typing.cast(
-                        typing.Optional[typing.Any],
-                        parse_obj_as(
-                            type_=typing.Optional[typing.Any],  # type: ignore
-                            object_=_response.json(),
-                        ),
-                    ),
-                )
-            if _response.status_code == 500:
-                raise InternalServerError(
-                    headers=dict(_response.headers),
-                    body=typing.cast(
-                        ErrorResponse,
-                        parse_obj_as(
-                            type_=ErrorResponse,  # type: ignore
-                            object_=_response.json(),
-                        ),
-                    ),
-                )
-            _response_json = _response.json()
-        except JSONDecodeError:
-            raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)
-        raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
-
-    def deidentify_structured_text(
-        self,
-        *,
-        vault_id: VaultId,
-        file: DeidentifyStructuredTextRequestFile,
-        configuration_id: typing.Optional[ConfigurationId] = OMIT,
-        entity_types: typing.Optional[EntityTypes] = OMIT,
-        token_type: typing.Optional[TokenTypeWithoutVault] = OMIT,
-        allow_regex: typing.Optional[AllowRegex] = OMIT,
-        restrict_regex: typing.Optional[RestrictRegex] = OMIT,
-        transformations: typing.Optional[Transformations] = OMIT,
-        request_options: typing.Optional[RequestOptions] = None,
-    ) -> HttpResponse[DeidentifyFileResponse]:
-        """
-        De-identifies sensitive data from a structured text file. This operation includes options applicable to all supported structured text file types.<br/><br/>For broader file type support, see <a href='#deidentify_file'>De-identify File</a>.
-
-        Parameters
-        ----------
-        vault_id : VaultId
-
-        file : DeidentifyStructuredTextRequestFile
-            File to de-identify. Files are specified as Base64-encoded data.
-
-        configuration_id : typing.Optional[ConfigurationId]
-
-        entity_types : typing.Optional[EntityTypes]
-
-        token_type : typing.Optional[TokenTypeWithoutVault]
-
-        allow_regex : typing.Optional[AllowRegex]
-
-        restrict_regex : typing.Optional[RestrictRegex]
-
-        transformations : typing.Optional[Transformations]
-
-        request_options : typing.Optional[RequestOptions]
-            Request-specific configuration.
-
-        Returns
-        -------
-        HttpResponse[DeidentifyFileResponse]
-            A successful response.
-        """
-        _response = self._client_wrapper.httpx_client.request(
-            "v1/detect/deidentify/file/structured_text",
-            method="POST",
-            json={
-                "vault_id": vault_id,
-                "file": convert_and_respect_annotation_metadata(
-                    object_=file, annotation=DeidentifyStructuredTextRequestFile, direction="write"
-                ),
-                "configuration_id": configuration_id,
-                "entity_types": entity_types,
-                "token_type": convert_and_respect_annotation_metadata(
-                    object_=token_type, annotation=TokenTypeWithoutVault, direction="write"
-                ),
-                "allow_regex": allow_regex,
-                "restrict_regex": restrict_regex,
-                "transformations": convert_and_respect_annotation_metadata(
-                    object_=transformations, annotation=Transformations, direction="write"
-                ),
-            },
-            headers={
-                "content-type": "application/json",
-            },
-            request_options=request_options,
-            omit=OMIT,
-        )
-        try:
-            if 200 <= _response.status_code < 300:
-                _data = typing.cast(
-                    DeidentifyFileResponse,
-                    parse_obj_as(
-                        type_=DeidentifyFileResponse,  # type: ignore
-                        object_=_response.json(),
-                    ),
-                )
-                return HttpResponse(response=_response, data=_data)
-            if _response.status_code == 400:
-                raise BadRequestError(
-                    headers=dict(_response.headers),
-                    body=typing.cast(
-                        typing.Optional[typing.Any],
-                        parse_obj_as(
-                            type_=typing.Optional[typing.Any],  # type: ignore
-                            object_=_response.json(),
-                        ),
-                    ),
-                )
-            if _response.status_code == 401:
-                raise UnauthorizedError(
-                    headers=dict(_response.headers),
-                    body=typing.cast(
-                        typing.Optional[typing.Any],
-                        parse_obj_as(
-                            type_=typing.Optional[typing.Any],  # type: ignore
-                            object_=_response.json(),
-                        ),
-                    ),
-                )
-            if _response.status_code == 500:
-                raise InternalServerError(
-                    headers=dict(_response.headers),
-                    body=typing.cast(
-                        ErrorResponse,
-                        parse_obj_as(
-                            type_=ErrorResponse,  # type: ignore
-                            object_=_response.json(),
-                        ),
-                    ),
-                )
-            _response_json = _response.json()
-        except JSONDecodeError:
-            raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)
-        raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
-
-    def deidentify_spreadsheet(
-        self,
-        *,
-        vault_id: VaultId,
-        file: DeidentifySpreadsheetRequestFile,
-        configuration_id: typing.Optional[ConfigurationId] = OMIT,
-        entity_types: typing.Optional[EntityTypes] = OMIT,
-        token_type: typing.Optional[TokenTypeWithoutVault] = OMIT,
-        allow_regex: typing.Optional[AllowRegex] = OMIT,
-        restrict_regex: typing.Optional[RestrictRegex] = OMIT,
-        transformations: typing.Optional[Transformations] = OMIT,
-        request_options: typing.Optional[RequestOptions] = None,
-    ) -> HttpResponse[DeidentifyFileResponse]:
-        """
-        De-identifies sensitive data from a spreadsheet file. This operation includes options applicable to all supported spreadsheet file types.<br/><br/>For broader file type support, see <a href='#deidentify_file'>De-identify File</a>.
-
-        Parameters
-        ----------
-        vault_id : VaultId
-
-        file : DeidentifySpreadsheetRequestFile
-            File to de-identify. Files are specified as Base64-encoded data.
-
-        configuration_id : typing.Optional[ConfigurationId]
-
-        entity_types : typing.Optional[EntityTypes]
-
-        token_type : typing.Optional[TokenTypeWithoutVault]
-
-        allow_regex : typing.Optional[AllowRegex]
-
-        restrict_regex : typing.Optional[RestrictRegex]
-
-        transformations : typing.Optional[Transformations]
-
-        request_options : typing.Optional[RequestOptions]
-            Request-specific configuration.
-
-        Returns
-        -------
-        HttpResponse[DeidentifyFileResponse]
-            A successful response.
-        """
-        _response = self._client_wrapper.httpx_client.request(
-            "v1/detect/deidentify/file/spreadsheet",
-            method="POST",
-            json={
-                "vault_id": vault_id,
-                "file": convert_and_respect_annotation_metadata(
-                    object_=file, annotation=DeidentifySpreadsheetRequestFile, direction="write"
-                ),
-                "configuration_id": configuration_id,
-                "entity_types": entity_types,
-                "token_type": convert_and_respect_annotation_metadata(
-                    object_=token_type, annotation=TokenTypeWithoutVault, direction="write"
-                ),
-                "allow_regex": allow_regex,
-                "restrict_regex": restrict_regex,
-                "transformations": convert_and_respect_annotation_metadata(
-                    object_=transformations, annotation=Transformations, direction="write"
-                ),
-            },
-            headers={
-                "content-type": "application/json",
-            },
-            request_options=request_options,
-            omit=OMIT,
-        )
-        try:
-            if 200 <= _response.status_code < 300:
-                _data = typing.cast(
-                    DeidentifyFileResponse,
-                    parse_obj_as(
-                        type_=DeidentifyFileResponse,  # type: ignore
-                        object_=_response.json(),
-                    ),
-                )
-                return HttpResponse(response=_response, data=_data)
-            if _response.status_code == 400:
-                raise BadRequestError(
-                    headers=dict(_response.headers),
-                    body=typing.cast(
-                        typing.Optional[typing.Any],
-                        parse_obj_as(
-                            type_=typing.Optional[typing.Any],  # type: ignore
-                            object_=_response.json(),
-                        ),
-                    ),
-                )
-            if _response.status_code == 401:
-                raise UnauthorizedError(
-                    headers=dict(_response.headers),
-                    body=typing.cast(
-                        typing.Optional[typing.Any],
-                        parse_obj_as(
-                            type_=typing.Optional[typing.Any],  # type: ignore
-                            object_=_response.json(),
-                        ),
-                    ),
-                )
-            if _response.status_code == 500:
-                raise InternalServerError(
-                    headers=dict(_response.headers),
-                    body=typing.cast(
-                        ErrorResponse,
-                        parse_obj_as(
-                            type_=ErrorResponse,  # type: ignore
-                            object_=_response.json(),
-                        ),
-                    ),
-                )
-            _response_json = _response.json()
-        except JSONDecodeError:
-            raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)
-        raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
-
-    def deidentify_presentation(
-        self,
-        *,
-        vault_id: VaultId,
-        file: DeidentifyPresentationRequestFile,
-        configuration_id: typing.Optional[ConfigurationId] = OMIT,
-        entity_types: typing.Optional[EntityTypes] = OMIT,
-        token_type: typing.Optional[TokenTypeWithoutVault] = OMIT,
-        allow_regex: typing.Optional[AllowRegex] = OMIT,
-        restrict_regex: typing.Optional[RestrictRegex] = OMIT,
-        transformations: typing.Optional[Transformations] = OMIT,
-        request_options: typing.Optional[RequestOptions] = None,
-    ) -> HttpResponse[DeidentifyFileResponse]:
-        """
-        De-identifies sensitive data from a presentation file. This operation includes options applicable to all supported presentation file types.<br/><br/>For broader file type support, see <a href='#deidentify_file'>De-identify File</a>.
-
-        Parameters
-        ----------
-        vault_id : VaultId
-
-        file : DeidentifyPresentationRequestFile
-            File to de-identify. Files are specified as Base64-encoded data.
-
-        configuration_id : typing.Optional[ConfigurationId]
-
-        entity_types : typing.Optional[EntityTypes]
-
-        token_type : typing.Optional[TokenTypeWithoutVault]
-
-        allow_regex : typing.Optional[AllowRegex]
-
-        restrict_regex : typing.Optional[RestrictRegex]
-
-        transformations : typing.Optional[Transformations]
-
-        request_options : typing.Optional[RequestOptions]
-            Request-specific configuration.
-
-        Returns
-        -------
-        HttpResponse[DeidentifyFileResponse]
-            A successful response.
-        """
-        _response = self._client_wrapper.httpx_client.request(
-            "v1/detect/deidentify/file/presentation",
-            method="POST",
-            json={
-                "vault_id": vault_id,
-                "file": convert_and_respect_annotation_metadata(
-                    object_=file, annotation=DeidentifyPresentationRequestFile, direction="write"
-                ),
-                "configuration_id": configuration_id,
-                "entity_types": entity_types,
-                "token_type": convert_and_respect_annotation_metadata(
-                    object_=token_type, annotation=TokenTypeWithoutVault, direction="write"
-                ),
-                "allow_regex": allow_regex,
-                "restrict_regex": restrict_regex,
-                "transformations": convert_and_respect_annotation_metadata(
-                    object_=transformations, annotation=Transformations, direction="write"
-                ),
             },
             headers={
                 "content-type": "application/json",
@@ -1005,20 +191,20 @@ class RawFilesClient:
     def deidentify_audio(
         self,
         *,
-        vault_id: VaultId,
-        file: DeidentifyAudioRequestFile,
-        configuration_id: typing.Optional[ConfigurationId] = OMIT,
+        file: FileDataDeidentifyAudio,
+        vault_id: str,
+        output_transcription: typing.Optional[DeidentifyFileAudioRequestDeidentifyAudioOutputTranscription] = OMIT,
         output_processed_audio: typing.Optional[bool] = OMIT,
-        output_transcription: typing.Optional[DeidentifyAudioRequestOutputTranscription] = OMIT,
-        bleep_gain: typing.Optional[float] = OMIT,
-        bleep_frequency: typing.Optional[float] = OMIT,
         bleep_start_padding: typing.Optional[float] = OMIT,
         bleep_stop_padding: typing.Optional[float] = OMIT,
-        entity_types: typing.Optional[EntityTypes] = OMIT,
-        token_type: typing.Optional[TokenTypeWithoutVault] = OMIT,
-        allow_regex: typing.Optional[AllowRegex] = OMIT,
-        restrict_regex: typing.Optional[RestrictRegex] = OMIT,
+        bleep_frequency: typing.Optional[int] = OMIT,
+        bleep_gain: typing.Optional[int] = OMIT,
+        entity_types: typing.Optional[typing.Sequence[DeidentifyFileAudioRequestDeidentifyAudioEntityTypesItem]] = OMIT,
+        token_type: typing.Optional[TokenTypeMapping] = OMIT,
+        allow_regex: typing.Optional[typing.Sequence[str]] = OMIT,
+        restrict_regex: typing.Optional[typing.Sequence[str]] = OMIT,
         transformations: typing.Optional[Transformations] = OMIT,
+        configuration_id: typing.Optional[str] = OMIT,
         request_options: typing.Optional[RequestOptions] = None,
     ) -> HttpResponse[DeidentifyFileResponse]:
         """
@@ -1026,24 +212,16 @@ class RawFilesClient:
 
         Parameters
         ----------
-        vault_id : VaultId
+        file : FileDataDeidentifyAudio
 
-        file : DeidentifyAudioRequestFile
-            File to de-identify. Files are specified as Base64-encoded data.
+        vault_id : str
+            ID of a vault that you have Detect Invoker or Vault Owner permissions for.
 
-        configuration_id : typing.Optional[ConfigurationId]
-
-        output_processed_audio : typing.Optional[bool]
-            If `true`, includes processed audio file in the response.
-
-        output_transcription : typing.Optional[DeidentifyAudioRequestOutputTranscription]
+        output_transcription : typing.Optional[DeidentifyFileAudioRequestDeidentifyAudioOutputTranscription]
             Type of transcription to output.
 
-        bleep_gain : typing.Optional[float]
-            Relative loudness of the bleep in dB. Positive values increase its loudness, and negative values decrease it.
-
-        bleep_frequency : typing.Optional[float]
-            The pitch of the bleep sound, in Hz. The higher the number, the higher the pitch.
+        output_processed_audio : typing.Optional[bool]
+            Whether to include the processed audio file in the response.
 
         bleep_start_padding : typing.Optional[float]
             Padding added to the beginning of a bleep, in seconds.
@@ -1051,15 +229,27 @@ class RawFilesClient:
         bleep_stop_padding : typing.Optional[float]
             Padding added to the end of a bleep, in seconds.
 
-        entity_types : typing.Optional[EntityTypes]
+        bleep_frequency : typing.Optional[int]
+            The pitch of the bleep sound, in Hz. The higher the number, the higher the pitch.
 
-        token_type : typing.Optional[TokenTypeWithoutVault]
+        bleep_gain : typing.Optional[int]
+            Relative loudness of the bleep in dB. Positive values increase its loudness, and negative values decrease it.
 
-        allow_regex : typing.Optional[AllowRegex]
+        entity_types : typing.Optional[typing.Sequence[DeidentifyFileAudioRequestDeidentifyAudioEntityTypesItem]]
+            Entities to detect and de-identify.
 
-        restrict_regex : typing.Optional[RestrictRegex]
+        token_type : typing.Optional[TokenTypeMapping]
+
+        allow_regex : typing.Optional[typing.Sequence[str]]
+            Regular expressions to display in plaintext. Entities appear in plaintext if an expression matches either the entirety of a detected entity or a substring of it. Expressions don't match across entity boundaries. If a string or entity matches both `allow_regex` and `restrict_regex`, the entity is displayed in plaintext.
+
+        restrict_regex : typing.Optional[typing.Sequence[str]]
+            Regular expressions to replace with '[RESTRICTED]'. Expressions must match the entirety of a detected entity, not just a substring, for the entity to be restricted. Expressions don't match across entity boundaries. If a string or entity matches both `allow_regex` and `restrict_regex`, the entity is displayed in plaintext. If a string is detected as an entity and a `restrict_regex` pattern matches the entire detected entity, the entity is replaced with '[RESTRICTED]'. If a string is detected as an entity but a `restrict_regex` pattern only matches a substring of it, the `restrict_regex` pattern is ignored, and the entity is processed according to the specified tokenization and transformation settings.
 
         transformations : typing.Optional[Transformations]
+
+        configuration_id : typing.Optional[str]
+            ID of the Detect configuration to use for de-identification. Can't be specified with fields other than `vault_id`, `text`, and `file`.
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
@@ -1067,32 +257,32 @@ class RawFilesClient:
         Returns
         -------
         HttpResponse[DeidentifyFileResponse]
-            A successful response.
+            OK
         """
         _response = self._client_wrapper.httpx_client.request(
             "v1/detect/deidentify/file/audio",
             method="POST",
             json={
-                "vault_id": vault_id,
                 "file": convert_and_respect_annotation_metadata(
-                    object_=file, annotation=DeidentifyAudioRequestFile, direction="write"
+                    object_=file, annotation=FileDataDeidentifyAudio, direction="write"
                 ),
-                "configuration_id": configuration_id,
-                "output_processed_audio": output_processed_audio,
+                "vault_id": vault_id,
                 "output_transcription": output_transcription,
-                "bleep_gain": bleep_gain,
-                "bleep_frequency": bleep_frequency,
+                "output_processed_audio": output_processed_audio,
                 "bleep_start_padding": bleep_start_padding,
                 "bleep_stop_padding": bleep_stop_padding,
+                "bleep_frequency": bleep_frequency,
+                "bleep_gain": bleep_gain,
                 "entity_types": entity_types,
                 "token_type": convert_and_respect_annotation_metadata(
-                    object_=token_type, annotation=TokenTypeWithoutVault, direction="write"
+                    object_=token_type, annotation=TokenTypeMapping, direction="write"
                 ),
                 "allow_regex": allow_regex,
                 "restrict_regex": restrict_regex,
                 "transformations": convert_and_respect_annotation_metadata(
                     object_=transformations, annotation=Transformations, direction="write"
                 ),
+                "configuration_id": configuration_id,
             },
             headers={
                 "content-type": "application/json",
@@ -1148,42 +338,84 @@ class RawFilesClient:
             raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)
         raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
 
-    def get_run(
-        self, run_id: Uuid, *, vault_id: ResourceId, request_options: typing.Optional[RequestOptions] = None
-    ) -> HttpResponse[DeidentifyStatusResponse]:
+    def deidentify_document(
+        self,
+        *,
+        file: FileDataDeidentifyDocument,
+        vault_id: str,
+        entity_types: typing.Optional[typing.Sequence[DeidentifyFileRequestDeidentifyDocumentEntityTypesItem]] = OMIT,
+        token_type: typing.Optional[TokenTypeMapping] = OMIT,
+        allow_regex: typing.Optional[typing.Sequence[str]] = OMIT,
+        restrict_regex: typing.Optional[typing.Sequence[str]] = OMIT,
+        transformations: typing.Optional[Transformations] = OMIT,
+        configuration_id: typing.Optional[str] = OMIT,
+        request_options: typing.Optional[RequestOptions] = None,
+    ) -> HttpResponse[DeidentifyFileResponse]:
         """
-        Returns the status of the detect run.
+        De-identifies sensitive data from a document file. This operation includes options applicable to all supported document file types.<br/><br/>For more specific options, see the file type-specific opertions (like <a href='#deidentify_pdf'>De-identify PDF</a>) where they're available. For broader file type support, see <a href='#deidentify_file'>De-identify File</a>.
 
         Parameters
         ----------
-        run_id : Uuid
-            ID of the detect run.
+        file : FileDataDeidentifyDocument
 
-        vault_id : ResourceId
-            ID of the vault.
+        vault_id : str
+            ID of a vault that you have Detect Invoker or Vault Owner permissions for.
+
+        entity_types : typing.Optional[typing.Sequence[DeidentifyFileRequestDeidentifyDocumentEntityTypesItem]]
+            Entities to detect and de-identify.
+
+        token_type : typing.Optional[TokenTypeMapping]
+
+        allow_regex : typing.Optional[typing.Sequence[str]]
+            Regular expressions to display in plaintext. Entities appear in plaintext if an expression matches either the entirety of a detected entity or a substring of it. Expressions don't match across entity boundaries. If a string or entity matches both `allow_regex` and `restrict_regex`, the entity is displayed in plaintext.
+
+        restrict_regex : typing.Optional[typing.Sequence[str]]
+            Regular expressions to replace with '[RESTRICTED]'. Expressions must match the entirety of a detected entity, not just a substring, for the entity to be restricted. Expressions don't match across entity boundaries. If a string or entity matches both `allow_regex` and `restrict_regex`, the entity is displayed in plaintext. If a string is detected as an entity and a `restrict_regex` pattern matches the entire detected entity, the entity is replaced with '[RESTRICTED]'. If a string is detected as an entity but a `restrict_regex` pattern only matches a substring of it, the `restrict_regex` pattern is ignored, and the entity is processed according to the specified tokenization and transformation settings.
+
+        transformations : typing.Optional[Transformations]
+
+        configuration_id : typing.Optional[str]
+            ID of the Detect configuration to use for de-identification. Can't be specified with fields other than `vault_id`, `text`, and `file`.
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
 
         Returns
         -------
-        HttpResponse[DeidentifyStatusResponse]
-            A successful response.
+        HttpResponse[DeidentifyFileResponse]
+            OK
         """
         _response = self._client_wrapper.httpx_client.request(
-            f"v1/detect/runs/{jsonable_encoder(run_id)}",
-            method="GET",
-            params={
+            "v1/detect/deidentify/file/document",
+            method="POST",
+            json={
+                "file": convert_and_respect_annotation_metadata(
+                    object_=file, annotation=FileDataDeidentifyDocument, direction="write"
+                ),
                 "vault_id": vault_id,
+                "entity_types": entity_types,
+                "token_type": convert_and_respect_annotation_metadata(
+                    object_=token_type, annotation=TokenTypeMapping, direction="write"
+                ),
+                "allow_regex": allow_regex,
+                "restrict_regex": restrict_regex,
+                "transformations": convert_and_respect_annotation_metadata(
+                    object_=transformations, annotation=Transformations, direction="write"
+                ),
+                "configuration_id": configuration_id,
+            },
+            headers={
+                "content-type": "application/json",
             },
             request_options=request_options,
+            omit=OMIT,
         )
         try:
             if 200 <= _response.status_code < 300:
                 _data = typing.cast(
-                    DeidentifyStatusResponse,
+                    DeidentifyFileResponse,
                     parse_obj_as(
-                        type_=DeidentifyStatusResponse,  # type: ignore
+                        type_=DeidentifyFileResponse,  # type: ignore
                         object_=_response.json(),
                     ),
                 )
@@ -1210,8 +442,750 @@ class RawFilesClient:
                         ),
                     ),
                 )
-            if _response.status_code == 404:
-                raise NotFoundError(
+            if _response.status_code == 500:
+                raise InternalServerError(
+                    headers=dict(_response.headers),
+                    body=typing.cast(
+                        ErrorResponse,
+                        parse_obj_as(
+                            type_=ErrorResponse,  # type: ignore
+                            object_=_response.json(),
+                        ),
+                    ),
+                )
+            _response_json = _response.json()
+        except JSONDecodeError:
+            raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)
+        raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
+
+    def deidentify_pdf(
+        self,
+        *,
+        file: FileDataDeidentifyPdf,
+        vault_id: str,
+        density: typing.Optional[int] = OMIT,
+        max_resolution: typing.Optional[int] = OMIT,
+        entity_types: typing.Optional[
+            typing.Sequence[DeidentifyFileDocumentPdfRequestDeidentifyPdfEntityTypesItem]
+        ] = OMIT,
+        token_type: typing.Optional[TokenTypeMapping] = OMIT,
+        allow_regex: typing.Optional[typing.Sequence[str]] = OMIT,
+        restrict_regex: typing.Optional[typing.Sequence[str]] = OMIT,
+        transformations: typing.Optional[Transformations] = OMIT,
+        configuration_id: typing.Optional[str] = OMIT,
+        request_options: typing.Optional[RequestOptions] = None,
+    ) -> HttpResponse[DeidentifyFileResponse]:
+        """
+        De-identifies sensitive data from a PDF file. This operation includes options specific to PDF files.<br/><br/>For broader file type support, see <a href='#deidentify_document'>De-identify Document</a> and <a href='#deidentify_file'>De-identify File</a>.
+
+        Parameters
+        ----------
+        file : FileDataDeidentifyPdf
+
+        vault_id : str
+            ID of a vault that you have Detect Invoker or Vault Owner permissions for.
+
+        density : typing.Optional[int]
+            Pixel density at which to process the PDF file.
+
+        max_resolution : typing.Optional[int]
+            Max resolution at which to process the PDF file.
+
+        entity_types : typing.Optional[typing.Sequence[DeidentifyFileDocumentPdfRequestDeidentifyPdfEntityTypesItem]]
+            Entities to detect and de-identify.
+
+        token_type : typing.Optional[TokenTypeMapping]
+
+        allow_regex : typing.Optional[typing.Sequence[str]]
+            Regular expressions to display in plaintext. Entities appear in plaintext if an expression matches either the entirety of a detected entity or a substring of it. Expressions don't match across entity boundaries. If a string or entity matches both `allow_regex` and `restrict_regex`, the entity is displayed in plaintext.
+
+        restrict_regex : typing.Optional[typing.Sequence[str]]
+            Regular expressions to replace with '[RESTRICTED]'. Expressions must match the entirety of a detected entity, not just a substring, for the entity to be restricted. Expressions don't match across entity boundaries. If a string or entity matches both `allow_regex` and `restrict_regex`, the entity is displayed in plaintext. If a string is detected as an entity and a `restrict_regex` pattern matches the entire detected entity, the entity is replaced with '[RESTRICTED]'. If a string is detected as an entity but a `restrict_regex` pattern only matches a substring of it, the `restrict_regex` pattern is ignored, and the entity is processed according to the specified tokenization and transformation settings.
+
+        transformations : typing.Optional[Transformations]
+
+        configuration_id : typing.Optional[str]
+            ID of the Detect configuration to use for de-identification. Can't be specified with fields other than `vault_id`, `text`, and `file`.
+
+        request_options : typing.Optional[RequestOptions]
+            Request-specific configuration.
+
+        Returns
+        -------
+        HttpResponse[DeidentifyFileResponse]
+            OK
+        """
+        _response = self._client_wrapper.httpx_client.request(
+            "v1/detect/deidentify/file/document/pdf",
+            method="POST",
+            json={
+                "file": convert_and_respect_annotation_metadata(
+                    object_=file, annotation=FileDataDeidentifyPdf, direction="write"
+                ),
+                "vault_id": vault_id,
+                "density": density,
+                "max_resolution": max_resolution,
+                "entity_types": entity_types,
+                "token_type": convert_and_respect_annotation_metadata(
+                    object_=token_type, annotation=TokenTypeMapping, direction="write"
+                ),
+                "allow_regex": allow_regex,
+                "restrict_regex": restrict_regex,
+                "transformations": convert_and_respect_annotation_metadata(
+                    object_=transformations, annotation=Transformations, direction="write"
+                ),
+                "configuration_id": configuration_id,
+            },
+            headers={
+                "content-type": "application/json",
+            },
+            request_options=request_options,
+            omit=OMIT,
+        )
+        try:
+            if 200 <= _response.status_code < 300:
+                _data = typing.cast(
+                    DeidentifyFileResponse,
+                    parse_obj_as(
+                        type_=DeidentifyFileResponse,  # type: ignore
+                        object_=_response.json(),
+                    ),
+                )
+                return HttpResponse(response=_response, data=_data)
+            if _response.status_code == 400:
+                raise BadRequestError(
+                    headers=dict(_response.headers),
+                    body=typing.cast(
+                        typing.Optional[typing.Any],
+                        parse_obj_as(
+                            type_=typing.Optional[typing.Any],  # type: ignore
+                            object_=_response.json(),
+                        ),
+                    ),
+                )
+            if _response.status_code == 401:
+                raise UnauthorizedError(
+                    headers=dict(_response.headers),
+                    body=typing.cast(
+                        typing.Optional[typing.Any],
+                        parse_obj_as(
+                            type_=typing.Optional[typing.Any],  # type: ignore
+                            object_=_response.json(),
+                        ),
+                    ),
+                )
+            if _response.status_code == 500:
+                raise InternalServerError(
+                    headers=dict(_response.headers),
+                    body=typing.cast(
+                        ErrorResponse,
+                        parse_obj_as(
+                            type_=ErrorResponse,  # type: ignore
+                            object_=_response.json(),
+                        ),
+                    ),
+                )
+            _response_json = _response.json()
+        except JSONDecodeError:
+            raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)
+        raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
+
+    def deidentify_image(
+        self,
+        *,
+        file: FileDataDeidentifyImage,
+        vault_id: str,
+        output_processed_image: typing.Optional[bool] = OMIT,
+        output_ocr_text: typing.Optional[bool] = OMIT,
+        masking_method: typing.Optional[DeidentifyFileImageRequestDeidentifyImageMaskingMethod] = OMIT,
+        entity_types: typing.Optional[typing.Sequence[DeidentifyFileImageRequestDeidentifyImageEntityTypesItem]] = OMIT,
+        token_type: typing.Optional[TokenTypeMapping] = OMIT,
+        allow_regex: typing.Optional[typing.Sequence[str]] = OMIT,
+        restrict_regex: typing.Optional[typing.Sequence[str]] = OMIT,
+        transformations: typing.Optional[Transformations] = OMIT,
+        configuration_id: typing.Optional[str] = OMIT,
+        request_options: typing.Optional[RequestOptions] = None,
+    ) -> HttpResponse[DeidentifyFileResponse]:
+        """
+        De-identifies sensitive data from an image file. This operation includes options applicable to all supported image file types.<br/><br/>For broader file type support, see <a href='#deidentify_file'>De-identify File</a>.
+
+        Parameters
+        ----------
+        file : FileDataDeidentifyImage
+
+        vault_id : str
+            ID of a vault that you have Detect Invoker or Vault Owner permissions for.
+
+        output_processed_image : typing.Optional[bool]
+            If `true`, includes processed image in the output.
+
+        output_ocr_text : typing.Optional[bool]
+            If `true`, includes text detected by OCR in the response.
+
+        masking_method : typing.Optional[DeidentifyFileImageRequestDeidentifyImageMaskingMethod]
+            Method to mask the entities in the image.
+
+        entity_types : typing.Optional[typing.Sequence[DeidentifyFileImageRequestDeidentifyImageEntityTypesItem]]
+            Entities to detect and de-identify.
+
+        token_type : typing.Optional[TokenTypeMapping]
+
+        allow_regex : typing.Optional[typing.Sequence[str]]
+            Regular expressions to display in plaintext. Entities appear in plaintext if an expression matches either the entirety of a detected entity or a substring of it. Expressions don't match across entity boundaries. If a string or entity matches both `allow_regex` and `restrict_regex`, the entity is displayed in plaintext.
+
+        restrict_regex : typing.Optional[typing.Sequence[str]]
+            Regular expressions to replace with '[RESTRICTED]'. Expressions must match the entirety of a detected entity, not just a substring, for the entity to be restricted. Expressions don't match across entity boundaries. If a string or entity matches both `allow_regex` and `restrict_regex`, the entity is displayed in plaintext. If a string is detected as an entity and a `restrict_regex` pattern matches the entire detected entity, the entity is replaced with '[RESTRICTED]'. If a string is detected as an entity but a `restrict_regex` pattern only matches a substring of it, the `restrict_regex` pattern is ignored, and the entity is processed according to the specified tokenization and transformation settings.
+
+        transformations : typing.Optional[Transformations]
+
+        configuration_id : typing.Optional[str]
+            ID of the Detect configuration to use for de-identification. Can't be specified with fields other than `vault_id`, `text`, and `file`.
+
+        request_options : typing.Optional[RequestOptions]
+            Request-specific configuration.
+
+        Returns
+        -------
+        HttpResponse[DeidentifyFileResponse]
+            OK
+        """
+        _response = self._client_wrapper.httpx_client.request(
+            "v1/detect/deidentify/file/image",
+            method="POST",
+            json={
+                "file": convert_and_respect_annotation_metadata(
+                    object_=file, annotation=FileDataDeidentifyImage, direction="write"
+                ),
+                "vault_id": vault_id,
+                "output_processed_image": output_processed_image,
+                "output_ocr_text": output_ocr_text,
+                "masking_method": masking_method,
+                "entity_types": entity_types,
+                "token_type": convert_and_respect_annotation_metadata(
+                    object_=token_type, annotation=TokenTypeMapping, direction="write"
+                ),
+                "allow_regex": allow_regex,
+                "restrict_regex": restrict_regex,
+                "transformations": convert_and_respect_annotation_metadata(
+                    object_=transformations, annotation=Transformations, direction="write"
+                ),
+                "configuration_id": configuration_id,
+            },
+            headers={
+                "content-type": "application/json",
+            },
+            request_options=request_options,
+            omit=OMIT,
+        )
+        try:
+            if 200 <= _response.status_code < 300:
+                _data = typing.cast(
+                    DeidentifyFileResponse,
+                    parse_obj_as(
+                        type_=DeidentifyFileResponse,  # type: ignore
+                        object_=_response.json(),
+                    ),
+                )
+                return HttpResponse(response=_response, data=_data)
+            if _response.status_code == 400:
+                raise BadRequestError(
+                    headers=dict(_response.headers),
+                    body=typing.cast(
+                        typing.Optional[typing.Any],
+                        parse_obj_as(
+                            type_=typing.Optional[typing.Any],  # type: ignore
+                            object_=_response.json(),
+                        ),
+                    ),
+                )
+            if _response.status_code == 401:
+                raise UnauthorizedError(
+                    headers=dict(_response.headers),
+                    body=typing.cast(
+                        typing.Optional[typing.Any],
+                        parse_obj_as(
+                            type_=typing.Optional[typing.Any],  # type: ignore
+                            object_=_response.json(),
+                        ),
+                    ),
+                )
+            if _response.status_code == 500:
+                raise InternalServerError(
+                    headers=dict(_response.headers),
+                    body=typing.cast(
+                        ErrorResponse,
+                        parse_obj_as(
+                            type_=ErrorResponse,  # type: ignore
+                            object_=_response.json(),
+                        ),
+                    ),
+                )
+            _response_json = _response.json()
+        except JSONDecodeError:
+            raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)
+        raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
+
+    def deidentify_presentation(
+        self,
+        *,
+        file: FileDataDeidentifyPresentation,
+        vault_id: str,
+        entity_types: typing.Optional[
+            typing.Sequence[DeidentifyFileRequestDeidentifyPresentationEntityTypesItem]
+        ] = OMIT,
+        token_type: typing.Optional[TokenTypeMapping] = OMIT,
+        allow_regex: typing.Optional[typing.Sequence[str]] = OMIT,
+        restrict_regex: typing.Optional[typing.Sequence[str]] = OMIT,
+        transformations: typing.Optional[Transformations] = OMIT,
+        configuration_id: typing.Optional[str] = OMIT,
+        request_options: typing.Optional[RequestOptions] = None,
+    ) -> HttpResponse[DeidentifyFileResponse]:
+        """
+        De-identifies sensitive data from a presentation file. This operation includes options applicable to all supported presentation file types.<br/><br/>For broader file type support, see <a href='#deidentify_file'>De-identify File</a>.
+
+        Parameters
+        ----------
+        file : FileDataDeidentifyPresentation
+
+        vault_id : str
+            ID of a vault that you have Detect Invoker or Vault Owner permissions for.
+
+        entity_types : typing.Optional[typing.Sequence[DeidentifyFileRequestDeidentifyPresentationEntityTypesItem]]
+            Entities to detect and de-identify.
+
+        token_type : typing.Optional[TokenTypeMapping]
+
+        allow_regex : typing.Optional[typing.Sequence[str]]
+            Regular expressions to display in plaintext. Entities appear in plaintext if an expression matches either the entirety of a detected entity or a substring of it. Expressions don't match across entity boundaries. If a string or entity matches both `allow_regex` and `restrict_regex`, the entity is displayed in plaintext.
+
+        restrict_regex : typing.Optional[typing.Sequence[str]]
+            Regular expressions to replace with '[RESTRICTED]'. Expressions must match the entirety of a detected entity, not just a substring, for the entity to be restricted. Expressions don't match across entity boundaries. If a string or entity matches both `allow_regex` and `restrict_regex`, the entity is displayed in plaintext. If a string is detected as an entity and a `restrict_regex` pattern matches the entire detected entity, the entity is replaced with '[RESTRICTED]'. If a string is detected as an entity but a `restrict_regex` pattern only matches a substring of it, the `restrict_regex` pattern is ignored, and the entity is processed according to the specified tokenization and transformation settings.
+
+        transformations : typing.Optional[Transformations]
+
+        configuration_id : typing.Optional[str]
+            ID of the Detect configuration to use for de-identification. Can't be specified with fields other than `vault_id`, `text`, and `file`.
+
+        request_options : typing.Optional[RequestOptions]
+            Request-specific configuration.
+
+        Returns
+        -------
+        HttpResponse[DeidentifyFileResponse]
+            OK
+        """
+        _response = self._client_wrapper.httpx_client.request(
+            "v1/detect/deidentify/file/presentation",
+            method="POST",
+            json={
+                "file": convert_and_respect_annotation_metadata(
+                    object_=file, annotation=FileDataDeidentifyPresentation, direction="write"
+                ),
+                "vault_id": vault_id,
+                "entity_types": entity_types,
+                "token_type": convert_and_respect_annotation_metadata(
+                    object_=token_type, annotation=TokenTypeMapping, direction="write"
+                ),
+                "allow_regex": allow_regex,
+                "restrict_regex": restrict_regex,
+                "transformations": convert_and_respect_annotation_metadata(
+                    object_=transformations, annotation=Transformations, direction="write"
+                ),
+                "configuration_id": configuration_id,
+            },
+            headers={
+                "content-type": "application/json",
+            },
+            request_options=request_options,
+            omit=OMIT,
+        )
+        try:
+            if 200 <= _response.status_code < 300:
+                _data = typing.cast(
+                    DeidentifyFileResponse,
+                    parse_obj_as(
+                        type_=DeidentifyFileResponse,  # type: ignore
+                        object_=_response.json(),
+                    ),
+                )
+                return HttpResponse(response=_response, data=_data)
+            if _response.status_code == 400:
+                raise BadRequestError(
+                    headers=dict(_response.headers),
+                    body=typing.cast(
+                        typing.Optional[typing.Any],
+                        parse_obj_as(
+                            type_=typing.Optional[typing.Any],  # type: ignore
+                            object_=_response.json(),
+                        ),
+                    ),
+                )
+            if _response.status_code == 401:
+                raise UnauthorizedError(
+                    headers=dict(_response.headers),
+                    body=typing.cast(
+                        typing.Optional[typing.Any],
+                        parse_obj_as(
+                            type_=typing.Optional[typing.Any],  # type: ignore
+                            object_=_response.json(),
+                        ),
+                    ),
+                )
+            if _response.status_code == 500:
+                raise InternalServerError(
+                    headers=dict(_response.headers),
+                    body=typing.cast(
+                        ErrorResponse,
+                        parse_obj_as(
+                            type_=ErrorResponse,  # type: ignore
+                            object_=_response.json(),
+                        ),
+                    ),
+                )
+            _response_json = _response.json()
+        except JSONDecodeError:
+            raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)
+        raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
+
+    def deidentify_spreadsheet(
+        self,
+        *,
+        file: FileDataDeidentifySpreadsheet,
+        vault_id: str,
+        entity_types: typing.Optional[
+            typing.Sequence[DeidentifyFileRequestDeidentifySpreadsheetEntityTypesItem]
+        ] = OMIT,
+        token_type: typing.Optional[TokenTypeMapping] = OMIT,
+        allow_regex: typing.Optional[typing.Sequence[str]] = OMIT,
+        restrict_regex: typing.Optional[typing.Sequence[str]] = OMIT,
+        transformations: typing.Optional[Transformations] = OMIT,
+        configuration_id: typing.Optional[str] = OMIT,
+        request_options: typing.Optional[RequestOptions] = None,
+    ) -> HttpResponse[DeidentifyFileResponse]:
+        """
+        De-identifies sensitive data from a spreadsheet file. This operation includes options applicable to all supported spreadsheet file types.<br/><br/>For broader file type support, see <a href='#deidentify_file'>De-identify File</a>.
+
+        Parameters
+        ----------
+        file : FileDataDeidentifySpreadsheet
+
+        vault_id : str
+            ID of a vault that you have Detect Invoker or Vault Owner permissions for.
+
+        entity_types : typing.Optional[typing.Sequence[DeidentifyFileRequestDeidentifySpreadsheetEntityTypesItem]]
+            Entities to detect and de-identify.
+
+        token_type : typing.Optional[TokenTypeMapping]
+
+        allow_regex : typing.Optional[typing.Sequence[str]]
+            Regular expressions to display in plaintext. Entities appear in plaintext if an expression matches either the entirety of a detected entity or a substring of it. Expressions don't match across entity boundaries. If a string or entity matches both `allow_regex` and `restrict_regex`, the entity is displayed in plaintext.
+
+        restrict_regex : typing.Optional[typing.Sequence[str]]
+            Regular expressions to replace with '[RESTRICTED]'. Expressions must match the entirety of a detected entity, not just a substring, for the entity to be restricted. Expressions don't match across entity boundaries. If a string or entity matches both `allow_regex` and `restrict_regex`, the entity is displayed in plaintext. If a string is detected as an entity and a `restrict_regex` pattern matches the entire detected entity, the entity is replaced with '[RESTRICTED]'. If a string is detected as an entity but a `restrict_regex` pattern only matches a substring of it, the `restrict_regex` pattern is ignored, and the entity is processed according to the specified tokenization and transformation settings.
+
+        transformations : typing.Optional[Transformations]
+
+        configuration_id : typing.Optional[str]
+            ID of the Detect configuration to use for de-identification. Can't be specified with fields other than `vault_id`, `text`, and `file`.
+
+        request_options : typing.Optional[RequestOptions]
+            Request-specific configuration.
+
+        Returns
+        -------
+        HttpResponse[DeidentifyFileResponse]
+            OK
+        """
+        _response = self._client_wrapper.httpx_client.request(
+            "v1/detect/deidentify/file/spreadsheet",
+            method="POST",
+            json={
+                "file": convert_and_respect_annotation_metadata(
+                    object_=file, annotation=FileDataDeidentifySpreadsheet, direction="write"
+                ),
+                "vault_id": vault_id,
+                "entity_types": entity_types,
+                "token_type": convert_and_respect_annotation_metadata(
+                    object_=token_type, annotation=TokenTypeMapping, direction="write"
+                ),
+                "allow_regex": allow_regex,
+                "restrict_regex": restrict_regex,
+                "transformations": convert_and_respect_annotation_metadata(
+                    object_=transformations, annotation=Transformations, direction="write"
+                ),
+                "configuration_id": configuration_id,
+            },
+            headers={
+                "content-type": "application/json",
+            },
+            request_options=request_options,
+            omit=OMIT,
+        )
+        try:
+            if 200 <= _response.status_code < 300:
+                _data = typing.cast(
+                    DeidentifyFileResponse,
+                    parse_obj_as(
+                        type_=DeidentifyFileResponse,  # type: ignore
+                        object_=_response.json(),
+                    ),
+                )
+                return HttpResponse(response=_response, data=_data)
+            if _response.status_code == 400:
+                raise BadRequestError(
+                    headers=dict(_response.headers),
+                    body=typing.cast(
+                        typing.Optional[typing.Any],
+                        parse_obj_as(
+                            type_=typing.Optional[typing.Any],  # type: ignore
+                            object_=_response.json(),
+                        ),
+                    ),
+                )
+            if _response.status_code == 401:
+                raise UnauthorizedError(
+                    headers=dict(_response.headers),
+                    body=typing.cast(
+                        typing.Optional[typing.Any],
+                        parse_obj_as(
+                            type_=typing.Optional[typing.Any],  # type: ignore
+                            object_=_response.json(),
+                        ),
+                    ),
+                )
+            if _response.status_code == 500:
+                raise InternalServerError(
+                    headers=dict(_response.headers),
+                    body=typing.cast(
+                        ErrorResponse,
+                        parse_obj_as(
+                            type_=ErrorResponse,  # type: ignore
+                            object_=_response.json(),
+                        ),
+                    ),
+                )
+            _response_json = _response.json()
+        except JSONDecodeError:
+            raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)
+        raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
+
+    def deidentify_structured_text(
+        self,
+        *,
+        file: FileDataDeidentifyStructuredText,
+        vault_id: str,
+        entity_types: typing.Optional[
+            typing.Sequence[DeidentifyFileRequestDeidentifyStructuredTextEntityTypesItem]
+        ] = OMIT,
+        token_type: typing.Optional[TokenTypeMapping] = OMIT,
+        allow_regex: typing.Optional[typing.Sequence[str]] = OMIT,
+        restrict_regex: typing.Optional[typing.Sequence[str]] = OMIT,
+        transformations: typing.Optional[Transformations] = OMIT,
+        configuration_id: typing.Optional[str] = OMIT,
+        request_options: typing.Optional[RequestOptions] = None,
+    ) -> HttpResponse[DeidentifyFileResponse]:
+        """
+        De-identifies sensitive data from a structured text file. This operation includes options applicable to all supported structured text file types.<br/><br/>For broader file type support, see <a href='#deidentify_file'>De-identify File</a>.
+
+        Parameters
+        ----------
+        file : FileDataDeidentifyStructuredText
+
+        vault_id : str
+            ID of a vault that you have Detect Invoker or Vault Owner permissions for.
+
+        entity_types : typing.Optional[typing.Sequence[DeidentifyFileRequestDeidentifyStructuredTextEntityTypesItem]]
+            Entities to detect and de-identify.
+
+        token_type : typing.Optional[TokenTypeMapping]
+
+        allow_regex : typing.Optional[typing.Sequence[str]]
+            Regular expressions to display in plaintext. Entities appear in plaintext if an expression matches either the entirety of a detected entity or a substring of it. Expressions don't match across entity boundaries. If a string or entity matches both `allow_regex` and `restrict_regex`, the entity is displayed in plaintext.
+
+        restrict_regex : typing.Optional[typing.Sequence[str]]
+            Regular expressions to replace with '[RESTRICTED]'. Expressions must match the entirety of a detected entity, not just a substring, for the entity to be restricted. Expressions don't match across entity boundaries. If a string or entity matches both `allow_regex` and `restrict_regex`, the entity is displayed in plaintext. If a string is detected as an entity and a `restrict_regex` pattern matches the entire detected entity, the entity is replaced with '[RESTRICTED]'. If a string is detected as an entity but a `restrict_regex` pattern only matches a substring of it, the `restrict_regex` pattern is ignored, and the entity is processed according to the specified tokenization and transformation settings.
+
+        transformations : typing.Optional[Transformations]
+
+        configuration_id : typing.Optional[str]
+            ID of the Detect configuration to use for de-identification. Can't be specified with fields other than `vault_id`, `text`, and `file`.
+
+        request_options : typing.Optional[RequestOptions]
+            Request-specific configuration.
+
+        Returns
+        -------
+        HttpResponse[DeidentifyFileResponse]
+            OK
+        """
+        _response = self._client_wrapper.httpx_client.request(
+            "v1/detect/deidentify/file/structured_text",
+            method="POST",
+            json={
+                "file": convert_and_respect_annotation_metadata(
+                    object_=file, annotation=FileDataDeidentifyStructuredText, direction="write"
+                ),
+                "vault_id": vault_id,
+                "entity_types": entity_types,
+                "token_type": convert_and_respect_annotation_metadata(
+                    object_=token_type, annotation=TokenTypeMapping, direction="write"
+                ),
+                "allow_regex": allow_regex,
+                "restrict_regex": restrict_regex,
+                "transformations": convert_and_respect_annotation_metadata(
+                    object_=transformations, annotation=Transformations, direction="write"
+                ),
+                "configuration_id": configuration_id,
+            },
+            headers={
+                "content-type": "application/json",
+            },
+            request_options=request_options,
+            omit=OMIT,
+        )
+        try:
+            if 200 <= _response.status_code < 300:
+                _data = typing.cast(
+                    DeidentifyFileResponse,
+                    parse_obj_as(
+                        type_=DeidentifyFileResponse,  # type: ignore
+                        object_=_response.json(),
+                    ),
+                )
+                return HttpResponse(response=_response, data=_data)
+            if _response.status_code == 400:
+                raise BadRequestError(
+                    headers=dict(_response.headers),
+                    body=typing.cast(
+                        typing.Optional[typing.Any],
+                        parse_obj_as(
+                            type_=typing.Optional[typing.Any],  # type: ignore
+                            object_=_response.json(),
+                        ),
+                    ),
+                )
+            if _response.status_code == 401:
+                raise UnauthorizedError(
+                    headers=dict(_response.headers),
+                    body=typing.cast(
+                        typing.Optional[typing.Any],
+                        parse_obj_as(
+                            type_=typing.Optional[typing.Any],  # type: ignore
+                            object_=_response.json(),
+                        ),
+                    ),
+                )
+            if _response.status_code == 500:
+                raise InternalServerError(
+                    headers=dict(_response.headers),
+                    body=typing.cast(
+                        ErrorResponse,
+                        parse_obj_as(
+                            type_=ErrorResponse,  # type: ignore
+                            object_=_response.json(),
+                        ),
+                    ),
+                )
+            _response_json = _response.json()
+        except JSONDecodeError:
+            raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)
+        raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
+
+    def deidentify_text(
+        self,
+        *,
+        file: FileDataDeidentifyText,
+        vault_id: str,
+        entity_types: typing.Optional[typing.Sequence[DeidentifyFileRequestDeidentifyTextEntityTypesItem]] = OMIT,
+        token_type: typing.Optional[TokenTypeMapping] = OMIT,
+        allow_regex: typing.Optional[typing.Sequence[str]] = OMIT,
+        restrict_regex: typing.Optional[typing.Sequence[str]] = OMIT,
+        transformations: typing.Optional[Transformations] = OMIT,
+        configuration_id: typing.Optional[str] = OMIT,
+        request_options: typing.Optional[RequestOptions] = None,
+    ) -> HttpResponse[DeidentifyFileResponse]:
+        """
+        De-identifies sensitive data from a text file. This operation includes options applicable to all supported image text types.<br/><br/>For broader file type support, see <a href='#deidentify_file'>De-identify File</a>.
+
+        Parameters
+        ----------
+        file : FileDataDeidentifyText
+
+        vault_id : str
+            ID of a vault that you have Detect Invoker or Vault Owner permissions for.
+
+        entity_types : typing.Optional[typing.Sequence[DeidentifyFileRequestDeidentifyTextEntityTypesItem]]
+            Entities to detect and de-identify.
+
+        token_type : typing.Optional[TokenTypeMapping]
+
+        allow_regex : typing.Optional[typing.Sequence[str]]
+            Regular expressions to display in plaintext. Entities appear in plaintext if an expression matches either the entirety of a detected entity or a substring of it. Expressions don't match across entity boundaries. If a string or entity matches both `allow_regex` and `restrict_regex`, the entity is displayed in plaintext.
+
+        restrict_regex : typing.Optional[typing.Sequence[str]]
+            Regular expressions to replace with '[RESTRICTED]'. Expressions must match the entirety of a detected entity, not just a substring, for the entity to be restricted. Expressions don't match across entity boundaries. If a string or entity matches both `allow_regex` and `restrict_regex`, the entity is displayed in plaintext. If a string is detected as an entity and a `restrict_regex` pattern matches the entire detected entity, the entity is replaced with '[RESTRICTED]'. If a string is detected as an entity but a `restrict_regex` pattern only matches a substring of it, the `restrict_regex` pattern is ignored, and the entity is processed according to the specified tokenization and transformation settings.
+
+        transformations : typing.Optional[Transformations]
+
+        configuration_id : typing.Optional[str]
+            ID of the Detect configuration to use for de-identification. Can't be specified with fields other than `vault_id`, `text`, and `file`.
+
+        request_options : typing.Optional[RequestOptions]
+            Request-specific configuration.
+
+        Returns
+        -------
+        HttpResponse[DeidentifyFileResponse]
+            OK
+        """
+        _response = self._client_wrapper.httpx_client.request(
+            "v1/detect/deidentify/file/text",
+            method="POST",
+            json={
+                "file": convert_and_respect_annotation_metadata(
+                    object_=file, annotation=FileDataDeidentifyText, direction="write"
+                ),
+                "vault_id": vault_id,
+                "entity_types": entity_types,
+                "token_type": convert_and_respect_annotation_metadata(
+                    object_=token_type, annotation=TokenTypeMapping, direction="write"
+                ),
+                "allow_regex": allow_regex,
+                "restrict_regex": restrict_regex,
+                "transformations": convert_and_respect_annotation_metadata(
+                    object_=transformations, annotation=Transformations, direction="write"
+                ),
+                "configuration_id": configuration_id,
+            },
+            headers={
+                "content-type": "application/json",
+            },
+            request_options=request_options,
+            omit=OMIT,
+        )
+        try:
+            if 200 <= _response.status_code < 300:
+                _data = typing.cast(
+                    DeidentifyFileResponse,
+                    parse_obj_as(
+                        type_=DeidentifyFileResponse,  # type: ignore
+                        object_=_response.json(),
+                    ),
+                )
+                return HttpResponse(response=_response, data=_data)
+            if _response.status_code == 400:
+                raise BadRequestError(
+                    headers=dict(_response.headers),
+                    body=typing.cast(
+                        typing.Optional[typing.Any],
+                        parse_obj_as(
+                            type_=typing.Optional[typing.Any],  # type: ignore
+                            object_=_response.json(),
+                        ),
+                    ),
+                )
+            if _response.status_code == 401:
+                raise UnauthorizedError(
                     headers=dict(_response.headers),
                     body=typing.cast(
                         typing.Optional[typing.Any],
@@ -1240,9 +1214,9 @@ class RawFilesClient:
     def reidentify_file(
         self,
         *,
-        vault_id: VaultId,
-        file: ReidentifyFileRequestFile,
-        format: typing.Optional[ReidentifyFileRequestFormat] = OMIT,
+        file: FileDataReidentifyFile,
+        vault_id: str,
+        format: typing.Optional[Format] = OMIT,
         request_options: typing.Optional[RequestOptions] = None,
     ) -> HttpResponse[ReidentifyFileResponse]:
         """
@@ -1250,13 +1224,12 @@ class RawFilesClient:
 
         Parameters
         ----------
-        vault_id : VaultId
+        file : FileDataReidentifyFile
 
-        file : ReidentifyFileRequestFile
-            File to re-identify. Files are specified as Base64-encoded data or an EFS path.
+        vault_id : str
+            ID of the vault where the entities are stored.
 
-        format : typing.Optional[ReidentifyFileRequestFormat]
-            Mapping of preferred data formatting options to entity types. Returned values are dependent on the configuration of the vault storing the data and the permissions of the user or account making the request.
+        format : typing.Optional[Format]
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
@@ -1264,19 +1237,17 @@ class RawFilesClient:
         Returns
         -------
         HttpResponse[ReidentifyFileResponse]
-            A successful response.
+            OK
         """
         _response = self._client_wrapper.httpx_client.request(
             "v1/detect/reidentify/file",
             method="POST",
             json={
-                "vault_id": vault_id,
                 "file": convert_and_respect_annotation_metadata(
-                    object_=file, annotation=ReidentifyFileRequestFile, direction="write"
+                    object_=file, annotation=FileDataReidentifyFile, direction="write"
                 ),
-                "format": convert_and_respect_annotation_metadata(
-                    object_=format, annotation=ReidentifyFileRequestFormat, direction="write"
-                ),
+                "vault_id": vault_id,
+                "format": convert_and_respect_annotation_metadata(object_=format, annotation=Format, direction="write"),
             },
             headers={
                 "content-type": "application/json",
@@ -1332,6 +1303,86 @@ class RawFilesClient:
             raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)
         raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
 
+    def get_run(
+        self,
+        run_id: str,
+        *,
+        vault_id: typing.Optional[str] = None,
+        request_options: typing.Optional[RequestOptions] = None,
+    ) -> HttpResponse[DetectRunsResponse]:
+        """
+        Returns the status of a detect run.
+
+        Parameters
+        ----------
+        run_id : str
+
+        vault_id : typing.Optional[str]
+
+        request_options : typing.Optional[RequestOptions]
+            Request-specific configuration.
+
+        Returns
+        -------
+        HttpResponse[DetectRunsResponse]
+            OK
+        """
+        _response = self._client_wrapper.httpx_client.request(
+            f"v1/detect/runs/{jsonable_encoder(run_id)}",
+            method="GET",
+            params={
+                "vault_id": vault_id,
+            },
+            request_options=request_options,
+        )
+        try:
+            if 200 <= _response.status_code < 300:
+                _data = typing.cast(
+                    DetectRunsResponse,
+                    parse_obj_as(
+                        type_=DetectRunsResponse,  # type: ignore
+                        object_=_response.json(),
+                    ),
+                )
+                return HttpResponse(response=_response, data=_data)
+            if _response.status_code == 400:
+                raise BadRequestError(
+                    headers=dict(_response.headers),
+                    body=typing.cast(
+                        typing.Optional[typing.Any],
+                        parse_obj_as(
+                            type_=typing.Optional[typing.Any],  # type: ignore
+                            object_=_response.json(),
+                        ),
+                    ),
+                )
+            if _response.status_code == 401:
+                raise UnauthorizedError(
+                    headers=dict(_response.headers),
+                    body=typing.cast(
+                        typing.Optional[typing.Any],
+                        parse_obj_as(
+                            type_=typing.Optional[typing.Any],  # type: ignore
+                            object_=_response.json(),
+                        ),
+                    ),
+                )
+            if _response.status_code == 500:
+                raise InternalServerError(
+                    headers=dict(_response.headers),
+                    body=typing.cast(
+                        ErrorResponse,
+                        parse_obj_as(
+                            type_=ErrorResponse,  # type: ignore
+                            object_=_response.json(),
+                        ),
+                    ),
+                )
+            _response_json = _response.json()
+        except JSONDecodeError:
+            raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)
+        raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
+
 
 class AsyncRawFilesClient:
     def __init__(self, *, client_wrapper: AsyncClientWrapper):
@@ -1340,14 +1391,14 @@ class AsyncRawFilesClient:
     async def deidentify_file(
         self,
         *,
-        vault_id: VaultId,
-        file: DeidentifyFileRequestFile,
-        configuration_id: typing.Optional[ConfigurationId] = OMIT,
-        entity_types: typing.Optional[EntityTypes] = OMIT,
-        token_type: typing.Optional[TokenTypeWithoutVault] = OMIT,
-        allow_regex: typing.Optional[AllowRegex] = OMIT,
-        restrict_regex: typing.Optional[RestrictRegex] = OMIT,
+        file: FileData,
+        vault_id: str,
+        entity_types: typing.Optional[typing.Sequence[DeidentifyFileRequestEntityTypesItem]] = OMIT,
+        token_type: typing.Optional[TokenTypeMapping] = OMIT,
+        allow_regex: typing.Optional[typing.Sequence[str]] = OMIT,
+        restrict_regex: typing.Optional[typing.Sequence[str]] = OMIT,
         transformations: typing.Optional[Transformations] = OMIT,
+        configuration_id: typing.Optional[str] = OMIT,
         request_options: typing.Optional[RequestOptions] = None,
     ) -> AsyncHttpResponse[DeidentifyFileResponse]:
         """
@@ -1355,22 +1406,26 @@ class AsyncRawFilesClient:
 
         Parameters
         ----------
-        vault_id : VaultId
+        file : FileData
 
-        file : DeidentifyFileRequestFile
-            File to de-identify. Files are specified as Base64-encoded data.
+        vault_id : str
+            ID of a vault that you have Detect Invoker or Vault Owner permissions for.
 
-        configuration_id : typing.Optional[ConfigurationId]
+        entity_types : typing.Optional[typing.Sequence[DeidentifyFileRequestEntityTypesItem]]
+            Entities to detect and de-identify.
 
-        entity_types : typing.Optional[EntityTypes]
+        token_type : typing.Optional[TokenTypeMapping]
 
-        token_type : typing.Optional[TokenTypeWithoutVault]
+        allow_regex : typing.Optional[typing.Sequence[str]]
+            Regular expressions to display in plaintext. Entities appear in plaintext if an expression matches either the entirety of a detected entity or a substring of it. Expressions don't match across entity boundaries. If a string or entity matches both `allow_regex` and `restrict_regex`, the entity is displayed in plaintext.
 
-        allow_regex : typing.Optional[AllowRegex]
-
-        restrict_regex : typing.Optional[RestrictRegex]
+        restrict_regex : typing.Optional[typing.Sequence[str]]
+            Regular expressions to replace with '[RESTRICTED]'. Expressions must match the entirety of a detected entity, not just a substring, for the entity to be restricted. Expressions don't match across entity boundaries. If a string or entity matches both `allow_regex` and `restrict_regex`, the entity is displayed in plaintext. If a string is detected as an entity and a `restrict_regex` pattern matches the entire detected entity, the entity is replaced with '[RESTRICTED]'. If a string is detected as an entity but a `restrict_regex` pattern only matches a substring of it, the `restrict_regex` pattern is ignored, and the entity is processed according to the specified tokenization and transformation settings.
 
         transformations : typing.Optional[Transformations]
+
+        configuration_id : typing.Optional[str]
+            ID of the Detect configuration to use for de-identification. Can't be specified with fields other than `vault_id`, `text`, and `file`.
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
@@ -1378,863 +1433,24 @@ class AsyncRawFilesClient:
         Returns
         -------
         AsyncHttpResponse[DeidentifyFileResponse]
-            A successful response.
+            OK
         """
         _response = await self._client_wrapper.httpx_client.request(
             "v1/detect/deidentify/file",
             method="POST",
             json={
+                "file": convert_and_respect_annotation_metadata(object_=file, annotation=FileData, direction="write"),
                 "vault_id": vault_id,
-                "file": convert_and_respect_annotation_metadata(
-                    object_=file, annotation=DeidentifyFileRequestFile, direction="write"
-                ),
-                "configuration_id": configuration_id,
                 "entity_types": entity_types,
                 "token_type": convert_and_respect_annotation_metadata(
-                    object_=token_type, annotation=TokenTypeWithoutVault, direction="write"
+                    object_=token_type, annotation=TokenTypeMapping, direction="write"
                 ),
                 "allow_regex": allow_regex,
                 "restrict_regex": restrict_regex,
                 "transformations": convert_and_respect_annotation_metadata(
                     object_=transformations, annotation=Transformations, direction="write"
                 ),
-            },
-            headers={
-                "content-type": "application/json",
-            },
-            request_options=request_options,
-            omit=OMIT,
-        )
-        try:
-            if 200 <= _response.status_code < 300:
-                _data = typing.cast(
-                    DeidentifyFileResponse,
-                    parse_obj_as(
-                        type_=DeidentifyFileResponse,  # type: ignore
-                        object_=_response.json(),
-                    ),
-                )
-                return AsyncHttpResponse(response=_response, data=_data)
-            if _response.status_code == 400:
-                raise BadRequestError(
-                    headers=dict(_response.headers),
-                    body=typing.cast(
-                        typing.Optional[typing.Any],
-                        parse_obj_as(
-                            type_=typing.Optional[typing.Any],  # type: ignore
-                            object_=_response.json(),
-                        ),
-                    ),
-                )
-            if _response.status_code == 401:
-                raise UnauthorizedError(
-                    headers=dict(_response.headers),
-                    body=typing.cast(
-                        typing.Optional[typing.Any],
-                        parse_obj_as(
-                            type_=typing.Optional[typing.Any],  # type: ignore
-                            object_=_response.json(),
-                        ),
-                    ),
-                )
-            if _response.status_code == 500:
-                raise InternalServerError(
-                    headers=dict(_response.headers),
-                    body=typing.cast(
-                        ErrorResponse,
-                        parse_obj_as(
-                            type_=ErrorResponse,  # type: ignore
-                            object_=_response.json(),
-                        ),
-                    ),
-                )
-            _response_json = _response.json()
-        except JSONDecodeError:
-            raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)
-        raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
-
-    async def deidentify_document(
-        self,
-        *,
-        vault_id: VaultId,
-        file: DeidentifyDocumentRequestFile,
-        configuration_id: typing.Optional[ConfigurationId] = OMIT,
-        entity_types: typing.Optional[EntityTypes] = OMIT,
-        token_type: typing.Optional[TokenTypeWithoutVault] = OMIT,
-        allow_regex: typing.Optional[AllowRegex] = OMIT,
-        restrict_regex: typing.Optional[RestrictRegex] = OMIT,
-        transformations: typing.Optional[Transformations] = OMIT,
-        request_options: typing.Optional[RequestOptions] = None,
-    ) -> AsyncHttpResponse[DeidentifyFileResponse]:
-        """
-        De-identifies sensitive data from a document file. This operation includes options applicable to all supported document file types.<br/><br/>For more specific options, see the file type-specific opertions (like <a href='#deidentify_pdf'>De-identify PDF</a>) where they're available. For broader file type support, see <a href='#deidentify_file'>De-identify File</a>.
-
-        Parameters
-        ----------
-        vault_id : VaultId
-
-        file : DeidentifyDocumentRequestFile
-            File to de-identify. Files are specified as Base64-encoded data.
-
-        configuration_id : typing.Optional[ConfigurationId]
-
-        entity_types : typing.Optional[EntityTypes]
-
-        token_type : typing.Optional[TokenTypeWithoutVault]
-
-        allow_regex : typing.Optional[AllowRegex]
-
-        restrict_regex : typing.Optional[RestrictRegex]
-
-        transformations : typing.Optional[Transformations]
-
-        request_options : typing.Optional[RequestOptions]
-            Request-specific configuration.
-
-        Returns
-        -------
-        AsyncHttpResponse[DeidentifyFileResponse]
-            A successful response.
-        """
-        _response = await self._client_wrapper.httpx_client.request(
-            "v1/detect/deidentify/file/document",
-            method="POST",
-            json={
-                "vault_id": vault_id,
-                "file": convert_and_respect_annotation_metadata(
-                    object_=file, annotation=DeidentifyDocumentRequestFile, direction="write"
-                ),
                 "configuration_id": configuration_id,
-                "entity_types": entity_types,
-                "token_type": convert_and_respect_annotation_metadata(
-                    object_=token_type, annotation=TokenTypeWithoutVault, direction="write"
-                ),
-                "allow_regex": allow_regex,
-                "restrict_regex": restrict_regex,
-                "transformations": convert_and_respect_annotation_metadata(
-                    object_=transformations, annotation=Transformations, direction="write"
-                ),
-            },
-            headers={
-                "content-type": "application/json",
-            },
-            request_options=request_options,
-            omit=OMIT,
-        )
-        try:
-            if 200 <= _response.status_code < 300:
-                _data = typing.cast(
-                    DeidentifyFileResponse,
-                    parse_obj_as(
-                        type_=DeidentifyFileResponse,  # type: ignore
-                        object_=_response.json(),
-                    ),
-                )
-                return AsyncHttpResponse(response=_response, data=_data)
-            if _response.status_code == 400:
-                raise BadRequestError(
-                    headers=dict(_response.headers),
-                    body=typing.cast(
-                        typing.Optional[typing.Any],
-                        parse_obj_as(
-                            type_=typing.Optional[typing.Any],  # type: ignore
-                            object_=_response.json(),
-                        ),
-                    ),
-                )
-            if _response.status_code == 401:
-                raise UnauthorizedError(
-                    headers=dict(_response.headers),
-                    body=typing.cast(
-                        typing.Optional[typing.Any],
-                        parse_obj_as(
-                            type_=typing.Optional[typing.Any],  # type: ignore
-                            object_=_response.json(),
-                        ),
-                    ),
-                )
-            if _response.status_code == 500:
-                raise InternalServerError(
-                    headers=dict(_response.headers),
-                    body=typing.cast(
-                        ErrorResponse,
-                        parse_obj_as(
-                            type_=ErrorResponse,  # type: ignore
-                            object_=_response.json(),
-                        ),
-                    ),
-                )
-            _response_json = _response.json()
-        except JSONDecodeError:
-            raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)
-        raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
-
-    async def deidentify_pdf(
-        self,
-        *,
-        vault_id: VaultId,
-        file: DeidentifyPdfRequestFile,
-        configuration_id: typing.Optional[ConfigurationId] = OMIT,
-        density: typing.Optional[float] = OMIT,
-        max_resolution: typing.Optional[float] = OMIT,
-        entity_types: typing.Optional[EntityTypes] = OMIT,
-        token_type: typing.Optional[TokenTypeWithoutVault] = OMIT,
-        allow_regex: typing.Optional[AllowRegex] = OMIT,
-        restrict_regex: typing.Optional[RestrictRegex] = OMIT,
-        transformations: typing.Optional[Transformations] = OMIT,
-        request_options: typing.Optional[RequestOptions] = None,
-    ) -> AsyncHttpResponse[DeidentifyFileResponse]:
-        """
-        De-identifies sensitive data from a PDF file. This operation includes options specific to PDF files.<br/><br/>For broader file type support, see <a href='#deidentify_document'>De-identify Document</a> and <a href='#deidentify_file'>De-identify File</a>.
-
-        Parameters
-        ----------
-        vault_id : VaultId
-
-        file : DeidentifyPdfRequestFile
-            File to de-identify. Files are specified as Base64-encoded data.
-
-        configuration_id : typing.Optional[ConfigurationId]
-
-        density : typing.Optional[float]
-            Pixel density at which to process the PDF file.
-
-        max_resolution : typing.Optional[float]
-            Max resolution at which to process the PDF file.
-
-        entity_types : typing.Optional[EntityTypes]
-
-        token_type : typing.Optional[TokenTypeWithoutVault]
-
-        allow_regex : typing.Optional[AllowRegex]
-
-        restrict_regex : typing.Optional[RestrictRegex]
-
-        transformations : typing.Optional[Transformations]
-
-        request_options : typing.Optional[RequestOptions]
-            Request-specific configuration.
-
-        Returns
-        -------
-        AsyncHttpResponse[DeidentifyFileResponse]
-            A successful response.
-        """
-        _response = await self._client_wrapper.httpx_client.request(
-            "v1/detect/deidentify/file/document/pdf",
-            method="POST",
-            json={
-                "vault_id": vault_id,
-                "file": convert_and_respect_annotation_metadata(
-                    object_=file, annotation=DeidentifyPdfRequestFile, direction="write"
-                ),
-                "configuration_id": configuration_id,
-                "density": density,
-                "max_resolution": max_resolution,
-                "entity_types": entity_types,
-                "token_type": convert_and_respect_annotation_metadata(
-                    object_=token_type, annotation=TokenTypeWithoutVault, direction="write"
-                ),
-                "allow_regex": allow_regex,
-                "restrict_regex": restrict_regex,
-                "transformations": convert_and_respect_annotation_metadata(
-                    object_=transformations, annotation=Transformations, direction="write"
-                ),
-            },
-            headers={
-                "content-type": "application/json",
-            },
-            request_options=request_options,
-            omit=OMIT,
-        )
-        try:
-            if 200 <= _response.status_code < 300:
-                _data = typing.cast(
-                    DeidentifyFileResponse,
-                    parse_obj_as(
-                        type_=DeidentifyFileResponse,  # type: ignore
-                        object_=_response.json(),
-                    ),
-                )
-                return AsyncHttpResponse(response=_response, data=_data)
-            if _response.status_code == 400:
-                raise BadRequestError(
-                    headers=dict(_response.headers),
-                    body=typing.cast(
-                        typing.Optional[typing.Any],
-                        parse_obj_as(
-                            type_=typing.Optional[typing.Any],  # type: ignore
-                            object_=_response.json(),
-                        ),
-                    ),
-                )
-            if _response.status_code == 401:
-                raise UnauthorizedError(
-                    headers=dict(_response.headers),
-                    body=typing.cast(
-                        typing.Optional[typing.Any],
-                        parse_obj_as(
-                            type_=typing.Optional[typing.Any],  # type: ignore
-                            object_=_response.json(),
-                        ),
-                    ),
-                )
-            if _response.status_code == 500:
-                raise InternalServerError(
-                    headers=dict(_response.headers),
-                    body=typing.cast(
-                        ErrorResponse,
-                        parse_obj_as(
-                            type_=ErrorResponse,  # type: ignore
-                            object_=_response.json(),
-                        ),
-                    ),
-                )
-            _response_json = _response.json()
-        except JSONDecodeError:
-            raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)
-        raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
-
-    async def deidentify_image(
-        self,
-        *,
-        vault_id: VaultId,
-        file: DeidentifyImageRequestFile,
-        configuration_id: typing.Optional[ConfigurationId] = OMIT,
-        output_processed_image: typing.Optional[bool] = OMIT,
-        output_ocr_text: typing.Optional[bool] = OMIT,
-        masking_method: typing.Optional[DeidentifyImageRequestMaskingMethod] = OMIT,
-        entity_types: typing.Optional[EntityTypes] = OMIT,
-        token_type: typing.Optional[TokenTypeWithoutVault] = OMIT,
-        allow_regex: typing.Optional[AllowRegex] = OMIT,
-        restrict_regex: typing.Optional[RestrictRegex] = OMIT,
-        transformations: typing.Optional[Transformations] = OMIT,
-        request_options: typing.Optional[RequestOptions] = None,
-    ) -> AsyncHttpResponse[DeidentifyFileResponse]:
-        """
-        De-identifies sensitive data from an image file. This operation includes options applicable to all supported image file types.<br/><br/>For broader file type support, see <a href='#deidentify_file'>De-identify File</a>.
-
-        Parameters
-        ----------
-        vault_id : VaultId
-
-        file : DeidentifyImageRequestFile
-            File to de-identify. Files are specified as Base64-encoded data.
-
-        configuration_id : typing.Optional[ConfigurationId]
-
-        output_processed_image : typing.Optional[bool]
-            If `true`, includes processed image in the output.
-
-        output_ocr_text : typing.Optional[bool]
-            If `true`, includes OCR text output in the response.
-
-        masking_method : typing.Optional[DeidentifyImageRequestMaskingMethod]
-            Method to mask the entities in the image.
-
-        entity_types : typing.Optional[EntityTypes]
-
-        token_type : typing.Optional[TokenTypeWithoutVault]
-
-        allow_regex : typing.Optional[AllowRegex]
-
-        restrict_regex : typing.Optional[RestrictRegex]
-
-        transformations : typing.Optional[Transformations]
-
-        request_options : typing.Optional[RequestOptions]
-            Request-specific configuration.
-
-        Returns
-        -------
-        AsyncHttpResponse[DeidentifyFileResponse]
-            A successful response.
-        """
-        _response = await self._client_wrapper.httpx_client.request(
-            "v1/detect/deidentify/file/image",
-            method="POST",
-            json={
-                "vault_id": vault_id,
-                "file": convert_and_respect_annotation_metadata(
-                    object_=file, annotation=DeidentifyImageRequestFile, direction="write"
-                ),
-                "configuration_id": configuration_id,
-                "output_processed_image": output_processed_image,
-                "output_ocr_text": output_ocr_text,
-                "masking_method": masking_method,
-                "entity_types": entity_types,
-                "token_type": convert_and_respect_annotation_metadata(
-                    object_=token_type, annotation=TokenTypeWithoutVault, direction="write"
-                ),
-                "allow_regex": allow_regex,
-                "restrict_regex": restrict_regex,
-                "transformations": convert_and_respect_annotation_metadata(
-                    object_=transformations, annotation=Transformations, direction="write"
-                ),
-            },
-            headers={
-                "content-type": "application/json",
-            },
-            request_options=request_options,
-            omit=OMIT,
-        )
-        try:
-            if 200 <= _response.status_code < 300:
-                _data = typing.cast(
-                    DeidentifyFileResponse,
-                    parse_obj_as(
-                        type_=DeidentifyFileResponse,  # type: ignore
-                        object_=_response.json(),
-                    ),
-                )
-                return AsyncHttpResponse(response=_response, data=_data)
-            if _response.status_code == 400:
-                raise BadRequestError(
-                    headers=dict(_response.headers),
-                    body=typing.cast(
-                        typing.Optional[typing.Any],
-                        parse_obj_as(
-                            type_=typing.Optional[typing.Any],  # type: ignore
-                            object_=_response.json(),
-                        ),
-                    ),
-                )
-            if _response.status_code == 401:
-                raise UnauthorizedError(
-                    headers=dict(_response.headers),
-                    body=typing.cast(
-                        typing.Optional[typing.Any],
-                        parse_obj_as(
-                            type_=typing.Optional[typing.Any],  # type: ignore
-                            object_=_response.json(),
-                        ),
-                    ),
-                )
-            if _response.status_code == 500:
-                raise InternalServerError(
-                    headers=dict(_response.headers),
-                    body=typing.cast(
-                        ErrorResponse,
-                        parse_obj_as(
-                            type_=ErrorResponse,  # type: ignore
-                            object_=_response.json(),
-                        ),
-                    ),
-                )
-            _response_json = _response.json()
-        except JSONDecodeError:
-            raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)
-        raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
-
-    async def deidentify_text(
-        self,
-        *,
-        vault_id: VaultId,
-        file: DeidentifyTextRequestFile,
-        configuration_id: typing.Optional[ConfigurationId] = OMIT,
-        entity_types: typing.Optional[EntityTypes] = OMIT,
-        token_type: typing.Optional[TokenTypeWithoutVault] = OMIT,
-        allow_regex: typing.Optional[AllowRegex] = OMIT,
-        restrict_regex: typing.Optional[RestrictRegex] = OMIT,
-        transformations: typing.Optional[Transformations] = OMIT,
-        request_options: typing.Optional[RequestOptions] = None,
-    ) -> AsyncHttpResponse[DeidentifyFileResponse]:
-        """
-        De-identifies sensitive data from a text file. This operation includes options applicable to all supported image text types.<br/><br/>For broader file type support, see <a href='#deidentify_file'>De-identify File</a>.
-
-        Parameters
-        ----------
-        vault_id : VaultId
-
-        file : DeidentifyTextRequestFile
-            File to de-identify. Files are specified as Base64-encoded data.
-
-        configuration_id : typing.Optional[ConfigurationId]
-
-        entity_types : typing.Optional[EntityTypes]
-
-        token_type : typing.Optional[TokenTypeWithoutVault]
-
-        allow_regex : typing.Optional[AllowRegex]
-
-        restrict_regex : typing.Optional[RestrictRegex]
-
-        transformations : typing.Optional[Transformations]
-
-        request_options : typing.Optional[RequestOptions]
-            Request-specific configuration.
-
-        Returns
-        -------
-        AsyncHttpResponse[DeidentifyFileResponse]
-            A successful response.
-        """
-        _response = await self._client_wrapper.httpx_client.request(
-            "v1/detect/deidentify/file/text",
-            method="POST",
-            json={
-                "vault_id": vault_id,
-                "file": convert_and_respect_annotation_metadata(
-                    object_=file, annotation=DeidentifyTextRequestFile, direction="write"
-                ),
-                "configuration_id": configuration_id,
-                "entity_types": entity_types,
-                "token_type": convert_and_respect_annotation_metadata(
-                    object_=token_type, annotation=TokenTypeWithoutVault, direction="write"
-                ),
-                "allow_regex": allow_regex,
-                "restrict_regex": restrict_regex,
-                "transformations": convert_and_respect_annotation_metadata(
-                    object_=transformations, annotation=Transformations, direction="write"
-                ),
-            },
-            headers={
-                "content-type": "application/json",
-            },
-            request_options=request_options,
-            omit=OMIT,
-        )
-        try:
-            if 200 <= _response.status_code < 300:
-                _data = typing.cast(
-                    DeidentifyFileResponse,
-                    parse_obj_as(
-                        type_=DeidentifyFileResponse,  # type: ignore
-                        object_=_response.json(),
-                    ),
-                )
-                return AsyncHttpResponse(response=_response, data=_data)
-            if _response.status_code == 400:
-                raise BadRequestError(
-                    headers=dict(_response.headers),
-                    body=typing.cast(
-                        typing.Optional[typing.Any],
-                        parse_obj_as(
-                            type_=typing.Optional[typing.Any],  # type: ignore
-                            object_=_response.json(),
-                        ),
-                    ),
-                )
-            if _response.status_code == 401:
-                raise UnauthorizedError(
-                    headers=dict(_response.headers),
-                    body=typing.cast(
-                        typing.Optional[typing.Any],
-                        parse_obj_as(
-                            type_=typing.Optional[typing.Any],  # type: ignore
-                            object_=_response.json(),
-                        ),
-                    ),
-                )
-            if _response.status_code == 500:
-                raise InternalServerError(
-                    headers=dict(_response.headers),
-                    body=typing.cast(
-                        ErrorResponse,
-                        parse_obj_as(
-                            type_=ErrorResponse,  # type: ignore
-                            object_=_response.json(),
-                        ),
-                    ),
-                )
-            _response_json = _response.json()
-        except JSONDecodeError:
-            raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)
-        raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
-
-    async def deidentify_structured_text(
-        self,
-        *,
-        vault_id: VaultId,
-        file: DeidentifyStructuredTextRequestFile,
-        configuration_id: typing.Optional[ConfigurationId] = OMIT,
-        entity_types: typing.Optional[EntityTypes] = OMIT,
-        token_type: typing.Optional[TokenTypeWithoutVault] = OMIT,
-        allow_regex: typing.Optional[AllowRegex] = OMIT,
-        restrict_regex: typing.Optional[RestrictRegex] = OMIT,
-        transformations: typing.Optional[Transformations] = OMIT,
-        request_options: typing.Optional[RequestOptions] = None,
-    ) -> AsyncHttpResponse[DeidentifyFileResponse]:
-        """
-        De-identifies sensitive data from a structured text file. This operation includes options applicable to all supported structured text file types.<br/><br/>For broader file type support, see <a href='#deidentify_file'>De-identify File</a>.
-
-        Parameters
-        ----------
-        vault_id : VaultId
-
-        file : DeidentifyStructuredTextRequestFile
-            File to de-identify. Files are specified as Base64-encoded data.
-
-        configuration_id : typing.Optional[ConfigurationId]
-
-        entity_types : typing.Optional[EntityTypes]
-
-        token_type : typing.Optional[TokenTypeWithoutVault]
-
-        allow_regex : typing.Optional[AllowRegex]
-
-        restrict_regex : typing.Optional[RestrictRegex]
-
-        transformations : typing.Optional[Transformations]
-
-        request_options : typing.Optional[RequestOptions]
-            Request-specific configuration.
-
-        Returns
-        -------
-        AsyncHttpResponse[DeidentifyFileResponse]
-            A successful response.
-        """
-        _response = await self._client_wrapper.httpx_client.request(
-            "v1/detect/deidentify/file/structured_text",
-            method="POST",
-            json={
-                "vault_id": vault_id,
-                "file": convert_and_respect_annotation_metadata(
-                    object_=file, annotation=DeidentifyStructuredTextRequestFile, direction="write"
-                ),
-                "configuration_id": configuration_id,
-                "entity_types": entity_types,
-                "token_type": convert_and_respect_annotation_metadata(
-                    object_=token_type, annotation=TokenTypeWithoutVault, direction="write"
-                ),
-                "allow_regex": allow_regex,
-                "restrict_regex": restrict_regex,
-                "transformations": convert_and_respect_annotation_metadata(
-                    object_=transformations, annotation=Transformations, direction="write"
-                ),
-            },
-            headers={
-                "content-type": "application/json",
-            },
-            request_options=request_options,
-            omit=OMIT,
-        )
-        try:
-            if 200 <= _response.status_code < 300:
-                _data = typing.cast(
-                    DeidentifyFileResponse,
-                    parse_obj_as(
-                        type_=DeidentifyFileResponse,  # type: ignore
-                        object_=_response.json(),
-                    ),
-                )
-                return AsyncHttpResponse(response=_response, data=_data)
-            if _response.status_code == 400:
-                raise BadRequestError(
-                    headers=dict(_response.headers),
-                    body=typing.cast(
-                        typing.Optional[typing.Any],
-                        parse_obj_as(
-                            type_=typing.Optional[typing.Any],  # type: ignore
-                            object_=_response.json(),
-                        ),
-                    ),
-                )
-            if _response.status_code == 401:
-                raise UnauthorizedError(
-                    headers=dict(_response.headers),
-                    body=typing.cast(
-                        typing.Optional[typing.Any],
-                        parse_obj_as(
-                            type_=typing.Optional[typing.Any],  # type: ignore
-                            object_=_response.json(),
-                        ),
-                    ),
-                )
-            if _response.status_code == 500:
-                raise InternalServerError(
-                    headers=dict(_response.headers),
-                    body=typing.cast(
-                        ErrorResponse,
-                        parse_obj_as(
-                            type_=ErrorResponse,  # type: ignore
-                            object_=_response.json(),
-                        ),
-                    ),
-                )
-            _response_json = _response.json()
-        except JSONDecodeError:
-            raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)
-        raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
-
-    async def deidentify_spreadsheet(
-        self,
-        *,
-        vault_id: VaultId,
-        file: DeidentifySpreadsheetRequestFile,
-        configuration_id: typing.Optional[ConfigurationId] = OMIT,
-        entity_types: typing.Optional[EntityTypes] = OMIT,
-        token_type: typing.Optional[TokenTypeWithoutVault] = OMIT,
-        allow_regex: typing.Optional[AllowRegex] = OMIT,
-        restrict_regex: typing.Optional[RestrictRegex] = OMIT,
-        transformations: typing.Optional[Transformations] = OMIT,
-        request_options: typing.Optional[RequestOptions] = None,
-    ) -> AsyncHttpResponse[DeidentifyFileResponse]:
-        """
-        De-identifies sensitive data from a spreadsheet file. This operation includes options applicable to all supported spreadsheet file types.<br/><br/>For broader file type support, see <a href='#deidentify_file'>De-identify File</a>.
-
-        Parameters
-        ----------
-        vault_id : VaultId
-
-        file : DeidentifySpreadsheetRequestFile
-            File to de-identify. Files are specified as Base64-encoded data.
-
-        configuration_id : typing.Optional[ConfigurationId]
-
-        entity_types : typing.Optional[EntityTypes]
-
-        token_type : typing.Optional[TokenTypeWithoutVault]
-
-        allow_regex : typing.Optional[AllowRegex]
-
-        restrict_regex : typing.Optional[RestrictRegex]
-
-        transformations : typing.Optional[Transformations]
-
-        request_options : typing.Optional[RequestOptions]
-            Request-specific configuration.
-
-        Returns
-        -------
-        AsyncHttpResponse[DeidentifyFileResponse]
-            A successful response.
-        """
-        _response = await self._client_wrapper.httpx_client.request(
-            "v1/detect/deidentify/file/spreadsheet",
-            method="POST",
-            json={
-                "vault_id": vault_id,
-                "file": convert_and_respect_annotation_metadata(
-                    object_=file, annotation=DeidentifySpreadsheetRequestFile, direction="write"
-                ),
-                "configuration_id": configuration_id,
-                "entity_types": entity_types,
-                "token_type": convert_and_respect_annotation_metadata(
-                    object_=token_type, annotation=TokenTypeWithoutVault, direction="write"
-                ),
-                "allow_regex": allow_regex,
-                "restrict_regex": restrict_regex,
-                "transformations": convert_and_respect_annotation_metadata(
-                    object_=transformations, annotation=Transformations, direction="write"
-                ),
-            },
-            headers={
-                "content-type": "application/json",
-            },
-            request_options=request_options,
-            omit=OMIT,
-        )
-        try:
-            if 200 <= _response.status_code < 300:
-                _data = typing.cast(
-                    DeidentifyFileResponse,
-                    parse_obj_as(
-                        type_=DeidentifyFileResponse,  # type: ignore
-                        object_=_response.json(),
-                    ),
-                )
-                return AsyncHttpResponse(response=_response, data=_data)
-            if _response.status_code == 400:
-                raise BadRequestError(
-                    headers=dict(_response.headers),
-                    body=typing.cast(
-                        typing.Optional[typing.Any],
-                        parse_obj_as(
-                            type_=typing.Optional[typing.Any],  # type: ignore
-                            object_=_response.json(),
-                        ),
-                    ),
-                )
-            if _response.status_code == 401:
-                raise UnauthorizedError(
-                    headers=dict(_response.headers),
-                    body=typing.cast(
-                        typing.Optional[typing.Any],
-                        parse_obj_as(
-                            type_=typing.Optional[typing.Any],  # type: ignore
-                            object_=_response.json(),
-                        ),
-                    ),
-                )
-            if _response.status_code == 500:
-                raise InternalServerError(
-                    headers=dict(_response.headers),
-                    body=typing.cast(
-                        ErrorResponse,
-                        parse_obj_as(
-                            type_=ErrorResponse,  # type: ignore
-                            object_=_response.json(),
-                        ),
-                    ),
-                )
-            _response_json = _response.json()
-        except JSONDecodeError:
-            raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)
-        raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
-
-    async def deidentify_presentation(
-        self,
-        *,
-        vault_id: VaultId,
-        file: DeidentifyPresentationRequestFile,
-        configuration_id: typing.Optional[ConfigurationId] = OMIT,
-        entity_types: typing.Optional[EntityTypes] = OMIT,
-        token_type: typing.Optional[TokenTypeWithoutVault] = OMIT,
-        allow_regex: typing.Optional[AllowRegex] = OMIT,
-        restrict_regex: typing.Optional[RestrictRegex] = OMIT,
-        transformations: typing.Optional[Transformations] = OMIT,
-        request_options: typing.Optional[RequestOptions] = None,
-    ) -> AsyncHttpResponse[DeidentifyFileResponse]:
-        """
-        De-identifies sensitive data from a presentation file. This operation includes options applicable to all supported presentation file types.<br/><br/>For broader file type support, see <a href='#deidentify_file'>De-identify File</a>.
-
-        Parameters
-        ----------
-        vault_id : VaultId
-
-        file : DeidentifyPresentationRequestFile
-            File to de-identify. Files are specified as Base64-encoded data.
-
-        configuration_id : typing.Optional[ConfigurationId]
-
-        entity_types : typing.Optional[EntityTypes]
-
-        token_type : typing.Optional[TokenTypeWithoutVault]
-
-        allow_regex : typing.Optional[AllowRegex]
-
-        restrict_regex : typing.Optional[RestrictRegex]
-
-        transformations : typing.Optional[Transformations]
-
-        request_options : typing.Optional[RequestOptions]
-            Request-specific configuration.
-
-        Returns
-        -------
-        AsyncHttpResponse[DeidentifyFileResponse]
-            A successful response.
-        """
-        _response = await self._client_wrapper.httpx_client.request(
-            "v1/detect/deidentify/file/presentation",
-            method="POST",
-            json={
-                "vault_id": vault_id,
-                "file": convert_and_respect_annotation_metadata(
-                    object_=file, annotation=DeidentifyPresentationRequestFile, direction="write"
-                ),
-                "configuration_id": configuration_id,
-                "entity_types": entity_types,
-                "token_type": convert_and_respect_annotation_metadata(
-                    object_=token_type, annotation=TokenTypeWithoutVault, direction="write"
-                ),
-                "allow_regex": allow_regex,
-                "restrict_regex": restrict_regex,
-                "transformations": convert_and_respect_annotation_metadata(
-                    object_=transformations, annotation=Transformations, direction="write"
-                ),
             },
             headers={
                 "content-type": "application/json",
@@ -2293,20 +1509,20 @@ class AsyncRawFilesClient:
     async def deidentify_audio(
         self,
         *,
-        vault_id: VaultId,
-        file: DeidentifyAudioRequestFile,
-        configuration_id: typing.Optional[ConfigurationId] = OMIT,
+        file: FileDataDeidentifyAudio,
+        vault_id: str,
+        output_transcription: typing.Optional[DeidentifyFileAudioRequestDeidentifyAudioOutputTranscription] = OMIT,
         output_processed_audio: typing.Optional[bool] = OMIT,
-        output_transcription: typing.Optional[DeidentifyAudioRequestOutputTranscription] = OMIT,
-        bleep_gain: typing.Optional[float] = OMIT,
-        bleep_frequency: typing.Optional[float] = OMIT,
         bleep_start_padding: typing.Optional[float] = OMIT,
         bleep_stop_padding: typing.Optional[float] = OMIT,
-        entity_types: typing.Optional[EntityTypes] = OMIT,
-        token_type: typing.Optional[TokenTypeWithoutVault] = OMIT,
-        allow_regex: typing.Optional[AllowRegex] = OMIT,
-        restrict_regex: typing.Optional[RestrictRegex] = OMIT,
+        bleep_frequency: typing.Optional[int] = OMIT,
+        bleep_gain: typing.Optional[int] = OMIT,
+        entity_types: typing.Optional[typing.Sequence[DeidentifyFileAudioRequestDeidentifyAudioEntityTypesItem]] = OMIT,
+        token_type: typing.Optional[TokenTypeMapping] = OMIT,
+        allow_regex: typing.Optional[typing.Sequence[str]] = OMIT,
+        restrict_regex: typing.Optional[typing.Sequence[str]] = OMIT,
         transformations: typing.Optional[Transformations] = OMIT,
+        configuration_id: typing.Optional[str] = OMIT,
         request_options: typing.Optional[RequestOptions] = None,
     ) -> AsyncHttpResponse[DeidentifyFileResponse]:
         """
@@ -2314,24 +1530,16 @@ class AsyncRawFilesClient:
 
         Parameters
         ----------
-        vault_id : VaultId
+        file : FileDataDeidentifyAudio
 
-        file : DeidentifyAudioRequestFile
-            File to de-identify. Files are specified as Base64-encoded data.
+        vault_id : str
+            ID of a vault that you have Detect Invoker or Vault Owner permissions for.
 
-        configuration_id : typing.Optional[ConfigurationId]
-
-        output_processed_audio : typing.Optional[bool]
-            If `true`, includes processed audio file in the response.
-
-        output_transcription : typing.Optional[DeidentifyAudioRequestOutputTranscription]
+        output_transcription : typing.Optional[DeidentifyFileAudioRequestDeidentifyAudioOutputTranscription]
             Type of transcription to output.
 
-        bleep_gain : typing.Optional[float]
-            Relative loudness of the bleep in dB. Positive values increase its loudness, and negative values decrease it.
-
-        bleep_frequency : typing.Optional[float]
-            The pitch of the bleep sound, in Hz. The higher the number, the higher the pitch.
+        output_processed_audio : typing.Optional[bool]
+            Whether to include the processed audio file in the response.
 
         bleep_start_padding : typing.Optional[float]
             Padding added to the beginning of a bleep, in seconds.
@@ -2339,15 +1547,27 @@ class AsyncRawFilesClient:
         bleep_stop_padding : typing.Optional[float]
             Padding added to the end of a bleep, in seconds.
 
-        entity_types : typing.Optional[EntityTypes]
+        bleep_frequency : typing.Optional[int]
+            The pitch of the bleep sound, in Hz. The higher the number, the higher the pitch.
 
-        token_type : typing.Optional[TokenTypeWithoutVault]
+        bleep_gain : typing.Optional[int]
+            Relative loudness of the bleep in dB. Positive values increase its loudness, and negative values decrease it.
 
-        allow_regex : typing.Optional[AllowRegex]
+        entity_types : typing.Optional[typing.Sequence[DeidentifyFileAudioRequestDeidentifyAudioEntityTypesItem]]
+            Entities to detect and de-identify.
 
-        restrict_regex : typing.Optional[RestrictRegex]
+        token_type : typing.Optional[TokenTypeMapping]
+
+        allow_regex : typing.Optional[typing.Sequence[str]]
+            Regular expressions to display in plaintext. Entities appear in plaintext if an expression matches either the entirety of a detected entity or a substring of it. Expressions don't match across entity boundaries. If a string or entity matches both `allow_regex` and `restrict_regex`, the entity is displayed in plaintext.
+
+        restrict_regex : typing.Optional[typing.Sequence[str]]
+            Regular expressions to replace with '[RESTRICTED]'. Expressions must match the entirety of a detected entity, not just a substring, for the entity to be restricted. Expressions don't match across entity boundaries. If a string or entity matches both `allow_regex` and `restrict_regex`, the entity is displayed in plaintext. If a string is detected as an entity and a `restrict_regex` pattern matches the entire detected entity, the entity is replaced with '[RESTRICTED]'. If a string is detected as an entity but a `restrict_regex` pattern only matches a substring of it, the `restrict_regex` pattern is ignored, and the entity is processed according to the specified tokenization and transformation settings.
 
         transformations : typing.Optional[Transformations]
+
+        configuration_id : typing.Optional[str]
+            ID of the Detect configuration to use for de-identification. Can't be specified with fields other than `vault_id`, `text`, and `file`.
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
@@ -2355,32 +1575,32 @@ class AsyncRawFilesClient:
         Returns
         -------
         AsyncHttpResponse[DeidentifyFileResponse]
-            A successful response.
+            OK
         """
         _response = await self._client_wrapper.httpx_client.request(
             "v1/detect/deidentify/file/audio",
             method="POST",
             json={
-                "vault_id": vault_id,
                 "file": convert_and_respect_annotation_metadata(
-                    object_=file, annotation=DeidentifyAudioRequestFile, direction="write"
+                    object_=file, annotation=FileDataDeidentifyAudio, direction="write"
                 ),
-                "configuration_id": configuration_id,
-                "output_processed_audio": output_processed_audio,
+                "vault_id": vault_id,
                 "output_transcription": output_transcription,
-                "bleep_gain": bleep_gain,
-                "bleep_frequency": bleep_frequency,
+                "output_processed_audio": output_processed_audio,
                 "bleep_start_padding": bleep_start_padding,
                 "bleep_stop_padding": bleep_stop_padding,
+                "bleep_frequency": bleep_frequency,
+                "bleep_gain": bleep_gain,
                 "entity_types": entity_types,
                 "token_type": convert_and_respect_annotation_metadata(
-                    object_=token_type, annotation=TokenTypeWithoutVault, direction="write"
+                    object_=token_type, annotation=TokenTypeMapping, direction="write"
                 ),
                 "allow_regex": allow_regex,
                 "restrict_regex": restrict_regex,
                 "transformations": convert_and_respect_annotation_metadata(
                     object_=transformations, annotation=Transformations, direction="write"
                 ),
+                "configuration_id": configuration_id,
             },
             headers={
                 "content-type": "application/json",
@@ -2436,42 +1656,84 @@ class AsyncRawFilesClient:
             raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)
         raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
 
-    async def get_run(
-        self, run_id: Uuid, *, vault_id: ResourceId, request_options: typing.Optional[RequestOptions] = None
-    ) -> AsyncHttpResponse[DeidentifyStatusResponse]:
+    async def deidentify_document(
+        self,
+        *,
+        file: FileDataDeidentifyDocument,
+        vault_id: str,
+        entity_types: typing.Optional[typing.Sequence[DeidentifyFileRequestDeidentifyDocumentEntityTypesItem]] = OMIT,
+        token_type: typing.Optional[TokenTypeMapping] = OMIT,
+        allow_regex: typing.Optional[typing.Sequence[str]] = OMIT,
+        restrict_regex: typing.Optional[typing.Sequence[str]] = OMIT,
+        transformations: typing.Optional[Transformations] = OMIT,
+        configuration_id: typing.Optional[str] = OMIT,
+        request_options: typing.Optional[RequestOptions] = None,
+    ) -> AsyncHttpResponse[DeidentifyFileResponse]:
         """
-        Returns the status of the detect run.
+        De-identifies sensitive data from a document file. This operation includes options applicable to all supported document file types.<br/><br/>For more specific options, see the file type-specific opertions (like <a href='#deidentify_pdf'>De-identify PDF</a>) where they're available. For broader file type support, see <a href='#deidentify_file'>De-identify File</a>.
 
         Parameters
         ----------
-        run_id : Uuid
-            ID of the detect run.
+        file : FileDataDeidentifyDocument
 
-        vault_id : ResourceId
-            ID of the vault.
+        vault_id : str
+            ID of a vault that you have Detect Invoker or Vault Owner permissions for.
+
+        entity_types : typing.Optional[typing.Sequence[DeidentifyFileRequestDeidentifyDocumentEntityTypesItem]]
+            Entities to detect and de-identify.
+
+        token_type : typing.Optional[TokenTypeMapping]
+
+        allow_regex : typing.Optional[typing.Sequence[str]]
+            Regular expressions to display in plaintext. Entities appear in plaintext if an expression matches either the entirety of a detected entity or a substring of it. Expressions don't match across entity boundaries. If a string or entity matches both `allow_regex` and `restrict_regex`, the entity is displayed in plaintext.
+
+        restrict_regex : typing.Optional[typing.Sequence[str]]
+            Regular expressions to replace with '[RESTRICTED]'. Expressions must match the entirety of a detected entity, not just a substring, for the entity to be restricted. Expressions don't match across entity boundaries. If a string or entity matches both `allow_regex` and `restrict_regex`, the entity is displayed in plaintext. If a string is detected as an entity and a `restrict_regex` pattern matches the entire detected entity, the entity is replaced with '[RESTRICTED]'. If a string is detected as an entity but a `restrict_regex` pattern only matches a substring of it, the `restrict_regex` pattern is ignored, and the entity is processed according to the specified tokenization and transformation settings.
+
+        transformations : typing.Optional[Transformations]
+
+        configuration_id : typing.Optional[str]
+            ID of the Detect configuration to use for de-identification. Can't be specified with fields other than `vault_id`, `text`, and `file`.
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
 
         Returns
         -------
-        AsyncHttpResponse[DeidentifyStatusResponse]
-            A successful response.
+        AsyncHttpResponse[DeidentifyFileResponse]
+            OK
         """
         _response = await self._client_wrapper.httpx_client.request(
-            f"v1/detect/runs/{jsonable_encoder(run_id)}",
-            method="GET",
-            params={
+            "v1/detect/deidentify/file/document",
+            method="POST",
+            json={
+                "file": convert_and_respect_annotation_metadata(
+                    object_=file, annotation=FileDataDeidentifyDocument, direction="write"
+                ),
                 "vault_id": vault_id,
+                "entity_types": entity_types,
+                "token_type": convert_and_respect_annotation_metadata(
+                    object_=token_type, annotation=TokenTypeMapping, direction="write"
+                ),
+                "allow_regex": allow_regex,
+                "restrict_regex": restrict_regex,
+                "transformations": convert_and_respect_annotation_metadata(
+                    object_=transformations, annotation=Transformations, direction="write"
+                ),
+                "configuration_id": configuration_id,
+            },
+            headers={
+                "content-type": "application/json",
             },
             request_options=request_options,
+            omit=OMIT,
         )
         try:
             if 200 <= _response.status_code < 300:
                 _data = typing.cast(
-                    DeidentifyStatusResponse,
+                    DeidentifyFileResponse,
                     parse_obj_as(
-                        type_=DeidentifyStatusResponse,  # type: ignore
+                        type_=DeidentifyFileResponse,  # type: ignore
                         object_=_response.json(),
                     ),
                 )
@@ -2498,8 +1760,750 @@ class AsyncRawFilesClient:
                         ),
                     ),
                 )
-            if _response.status_code == 404:
-                raise NotFoundError(
+            if _response.status_code == 500:
+                raise InternalServerError(
+                    headers=dict(_response.headers),
+                    body=typing.cast(
+                        ErrorResponse,
+                        parse_obj_as(
+                            type_=ErrorResponse,  # type: ignore
+                            object_=_response.json(),
+                        ),
+                    ),
+                )
+            _response_json = _response.json()
+        except JSONDecodeError:
+            raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)
+        raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
+
+    async def deidentify_pdf(
+        self,
+        *,
+        file: FileDataDeidentifyPdf,
+        vault_id: str,
+        density: typing.Optional[int] = OMIT,
+        max_resolution: typing.Optional[int] = OMIT,
+        entity_types: typing.Optional[
+            typing.Sequence[DeidentifyFileDocumentPdfRequestDeidentifyPdfEntityTypesItem]
+        ] = OMIT,
+        token_type: typing.Optional[TokenTypeMapping] = OMIT,
+        allow_regex: typing.Optional[typing.Sequence[str]] = OMIT,
+        restrict_regex: typing.Optional[typing.Sequence[str]] = OMIT,
+        transformations: typing.Optional[Transformations] = OMIT,
+        configuration_id: typing.Optional[str] = OMIT,
+        request_options: typing.Optional[RequestOptions] = None,
+    ) -> AsyncHttpResponse[DeidentifyFileResponse]:
+        """
+        De-identifies sensitive data from a PDF file. This operation includes options specific to PDF files.<br/><br/>For broader file type support, see <a href='#deidentify_document'>De-identify Document</a> and <a href='#deidentify_file'>De-identify File</a>.
+
+        Parameters
+        ----------
+        file : FileDataDeidentifyPdf
+
+        vault_id : str
+            ID of a vault that you have Detect Invoker or Vault Owner permissions for.
+
+        density : typing.Optional[int]
+            Pixel density at which to process the PDF file.
+
+        max_resolution : typing.Optional[int]
+            Max resolution at which to process the PDF file.
+
+        entity_types : typing.Optional[typing.Sequence[DeidentifyFileDocumentPdfRequestDeidentifyPdfEntityTypesItem]]
+            Entities to detect and de-identify.
+
+        token_type : typing.Optional[TokenTypeMapping]
+
+        allow_regex : typing.Optional[typing.Sequence[str]]
+            Regular expressions to display in plaintext. Entities appear in plaintext if an expression matches either the entirety of a detected entity or a substring of it. Expressions don't match across entity boundaries. If a string or entity matches both `allow_regex` and `restrict_regex`, the entity is displayed in plaintext.
+
+        restrict_regex : typing.Optional[typing.Sequence[str]]
+            Regular expressions to replace with '[RESTRICTED]'. Expressions must match the entirety of a detected entity, not just a substring, for the entity to be restricted. Expressions don't match across entity boundaries. If a string or entity matches both `allow_regex` and `restrict_regex`, the entity is displayed in plaintext. If a string is detected as an entity and a `restrict_regex` pattern matches the entire detected entity, the entity is replaced with '[RESTRICTED]'. If a string is detected as an entity but a `restrict_regex` pattern only matches a substring of it, the `restrict_regex` pattern is ignored, and the entity is processed according to the specified tokenization and transformation settings.
+
+        transformations : typing.Optional[Transformations]
+
+        configuration_id : typing.Optional[str]
+            ID of the Detect configuration to use for de-identification. Can't be specified with fields other than `vault_id`, `text`, and `file`.
+
+        request_options : typing.Optional[RequestOptions]
+            Request-specific configuration.
+
+        Returns
+        -------
+        AsyncHttpResponse[DeidentifyFileResponse]
+            OK
+        """
+        _response = await self._client_wrapper.httpx_client.request(
+            "v1/detect/deidentify/file/document/pdf",
+            method="POST",
+            json={
+                "file": convert_and_respect_annotation_metadata(
+                    object_=file, annotation=FileDataDeidentifyPdf, direction="write"
+                ),
+                "vault_id": vault_id,
+                "density": density,
+                "max_resolution": max_resolution,
+                "entity_types": entity_types,
+                "token_type": convert_and_respect_annotation_metadata(
+                    object_=token_type, annotation=TokenTypeMapping, direction="write"
+                ),
+                "allow_regex": allow_regex,
+                "restrict_regex": restrict_regex,
+                "transformations": convert_and_respect_annotation_metadata(
+                    object_=transformations, annotation=Transformations, direction="write"
+                ),
+                "configuration_id": configuration_id,
+            },
+            headers={
+                "content-type": "application/json",
+            },
+            request_options=request_options,
+            omit=OMIT,
+        )
+        try:
+            if 200 <= _response.status_code < 300:
+                _data = typing.cast(
+                    DeidentifyFileResponse,
+                    parse_obj_as(
+                        type_=DeidentifyFileResponse,  # type: ignore
+                        object_=_response.json(),
+                    ),
+                )
+                return AsyncHttpResponse(response=_response, data=_data)
+            if _response.status_code == 400:
+                raise BadRequestError(
+                    headers=dict(_response.headers),
+                    body=typing.cast(
+                        typing.Optional[typing.Any],
+                        parse_obj_as(
+                            type_=typing.Optional[typing.Any],  # type: ignore
+                            object_=_response.json(),
+                        ),
+                    ),
+                )
+            if _response.status_code == 401:
+                raise UnauthorizedError(
+                    headers=dict(_response.headers),
+                    body=typing.cast(
+                        typing.Optional[typing.Any],
+                        parse_obj_as(
+                            type_=typing.Optional[typing.Any],  # type: ignore
+                            object_=_response.json(),
+                        ),
+                    ),
+                )
+            if _response.status_code == 500:
+                raise InternalServerError(
+                    headers=dict(_response.headers),
+                    body=typing.cast(
+                        ErrorResponse,
+                        parse_obj_as(
+                            type_=ErrorResponse,  # type: ignore
+                            object_=_response.json(),
+                        ),
+                    ),
+                )
+            _response_json = _response.json()
+        except JSONDecodeError:
+            raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)
+        raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
+
+    async def deidentify_image(
+        self,
+        *,
+        file: FileDataDeidentifyImage,
+        vault_id: str,
+        output_processed_image: typing.Optional[bool] = OMIT,
+        output_ocr_text: typing.Optional[bool] = OMIT,
+        masking_method: typing.Optional[DeidentifyFileImageRequestDeidentifyImageMaskingMethod] = OMIT,
+        entity_types: typing.Optional[typing.Sequence[DeidentifyFileImageRequestDeidentifyImageEntityTypesItem]] = OMIT,
+        token_type: typing.Optional[TokenTypeMapping] = OMIT,
+        allow_regex: typing.Optional[typing.Sequence[str]] = OMIT,
+        restrict_regex: typing.Optional[typing.Sequence[str]] = OMIT,
+        transformations: typing.Optional[Transformations] = OMIT,
+        configuration_id: typing.Optional[str] = OMIT,
+        request_options: typing.Optional[RequestOptions] = None,
+    ) -> AsyncHttpResponse[DeidentifyFileResponse]:
+        """
+        De-identifies sensitive data from an image file. This operation includes options applicable to all supported image file types.<br/><br/>For broader file type support, see <a href='#deidentify_file'>De-identify File</a>.
+
+        Parameters
+        ----------
+        file : FileDataDeidentifyImage
+
+        vault_id : str
+            ID of a vault that you have Detect Invoker or Vault Owner permissions for.
+
+        output_processed_image : typing.Optional[bool]
+            If `true`, includes processed image in the output.
+
+        output_ocr_text : typing.Optional[bool]
+            If `true`, includes text detected by OCR in the response.
+
+        masking_method : typing.Optional[DeidentifyFileImageRequestDeidentifyImageMaskingMethod]
+            Method to mask the entities in the image.
+
+        entity_types : typing.Optional[typing.Sequence[DeidentifyFileImageRequestDeidentifyImageEntityTypesItem]]
+            Entities to detect and de-identify.
+
+        token_type : typing.Optional[TokenTypeMapping]
+
+        allow_regex : typing.Optional[typing.Sequence[str]]
+            Regular expressions to display in plaintext. Entities appear in plaintext if an expression matches either the entirety of a detected entity or a substring of it. Expressions don't match across entity boundaries. If a string or entity matches both `allow_regex` and `restrict_regex`, the entity is displayed in plaintext.
+
+        restrict_regex : typing.Optional[typing.Sequence[str]]
+            Regular expressions to replace with '[RESTRICTED]'. Expressions must match the entirety of a detected entity, not just a substring, for the entity to be restricted. Expressions don't match across entity boundaries. If a string or entity matches both `allow_regex` and `restrict_regex`, the entity is displayed in plaintext. If a string is detected as an entity and a `restrict_regex` pattern matches the entire detected entity, the entity is replaced with '[RESTRICTED]'. If a string is detected as an entity but a `restrict_regex` pattern only matches a substring of it, the `restrict_regex` pattern is ignored, and the entity is processed according to the specified tokenization and transformation settings.
+
+        transformations : typing.Optional[Transformations]
+
+        configuration_id : typing.Optional[str]
+            ID of the Detect configuration to use for de-identification. Can't be specified with fields other than `vault_id`, `text`, and `file`.
+
+        request_options : typing.Optional[RequestOptions]
+            Request-specific configuration.
+
+        Returns
+        -------
+        AsyncHttpResponse[DeidentifyFileResponse]
+            OK
+        """
+        _response = await self._client_wrapper.httpx_client.request(
+            "v1/detect/deidentify/file/image",
+            method="POST",
+            json={
+                "file": convert_and_respect_annotation_metadata(
+                    object_=file, annotation=FileDataDeidentifyImage, direction="write"
+                ),
+                "vault_id": vault_id,
+                "output_processed_image": output_processed_image,
+                "output_ocr_text": output_ocr_text,
+                "masking_method": masking_method,
+                "entity_types": entity_types,
+                "token_type": convert_and_respect_annotation_metadata(
+                    object_=token_type, annotation=TokenTypeMapping, direction="write"
+                ),
+                "allow_regex": allow_regex,
+                "restrict_regex": restrict_regex,
+                "transformations": convert_and_respect_annotation_metadata(
+                    object_=transformations, annotation=Transformations, direction="write"
+                ),
+                "configuration_id": configuration_id,
+            },
+            headers={
+                "content-type": "application/json",
+            },
+            request_options=request_options,
+            omit=OMIT,
+        )
+        try:
+            if 200 <= _response.status_code < 300:
+                _data = typing.cast(
+                    DeidentifyFileResponse,
+                    parse_obj_as(
+                        type_=DeidentifyFileResponse,  # type: ignore
+                        object_=_response.json(),
+                    ),
+                )
+                return AsyncHttpResponse(response=_response, data=_data)
+            if _response.status_code == 400:
+                raise BadRequestError(
+                    headers=dict(_response.headers),
+                    body=typing.cast(
+                        typing.Optional[typing.Any],
+                        parse_obj_as(
+                            type_=typing.Optional[typing.Any],  # type: ignore
+                            object_=_response.json(),
+                        ),
+                    ),
+                )
+            if _response.status_code == 401:
+                raise UnauthorizedError(
+                    headers=dict(_response.headers),
+                    body=typing.cast(
+                        typing.Optional[typing.Any],
+                        parse_obj_as(
+                            type_=typing.Optional[typing.Any],  # type: ignore
+                            object_=_response.json(),
+                        ),
+                    ),
+                )
+            if _response.status_code == 500:
+                raise InternalServerError(
+                    headers=dict(_response.headers),
+                    body=typing.cast(
+                        ErrorResponse,
+                        parse_obj_as(
+                            type_=ErrorResponse,  # type: ignore
+                            object_=_response.json(),
+                        ),
+                    ),
+                )
+            _response_json = _response.json()
+        except JSONDecodeError:
+            raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)
+        raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
+
+    async def deidentify_presentation(
+        self,
+        *,
+        file: FileDataDeidentifyPresentation,
+        vault_id: str,
+        entity_types: typing.Optional[
+            typing.Sequence[DeidentifyFileRequestDeidentifyPresentationEntityTypesItem]
+        ] = OMIT,
+        token_type: typing.Optional[TokenTypeMapping] = OMIT,
+        allow_regex: typing.Optional[typing.Sequence[str]] = OMIT,
+        restrict_regex: typing.Optional[typing.Sequence[str]] = OMIT,
+        transformations: typing.Optional[Transformations] = OMIT,
+        configuration_id: typing.Optional[str] = OMIT,
+        request_options: typing.Optional[RequestOptions] = None,
+    ) -> AsyncHttpResponse[DeidentifyFileResponse]:
+        """
+        De-identifies sensitive data from a presentation file. This operation includes options applicable to all supported presentation file types.<br/><br/>For broader file type support, see <a href='#deidentify_file'>De-identify File</a>.
+
+        Parameters
+        ----------
+        file : FileDataDeidentifyPresentation
+
+        vault_id : str
+            ID of a vault that you have Detect Invoker or Vault Owner permissions for.
+
+        entity_types : typing.Optional[typing.Sequence[DeidentifyFileRequestDeidentifyPresentationEntityTypesItem]]
+            Entities to detect and de-identify.
+
+        token_type : typing.Optional[TokenTypeMapping]
+
+        allow_regex : typing.Optional[typing.Sequence[str]]
+            Regular expressions to display in plaintext. Entities appear in plaintext if an expression matches either the entirety of a detected entity or a substring of it. Expressions don't match across entity boundaries. If a string or entity matches both `allow_regex` and `restrict_regex`, the entity is displayed in plaintext.
+
+        restrict_regex : typing.Optional[typing.Sequence[str]]
+            Regular expressions to replace with '[RESTRICTED]'. Expressions must match the entirety of a detected entity, not just a substring, for the entity to be restricted. Expressions don't match across entity boundaries. If a string or entity matches both `allow_regex` and `restrict_regex`, the entity is displayed in plaintext. If a string is detected as an entity and a `restrict_regex` pattern matches the entire detected entity, the entity is replaced with '[RESTRICTED]'. If a string is detected as an entity but a `restrict_regex` pattern only matches a substring of it, the `restrict_regex` pattern is ignored, and the entity is processed according to the specified tokenization and transformation settings.
+
+        transformations : typing.Optional[Transformations]
+
+        configuration_id : typing.Optional[str]
+            ID of the Detect configuration to use for de-identification. Can't be specified with fields other than `vault_id`, `text`, and `file`.
+
+        request_options : typing.Optional[RequestOptions]
+            Request-specific configuration.
+
+        Returns
+        -------
+        AsyncHttpResponse[DeidentifyFileResponse]
+            OK
+        """
+        _response = await self._client_wrapper.httpx_client.request(
+            "v1/detect/deidentify/file/presentation",
+            method="POST",
+            json={
+                "file": convert_and_respect_annotation_metadata(
+                    object_=file, annotation=FileDataDeidentifyPresentation, direction="write"
+                ),
+                "vault_id": vault_id,
+                "entity_types": entity_types,
+                "token_type": convert_and_respect_annotation_metadata(
+                    object_=token_type, annotation=TokenTypeMapping, direction="write"
+                ),
+                "allow_regex": allow_regex,
+                "restrict_regex": restrict_regex,
+                "transformations": convert_and_respect_annotation_metadata(
+                    object_=transformations, annotation=Transformations, direction="write"
+                ),
+                "configuration_id": configuration_id,
+            },
+            headers={
+                "content-type": "application/json",
+            },
+            request_options=request_options,
+            omit=OMIT,
+        )
+        try:
+            if 200 <= _response.status_code < 300:
+                _data = typing.cast(
+                    DeidentifyFileResponse,
+                    parse_obj_as(
+                        type_=DeidentifyFileResponse,  # type: ignore
+                        object_=_response.json(),
+                    ),
+                )
+                return AsyncHttpResponse(response=_response, data=_data)
+            if _response.status_code == 400:
+                raise BadRequestError(
+                    headers=dict(_response.headers),
+                    body=typing.cast(
+                        typing.Optional[typing.Any],
+                        parse_obj_as(
+                            type_=typing.Optional[typing.Any],  # type: ignore
+                            object_=_response.json(),
+                        ),
+                    ),
+                )
+            if _response.status_code == 401:
+                raise UnauthorizedError(
+                    headers=dict(_response.headers),
+                    body=typing.cast(
+                        typing.Optional[typing.Any],
+                        parse_obj_as(
+                            type_=typing.Optional[typing.Any],  # type: ignore
+                            object_=_response.json(),
+                        ),
+                    ),
+                )
+            if _response.status_code == 500:
+                raise InternalServerError(
+                    headers=dict(_response.headers),
+                    body=typing.cast(
+                        ErrorResponse,
+                        parse_obj_as(
+                            type_=ErrorResponse,  # type: ignore
+                            object_=_response.json(),
+                        ),
+                    ),
+                )
+            _response_json = _response.json()
+        except JSONDecodeError:
+            raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)
+        raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
+
+    async def deidentify_spreadsheet(
+        self,
+        *,
+        file: FileDataDeidentifySpreadsheet,
+        vault_id: str,
+        entity_types: typing.Optional[
+            typing.Sequence[DeidentifyFileRequestDeidentifySpreadsheetEntityTypesItem]
+        ] = OMIT,
+        token_type: typing.Optional[TokenTypeMapping] = OMIT,
+        allow_regex: typing.Optional[typing.Sequence[str]] = OMIT,
+        restrict_regex: typing.Optional[typing.Sequence[str]] = OMIT,
+        transformations: typing.Optional[Transformations] = OMIT,
+        configuration_id: typing.Optional[str] = OMIT,
+        request_options: typing.Optional[RequestOptions] = None,
+    ) -> AsyncHttpResponse[DeidentifyFileResponse]:
+        """
+        De-identifies sensitive data from a spreadsheet file. This operation includes options applicable to all supported spreadsheet file types.<br/><br/>For broader file type support, see <a href='#deidentify_file'>De-identify File</a>.
+
+        Parameters
+        ----------
+        file : FileDataDeidentifySpreadsheet
+
+        vault_id : str
+            ID of a vault that you have Detect Invoker or Vault Owner permissions for.
+
+        entity_types : typing.Optional[typing.Sequence[DeidentifyFileRequestDeidentifySpreadsheetEntityTypesItem]]
+            Entities to detect and de-identify.
+
+        token_type : typing.Optional[TokenTypeMapping]
+
+        allow_regex : typing.Optional[typing.Sequence[str]]
+            Regular expressions to display in plaintext. Entities appear in plaintext if an expression matches either the entirety of a detected entity or a substring of it. Expressions don't match across entity boundaries. If a string or entity matches both `allow_regex` and `restrict_regex`, the entity is displayed in plaintext.
+
+        restrict_regex : typing.Optional[typing.Sequence[str]]
+            Regular expressions to replace with '[RESTRICTED]'. Expressions must match the entirety of a detected entity, not just a substring, for the entity to be restricted. Expressions don't match across entity boundaries. If a string or entity matches both `allow_regex` and `restrict_regex`, the entity is displayed in plaintext. If a string is detected as an entity and a `restrict_regex` pattern matches the entire detected entity, the entity is replaced with '[RESTRICTED]'. If a string is detected as an entity but a `restrict_regex` pattern only matches a substring of it, the `restrict_regex` pattern is ignored, and the entity is processed according to the specified tokenization and transformation settings.
+
+        transformations : typing.Optional[Transformations]
+
+        configuration_id : typing.Optional[str]
+            ID of the Detect configuration to use for de-identification. Can't be specified with fields other than `vault_id`, `text`, and `file`.
+
+        request_options : typing.Optional[RequestOptions]
+            Request-specific configuration.
+
+        Returns
+        -------
+        AsyncHttpResponse[DeidentifyFileResponse]
+            OK
+        """
+        _response = await self._client_wrapper.httpx_client.request(
+            "v1/detect/deidentify/file/spreadsheet",
+            method="POST",
+            json={
+                "file": convert_and_respect_annotation_metadata(
+                    object_=file, annotation=FileDataDeidentifySpreadsheet, direction="write"
+                ),
+                "vault_id": vault_id,
+                "entity_types": entity_types,
+                "token_type": convert_and_respect_annotation_metadata(
+                    object_=token_type, annotation=TokenTypeMapping, direction="write"
+                ),
+                "allow_regex": allow_regex,
+                "restrict_regex": restrict_regex,
+                "transformations": convert_and_respect_annotation_metadata(
+                    object_=transformations, annotation=Transformations, direction="write"
+                ),
+                "configuration_id": configuration_id,
+            },
+            headers={
+                "content-type": "application/json",
+            },
+            request_options=request_options,
+            omit=OMIT,
+        )
+        try:
+            if 200 <= _response.status_code < 300:
+                _data = typing.cast(
+                    DeidentifyFileResponse,
+                    parse_obj_as(
+                        type_=DeidentifyFileResponse,  # type: ignore
+                        object_=_response.json(),
+                    ),
+                )
+                return AsyncHttpResponse(response=_response, data=_data)
+            if _response.status_code == 400:
+                raise BadRequestError(
+                    headers=dict(_response.headers),
+                    body=typing.cast(
+                        typing.Optional[typing.Any],
+                        parse_obj_as(
+                            type_=typing.Optional[typing.Any],  # type: ignore
+                            object_=_response.json(),
+                        ),
+                    ),
+                )
+            if _response.status_code == 401:
+                raise UnauthorizedError(
+                    headers=dict(_response.headers),
+                    body=typing.cast(
+                        typing.Optional[typing.Any],
+                        parse_obj_as(
+                            type_=typing.Optional[typing.Any],  # type: ignore
+                            object_=_response.json(),
+                        ),
+                    ),
+                )
+            if _response.status_code == 500:
+                raise InternalServerError(
+                    headers=dict(_response.headers),
+                    body=typing.cast(
+                        ErrorResponse,
+                        parse_obj_as(
+                            type_=ErrorResponse,  # type: ignore
+                            object_=_response.json(),
+                        ),
+                    ),
+                )
+            _response_json = _response.json()
+        except JSONDecodeError:
+            raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)
+        raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
+
+    async def deidentify_structured_text(
+        self,
+        *,
+        file: FileDataDeidentifyStructuredText,
+        vault_id: str,
+        entity_types: typing.Optional[
+            typing.Sequence[DeidentifyFileRequestDeidentifyStructuredTextEntityTypesItem]
+        ] = OMIT,
+        token_type: typing.Optional[TokenTypeMapping] = OMIT,
+        allow_regex: typing.Optional[typing.Sequence[str]] = OMIT,
+        restrict_regex: typing.Optional[typing.Sequence[str]] = OMIT,
+        transformations: typing.Optional[Transformations] = OMIT,
+        configuration_id: typing.Optional[str] = OMIT,
+        request_options: typing.Optional[RequestOptions] = None,
+    ) -> AsyncHttpResponse[DeidentifyFileResponse]:
+        """
+        De-identifies sensitive data from a structured text file. This operation includes options applicable to all supported structured text file types.<br/><br/>For broader file type support, see <a href='#deidentify_file'>De-identify File</a>.
+
+        Parameters
+        ----------
+        file : FileDataDeidentifyStructuredText
+
+        vault_id : str
+            ID of a vault that you have Detect Invoker or Vault Owner permissions for.
+
+        entity_types : typing.Optional[typing.Sequence[DeidentifyFileRequestDeidentifyStructuredTextEntityTypesItem]]
+            Entities to detect and de-identify.
+
+        token_type : typing.Optional[TokenTypeMapping]
+
+        allow_regex : typing.Optional[typing.Sequence[str]]
+            Regular expressions to display in plaintext. Entities appear in plaintext if an expression matches either the entirety of a detected entity or a substring of it. Expressions don't match across entity boundaries. If a string or entity matches both `allow_regex` and `restrict_regex`, the entity is displayed in plaintext.
+
+        restrict_regex : typing.Optional[typing.Sequence[str]]
+            Regular expressions to replace with '[RESTRICTED]'. Expressions must match the entirety of a detected entity, not just a substring, for the entity to be restricted. Expressions don't match across entity boundaries. If a string or entity matches both `allow_regex` and `restrict_regex`, the entity is displayed in plaintext. If a string is detected as an entity and a `restrict_regex` pattern matches the entire detected entity, the entity is replaced with '[RESTRICTED]'. If a string is detected as an entity but a `restrict_regex` pattern only matches a substring of it, the `restrict_regex` pattern is ignored, and the entity is processed according to the specified tokenization and transformation settings.
+
+        transformations : typing.Optional[Transformations]
+
+        configuration_id : typing.Optional[str]
+            ID of the Detect configuration to use for de-identification. Can't be specified with fields other than `vault_id`, `text`, and `file`.
+
+        request_options : typing.Optional[RequestOptions]
+            Request-specific configuration.
+
+        Returns
+        -------
+        AsyncHttpResponse[DeidentifyFileResponse]
+            OK
+        """
+        _response = await self._client_wrapper.httpx_client.request(
+            "v1/detect/deidentify/file/structured_text",
+            method="POST",
+            json={
+                "file": convert_and_respect_annotation_metadata(
+                    object_=file, annotation=FileDataDeidentifyStructuredText, direction="write"
+                ),
+                "vault_id": vault_id,
+                "entity_types": entity_types,
+                "token_type": convert_and_respect_annotation_metadata(
+                    object_=token_type, annotation=TokenTypeMapping, direction="write"
+                ),
+                "allow_regex": allow_regex,
+                "restrict_regex": restrict_regex,
+                "transformations": convert_and_respect_annotation_metadata(
+                    object_=transformations, annotation=Transformations, direction="write"
+                ),
+                "configuration_id": configuration_id,
+            },
+            headers={
+                "content-type": "application/json",
+            },
+            request_options=request_options,
+            omit=OMIT,
+        )
+        try:
+            if 200 <= _response.status_code < 300:
+                _data = typing.cast(
+                    DeidentifyFileResponse,
+                    parse_obj_as(
+                        type_=DeidentifyFileResponse,  # type: ignore
+                        object_=_response.json(),
+                    ),
+                )
+                return AsyncHttpResponse(response=_response, data=_data)
+            if _response.status_code == 400:
+                raise BadRequestError(
+                    headers=dict(_response.headers),
+                    body=typing.cast(
+                        typing.Optional[typing.Any],
+                        parse_obj_as(
+                            type_=typing.Optional[typing.Any],  # type: ignore
+                            object_=_response.json(),
+                        ),
+                    ),
+                )
+            if _response.status_code == 401:
+                raise UnauthorizedError(
+                    headers=dict(_response.headers),
+                    body=typing.cast(
+                        typing.Optional[typing.Any],
+                        parse_obj_as(
+                            type_=typing.Optional[typing.Any],  # type: ignore
+                            object_=_response.json(),
+                        ),
+                    ),
+                )
+            if _response.status_code == 500:
+                raise InternalServerError(
+                    headers=dict(_response.headers),
+                    body=typing.cast(
+                        ErrorResponse,
+                        parse_obj_as(
+                            type_=ErrorResponse,  # type: ignore
+                            object_=_response.json(),
+                        ),
+                    ),
+                )
+            _response_json = _response.json()
+        except JSONDecodeError:
+            raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)
+        raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
+
+    async def deidentify_text(
+        self,
+        *,
+        file: FileDataDeidentifyText,
+        vault_id: str,
+        entity_types: typing.Optional[typing.Sequence[DeidentifyFileRequestDeidentifyTextEntityTypesItem]] = OMIT,
+        token_type: typing.Optional[TokenTypeMapping] = OMIT,
+        allow_regex: typing.Optional[typing.Sequence[str]] = OMIT,
+        restrict_regex: typing.Optional[typing.Sequence[str]] = OMIT,
+        transformations: typing.Optional[Transformations] = OMIT,
+        configuration_id: typing.Optional[str] = OMIT,
+        request_options: typing.Optional[RequestOptions] = None,
+    ) -> AsyncHttpResponse[DeidentifyFileResponse]:
+        """
+        De-identifies sensitive data from a text file. This operation includes options applicable to all supported image text types.<br/><br/>For broader file type support, see <a href='#deidentify_file'>De-identify File</a>.
+
+        Parameters
+        ----------
+        file : FileDataDeidentifyText
+
+        vault_id : str
+            ID of a vault that you have Detect Invoker or Vault Owner permissions for.
+
+        entity_types : typing.Optional[typing.Sequence[DeidentifyFileRequestDeidentifyTextEntityTypesItem]]
+            Entities to detect and de-identify.
+
+        token_type : typing.Optional[TokenTypeMapping]
+
+        allow_regex : typing.Optional[typing.Sequence[str]]
+            Regular expressions to display in plaintext. Entities appear in plaintext if an expression matches either the entirety of a detected entity or a substring of it. Expressions don't match across entity boundaries. If a string or entity matches both `allow_regex` and `restrict_regex`, the entity is displayed in plaintext.
+
+        restrict_regex : typing.Optional[typing.Sequence[str]]
+            Regular expressions to replace with '[RESTRICTED]'. Expressions must match the entirety of a detected entity, not just a substring, for the entity to be restricted. Expressions don't match across entity boundaries. If a string or entity matches both `allow_regex` and `restrict_regex`, the entity is displayed in plaintext. If a string is detected as an entity and a `restrict_regex` pattern matches the entire detected entity, the entity is replaced with '[RESTRICTED]'. If a string is detected as an entity but a `restrict_regex` pattern only matches a substring of it, the `restrict_regex` pattern is ignored, and the entity is processed according to the specified tokenization and transformation settings.
+
+        transformations : typing.Optional[Transformations]
+
+        configuration_id : typing.Optional[str]
+            ID of the Detect configuration to use for de-identification. Can't be specified with fields other than `vault_id`, `text`, and `file`.
+
+        request_options : typing.Optional[RequestOptions]
+            Request-specific configuration.
+
+        Returns
+        -------
+        AsyncHttpResponse[DeidentifyFileResponse]
+            OK
+        """
+        _response = await self._client_wrapper.httpx_client.request(
+            "v1/detect/deidentify/file/text",
+            method="POST",
+            json={
+                "file": convert_and_respect_annotation_metadata(
+                    object_=file, annotation=FileDataDeidentifyText, direction="write"
+                ),
+                "vault_id": vault_id,
+                "entity_types": entity_types,
+                "token_type": convert_and_respect_annotation_metadata(
+                    object_=token_type, annotation=TokenTypeMapping, direction="write"
+                ),
+                "allow_regex": allow_regex,
+                "restrict_regex": restrict_regex,
+                "transformations": convert_and_respect_annotation_metadata(
+                    object_=transformations, annotation=Transformations, direction="write"
+                ),
+                "configuration_id": configuration_id,
+            },
+            headers={
+                "content-type": "application/json",
+            },
+            request_options=request_options,
+            omit=OMIT,
+        )
+        try:
+            if 200 <= _response.status_code < 300:
+                _data = typing.cast(
+                    DeidentifyFileResponse,
+                    parse_obj_as(
+                        type_=DeidentifyFileResponse,  # type: ignore
+                        object_=_response.json(),
+                    ),
+                )
+                return AsyncHttpResponse(response=_response, data=_data)
+            if _response.status_code == 400:
+                raise BadRequestError(
+                    headers=dict(_response.headers),
+                    body=typing.cast(
+                        typing.Optional[typing.Any],
+                        parse_obj_as(
+                            type_=typing.Optional[typing.Any],  # type: ignore
+                            object_=_response.json(),
+                        ),
+                    ),
+                )
+            if _response.status_code == 401:
+                raise UnauthorizedError(
                     headers=dict(_response.headers),
                     body=typing.cast(
                         typing.Optional[typing.Any],
@@ -2528,9 +2532,9 @@ class AsyncRawFilesClient:
     async def reidentify_file(
         self,
         *,
-        vault_id: VaultId,
-        file: ReidentifyFileRequestFile,
-        format: typing.Optional[ReidentifyFileRequestFormat] = OMIT,
+        file: FileDataReidentifyFile,
+        vault_id: str,
+        format: typing.Optional[Format] = OMIT,
         request_options: typing.Optional[RequestOptions] = None,
     ) -> AsyncHttpResponse[ReidentifyFileResponse]:
         """
@@ -2538,13 +2542,12 @@ class AsyncRawFilesClient:
 
         Parameters
         ----------
-        vault_id : VaultId
+        file : FileDataReidentifyFile
 
-        file : ReidentifyFileRequestFile
-            File to re-identify. Files are specified as Base64-encoded data or an EFS path.
+        vault_id : str
+            ID of the vault where the entities are stored.
 
-        format : typing.Optional[ReidentifyFileRequestFormat]
-            Mapping of preferred data formatting options to entity types. Returned values are dependent on the configuration of the vault storing the data and the permissions of the user or account making the request.
+        format : typing.Optional[Format]
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
@@ -2552,19 +2555,17 @@ class AsyncRawFilesClient:
         Returns
         -------
         AsyncHttpResponse[ReidentifyFileResponse]
-            A successful response.
+            OK
         """
         _response = await self._client_wrapper.httpx_client.request(
             "v1/detect/reidentify/file",
             method="POST",
             json={
-                "vault_id": vault_id,
                 "file": convert_and_respect_annotation_metadata(
-                    object_=file, annotation=ReidentifyFileRequestFile, direction="write"
+                    object_=file, annotation=FileDataReidentifyFile, direction="write"
                 ),
-                "format": convert_and_respect_annotation_metadata(
-                    object_=format, annotation=ReidentifyFileRequestFormat, direction="write"
-                ),
+                "vault_id": vault_id,
+                "format": convert_and_respect_annotation_metadata(object_=format, annotation=Format, direction="write"),
             },
             headers={
                 "content-type": "application/json",
@@ -2578,6 +2579,86 @@ class AsyncRawFilesClient:
                     ReidentifyFileResponse,
                     parse_obj_as(
                         type_=ReidentifyFileResponse,  # type: ignore
+                        object_=_response.json(),
+                    ),
+                )
+                return AsyncHttpResponse(response=_response, data=_data)
+            if _response.status_code == 400:
+                raise BadRequestError(
+                    headers=dict(_response.headers),
+                    body=typing.cast(
+                        typing.Optional[typing.Any],
+                        parse_obj_as(
+                            type_=typing.Optional[typing.Any],  # type: ignore
+                            object_=_response.json(),
+                        ),
+                    ),
+                )
+            if _response.status_code == 401:
+                raise UnauthorizedError(
+                    headers=dict(_response.headers),
+                    body=typing.cast(
+                        typing.Optional[typing.Any],
+                        parse_obj_as(
+                            type_=typing.Optional[typing.Any],  # type: ignore
+                            object_=_response.json(),
+                        ),
+                    ),
+                )
+            if _response.status_code == 500:
+                raise InternalServerError(
+                    headers=dict(_response.headers),
+                    body=typing.cast(
+                        ErrorResponse,
+                        parse_obj_as(
+                            type_=ErrorResponse,  # type: ignore
+                            object_=_response.json(),
+                        ),
+                    ),
+                )
+            _response_json = _response.json()
+        except JSONDecodeError:
+            raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)
+        raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
+
+    async def get_run(
+        self,
+        run_id: str,
+        *,
+        vault_id: typing.Optional[str] = None,
+        request_options: typing.Optional[RequestOptions] = None,
+    ) -> AsyncHttpResponse[DetectRunsResponse]:
+        """
+        Returns the status of a detect run.
+
+        Parameters
+        ----------
+        run_id : str
+
+        vault_id : typing.Optional[str]
+
+        request_options : typing.Optional[RequestOptions]
+            Request-specific configuration.
+
+        Returns
+        -------
+        AsyncHttpResponse[DetectRunsResponse]
+            OK
+        """
+        _response = await self._client_wrapper.httpx_client.request(
+            f"v1/detect/runs/{jsonable_encoder(run_id)}",
+            method="GET",
+            params={
+                "vault_id": vault_id,
+            },
+            request_options=request_options,
+        )
+        try:
+            if 200 <= _response.status_code < 300:
+                _data = typing.cast(
+                    DetectRunsResponse,
+                    parse_obj_as(
+                        type_=DetectRunsResponse,  # type: ignore
                         object_=_response.json(),
                     ),
                 )

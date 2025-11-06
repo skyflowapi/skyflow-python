@@ -4,17 +4,13 @@ import typing
 
 from ..core.client_wrapper import AsyncClientWrapper, SyncClientWrapper
 from ..core.request_options import RequestOptions
-from ..types.allow_regex import AllowRegex
-from ..types.configuration_id import ConfigurationId
 from ..types.deidentify_string_response import DeidentifyStringResponse
-from ..types.entity_types import EntityTypes
-from ..types.reidentify_string_response import ReidentifyStringResponse
-from ..types.restrict_regex import RestrictRegex
-from ..types.token_type import TokenType
+from ..types.format import Format
+from ..types.identify_response import IdentifyResponse
+from ..types.token_type_mapping import TokenTypeMapping
 from ..types.transformations import Transformations
-from ..types.vault_id import VaultId
 from .raw_client import AsyncRawStringsClient, RawStringsClient
-from .types.reidentify_string_request_format import ReidentifyStringRequestFormat
+from .types.deidentify_string_request_entity_types_item import DeidentifyStringRequestEntityTypesItem
 
 # this is used as the default value for optional parameters
 OMIT = typing.cast(typing.Any, ...)
@@ -38,14 +34,14 @@ class StringsClient:
     def deidentify_string(
         self,
         *,
-        vault_id: VaultId,
         text: str,
-        configuration_id: typing.Optional[ConfigurationId] = OMIT,
-        entity_types: typing.Optional[EntityTypes] = OMIT,
-        token_type: typing.Optional[TokenType] = OMIT,
-        allow_regex: typing.Optional[AllowRegex] = OMIT,
-        restrict_regex: typing.Optional[RestrictRegex] = OMIT,
+        vault_id: str,
+        entity_types: typing.Optional[typing.Sequence[DeidentifyStringRequestEntityTypesItem]] = OMIT,
+        token_type: typing.Optional[TokenTypeMapping] = OMIT,
+        allow_regex: typing.Optional[typing.Sequence[str]] = OMIT,
+        restrict_regex: typing.Optional[typing.Sequence[str]] = OMIT,
         transformations: typing.Optional[Transformations] = OMIT,
+        configuration_id: typing.Optional[str] = OMIT,
         request_options: typing.Optional[RequestOptions] = None,
     ) -> DeidentifyStringResponse:
         """
@@ -53,22 +49,27 @@ class StringsClient:
 
         Parameters
         ----------
-        vault_id : VaultId
-
         text : str
-            String to de-identify.
+            Text to de-identify.
 
-        configuration_id : typing.Optional[ConfigurationId]
+        vault_id : str
+            ID of a vault that you have Detect Invoker or Vault Owner permissions for.
 
-        entity_types : typing.Optional[EntityTypes]
+        entity_types : typing.Optional[typing.Sequence[DeidentifyStringRequestEntityTypesItem]]
+            Entities to detect and de-identify.
 
-        token_type : typing.Optional[TokenType]
+        token_type : typing.Optional[TokenTypeMapping]
 
-        allow_regex : typing.Optional[AllowRegex]
+        allow_regex : typing.Optional[typing.Sequence[str]]
+            Regular expressions to display in plaintext. Entities appear in plaintext if an expression matches either the entirety of a detected entity or a substring of it. Expressions don't match across entity boundaries. If a string or entity matches both `allow_regex` and `restrict_regex`, the entity is displayed in plaintext.
 
-        restrict_regex : typing.Optional[RestrictRegex]
+        restrict_regex : typing.Optional[typing.Sequence[str]]
+            Regular expressions to replace with '[RESTRICTED]'. Expressions must match the entirety of a detected entity, not just a substring, for the entity to be restricted. Expressions don't match across entity boundaries. If a string or entity matches both `allow_regex` and `restrict_regex`, the entity is displayed in plaintext. If a string is detected as an entity and a `restrict_regex` pattern matches the entire detected entity, the entity is replaced with '[RESTRICTED]'. If a string is detected as an entity but a `restrict_regex` pattern only matches a substring of it, the `restrict_regex` pattern is ignored, and the entity is processed according to the specified tokenization and transformation settings.
 
         transformations : typing.Optional[Transformations]
+
+        configuration_id : typing.Optional[str]
+            ID of the Detect configuration to use for de-identification. Can't be specified with fields other than `vault_id`, `text`, and `file`.
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
@@ -76,7 +77,7 @@ class StringsClient:
         Returns
         -------
         DeidentifyStringResponse
-            A successful response.
+            OK
 
         Examples
         --------
@@ -86,19 +87,19 @@ class StringsClient:
             token="YOUR_TOKEN",
         )
         client.strings.deidentify_string(
-            vault_id="f4b3b3b33b3b3b3b3b3b3b3b3b3b3b3b",
-            text="My name is John Doe, and my email is johndoe@acme.com.",
+            text="text",
+            vault_id="f4b3b3b3-3b3b-3b3b-3b3b-3b3b3b3b3b3b",
         )
         """
         _response = self._raw_client.deidentify_string(
-            vault_id=vault_id,
             text=text,
-            configuration_id=configuration_id,
+            vault_id=vault_id,
             entity_types=entity_types,
             token_type=token_type,
             allow_regex=allow_regex,
             restrict_regex=restrict_regex,
             transformations=transformations,
+            configuration_id=configuration_id,
             request_options=request_options,
         )
         return _response.data
@@ -106,32 +107,31 @@ class StringsClient:
     def reidentify_string(
         self,
         *,
-        text: str,
-        vault_id: str,
-        format: typing.Optional[ReidentifyStringRequestFormat] = OMIT,
+        text: typing.Optional[str] = OMIT,
+        vault_id: typing.Optional[str] = OMIT,
+        format: typing.Optional[Format] = OMIT,
         request_options: typing.Optional[RequestOptions] = None,
-    ) -> ReidentifyStringResponse:
+    ) -> IdentifyResponse:
         """
         Re-identifies tokens in a string.
 
         Parameters
         ----------
-        text : str
-            String to re-identify.
+        text : typing.Optional[str]
+            Text to reidentify.
 
-        vault_id : str
+        vault_id : typing.Optional[str]
             ID of the vault where the entities are stored.
 
-        format : typing.Optional[ReidentifyStringRequestFormat]
-            Mapping of perferred data formatting options to entity types. Returned values are dependent on the configuration of the vault storing the data and the permissions of the user or account making the request.
+        format : typing.Optional[Format]
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
 
         Returns
         -------
-        ReidentifyStringResponse
-            A successful response.
+        IdentifyResponse
+            OK
 
         Examples
         --------
@@ -140,10 +140,7 @@ class StringsClient:
         client = Skyflow(
             token="YOUR_TOKEN",
         )
-        client.strings.reidentify_string(
-            text="My name is [NAME_1], and my email is [EMAIL_1].",
-            vault_id="1ad6db07-8405-46cf-9a1e-db148ff9f4c5",
-        )
+        client.strings.reidentify_string()
         """
         _response = self._raw_client.reidentify_string(
             text=text, vault_id=vault_id, format=format, request_options=request_options
@@ -169,14 +166,14 @@ class AsyncStringsClient:
     async def deidentify_string(
         self,
         *,
-        vault_id: VaultId,
         text: str,
-        configuration_id: typing.Optional[ConfigurationId] = OMIT,
-        entity_types: typing.Optional[EntityTypes] = OMIT,
-        token_type: typing.Optional[TokenType] = OMIT,
-        allow_regex: typing.Optional[AllowRegex] = OMIT,
-        restrict_regex: typing.Optional[RestrictRegex] = OMIT,
+        vault_id: str,
+        entity_types: typing.Optional[typing.Sequence[DeidentifyStringRequestEntityTypesItem]] = OMIT,
+        token_type: typing.Optional[TokenTypeMapping] = OMIT,
+        allow_regex: typing.Optional[typing.Sequence[str]] = OMIT,
+        restrict_regex: typing.Optional[typing.Sequence[str]] = OMIT,
         transformations: typing.Optional[Transformations] = OMIT,
+        configuration_id: typing.Optional[str] = OMIT,
         request_options: typing.Optional[RequestOptions] = None,
     ) -> DeidentifyStringResponse:
         """
@@ -184,22 +181,27 @@ class AsyncStringsClient:
 
         Parameters
         ----------
-        vault_id : VaultId
-
         text : str
-            String to de-identify.
+            Text to de-identify.
 
-        configuration_id : typing.Optional[ConfigurationId]
+        vault_id : str
+            ID of a vault that you have Detect Invoker or Vault Owner permissions for.
 
-        entity_types : typing.Optional[EntityTypes]
+        entity_types : typing.Optional[typing.Sequence[DeidentifyStringRequestEntityTypesItem]]
+            Entities to detect and de-identify.
 
-        token_type : typing.Optional[TokenType]
+        token_type : typing.Optional[TokenTypeMapping]
 
-        allow_regex : typing.Optional[AllowRegex]
+        allow_regex : typing.Optional[typing.Sequence[str]]
+            Regular expressions to display in plaintext. Entities appear in plaintext if an expression matches either the entirety of a detected entity or a substring of it. Expressions don't match across entity boundaries. If a string or entity matches both `allow_regex` and `restrict_regex`, the entity is displayed in plaintext.
 
-        restrict_regex : typing.Optional[RestrictRegex]
+        restrict_regex : typing.Optional[typing.Sequence[str]]
+            Regular expressions to replace with '[RESTRICTED]'. Expressions must match the entirety of a detected entity, not just a substring, for the entity to be restricted. Expressions don't match across entity boundaries. If a string or entity matches both `allow_regex` and `restrict_regex`, the entity is displayed in plaintext. If a string is detected as an entity and a `restrict_regex` pattern matches the entire detected entity, the entity is replaced with '[RESTRICTED]'. If a string is detected as an entity but a `restrict_regex` pattern only matches a substring of it, the `restrict_regex` pattern is ignored, and the entity is processed according to the specified tokenization and transformation settings.
 
         transformations : typing.Optional[Transformations]
+
+        configuration_id : typing.Optional[str]
+            ID of the Detect configuration to use for de-identification. Can't be specified with fields other than `vault_id`, `text`, and `file`.
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
@@ -207,7 +209,7 @@ class AsyncStringsClient:
         Returns
         -------
         DeidentifyStringResponse
-            A successful response.
+            OK
 
         Examples
         --------
@@ -222,22 +224,22 @@ class AsyncStringsClient:
 
         async def main() -> None:
             await client.strings.deidentify_string(
-                vault_id="f4b3b3b33b3b3b3b3b3b3b3b3b3b3b3b",
-                text="My name is John Doe, and my email is johndoe@acme.com.",
+                text="text",
+                vault_id="f4b3b3b3-3b3b-3b3b-3b3b-3b3b3b3b3b3b",
             )
 
 
         asyncio.run(main())
         """
         _response = await self._raw_client.deidentify_string(
-            vault_id=vault_id,
             text=text,
-            configuration_id=configuration_id,
+            vault_id=vault_id,
             entity_types=entity_types,
             token_type=token_type,
             allow_regex=allow_regex,
             restrict_regex=restrict_regex,
             transformations=transformations,
+            configuration_id=configuration_id,
             request_options=request_options,
         )
         return _response.data
@@ -245,32 +247,31 @@ class AsyncStringsClient:
     async def reidentify_string(
         self,
         *,
-        text: str,
-        vault_id: str,
-        format: typing.Optional[ReidentifyStringRequestFormat] = OMIT,
+        text: typing.Optional[str] = OMIT,
+        vault_id: typing.Optional[str] = OMIT,
+        format: typing.Optional[Format] = OMIT,
         request_options: typing.Optional[RequestOptions] = None,
-    ) -> ReidentifyStringResponse:
+    ) -> IdentifyResponse:
         """
         Re-identifies tokens in a string.
 
         Parameters
         ----------
-        text : str
-            String to re-identify.
+        text : typing.Optional[str]
+            Text to reidentify.
 
-        vault_id : str
+        vault_id : typing.Optional[str]
             ID of the vault where the entities are stored.
 
-        format : typing.Optional[ReidentifyStringRequestFormat]
-            Mapping of perferred data formatting options to entity types. Returned values are dependent on the configuration of the vault storing the data and the permissions of the user or account making the request.
+        format : typing.Optional[Format]
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
 
         Returns
         -------
-        ReidentifyStringResponse
-            A successful response.
+        IdentifyResponse
+            OK
 
         Examples
         --------
@@ -284,10 +285,7 @@ class AsyncStringsClient:
 
 
         async def main() -> None:
-            await client.strings.reidentify_string(
-                text="My name is [NAME_1], and my email is [EMAIL_1].",
-                vault_id="1ad6db07-8405-46cf-9a1e-db148ff9f4c5",
-            )
+            await client.strings.reidentify_string()
 
 
         asyncio.run(main())
