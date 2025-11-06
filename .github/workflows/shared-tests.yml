@@ -23,6 +23,12 @@ jobs:
         with:
           name: "credentials.json"
           json: ${{ secrets.VALID_SKYFLOW_CREDS_TEST }}
+
+      - name: Build and install skyflow package
+        run: |
+          pip install --upgrade pip setuptools wheel
+          python setup.py sdist bdist_wheel
+          pip install dist/skyflow-*.whl
       
       - name: 'Run Tests'
         run: |
