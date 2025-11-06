@@ -2,6 +2,6 @@
 
 # isort: skip_file
 
-from .types import ReidentifyStringRequestFormat
+from .types import DeidentifyStringRequestEntityTypesItem
 
-__all__ = ["ReidentifyStringRequestFormat"]
+__all__ = ["DeidentifyStringRequestEntityTypesItem"]

@@ -14,7 +14,7 @@ from urllib.parse import quote
 from skyflow.error import SkyflowError
 from skyflow.generated.rest import V1UpdateRecordResponse, V1BulkDeleteRecordResponse, \
     V1DetokenizeResponse, V1TokenizeResponse, V1GetQueryResponse, V1BulkGetRecordResponse, \
-    DeidentifyStringResponse, ReidentifyStringResponse, ErrorResponse
+    DeidentifyStringResponse, ErrorResponse, IdentifyResponse
 from skyflow.generated.rest.core.http_response import HttpResponse
 from skyflow.utils.logger import log_error_log
 from skyflow.vault.detect import DeidentifyTextResponse, ReidentifyTextResponse
@@ -90,12 +90,12 @@ def convert_detected_entity_to_entity_info(detected_entity):
         token=detected_entity.token,
         value=detected_entity.value,
         text_index=TextIndex(
-            start=detected_entity.location.start_index,
-            end=detected_entity.location.end_index
+            start=detected_entity.location['start_index'],
+            end=detected_entity.location['end_index']
         ),
         processed_index=TextIndex(
-            start=detected_entity.location.start_index_processed,
-            end=detected_entity.location.end_index_processed
+            start=detected_entity.location['start_index_processed'],
+            end=detected_entity.location['end_index_processed']
         ),
         entity=detected_entity.entity_type,
         scores=detected_entity.entity_scores
@@ -388,7 +388,7 @@ def parse_deidentify_text_response(api_response: DeidentifyStringResponse):
         char_count=api_response.character_count
     )
 
-def parse_reidentify_text_response(api_response: ReidentifyStringResponse):
+def parse_reidentify_text_response(api_response: IdentifyResponse):
     return ReidentifyTextResponse(api_response.text)
 
 def log_and_reject_error(description, status_code, request_id, http_status=None, grpc_code=None, details=None, logger = None):

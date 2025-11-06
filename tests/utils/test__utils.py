@@ -494,12 +494,12 @@ class TestUtils(unittest.TestCase):
         mock_entity.value = "sensitive_value"
         mock_entity.entity_type = "EMAIL"
         mock_entity.entity_scores = {"EMAIL": 0.95}
-        mock_entity.location = Mock(
-            start_index=10,
-            end_index=20,
-            start_index_processed=15,
-            end_index_processed=25
-        )
+        mock_entity.location = {
+            "start_index": 10,
+            "end_index": 20,
+            "start_index_processed": 15,
+            "end_index_processed":25
+        }
 
         mock_api_response = Mock()
         mock_api_response.processed_text = "Sample processed text"
@@ -555,12 +555,12 @@ class TestUtils(unittest.TestCase):
         mock_detected_entity.value = "sensitive_value"
         mock_detected_entity.entity_type = "EMAIL"
         mock_detected_entity.entity_scores = {"EMAIL": 0.95}
-        mock_detected_entity.location = Mock(
-            start_index=10,
-            end_index=20,
-            start_index_processed=15,
-            end_index_processed=25
-        )
+        mock_detected_entity.location = {
+            "start_index": 10,
+            "end_index": 20,
+            "start_index_processed": 15,
+            "end_index_processed":25
+        }
 
         result = convert_detected_entity_to_entity_info(mock_detected_entity)
 
@@ -580,12 +580,12 @@ class TestUtils(unittest.TestCase):
         mock_detected_entity.value = None
         mock_detected_entity.entity_type = "UNKNOWN"
         mock_detected_entity.entity_scores = {}
-        mock_detected_entity.location = Mock(
-            start_index=0,
-            end_index=0,
-            start_index_processed=0,
-            end_index_processed=0
-        )
+        mock_detected_entity.location = {
+            "start_index": 0,
+            "end_index": 0,
+            "start_index_processed":0,
+            "end_index_processed":0
+        }
 
         result = convert_detected_entity_to_entity_info(mock_detected_entity)
 

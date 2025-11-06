@@ -11,9 +11,8 @@ from ..core.request_options import RequestOptions
 from ..errors.bad_request_error import BadRequestError
 from ..errors.internal_server_error import InternalServerError
 from ..errors.unauthorized_error import UnauthorizedError
-from ..types.check_guardrails_response import CheckGuardrailsResponse
+from ..types.detect_guardrails_response import DetectGuardrailsResponse
 from ..types.error_response import ErrorResponse
-from ..types.vault_id import VaultId
 
 # this is used as the default value for optional parameters
 OMIT = typing.cast(typing.Any, ...)
@@ -26,24 +25,25 @@ class RawGuardrailsClient:
     def check_guardrails(
         self,
         *,
-        vault_id: VaultId,
         text: str,
+        vault_id: str,
         check_toxicity: typing.Optional[bool] = OMIT,
         deny_topics: typing.Optional[typing.Sequence[str]] = OMIT,
         request_options: typing.Optional[RequestOptions] = None,
-    ) -> HttpResponse[CheckGuardrailsResponse]:
+    ) -> HttpResponse[DetectGuardrailsResponse]:
         """
         Preserve safety and compliance with usage policies.
 
         Parameters
         ----------
-        vault_id : VaultId
-
         text : str
             Text to check against guardrails.
 
+        vault_id : str
+            ID of the vault.
+
         check_toxicity : typing.Optional[bool]
-            Check for toxicity in the text.
+            If `true`, checks for toxicity in the text.
 
         deny_topics : typing.Optional[typing.Sequence[str]]
             List of topics to deny.
@@ -53,17 +53,17 @@ class RawGuardrailsClient:
 
         Returns
         -------
-        HttpResponse[CheckGuardrailsResponse]
-            A successful response.
+        HttpResponse[DetectGuardrailsResponse]
+            OK
         """
         _response = self._client_wrapper.httpx_client.request(
             "v1/detect/guardrails",
             method="POST",
             json={
-                "vault_id": vault_id,
                 "text": text,
                 "check_toxicity": check_toxicity,
                 "deny_topics": deny_topics,
+                "vault_id": vault_id,
             },
             headers={
                 "content-type": "application/json",
@@ -74,9 +74,9 @@ class RawGuardrailsClient:
         try:
             if 200 <= _response.status_code < 300:
                 _data = typing.cast(
-                    CheckGuardrailsResponse,
+                    DetectGuardrailsResponse,
                     parse_obj_as(
-                        type_=CheckGuardrailsResponse,  # type: ignore
+                        type_=DetectGuardrailsResponse,  # type: ignore
                         object_=_response.json(),
                     ),
                 )
@@ -127,24 +127,25 @@ class AsyncRawGuardrailsClient:
     async def check_guardrails(
         self,
         *,
-        vault_id: VaultId,
         text: str,
+        vault_id: str,
         check_toxicity: typing.Optional[bool] = OMIT,
         deny_topics: typing.Optional[typing.Sequence[str]] = OMIT,
         request_options: typing.Optional[RequestOptions] = None,
-    ) -> AsyncHttpResponse[CheckGuardrailsResponse]:
+    ) -> AsyncHttpResponse[DetectGuardrailsResponse]:
         """
         Preserve safety and compliance with usage policies.
 
         Parameters
         ----------
-        vault_id : VaultId
-
         text : str
             Text to check against guardrails.
 
+        vault_id : str
+            ID of the vault.
+
         check_toxicity : typing.Optional[bool]
-            Check for toxicity in the text.
+            If `true`, checks for toxicity in the text.
 
         deny_topics : typing.Optional[typing.Sequence[str]]
             List of topics to deny.
@@ -154,17 +155,17 @@ class AsyncRawGuardrailsClient:
 
         Returns
         -------
-        AsyncHttpResponse[CheckGuardrailsResponse]
-            A successful response.
+        AsyncHttpResponse[DetectGuardrailsResponse]
+            OK
         """
         _response = await self._client_wrapper.httpx_client.request(
             "v1/detect/guardrails",
             method="POST",
             json={
-                "vault_id": vault_id,
                 "text": text,
                 "check_toxicity": check_toxicity,
                 "deny_topics": deny_topics,
+                "vault_id": vault_id,
             },
             headers={
                 "content-type": "application/json",
@@ -175,9 +176,9 @@ class AsyncRawGuardrailsClient:
         try:
             if 200 <= _response.status_code < 300:
                 _data = typing.cast(
-                    CheckGuardrailsResponse,
+                    DetectGuardrailsResponse,
                     parse_obj_as(
-                        type_=CheckGuardrailsResponse,  # type: ignore
+                        type_=DetectGuardrailsResponse,  # type: ignore
                         object_=_response.json(),
                     ),
                 )
