@@ -4,6 +4,7 @@ import typing
 
 import pydantic
 from ..core.pydantic_utilities import IS_PYDANTIC_V2, UniversalBaseModel
+from .locations import Locations
 
 
 class StringResponseEntities(UniversalBaseModel):
@@ -21,6 +22,7 @@ class StringResponseEntities(UniversalBaseModel):
     Original text of the entity.
     """
 
+    location: typing.Optional[Locations] = None
     entity_type: typing.Optional[str] = pydantic.Field(default=None)
     """
     Highest-rated label.

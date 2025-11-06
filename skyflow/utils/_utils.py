@@ -90,12 +90,12 @@ def convert_detected_entity_to_entity_info(detected_entity):
         token=detected_entity.token,
         value=detected_entity.value,
         text_index=TextIndex(
-            start=detected_entity.location['start_index'],
-            end=detected_entity.location['end_index']
+            start=detected_entity.location.start_index,
+            end=detected_entity.location.end_index
         ),
         processed_index=TextIndex(
-            start=detected_entity.location['start_index_processed'],
-            end=detected_entity.location['end_index_processed']
+            start=detected_entity.location.start_index_processed,
+            end=detected_entity.location.end_index_processed
         ),
         entity=detected_entity.entity_type,
         scores=detected_entity.entity_scores

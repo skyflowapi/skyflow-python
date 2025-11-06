@@ -47,6 +47,7 @@ from .format_redacted_item import FormatRedactedItem
 from .googlerpc_status import GooglerpcStatus
 from .http_code import HttpCode
 from .identify_response import IdentifyResponse
+from .locations import Locations
 from .protobuf_any import ProtobufAny
 from .redaction_enum_redaction import RedactionEnumRedaction
 from .reidentified_file_output import ReidentifiedFileOutput
@@ -146,6 +147,7 @@ __all__ = [
     "GooglerpcStatus",
     "HttpCode",
     "IdentifyResponse",
+    "Locations",
     "ProtobufAny",
     "RedactionEnumRedaction",
     "ReidentifiedFileOutput",
