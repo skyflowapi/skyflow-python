@@ -27,11 +27,6 @@ jobs:
           python -m pip install --upgrade pip
           pip install setuptools wheel twine
 
-      - name: Build and install skyflow package
-        run: |
-          python setup.py sdist bdist_wheel
-          pip install dist/skyflow-*.whl
-
       - name: Resolve Branch for the Tagged Commit
         id: resolve-branch
         if: ${{ inputs.tag == 'beta' || inputs.tag == 'public' }} 
@@ -86,6 +81,11 @@ jobs:
             git commit -m "$COMMIT_MESSAGE"
             git push origin ${{ env.branch_name }}
           fi
+
+      - name: Build and install skyflow package
+        run: |
+          python setup.py sdist bdist_wheel
+          pip install dist/skyflow-*.whl
 
       - name: Build and Publish Package
         if: ${{ inputs.tag == 'beta' || inputs.tag == 'public' }} 
