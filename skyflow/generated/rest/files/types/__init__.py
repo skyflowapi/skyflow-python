@@ -2,48 +2,48 @@
 
 # isort: skip_file
 
-from .deidentify_audio_request_file import DeidentifyAudioRequestFile
-from .deidentify_audio_request_file_data_format import DeidentifyAudioRequestFileDataFormat
-from .deidentify_audio_request_output_transcription import DeidentifyAudioRequestOutputTranscription
-from .deidentify_document_request_file import DeidentifyDocumentRequestFile
-from .deidentify_document_request_file_data_format import DeidentifyDocumentRequestFileDataFormat
-from .deidentify_file_request_file import DeidentifyFileRequestFile
-from .deidentify_file_request_file_data_format import DeidentifyFileRequestFileDataFormat
-from .deidentify_image_request_file import DeidentifyImageRequestFile
-from .deidentify_image_request_file_data_format import DeidentifyImageRequestFileDataFormat
-from .deidentify_image_request_masking_method import DeidentifyImageRequestMaskingMethod
-from .deidentify_pdf_request_file import DeidentifyPdfRequestFile
-from .deidentify_presentation_request_file import DeidentifyPresentationRequestFile
-from .deidentify_presentation_request_file_data_format import DeidentifyPresentationRequestFileDataFormat
-from .deidentify_spreadsheet_request_file import DeidentifySpreadsheetRequestFile
-from .deidentify_spreadsheet_request_file_data_format import DeidentifySpreadsheetRequestFileDataFormat
-from .deidentify_structured_text_request_file import DeidentifyStructuredTextRequestFile
-from .deidentify_structured_text_request_file_data_format import DeidentifyStructuredTextRequestFileDataFormat
-from .deidentify_text_request_file import DeidentifyTextRequestFile
-from .reidentify_file_request_file import ReidentifyFileRequestFile
-from .reidentify_file_request_file_data_format import ReidentifyFileRequestFileDataFormat
-from .reidentify_file_request_format import ReidentifyFileRequestFormat
+from .deidentify_file_audio_request_deidentify_audio_entity_types_item import (
+    DeidentifyFileAudioRequestDeidentifyAudioEntityTypesItem,
+)
+from .deidentify_file_audio_request_deidentify_audio_output_transcription import (
+    DeidentifyFileAudioRequestDeidentifyAudioOutputTranscription,
+)
+from .deidentify_file_document_pdf_request_deidentify_pdf_entity_types_item import (
+    DeidentifyFileDocumentPdfRequestDeidentifyPdfEntityTypesItem,
+)
+from .deidentify_file_image_request_deidentify_image_entity_types_item import (
+    DeidentifyFileImageRequestDeidentifyImageEntityTypesItem,
+)
+from .deidentify_file_image_request_deidentify_image_masking_method import (
+    DeidentifyFileImageRequestDeidentifyImageMaskingMethod,
+)
+from .deidentify_file_request_deidentify_document_entity_types_item import (
+    DeidentifyFileRequestDeidentifyDocumentEntityTypesItem,
+)
+from .deidentify_file_request_deidentify_presentation_entity_types_item import (
+    DeidentifyFileRequestDeidentifyPresentationEntityTypesItem,
+)
+from .deidentify_file_request_deidentify_spreadsheet_entity_types_item import (
+    DeidentifyFileRequestDeidentifySpreadsheetEntityTypesItem,
+)
+from .deidentify_file_request_deidentify_structured_text_entity_types_item import (
+    DeidentifyFileRequestDeidentifyStructuredTextEntityTypesItem,
+)
+from .deidentify_file_request_deidentify_text_entity_types_item import (
+    DeidentifyFileRequestDeidentifyTextEntityTypesItem,
+)
+from .deidentify_file_request_entity_types_item import DeidentifyFileRequestEntityTypesItem
 
 __all__ = [
-    "DeidentifyAudioRequestFile",
-    "DeidentifyAudioRequestFileDataFormat",
-    "DeidentifyAudioRequestOutputTranscription",
-    "DeidentifyDocumentRequestFile",
-    "DeidentifyDocumentRequestFileDataFormat",
-    "DeidentifyFileRequestFile",
-    "DeidentifyFileRequestFileDataFormat",
-    "DeidentifyImageRequestFile",
-    "DeidentifyImageRequestFileDataFormat",
-    "DeidentifyImageRequestMaskingMethod",
-    "DeidentifyPdfRequestFile",
-    "DeidentifyPresentationRequestFile",
-    "DeidentifyPresentationRequestFileDataFormat",
-    "DeidentifySpreadsheetRequestFile",
-    "DeidentifySpreadsheetRequestFileDataFormat",
-    "DeidentifyStructuredTextRequestFile",
-    "DeidentifyStructuredTextRequestFileDataFormat",
-    "DeidentifyTextRequestFile",
-    "ReidentifyFileRequestFile",
-    "ReidentifyFileRequestFileDataFormat",
-    "ReidentifyFileRequestFormat",
+    "DeidentifyFileAudioRequestDeidentifyAudioEntityTypesItem",
+    "DeidentifyFileAudioRequestDeidentifyAudioOutputTranscription",
+    "DeidentifyFileDocumentPdfRequestDeidentifyPdfEntityTypesItem",
+    "DeidentifyFileImageRequestDeidentifyImageEntityTypesItem",
+    "DeidentifyFileImageRequestDeidentifyImageMaskingMethod",
+    "DeidentifyFileRequestDeidentifyDocumentEntityTypesItem",
+    "DeidentifyFileRequestDeidentifyPresentationEntityTypesItem",
+    "DeidentifyFileRequestDeidentifySpreadsheetEntityTypesItem",
+    "DeidentifyFileRequestDeidentifyStructuredTextEntityTypesItem",
+    "DeidentifyFileRequestDeidentifyTextEntityTypesItem",
+    "DeidentifyFileRequestEntityTypesItem",
 ]

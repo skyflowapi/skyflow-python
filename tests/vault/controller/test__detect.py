@@ -3,6 +3,7 @@ from unittest.mock import Mock, patch, MagicMock
 import base64
 import os
 from skyflow.error import SkyflowError
+from skyflow.generated.rest import WordCharacterCount
 from skyflow.utils import SkyflowMessages
 from skyflow.vault.controller import Detect
 from skyflow.vault.detect import DeidentifyTextRequest, ReidentifyTextRequest, \
@@ -149,7 +150,7 @@ class TestDetect(unittest.TestCase):
         processed_response = Mock()
         processed_response.status = "SUCCESS"
         processed_response.output = []
-        processed_response.wordCharacterCount = Mock(wordCount=1, characterCount=1)
+        processed_response.word_character_count = WordCharacterCount(word_count=1, character_count=1)
         with patch.object(self.detect, "_Detect__poll_for_processed_file",
                           return_value=processed_response) as mock_poll, \
                 patch.object(self.detect, "_Detect__parse_deidentify_file_response",
@@ -159,7 +160,7 @@ class TestDetect(unittest.TestCase):
                                                                  word_count=1, char_count=1, size_in_kb=1,
                                                                  duration_in_seconds=None, page_count=None,
                                                                  slide_count=None, entities=[], run_id="runid123",
-                                                                 status="SUCCESS", errors=None)) as mock_parse:
+                                                                 status="SUCCESS")) as mock_parse:
             result = self.detect.deidentify_file(req)
 
             mock_validate.assert_called_once()
@@ -184,7 +185,6 @@ class TestDetect(unittest.TestCase):
             self.assertIsNone(result.page_count)
             self.assertIsNone(result.slide_count)
             self.assertEqual(result.entities, [])
-            self.assertEqual(result.errors, None)
 
     @patch("skyflow.vault.controller._detect.validate_deidentify_file_request")
     @patch("skyflow.vault.controller._detect.base64")
@@ -212,7 +212,7 @@ class TestDetect(unittest.TestCase):
         processed_response = Mock()
         processed_response.status = "SUCCESS"
         processed_response.output = []
-        processed_response.wordCharacterCount = Mock(wordCount=1, characterCount=1)
+        processed_response.word_character_count = Mock(word_count=1, character_count=1)
         with patch.object(self.detect, "_Detect__poll_for_processed_file",
                           return_value=processed_response) as mock_poll, \
                 patch.object(self.detect, "_Detect__parse_deidentify_file_response",
@@ -222,7 +222,7 @@ class TestDetect(unittest.TestCase):
                                                                  word_count=1, char_count=1, size_in_kb=1,
                                                                  duration_in_seconds=1, page_count=None,
                                                                  slide_count=None, entities=[], run_id="runid456",
-                                                                 status="SUCCESS", errors=None)) as mock_parse:
+                                                                 status="SUCCESS")) as mock_parse:
             result = self.detect.deidentify_file(req)
             mock_validate.assert_called_once()
             files_api.deidentify_audio.assert_called_once()
@@ -263,8 +263,7 @@ class TestDetect(unittest.TestCase):
                           return_value=DeidentifyFileResponse(file="file", type="txt", extension="txt", word_count=1,
                                                               char_count=1, size_in_kb=1, duration_in_seconds=None,
                                                               page_count=None, slide_count=None, entities=[],
-                                                              run_id="runid789", status="SUCCESS",
-                                                              errors=None)) as mock_parse:
+                                                              run_id="runid789", status="SUCCESS")) as mock_parse:
             result = self.detect.get_detect_run(req)
             mock_validate.assert_called_once()
             files_api.get_run.assert_called_once()
@@ -297,16 +296,15 @@ class TestDetect(unittest.TestCase):
         processed_response = Mock()
         processed_response.status = "SUCCESS"
         processed_response.output = [
-            {"processedFile": "dGVzdCBjb250ZW50", "processedFileType": "pdf", "processedFileExtension": "pdf"}
+            {"processed_file": "dGVzdCBjb250ZW50", "processed_file_type": "pdf", "processed_file_extension": "pdf"}
         ]
-        processed_response.wordCharacterCount = Mock(wordCount=1, characterCount=1)
         processed_response.size = 1
         processed_response.duration = 1
         processed_response.pages = 1
         processed_response.slides = 1
         processed_response.message = ""
         processed_response.run_id = "runid123"
-        processed_response.wordCharacterCount = {"wordCount": 1, "characterCount": 1}
+        processed_response.word_character_count = WordCharacterCount(word_count=1, character_count=1)
         mock_poll.return_value = processed_response
 
         # Test configuration for different file types
@@ -354,6 +352,7 @@ class TestDetect(unittest.TestCase):
                 result = self.detect.deidentify_file(req)
 
                 # Verify the result
+                print("Result : ", result)
                 self.assertIsInstance(result, DeidentifyFileResponse)
                 self.assertEqual(result.status, "SUCCESS")
                 self.assertEqual(result.run_id, "runid123")
@@ -658,8 +657,12 @@ class TestDetect(unittest.TestCase):
         # Setup processed response
         processed_response = Mock()
         processed_response.status = "SUCCESS"
-        processed_response.output = []
-        processed_response.wordCharacterCount = Mock(wordCount=1, characterCount=1)
+        processed_response.output = [
+            Mock(processedFile="dGVzdCBjb250ZW",
+                 processedFileType="txt",
+                 processedFileExtension="txt")
+        ]
+        processed_response.word_character_count = WordCharacterCount(word_count=1, character_count=1)
 
         # Test the method
         with patch.object(self.detect, "_Detect__poll_for_processed_file",
@@ -679,16 +682,14 @@ class TestDetect(unittest.TestCase):
                              entities=[],
                              run_id="runid123",
                              status="SUCCESS",
-                             errors=None
                          )) as mock_parse:
             
             result = self.detect.deidentify_file(req)
 
             mock_file.read.assert_called_once()
-            mock_basename.assert_called_with("/path/to/test.txt")
-
             mock_validate.assert_called_once()
             files_api.deidentify_text.assert_called_once()
+            mock_basename.assert_called_with("/path/to/test.txt")
             mock_poll.assert_called_once()
             mock_parse.assert_called_once()
 
@@ -710,4 +711,3 @@ class TestDetect(unittest.TestCase):
             self.assertIsNone(result.page_count)
             self.assertIsNone(result.slide_count)
             self.assertEqual(result.entities, [])
-            self.assertEqual(result.errors, None)

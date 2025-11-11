@@ -11,7 +11,12 @@ from ..core.jsonable_encoder import jsonable_encoder
 from ..core.pydantic_utilities import parse_obj_as
 from ..core.request_options import RequestOptions
 from ..core.serialization import convert_and_respect_annotation_metadata
+from ..errors.bad_request_error import BadRequestError
+from ..errors.internal_server_error import InternalServerError
 from ..errors.not_found_error import NotFoundError
+from ..errors.unauthorized_error import UnauthorizedError
+from ..types.error_response import ErrorResponse
+from ..types.upload_file_v_2_response import UploadFileV2Response
 from ..types.v_1_batch_operation_response import V1BatchOperationResponse
 from ..types.v_1_batch_record import V1BatchRecord
 from ..types.v_1_bulk_delete_record_response import V1BulkDeleteRecordResponse
@@ -804,6 +809,123 @@ class RawRecordsClient:
             raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)
         raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
 
+    def upload_file_v_2(
+        self,
+        vault_id: str,
+        *,
+        table_name: str,
+        column_name: str,
+        file: core.File,
+        skyflow_id: typing.Optional[str] = OMIT,
+        return_file_metadata: typing.Optional[bool] = OMIT,
+        request_options: typing.Optional[RequestOptions] = None,
+    ) -> HttpResponse[UploadFileV2Response]:
+        """
+        Uploads the specified file to a record. If an existing record isn't specified, creates a new record and uploads the file to that record.
+
+        Parameters
+        ----------
+        vault_id : str
+            ID of the vault.
+
+        table_name : str
+            Name of the table to upload the file to.
+
+        column_name : str
+            Name of the column to upload the file to. The column must have a `file` data type.
+
+        file : core.File
+            See core.File for more documentation
+
+        skyflow_id : typing.Optional[str]
+            Skyflow ID of the record to upload the file to. If `skyflowID` isn't specified, a new record will be created.
+
+        return_file_metadata : typing.Optional[bool]
+            If `true`, returns metadata about the uploaded file.
+
+        request_options : typing.Optional[RequestOptions]
+            Request-specific configuration.
+
+        Returns
+        -------
+        HttpResponse[UploadFileV2Response]
+            File uploaded successfully.
+        """
+        _response = self._client_wrapper.httpx_client.request(
+            f"v2/vaults/{jsonable_encoder(vault_id)}/files/upload",
+            method="POST",
+            data={
+                "tableName": table_name,
+                "columnName": column_name,
+                "skyflowID": skyflow_id,
+                "returnFileMetadata": return_file_metadata,
+            },
+            files={
+                "file": file,
+            },
+            request_options=request_options,
+            omit=OMIT,
+            force_multipart=True,
+        )
+        try:
+            if 200 <= _response.status_code < 300:
+                _data = typing.cast(
+                    UploadFileV2Response,
+                    parse_obj_as(
+                        type_=UploadFileV2Response,  # type: ignore
+                        object_=_response.json(),
+                    ),
+                )
+                return HttpResponse(response=_response, data=_data)
+            if _response.status_code == 400:
+                raise BadRequestError(
+                    headers=dict(_response.headers),
+                    body=typing.cast(
+                        typing.Optional[typing.Any],
+                        parse_obj_as(
+                            type_=typing.Optional[typing.Any],  # type: ignore
+                            object_=_response.json(),
+                        ),
+                    ),
+                )
+            if _response.status_code == 401:
+                raise UnauthorizedError(
+                    headers=dict(_response.headers),
+                    body=typing.cast(
+                        typing.Optional[typing.Any],
+                        parse_obj_as(
+                            type_=typing.Optional[typing.Any],  # type: ignore
+                            object_=_response.json(),
+                        ),
+                    ),
+                )
+            if _response.status_code == 404:
+                raise NotFoundError(
+                    headers=dict(_response.headers),
+                    body=typing.cast(
+                        typing.Optional[typing.Any],
+                        parse_obj_as(
+                            type_=typing.Optional[typing.Any],  # type: ignore
+                            object_=_response.json(),
+                        ),
+                    ),
+                )
+            if _response.status_code == 500:
+                raise InternalServerError(
+                    headers=dict(_response.headers),
+                    body=typing.cast(
+                        ErrorResponse,
+                        parse_obj_as(
+                            type_=ErrorResponse,  # type: ignore
+                            object_=_response.json(),
+                        ),
+                    ),
+                )
+            _response_json = _response.json()
+        except JSONDecodeError:
+            raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)
+        raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
+
 
 class AsyncRawRecordsClient:
     def __init__(self, *, client_wrapper: AsyncClientWrapper):
@@ -1569,6 +1691,123 @@ class AsyncRawRecordsClient:
                         typing.Optional[typing.Any],
                         parse_obj_as(
                             type_=typing.Optional[typing.Any],  # type: ignore
+                            object_=_response.json(),
+                        ),
+                    ),
+                )
+            _response_json = _response.json()
+        except JSONDecodeError:
+            raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)
+        raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
+
+    async def upload_file_v_2(
+        self,
+        vault_id: str,
+        *,
+        table_name: str,
+        column_name: str,
+        file: core.File,
+        skyflow_id: typing.Optional[str] = OMIT,
+        return_file_metadata: typing.Optional[bool] = OMIT,
+        request_options: typing.Optional[RequestOptions] = None,
+    ) -> AsyncHttpResponse[UploadFileV2Response]:
+        """
+        Uploads the specified file to a record. If an existing record isn't specified, creates a new record and uploads the file to that record.
+
+        Parameters
+        ----------
+        vault_id : str
+            ID of the vault.
+
+        table_name : str
+            Name of the table to upload the file to.
+
+        column_name : str
+            Name of the column to upload the file to. The column must have a `file` data type.
+
+        file : core.File
+            See core.File for more documentation
+
+        skyflow_id : typing.Optional[str]
+            Skyflow ID of the record to upload the file to. If `skyflowID` isn't specified, a new record will be created.
+
+        return_file_metadata : typing.Optional[bool]
+            If `true`, returns metadata about the uploaded file.
+
+        request_options : typing.Optional[RequestOptions]
+            Request-specific configuration.
+
+        Returns
+        -------
+        AsyncHttpResponse[UploadFileV2Response]
+            File uploaded successfully.
+        """
+        _response = await self._client_wrapper.httpx_client.request(
+            f"v2/vaults/{jsonable_encoder(vault_id)}/files/upload",
+            method="POST",
+            data={
+                "tableName": table_name,
+                "columnName": column_name,
+                "skyflowID": skyflow_id,
+                "returnFileMetadata": return_file_metadata,
+            },
+            files={
+                "file": file,
+            },
+            request_options=request_options,
+            omit=OMIT,
+            force_multipart=True,
+        )
+        try:
+            if 200 <= _response.status_code < 300:
+                _data = typing.cast(
+                    UploadFileV2Response,
+                    parse_obj_as(
+                        type_=UploadFileV2Response,  # type: ignore
+                        object_=_response.json(),
+                    ),
+                )
+                return AsyncHttpResponse(response=_response, data=_data)
+            if _response.status_code == 400:
+                raise BadRequestError(
+                    headers=dict(_response.headers),
+                    body=typing.cast(
+                        typing.Optional[typing.Any],
+                        parse_obj_as(
+                            type_=typing.Optional[typing.Any],  # type: ignore
+                            object_=_response.json(),
+                        ),
+                    ),
+                )
+            if _response.status_code == 401:
+                raise UnauthorizedError(
+                    headers=dict(_response.headers),
+                    body=typing.cast(
+                        typing.Optional[typing.Any],
+                        parse_obj_as(
+                            type_=typing.Optional[typing.Any],  # type: ignore
+                            object_=_response.json(),
+                        ),
+                    ),
+                )
+            if _response.status_code == 404:
+                raise NotFoundError(
+                    headers=dict(_response.headers),
+                    body=typing.cast(
+                        typing.Optional[typing.Any],
+                        parse_obj_as(
+                            type_=typing.Optional[typing.Any],  # type: ignore
+                            object_=_response.json(),
+                        ),
+                    ),
+                )
+            if _response.status_code == 500:
+                raise InternalServerError(
+                    headers=dict(_response.headers),
+                    body=typing.cast(
+                        ErrorResponse,
+                        parse_obj_as(
+                            type_=ErrorResponse,  # type: ignore
                             object_=_response.json(),
                         ),
                     ),

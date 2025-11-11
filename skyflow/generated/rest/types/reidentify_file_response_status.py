@@ -2,4 +2,4 @@
 
 import typing
 
-ReidentifyFileResponseStatus = typing.Union[typing.Literal["failed", "in_progress", "success"], typing.Any]
+ReidentifyFileResponseStatus = typing.Union[typing.Literal["UNKNOWN", "FAILED", "SUCCESS", "IN_PROGRESS"], typing.Any]

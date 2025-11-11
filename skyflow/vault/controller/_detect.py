@@ -3,20 +3,18 @@ import json
 import os
 import base64
 import time
-from skyflow.generated.rest import DeidentifyTextRequestFile, DeidentifyAudioRequestFile, DeidentifyPdfRequestFile, \
-    DeidentifyImageRequestFile, DeidentifyPresentationRequestFile, DeidentifySpreadsheetRequestFile, \
-    DeidentifyDocumentRequestFile, DeidentifyFileRequestFile
+from skyflow.generated.rest import FileDataDeidentifyText, FileDataDeidentifyPdf, FileDataDeidentifyPresentation, \
+    FileDataDeidentifySpreadsheet, FileDataDeidentifyDocument, FileDataDeidentifyStructuredText, FileData, \
+    FileDataDeidentifyImage, Format, FileDataDeidentifyAudio, WordCharacterCount, DetectRunsResponse
 from skyflow.utils._skyflow_messages import SkyflowMessages
-from skyflow.utils._utils import get_metrics, handle_exception, parse_deidentify_text_response, parse_reidentify_text_response
+from skyflow.utils._utils import get_attribute, get_metrics, handle_exception, parse_deidentify_text_response, parse_reidentify_text_response
 from skyflow.utils.constants import SKY_META_DATA_HEADER
 from skyflow.utils.logger import log_info, log_error_log
 from skyflow.utils.validations import validate_deidentify_file_request, validate_get_detect_run_request
 from skyflow.utils.validations._validations import validate_deidentify_text_request, validate_reidentify_text_request
 from typing import Dict, Any
-from skyflow.generated.rest.strings.types.reidentify_string_request_format import ReidentifyStringRequestFormat
 from skyflow.vault.detect import DeidentifyTextRequest, DeidentifyTextResponse, ReidentifyTextRequest, \
     ReidentifyTextResponse, DeidentifyFileRequest, DeidentifyFileResponse, GetDetectRunRequest
-
 
 class Detect:
     def __init__(self, vault_client):
@@ -45,7 +43,7 @@ class Detect:
         return deidentify_text_body
 
     def ___build_reidentify_text_body(self, request: ReidentifyTextRequest) -> Dict[str, Any]:
-        parsed_format = ReidentifyStringRequestFormat(
+        parsed_format = Format(
             redacted=request.redacted_entities,
             masked=request.masked_entities,
             plaintext=request.plain_text_entities
@@ -83,6 +81,43 @@ class Detect:
         except Exception as e:
             raise e
 
+    def __save_deidentify_file_response_output(self, response: DetectRunsResponse, output_directory: str, original_file_name: str, name_without_ext: str):
+        if not response or not hasattr(response, 'output') or not response.output or not output_directory:
+            return
+
+        if not os.path.exists(output_directory):
+            return
+
+        deidentify_file_prefix = "processed-"
+        output_list = response.output
+
+        base_original_filename = os.path.basename(original_file_name)
+        base_name_without_ext = os.path.splitext(base_original_filename)[0]
+
+        for idx, output in enumerate(output_list):
+            try:
+                processed_file = get_attribute(output, 'processedFile', 'processed_file')
+                processed_file_type = get_attribute(output, 'processedFileType', 'processed_file_type')
+                processed_file_extension = get_attribute(output, 'processedFileExtension', 'processed_file_extension')
+
+                if not processed_file:
+                    continue
+
+                decoded_data = base64.b64decode(processed_file)
+                
+                if idx == 0 or processed_file_type == 'redacted_file':
+                    output_file_name = os.path.join(output_directory, deidentify_file_prefix + base_original_filename)
+                    if processed_file_extension:
+                        output_file_name = os.path.join(output_directory, f"{deidentify_file_prefix}{base_name_without_ext}.{processed_file_extension}")
+                else:
+                    output_file_name = os.path.join(output_directory, f"{deidentify_file_prefix}{base_name_without_ext}.{processed_file_extension}")
+                
+                with open(output_file_name, 'wb') as f:
+                    f.write(decoded_data)
+            except Exception as e:
+                log_error_log(SkyflowMessages.ErrorLogs.SAVING_DEIDENTIFY_FILE_FAILED.value, self.__vault_client.get_logger())
+                handle_exception(e, self.__vault_client.get_logger())
+
     def __parse_deidentify_file_response(self, data, run_id=None, status=None):
         output = getattr(data, "output", [])
         status_val = getattr(data, "status", None) or status
@@ -91,10 +126,10 @@ class Detect:
         word_count = None
         char_count = None
 
-        word_character_count = getattr(data, "wordCharacterCount", None)
-        if word_character_count and isinstance(word_character_count, dict):
-            word_count = word_character_count.get("wordCount")
-            char_count = word_character_count.get("characterCount")
+        word_character_count = getattr(data, "word_character_count", None)
+        if word_character_count and isinstance(word_character_count, WordCharacterCount):
+            word_count = word_character_count.word_count
+            char_count = word_character_count.character_count
 
         size = getattr(data, "size", None)
 
@@ -104,23 +139,20 @@ class Detect:
         pages = getattr(data, "pages", None)
         slides = getattr(data, "slides", None)
 
-        # Convert output to list of dicts, prefer camelCase keys
         def output_to_dict_list(output):
             result = []
             for o in output:
                 if isinstance(o, dict):
                     result.append({
-                        "file": o.get("processedFile") or o.get("processed_file"),
-                        "type": o.get("processedFileType") or o.get("processed_file_type"),
-                        "extension": o.get("processedFileExtension") or o.get("processed_file_extension")
+                        "file": o.get("processed_file"),
+                        "type": o.get("processed_file_type"),
+                        "extension": o.get("processed_file_extension")
                     })
                 else:
                     result.append({
-                        "file": getattr(o, "processedFile", None) or getattr(o, "processed_file", None),
-                        "type": getattr(o, "processedFileType", None) or getattr(o, "processed_file_type", None),
-                        "extension": getattr(o, "processedFileExtension", None) or getattr(o,
-                                                                                           "processed_file_extension",
-                                                                                           None)
+                        "file": getattr(o, "processed_file", None),
+                        "type": getattr(o, "processed_file_type", None),
+                        "extension": getattr(o, "processed_file_extension", None)
                     })
             return result
 
@@ -141,8 +173,8 @@ class Detect:
     
         return DeidentifyFileResponse(
             file_base64=base64_string,
-            file=file_obj,  # File class will be instantiated in DeidentifyFileResponse
-            type=first_output.get("type", None),
+            file=file_obj,
+            type=first_output.get("type", "UNKNOWN"),
             extension=extension,
             word_count=word_count,
             char_count=char_count,
@@ -153,7 +185,6 @@ class Detect:
             entities=entities,
             run_id=run_id_val,
             status=status_val,
-            errors=None
         )
 
     def __get_token_format(self, request):
@@ -163,7 +194,6 @@ class Detect:
             'default': getattr(request.token_format, "default", None),
             'entity_unq_counter': getattr(request.token_format, "entity_unique_counter", None),
             'entity_only': getattr(request.token_format, "entity_only", None),
-            'vault_token': getattr(request.token_format, "vault_token", None)
         }
 
     def __get_transformations(self, request):
@@ -256,7 +286,7 @@ class Detect:
 
         try:
             if file_extension == 'txt':
-                req_file = DeidentifyTextRequestFile(base_64=base64_string, data_format="txt")
+                req_file = FileDataDeidentifyText(base_64=base64_string, data_format="txt")
                 api_call = files_api.deidentify_text
                 api_kwargs = {
                     'vault_id': self.__vault_client.get_vault_id(),
@@ -270,7 +300,7 @@ class Detect:
                 }
 
             elif file_extension in ['mp3', 'wav']:
-                req_file = DeidentifyAudioRequestFile(base_64=base64_string, data_format=file_extension)
+                req_file = FileDataDeidentifyAudio(base_64=base64_string, data_format=file_extension)
                 api_call = files_api.deidentify_audio
                 api_kwargs = {
                     'vault_id': self.__vault_client.get_vault_id(),
@@ -290,7 +320,7 @@ class Detect:
                 }
 
             elif file_extension == 'pdf':
-                req_file = DeidentifyPdfRequestFile(base_64=base64_string)
+                req_file = FileDataDeidentifyPdf(base_64=base64_string)
                 api_call = files_api.deidentify_pdf
                 api_kwargs = {
                     'vault_id': self.__vault_client.get_vault_id(),
@@ -305,7 +335,7 @@ class Detect:
                 }
 
             elif file_extension in ['jpeg', 'jpg', 'png', 'bmp', 'tif', 'tiff']:
-                req_file = DeidentifyImageRequestFile(base_64=base64_string, data_format=file_extension)
+                req_file = FileDataDeidentifyImage(base_64=base64_string, data_format=file_extension)
                 api_call = files_api.deidentify_image
                 api_kwargs = {
                     'vault_id': self.__vault_client.get_vault_id(),
@@ -321,7 +351,7 @@ class Detect:
                 }
 
             elif file_extension in ['ppt', 'pptx']:
-                req_file = DeidentifyPresentationRequestFile(base_64=base64_string, data_format=file_extension)
+                req_file = FileDataDeidentifyPresentation(base_64=base64_string, data_format=file_extension)
                 api_call = files_api.deidentify_presentation
                 api_kwargs = {
                     'vault_id': self.__vault_client.get_vault_id(),
@@ -334,7 +364,7 @@ class Detect:
                 }
 
             elif file_extension in ['csv', 'xls', 'xlsx']:
-                req_file = DeidentifySpreadsheetRequestFile(base_64=base64_string, data_format=file_extension)
+                req_file = FileDataDeidentifySpreadsheet(base_64=base64_string, data_format=file_extension)
                 api_call = files_api.deidentify_spreadsheet
                 api_kwargs = {
                     'vault_id': self.__vault_client.get_vault_id(),
@@ -343,12 +373,11 @@ class Detect:
                     'token_type': self.__get_token_format(request),
                     'allow_regex': request.allow_regex_list,
                     'restrict_regex': request.restrict_regex_list,
-                    'transformations': self.__get_transformations(request),
                     'request_options': self.__get_headers()
                 }
 
             elif file_extension in ['doc', 'docx']:
-                req_file = DeidentifyDocumentRequestFile(base_64=base64_string, data_format=file_extension)
+                req_file = FileDataDeidentifyDocument(base_64=base64_string, data_format=file_extension)
                 api_call = files_api.deidentify_document
                 api_kwargs = {
                     'vault_id': self.__vault_client.get_vault_id(),
@@ -361,9 +390,7 @@ class Detect:
                 }
 
             elif file_extension in ['json', 'xml']:
-                from skyflow.generated.rest.files.types.deidentify_structured_text_request_file import \
-                    DeidentifyStructuredTextRequestFile
-                req_file = DeidentifyStructuredTextRequestFile(base_64=base64_string, data_format=file_extension)
+                req_file = FileDataDeidentifyStructuredText(base_64=base64_string, data_format=file_extension)
                 api_call = files_api.deidentify_structured_text
                 api_kwargs = {
                     'vault_id': self.__vault_client.get_vault_id(),
@@ -377,7 +404,7 @@ class Detect:
                 }
 
             else:
-                req_file = DeidentifyFileRequestFile(base_64=base64_string, data_format=file_extension)
+                req_file = FileData(base_64=base64_string, data_format=file_extension)
                 api_call = files_api.deidentify_file
                 api_kwargs = {
                     'vault_id': self.__vault_client.get_vault_id(),
@@ -396,12 +423,11 @@ class Detect:
             run_id = getattr(api_response.data, 'run_id', None)
 
             processed_response = self.__poll_for_processed_file(run_id, request.wait_time)
-            parsed_response = self.__parse_deidentify_file_response(processed_response, run_id)
             if request.output_directory and processed_response.status == 'SUCCESS':
-                file_name_only = 'processed-'+os.path.basename(file_name)
-                output_file_path = f"{request.output_directory}/{file_name_only}"
-                with open(output_file_path, 'wb') as output_file:
-                    output_file.write(base64.b64decode(parsed_response.file_base64))
+                name_without_ext, _ = os.path.splitext(file_name)
+                self.__save_deidentify_file_response_output(processed_response, request.output_directory, file_name, name_without_ext)
+
+            parsed_response = self.__parse_deidentify_file_response(processed_response, run_id)
             log_info(SkyflowMessages.Info.DETECT_FILE_SUCCESS.value, self.__vault_client.get_logger())
             return parsed_response
 
@@ -411,9 +437,9 @@ class Detect:
             handle_exception(e, self.__vault_client.get_logger())
 
     def get_detect_run(self, request: GetDetectRunRequest):
+        log_info(SkyflowMessages.Info.GET_DETECT_RUN_TRIGGERED.value,self.__vault_client.get_logger())
         log_info(SkyflowMessages.Info.VALIDATING_GET_DETECT_RUN_INPUT.value, self.__vault_client.get_logger())
         validate_get_detect_run_request(self.__vault_client.get_logger(), request)
-        log_info(SkyflowMessages.Info.DEIDENTIFY_TEXT_REQUEST_RESOLVED.value, self.__vault_client.get_logger())
         self.__initialize()
 
         files_api = self.__vault_client.get_detect_file_api().with_raw_response
@@ -428,6 +454,7 @@ class Detect:
                 parsed_response = self.__parse_deidentify_file_response(DeidentifyFileResponse(run_id=run_id, status='IN_PROGRESS'))
             else:
                 parsed_response = self.__parse_deidentify_file_response(response.data, run_id, response.data.status)
+            log_info(SkyflowMessages.Info.GET_DETECT_RUN_SUCCESS.value,self.__vault_client.get_logger())
             return parsed_response
         except Exception as e:
             log_error_log(SkyflowMessages.ErrorLogs.DETECT_FILE_REQUEST_REJECTED.value,

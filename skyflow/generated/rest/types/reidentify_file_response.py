@@ -4,26 +4,27 @@ import typing
 
 import pydantic
 from ..core.pydantic_utilities import IS_PYDANTIC_V2, UniversalBaseModel
-from .reidentify_file_response_output import ReidentifyFileResponseOutput
+from .reidentified_file_output import ReidentifiedFileOutput
+from .reidentify_file_response_output_type import ReidentifyFileResponseOutputType
 from .reidentify_file_response_status import ReidentifyFileResponseStatus
 
 
 class ReidentifyFileResponse(UniversalBaseModel):
     """
-    Response to re-identify a file.
+    Response to get the status & response of a file re-identification request.
     """
 
-    status: ReidentifyFileResponseStatus = pydantic.Field()
+    status: typing.Optional[ReidentifyFileResponseStatus] = pydantic.Field(default=None)
     """
-    Status of the re-identify operation.
+    Status of the operation.
     """
 
-    output_type: typing.Literal["BASE64"] = pydantic.Field(default="BASE64")
+    output_type: typing.Optional[ReidentifyFileResponseOutputType] = pydantic.Field(default=None)
     """
     Format of the output file.
     """
 
-    output: ReidentifyFileResponseOutput
+    output: typing.Optional[ReidentifiedFileOutput] = None
 
     if IS_PYDANTIC_V2:
         model_config: typing.ClassVar[pydantic.ConfigDict] = pydantic.ConfigDict(extra="allow", frozen=True)  # type: ignore # Pydantic v2

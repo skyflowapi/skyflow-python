@@ -5,6 +5,7 @@ import typing
 from .. import core
 from ..core.client_wrapper import AsyncClientWrapper, SyncClientWrapper
 from ..core.request_options import RequestOptions
+from ..types.upload_file_v_2_response import UploadFileV2Response
 from ..types.v_1_batch_operation_response import V1BatchOperationResponse
 from ..types.v_1_batch_record import V1BatchRecord
 from ..types.v_1_bulk_delete_record_response import V1BulkDeleteRecordResponse
@@ -191,6 +192,13 @@ class RecordsClient:
         client.records.record_service_bulk_get_record(
             vault_id="vaultID",
             object_name="objectName",
+            redaction="DEFAULT",
+            tokenization=True,
+            offset="offset",
+            limit="limit",
+            download_url=True,
+            column_name="column_name",
+            order_by="ASCENDING",
         )
         """
         _response = self._raw_client.record_service_bulk_get_record(
@@ -408,6 +416,9 @@ class RecordsClient:
             vault_id="vaultID",
             object_name="objectName",
             id="ID",
+            redaction="DEFAULT",
+            tokenization=True,
+            download_url=True,
         )
         """
         _response = self._raw_client.record_service_get_record(
@@ -700,6 +711,72 @@ class RecordsClient:
         )
         return _response.data
 
+    def upload_file_v_2(
+        self,
+        vault_id: str,
+        *,
+        table_name: str,
+        column_name: str,
+        file: core.File,
+        skyflow_id: typing.Optional[str] = OMIT,
+        return_file_metadata: typing.Optional[bool] = OMIT,
+        request_options: typing.Optional[RequestOptions] = None,
+    ) -> UploadFileV2Response:
+        """
+        Uploads the specified file to a record. If an existing record isn't specified, creates a new record and uploads the file to that record.
+
+        Parameters
+        ----------
+        vault_id : str
+            ID of the vault.
+
+        table_name : str
+            Name of the table to upload the file to.
+
+        column_name : str
+            Name of the column to upload the file to. The column must have a `file` data type.
+
+        file : core.File
+            See core.File for more documentation
+
+        skyflow_id : typing.Optional[str]
+            Skyflow ID of the record to upload the file to. If `skyflowID` isn't specified, a new record will be created.
+
+        return_file_metadata : typing.Optional[bool]
+            If `true`, returns metadata about the uploaded file.
+
+        request_options : typing.Optional[RequestOptions]
+            Request-specific configuration.
+
+        Returns
+        -------
+        UploadFileV2Response
+            File uploaded successfully.
+
+        Examples
+        --------
+        from skyflow import Skyflow
+
+        client = Skyflow(
+            token="YOUR_TOKEN",
+        )
+        client.records.upload_file_v_2(
+            vault_id="d4410ea01d83473ca09a24c6b03096d4",
+            table_name="tableName",
+            column_name="columnName",
+        )
+        """
+        _response = self._raw_client.upload_file_v_2(
+            vault_id,
+            table_name=table_name,
+            column_name=column_name,
+            file=file,
+            skyflow_id=skyflow_id,
+            return_file_metadata=return_file_metadata,
+            request_options=request_options,
+        )
+        return _response.data
+
 
 class AsyncRecordsClient:
     def __init__(self, *, client_wrapper: AsyncClientWrapper):
@@ -880,6 +957,13 @@ class AsyncRecordsClient:
             await client.records.record_service_bulk_get_record(
                 vault_id="vaultID",
                 object_name="objectName",
+                redaction="DEFAULT",
+                tokenization=True,
+                offset="offset",
+                limit="limit",
+                download_url=True,
+                column_name="column_name",
+                order_by="ASCENDING",
             )
 
 
@@ -1121,6 +1205,9 @@ class AsyncRecordsClient:
                 vault_id="vaultID",
                 object_name="objectName",
                 id="ID",
+                redaction="DEFAULT",
+                tokenization=True,
+                download_url=True,
             )
 
 
@@ -1453,5 +1540,79 @@ class AsyncRecordsClient:
         """
         _response = await self._raw_client.file_service_get_file_scan_status(
             vault_id, table_name, id, column_name, request_options=request_options
+        )
+        return _response.data
+
+    async def upload_file_v_2(
+        self,
+        vault_id: str,
+        *,
+        table_name: str,
+        column_name: str,
+        file: core.File,
+        skyflow_id: typing.Optional[str] = OMIT,
+        return_file_metadata: typing.Optional[bool] = OMIT,
+        request_options: typing.Optional[RequestOptions] = None,
+    ) -> UploadFileV2Response:
+        """
+        Uploads the specified file to a record. If an existing record isn't specified, creates a new record and uploads the file to that record.
+
+        Parameters
+        ----------
+        vault_id : str
+            ID of the vault.
+
+        table_name : str
+            Name of the table to upload the file to.
+
+        column_name : str
+            Name of the column to upload the file to. The column must have a `file` data type.
+
+        file : core.File
+            See core.File for more documentation
+
+        skyflow_id : typing.Optional[str]
+            Skyflow ID of the record to upload the file to. If `skyflowID` isn't specified, a new record will be created.
+
+        return_file_metadata : typing.Optional[bool]
+            If `true`, returns metadata about the uploaded file.
+
+        request_options : typing.Optional[RequestOptions]
+            Request-specific configuration.
+
+        Returns
+        -------
+        UploadFileV2Response
+            File uploaded successfully.
+
+        Examples
+        --------
+        import asyncio
+
+        from skyflow import AsyncSkyflow
+
+        client = AsyncSkyflow(
+            token="YOUR_TOKEN",
+        )
+
+
+        async def main() -> None:
+            await client.records.upload_file_v_2(
+                vault_id="d4410ea01d83473ca09a24c6b03096d4",
+                table_name="tableName",
+                column_name="columnName",
+            )
+
+
+        asyncio.run(main())
+        """
+        _response = await self._raw_client.upload_file_v_2(
+            vault_id,
+            table_name=table_name,
+            column_name=column_name,
+            file=file,
+            skyflow_id=skyflow_id,
+            return_file_metadata=return_file_metadata,
+            request_options=request_options,
         )
         return _response.data

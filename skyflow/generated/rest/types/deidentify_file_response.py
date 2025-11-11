@@ -8,12 +8,12 @@ from ..core.pydantic_utilities import IS_PYDANTIC_V2, UniversalBaseModel
 
 class DeidentifyFileResponse(UniversalBaseModel):
     """
-    Response to de-identify a file.
+    Response to deidentify a file.
     """
 
-    run_id: str = pydantic.Field()
+    run_id: typing.Optional[str] = pydantic.Field(default=None)
     """
-    Status URL for the detect run.
+    Status URL for the Detect run.
     """
 
     if IS_PYDANTIC_V2:

@@ -1,4 +1,4 @@
-from ..utils.enums import LogLevel, Env
+from ..utils.enums import LogLevel, Env, TokenType
 from ._skyflow_messages import SkyflowMessages
 from ._version import SDK_VERSION
 from ._helpers import get_base_url, format_scope

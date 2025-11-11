@@ -1,6 +1,6 @@
+import base64
 import json
 import os
-from skyflow.generated.rest import TokenType
 from skyflow.service_account import is_expired
 from skyflow.utils.enums import LogLevel, Env, RedactionType, TokenMode, DetectEntities, DetectOutputTranscriptions, \
     MaskingMethod
@@ -276,7 +276,7 @@ def validate_file_from_request(file_input: FileInput):
             raise SkyflowError(SkyflowMessages.Error.INVALID_FILE_TYPE.value, invalid_input_error_code)
         
         # Validate file name
-        file_name = os.path.splitext(file.name)[0]
+        file_name, _ = os.path.splitext(os.path.basename(file.name))
         if not file_name or not file_name.strip():
             raise SkyflowError(SkyflowMessages.Error.INVALID_FILE_NAME.value, invalid_input_error_code)
             
@@ -393,10 +393,10 @@ def validate_deidentify_file_request(logger, request: DeidentifyFileRequest):
             raise SkyflowError(SkyflowMessages.Error.WAIT_TIME_GREATER_THEN_64.value, invalid_input_error_code)
 
 def validate_insert_request(logger, request):
-    if not isinstance(request.table_name, str):
+    if not isinstance(request.table, str):
         log_error_log(SkyflowMessages.ErrorLogs.TABLE_IS_REQUIRED.value.format("INSERT"), logger = logger)
         raise SkyflowError(SkyflowMessages.Error.INVALID_TABLE_NAME_IN_INSERT.value, invalid_input_error_code)
-    if not request.table_name.strip():
+    if not request.table.strip():
         log_error_log(SkyflowMessages.ErrorLogs.EMPTY_TABLE_NAME.value.format("INSERT"), logger = logger)
         raise SkyflowError(SkyflowMessages.Error.MISSING_TABLE_NAME_IN_INSERT.value, invalid_input_error_code)
 
@@ -691,6 +691,69 @@ def validate_tokenize_request(logger, request):
         if not param.get("column_group"):
             log_error_log(SkyflowMessages.ErrorLogs.EMPTY_COLUMN_GROUP_IN_COLUMN_VALUES.value.format("TOKENIZE"), logger = logger)
             raise SkyflowError(SkyflowMessages.Error.EMPTY_TOKENIZE_PARAMETER_COLUMN_GROUP.value.format(i), invalid_input_error_code)
+
+
+def validate_file_upload_request(logger, request):
+    if request is None:
+        raise SkyflowError(SkyflowMessages.Error.INVALID_TABLE_VALUE.value, invalid_input_error_code)
+
+    # Table
+    table = getattr(request, "table", None)
+    if table is None:
+        raise SkyflowError(SkyflowMessages.Error.INVALID_TABLE_VALUE.value, invalid_input_error_code)
+    elif table.strip() == "":
+        raise SkyflowError(SkyflowMessages.Error.EMPTY_TABLE_VALUE.value, invalid_input_error_code)
+
+    # Skyflow ID
+    skyflow_id = getattr(request, "skyflow_id", None)
+    if skyflow_id is None:
+        raise SkyflowError(SkyflowMessages.Error.IDS_KEY_ERROR.value, invalid_input_error_code)
+    elif skyflow_id.strip() == "":
+        raise SkyflowError(SkyflowMessages.Error.EMPTY_SKYFLOW_ID.value.format("FILE_UPLOAD"), invalid_input_error_code)
+
+    # Column Name
+    column_name = getattr(request, "column_name", None)
+    if column_name is None:
+        raise SkyflowError(SkyflowMessages.Error.INVALID_FILE_COLUMN_NAME.value.format(type(column_name)), invalid_input_error_code)
+    elif column_name.strip() == "":
+        logger.error("Empty column name in FILE_UPLOAD")
+        raise SkyflowError(SkyflowMessages.Error.INVALID_FILE_COLUMN_NAME.value.format(type(column_name)), invalid_input_error_code)
+
+    # File-related attributes
+    file_path = getattr(request, "file_path", None)
+    base64_str = getattr(request, "base64", None)
+    file_object = getattr(request, "file_object", None)
+    file_name = getattr(request, "file_name", None)
+
+    # Check file_path first if present
+    if not is_none_or_empty(file_path):
+        if not os.path.exists(file_path) or not os.path.isfile(file_path):
+            raise SkyflowError(SkyflowMessages.Error.INVALID_FILE_PATH.value, invalid_input_error_code)
+        return
+
+    # Check base64 if present
+    if not is_none_or_empty(base64_str):
+        if is_none_or_empty(file_name):
+            raise SkyflowError(SkyflowMessages.Error.INVALID_FILE_NAME.value, invalid_input_error_code)
+        try:
+            base64.b64decode(base64_str)
+        except Exception:
+            raise SkyflowError(SkyflowMessages.Error.INVALID_BASE64_STRING.value, invalid_input_error_code)
+        return
+
+    # Check file_object if present
+    if file_object is not None:
+        try:
+            file_object.seek(0, 1)
+            return
+        except Exception:
+            raise SkyflowError(SkyflowMessages.Error.INVALID_FILE_OBJECT.value, invalid_input_error_code)
+
+    # If none of the above, raise missing file source error
+    raise SkyflowError(SkyflowMessages.Error.MISSING_FILE_SOURCE.value, invalid_input_error_code)
+
+def is_none_or_empty(value: str) -> bool:
+    return value is None or (isinstance(value, str) and value.strip() == "")
 
 def validate_invoke_connection_params(logger, query_params, path_params):
     if not isinstance(path_params, dict):

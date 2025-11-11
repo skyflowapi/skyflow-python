@@ -100,6 +100,8 @@ class SkyflowMessages:
         INVALID_TABLE_VALUE = f"{error_prefix} Validation error. Invalid type of table. Specify table as a string"
         EMPTY_RECORD_IDS_IN_DELETE = f"{error_prefix} Validation error. 'record ids' array can't be empty. Specify one or more record ids."
         BULK_DELETE_FAILURE = f"{error_prefix} Delete operation failed."
+        EMPTY_SKYFLOW_ID= f"{error_prefix} Validation error. skyflow_id can't be empty."
+        INVALID_FILE_COLUMN_NAME= f"{error_prefix} Validation error. 'column_name' can't be empty."
 
         INVALID_QUERY_TYPE = f"{error_prefix} Validation error. Query parameter is of type {{}}. Specify as a string."
         EMPTY_QUERY = f"{error_prefix} Validation error. Query parameter can't be empty. Specify as a string."
@@ -198,6 +200,7 @@ class SkyflowMessages:
         INVALID_FILE_OR_ENCODED_FILE= f"{error_prefix} . Error while decoding base64 and saving file"
         INVALID_FILE_TYPE = f"{error_prefix} Validation error. Invalid file type. Specify a valid file type."
         INVALID_FILE_NAME= f"{error_prefix} Validation error. Invalid file name. Specify a valid file name."
+        INVALID_FILE_PATH= f"{error_prefix} Validation error. Invalid file path. Specify a valid file path."
         INVALID_DEIDENTIFY_FILE_PATH= f"{error_prefix} Validation error. Invalid file path. Specify a valid file path."
         INVALID_BASE64_HEADER= f"{error_prefix} Validation error. Invalid base64 header. Specify a valid base64 header."
         INVALID_WAIT_TIME= f"{error_prefix} Validation error. Invalid wait time. Specify a valid wait time as number and should not be greater than 64 secs."
@@ -270,6 +273,12 @@ class SkyflowMessages:
         VALIDATING_TOKENIZE_REQUEST = f"{INFO}: [{error_prefix}] Validating tokenize request."
         TOKENIZE_REQUEST_RESOLVED = f"{INFO}: [{error_prefix}] Tokenize request resolved."
         TOKENIZE_SUCCESS = f"{INFO}: [{error_prefix}] Data tokenized."
+
+        FILE_UPLOAD_TRIGGERED = f"{INFO}: [{error_prefix}] File upload method triggered."
+        VALIDATING_FILE_UPLOAD_REQUEST = f"{INFO}: [{error_prefix}] Validating file upload request."
+        FILE_UPLOAD_REQUEST_RESOLVED = f"{INFO}: [{error_prefix}] File upload request resolved."
+        FILE_UPLOAD_SUCCESS = f"{INFO}: [{error_prefix}] File uploaded successfully."
+        FILE_UPLOAD_REQUEST_REJECTED = f"{ERROR}: [{error_prefix}] File upload failed."
 
         INVOKE_CONNECTION_TRIGGERED = f"{INFO}: [{error_prefix}] Invoke connection method triggered."
         VALIDATING_INVOKE_CONNECTION_REQUEST = f"{INFO}: [{error_prefix}] Validating invoke connection request."
@@ -374,6 +383,7 @@ class SkyflowMessages:
         DEIDENTIFY_FILE_REQUEST_REJECTED = f"{ERROR}: [{error_prefix}] Deidentify file resulted in failure."
         DETECT_RUN_REQUEST_REJECTED = f"{ERROR}: [{error_prefix}] Detect get run resulted in failure."
         DEIDENTIFY_TEXT_REQUEST_REJECTED = f"{ERROR}: [{error_prefix}] Deidentify text resulted in failure."
+        SAVING_DEIDENTIFY_FILE_FAILED = f"{ERROR}: [{error_prefix}] Error while saving deidentified file to output directory."
         REIDENTIFY_TEXT_REQUEST_REJECTED = f"{ERROR}: [{error_prefix}] Reidentify text resulted in failure."
         DETECT_FILE_REQUEST_REJECTED = f"{ERROR}: [{error_prefix}] Deidentify file resulted in failure."
 

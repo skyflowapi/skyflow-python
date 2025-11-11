@@ -4,8 +4,7 @@ import typing
 
 from ..core.client_wrapper import AsyncClientWrapper, SyncClientWrapper
 from ..core.request_options import RequestOptions
-from ..types.check_guardrails_response import CheckGuardrailsResponse
-from ..types.vault_id import VaultId
+from ..types.detect_guardrails_response import DetectGuardrailsResponse
 from .raw_client import AsyncRawGuardrailsClient, RawGuardrailsClient
 
 # this is used as the default value for optional parameters
@@ -30,24 +29,25 @@ class GuardrailsClient:
     def check_guardrails(
         self,
         *,
-        vault_id: VaultId,
         text: str,
+        vault_id: str,
         check_toxicity: typing.Optional[bool] = OMIT,
         deny_topics: typing.Optional[typing.Sequence[str]] = OMIT,
         request_options: typing.Optional[RequestOptions] = None,
-    ) -> CheckGuardrailsResponse:
+    ) -> DetectGuardrailsResponse:
         """
         Preserve safety and compliance with usage policies.
 
         Parameters
         ----------
-        vault_id : VaultId
-
         text : str
             Text to check against guardrails.
 
+        vault_id : str
+            ID of the vault.
+
         check_toxicity : typing.Optional[bool]
-            Check for toxicity in the text.
+            If `true`, checks for toxicity in the text.
 
         deny_topics : typing.Optional[typing.Sequence[str]]
             List of topics to deny.
@@ -57,8 +57,8 @@ class GuardrailsClient:
 
         Returns
         -------
-        CheckGuardrailsResponse
-            A successful response.
+        DetectGuardrailsResponse
+            OK
 
         Examples
         --------
@@ -68,15 +68,15 @@ class GuardrailsClient:
             token="YOUR_TOKEN",
         )
         client.guardrails.check_guardrails(
-            vault_id="VAULT_ID",
             text="I love to play cricket.",
             check_toxicity=True,
             deny_topics=["sports"],
+            vault_id="$VAULT_ID",
         )
         """
         _response = self._raw_client.check_guardrails(
-            vault_id=vault_id,
             text=text,
+            vault_id=vault_id,
             check_toxicity=check_toxicity,
             deny_topics=deny_topics,
             request_options=request_options,
@@ -102,24 +102,25 @@ class AsyncGuardrailsClient:
     async def check_guardrails(
         self,
         *,
-        vault_id: VaultId,
         text: str,
+        vault_id: str,
         check_toxicity: typing.Optional[bool] = OMIT,
         deny_topics: typing.Optional[typing.Sequence[str]] = OMIT,
         request_options: typing.Optional[RequestOptions] = None,
-    ) -> CheckGuardrailsResponse:
+    ) -> DetectGuardrailsResponse:
         """
         Preserve safety and compliance with usage policies.
 
         Parameters
         ----------
-        vault_id : VaultId
-
         text : str
             Text to check against guardrails.
 
+        vault_id : str
+            ID of the vault.
+
         check_toxicity : typing.Optional[bool]
-            Check for toxicity in the text.
+            If `true`, checks for toxicity in the text.
 
         deny_topics : typing.Optional[typing.Sequence[str]]
             List of topics to deny.
@@ -129,8 +130,8 @@ class AsyncGuardrailsClient:
 
         Returns
         -------
-        CheckGuardrailsResponse
-            A successful response.
+        DetectGuardrailsResponse
+            OK
 
         Examples
         --------
@@ -145,18 +146,18 @@ class AsyncGuardrailsClient:
 
         async def main() -> None:
             await client.guardrails.check_guardrails(
-                vault_id="VAULT_ID",
                 text="I love to play cricket.",
                 check_toxicity=True,
                 deny_topics=["sports"],
+                vault_id="$VAULT_ID",
             )
 
 
         asyncio.run(main())
         """
         _response = await self._raw_client.check_guardrails(
-            vault_id=vault_id,
             text=text,
+            vault_id=vault_id,
             check_toxicity=check_toxicity,
             deny_topics=deny_topics,
             request_options=request_options,

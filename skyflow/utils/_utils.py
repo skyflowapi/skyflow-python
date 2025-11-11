@@ -14,7 +14,7 @@ from urllib.parse import quote
 from skyflow.error import SkyflowError
 from skyflow.generated.rest import V1UpdateRecordResponse, V1BulkDeleteRecordResponse, \
     V1DetokenizeResponse, V1TokenizeResponse, V1GetQueryResponse, V1BulkGetRecordResponse, \
-    DeidentifyStringResponse, ReidentifyStringResponse, ErrorResponse
+    DeidentifyStringResponse, ErrorResponse, IdentifyResponse
 from skyflow.generated.rest.core.http_response import HttpResponse
 from skyflow.utils.logger import log_error_log
 from skyflow.vault.detect import DeidentifyTextResponse, ReidentifyTextResponse
@@ -388,7 +388,7 @@ def parse_deidentify_text_response(api_response: DeidentifyStringResponse):
         char_count=api_response.character_count
     )
 
-def parse_reidentify_text_response(api_response: ReidentifyStringResponse):
+def parse_reidentify_text_response(api_response: IdentifyResponse):
     return ReidentifyTextResponse(api_response.text)
 
 def log_and_reject_error(description, status_code, request_id, http_status=None, grpc_code=None, details=None, logger = None):
@@ -447,3 +447,6 @@ def encode_column_values(get_request):
         encoded_column_values.append(quote(column))
 
     return encoded_column_values
+
+def get_attribute(obj, camel_case, snake_case):
+    return getattr(obj, camel_case, None) or getattr(obj, snake_case, None)
