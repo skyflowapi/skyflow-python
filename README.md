@@ -10,11 +10,11 @@ The Skyflow Python SDK is designed to help with integrating Skyflow into a Pytho
     - [Requirements](#requirements)
     - [Configuration](#configuration)
 - [Migration from v1 to v2](#migration-from-v1-to-v2)
-    - [Authentication options](#1-authentication-options)
-    - [Initializing the client](#2-initializing-the-client)
-    - [Request & response structure](#3-request--response-structure)
-    - [Request options](#4-request-options)
-    - [Error structure](#5-error-structure)
+    - [Authentication options](#authentication-options)
+    - [Initializing the client](#initializing-the-client)
+    - [Request & response structure](#request--response-structure)
+    - [Request options](#request-options)
+    - [Error structure](#error-structure)
 - [Quickstart](#quickstart)
     - [Authenticate](#authenticate)
     - [Initialize the client](#initialize-the-client)
@@ -31,6 +31,7 @@ The Skyflow Python SDK is designed to help with integrating Skyflow into a Pytho
     - [Update](#update)
     - [Delete](#delete)
     - [Query](#query)
+    - [Upload File](#upload-file)
 - [Detect](#detect)
     - [Deidentify Text](#deidentify-text)
     - [Reidentify Text](#reidentify-text)
@@ -771,7 +772,7 @@ Notes:
 - `redaction_type` defaults to `RedactionType.PLAIN_TEXT`.
 - `continue_on_error` default valus is `False`.
 
-#### An [example](https://github.com/skyflowapi/skyflow-python/blob/v2/samples/vault_api/detokenize_records.py) of a detokenize call
+#### An [example](https://github.com/skyflowapi/skyflow-python/blob/main/samples/vault_api/detokenize_records.py) of a detokenize call
 
 ```python
 from skyflow.error import SkyflowError
@@ -948,7 +949,7 @@ except Exception as error:
     print('Unexpected Error:', error)  # Print the stack trace for debugging purposes
 ```
 
-#### An [example](https://github.com/skyflowapi/skyflow-python/blob/v2/samples/vault_api/tokenize_records.py) of Tokenize call
+#### An [example](https://github.com/skyflowapi/skyflow-python/blob/main/samples/vault_api/tokenize_records.py) of Tokenize call
 
 ```python
 from skyflow.error import SkyflowError
@@ -1086,7 +1087,7 @@ except Exception as error:
 Retrieve specific records using skyflow `ids`. Ideal for fetching exact records when IDs are known.
 
 
-#### An [example](https://github.com/skyflowapi/skyflow-python/blob/v2/samples/vault_api/get_records.py) of a get call to retrieve data using Redaction type:
+#### An [example](https://github.com/skyflowapi/skyflow-python/blob/main/samples/vault_api/get_records.py) of a get call to retrieve data using Redaction type:
 
 ```python
 from skyflow.error import SkyflowError
@@ -1163,7 +1164,7 @@ GetResponse(
 #### Get tokens
 Return tokens for records. Ideal for securely processing sensitive data while maintaining data privacy.
 
-#### An [example](https://github.com/skyflowapi/skyflow-python/blob/v2/samples/vault_api/get_records.py) of get call to retrieve tokens using Skyflow IDs:
+#### An [example](https://github.com/skyflowapi/skyflow-python/blob/main/samples/vault_api/get_records.py) of get call to retrieve tokens using Skyflow IDs:
 
 
 ```python
@@ -1386,7 +1387,7 @@ except Exception as error:
     print('Unexpected Error:', error)  # Print the stack trace for debugging purposes
 ```
 
-#### An [example](https://github.com/skyflowapi/skyflow-python/blob/v2/samples/vault_api/update_record.py) of update call
+#### An [example](https://github.com/skyflowapi/skyflow-python/blob/main/samples/vault_api/update_record.py) of update call
 
 ```python
 from skyflow.error import SkyflowError
@@ -1513,7 +1514,7 @@ except Exception as error:
     print('Unexpected Error:', error)  # Print the exception stack trace for debugging purposes
 ```
 
-#### An [example](https://github.com/skyflowapi/skyflow-python/blob/v2/samples/vault_api/delete_records.py) of delete call
+#### An [example](https://github.com/skyflowapi/skyflow-python/blob/main/samples/vault_api/delete_records.py) of delete call
 
 ```python
 from skyflow.error import SkyflowError
@@ -1613,7 +1614,7 @@ except Exception as error:
     # Handle any unexpected errors during execution
     print('Unexpected Error:', error)  # Print the stack trace for debugging purposes
 ```
-#### An [example](https://github.com/skyflowapi/skyflow-python/blob/v2/samples/vault_api/query_records.py) of query call
+#### An [example](https://github.com/skyflowapi/skyflow-python/blob/main/samples/vault_api/query_records.py) of query call
 
 ```python
 from skyflow.error import SkyflowError
@@ -1671,6 +1672,82 @@ QueryResponse(
     ],
     errors=[]
 )
+```
+
+### Upload File
+To upload files to a Skyflow vault, use the `upload_file` method. The `FileUploadRequest` class accepts parameters such as the table name, column name, skyflow ID, and either a file path, a file object or a base64 encoded file.
+
+#### Construct an upload file request
+
+You can upload a file by providing either a file path or a file object:
+
+```python
+from skyflow.error import SkyflowError
+from skyflow.vault.data import FileUploadRequest
+
+try:
+    with open('<PATH_TO_FILE>', 'rb') as file_obj:
+        file_upload_request = FileUploadRequest(
+            table='<TABLE_NAME>',         # Table to upload file to
+            column_name='<COLUMN_NAME>',  # Column to upload file into
+            file_object=file_obj,         # File object opened in binary mode
+            skyflow_id='<SKYFLOW_ID>'     # Record ID to associate the file with
+        )
+        response = skyflow_client.vault('<VAULT_ID>').upload_file(file_upload_request)
+        print('File upload successful:', response)
+
+except SkyflowError as error:
+    print('Skyflow Specific Error:', {
+        'code': error.http_code,
+        'message': error.message,
+        'details': error.details
+    })
+except Exception as error:
+    print('Unexpected Error:', error)
+```
+
+#### An [example](https://github.com/skyflowapi/skyflow-python/blob/main/samples/vault_api/upload_file.py) of upload file call
+
+```python
+from skyflow.error import SkyflowError
+from skyflow.vault.data import FileUploadRequest
+
+"""
+This example demonstrates how to upload a file to a Skyflow vault using a file object.
+
+1. Initializes the Skyflow client with the Vault ID.
+2. Constructs an upload file request.
+3. Uploads the file into the Skyflow vault.
+4. Prints the response to confirm the success or failure of the upload file operation.
+"""
+
+try:
+    # Initialize Skyflow client
+    # Step 1: Open a file
+    with open('my_document.pdf', 'rb') as file_obj:
+        # Step 2: Create a FileIploadRequest to define the upload file operation
+        file_upload_request = FileUploadRequest(
+            table='documents',
+            column_name='attachment',
+            file_object=file_obj,
+            skyflow_id='123e4567-e89b-12d3-a456-426614174000'
+        )
+
+        # Step 3: Execute the upload file request on the specified Skyflow vault
+        response = skyflow_client.vault('9f27764a10f7946fe56b3258e117').upload_file(file_upload_request)
+        
+        # Step 4: Print the response containing the query results
+        print('File upload successful:', response)
+
+except SkyflowError as error:
+    # Step 5: Handle any exceptions that occur during the query execution
+    print('Skyflow Specific Error:', {
+        'code': error.http_code,
+        'message': error.message,
+        'details': error.details
+    })
+except Exception as error:
+    print('Unexpected Error:', error)  # Print the stack trace for debugging purposes
 ```
 
 ## Detect
@@ -2254,7 +2331,7 @@ except Exception as error:
 
 **path_params, query_params, header, body** are the JSON objects represented as dictionaries that will be sent through the connection integration url.
 
-#### An [example](https://github.com/skyflowapi/skyflow-python/blob/v2/samples/vault_api/invoke_connection.py) of Invoke Connection
+#### An [example](https://github.com/skyflowapi/skyflow-python/blob/main/samples/vault_api/invoke_connection.py) of Invoke Connection
 
 ```python
 from skyflow import Skyflow, LogLevel
@@ -2364,7 +2441,7 @@ The [Service Account](https://github.com/skyflowapi/skyflow-python/tree/v2/skyfl
 
 The `generate_bearer_token(filepath)` function takes the credentials file path for token generation, alternatively, you can also send the entire credentials as string, by using `generate_bearer_token_from_creds(credentials)`
 
-#### [Example](https://github.com/skyflowapi/skyflow-python/blob/v2/samples/service_account/token_generation_example.py):
+#### [Example](https://github.com/skyflowapi/skyflow-python/blob/main/samples/service_account/token_generation_example.py):
 
 ```python
 import json
@@ -2439,7 +2516,7 @@ except Exception as e:
 
 A service account with the context_id identifier generates bearer tokens containing context information, represented as a JWT claim in a Skyflow-generated bearer token. Tokens generated from such service accounts include a context_identifier claim, are valid for 60 minutes, and can be used to make API calls to the Data and Management APIs, depending on the service account's permissions.
 
-#### [Example](https://github.com/skyflowapi/skyflow-python/blob/v2/samples/service_account/token_generation_with_context_example.py):
+#### [Example](https://github.com/skyflowapi/skyflow-python/blob/main/samples/service_account/token_generation_with_context_example.py):
 ```python
 import json
 from skyflow.error import SkyflowError
@@ -2519,7 +2596,7 @@ except Exception as e:
 #### Generate scoped bearer tokens
 A service account with multiple roles can generate bearer tokens with access limited to a specific role by specifying the appropriate roleID. This can be used to limit access to specific roles for services with multiple responsibilities, such as segregating access for billing and analytics. The generated bearer tokens are valid for 60 minutes and can only execute operations permitted by the permissions associated with the designated role.
 
-#### [Example](https://github.com/skyflowapi/skyflow-python/blob/v2/samples/service_account/scoped_token_generation_example.py):
+#### [Example](https://github.com/skyflowapi/skyflow-python/blob/main/samples/service_account/scoped_token_generation_example.py):
 ```python
 import json
 from skyflow.error import SkyflowError
@@ -2565,7 +2642,7 @@ except Exception as e:
 #### Generate signed data tokens
 Skyflow generates data tokens when sensitive data is inserted into the vault. These data tokens can be digitally signed with a service account's private key, adding an extra layer of protection. Signed tokens can only be detokenized by providing the signed data token along with a bearer token generated from the service account's credentials. The service account must have the necessary permissions and context to successfully detokenize the signed data tokens.
 
-#### [Example](https://github.com/skyflowapi/skyflow-python/blob/v2/samples/service_account/signed_token_generation_example.py):
+#### [Example](https://github.com/skyflowapi/skyflow-python/blob/main/samples/service_account/signed_token_generation_example.py):
 ```python
 import json
 from skyflow.error import SkyflowError
@@ -2648,7 +2725,7 @@ message: Authentication failed. Bearer token is expired. Use a valid bearer toke
 
 If you encounter this kind of error, retry the request. During the retry, the SDK detects that the previous bearer token has expired and generates a new one for the current and subsequent requests.
 
-#### [Example](https://github.com/skyflowapi/skyflow-python/blob/v2/samples/service_account/bearer_token_expiry_example.py):
+#### [Example](https://github.com/skyflowapi/skyflow-python/blob/main/samples/service_account/bearer_token_expiry_example.py):
 ```python
 import json
 from skyflow.error import SkyflowError
