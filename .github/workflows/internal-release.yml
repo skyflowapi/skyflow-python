@@ -8,7 +8,7 @@ on:
       - "setup.py"
       - "*.yml"
       - "*.md"
-      - "skyflow/version.py"
+      - "skyflow/utils/_version.py"
       - "samples/**"
     branches:
       - release/*
@@ -20,3 +20,4 @@ jobs:
       ref: ${{ github.ref_name }}
       tag: 'internal'
     secrets: inherit
+      

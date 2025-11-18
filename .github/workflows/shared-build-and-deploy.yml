@@ -7,7 +7,7 @@ on:
         description: 'Git reference to use (e.g., main or branch name)'
         required: true
         type: string
-
+      
       tag:
         description: 'Release Tag'
         required: true
@@ -26,18 +26,23 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install setuptools wheel twine
+
       - name: Resolve Branch for the Tagged Commit
         id: resolve-branch
         if: ${{ inputs.tag == 'beta' || inputs.tag == 'public' }} 
         run: |
           TAG_COMMIT=$(git rev-list -n 1 ${{ github.ref_name }})
+
           BRANCH_NAME=$(git branch -r --contains $TAG_COMMIT | grep -o 'origin/.*' | sed 's|origin/||' | head -n 1)
+
           if [ -z "$BRANCH_NAME" ]; then
             echo "Error: Could not resolve branch for the tag."
             exit 1
           fi
+
           echo "Resolved Branch Name: $BRANCH_NAME"
           echo "branch_name=$BRANCH_NAME" >> $GITHUB_ENV
+
       - name: Get Previous tag
         id: previoustag
         uses: WyriHaximus/github-action-get-previous-tag@v1
@@ -52,18 +57,45 @@ jobs:
           else
             ./ci-scripts/bump_version.sh "${{ steps.previoustag.outputs.tag }}"
           fi
+
       - name: Commit changes
         run: |
           git config user.name "${{ github.actor }}"
           git config user.email "${{ github.actor }}@users.noreply.github.com"
+
+          if [[ "${{ inputs.tag }}" == "beta" || "${{ inputs.tag }}" == "public" ]]; then
+            git checkout ${{ env.branch_name }}
+          fi
+
           git add setup.py
-          git add skyflow/version.py
+          git add skyflow/utils/_version.py
+
           if [[ "${{ inputs.tag }}" == "internal" ]]; then
             VERSION="${{ steps.previoustag.outputs.tag }}.dev0+$(git rev-parse --short $GITHUB_SHA)"
             COMMIT_MESSAGE="[AUTOMATED] Private Release $VERSION"
             git commit -m "$COMMIT_MESSAGE"
             git push origin ${{ github.ref_name }} -f
           fi
+          if [[ "${{ inputs.tag }}" == "beta" || "${{ inputs.tag }}" == "public" ]]; then
+            COMMIT_MESSAGE="[AUTOMATED] Public Release - ${{ steps.previoustag.outputs.tag }}"
+            git commit -m "$COMMIT_MESSAGE"
+            git push origin ${{ env.branch_name }}
+          fi
+
+      - name: Build and install skyflow package
+        run: |
+          python setup.py sdist bdist_wheel
+          pip install dist/skyflow-*.whl
+
+      - name: Build and Publish Package
+        if: ${{ inputs.tag == 'beta' || inputs.tag == 'public' }} 
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_PUBLISH_TOKEN }}
+        run: |
+          python setup.py sdist bdist_wheel
+          twine upload dist/*
+
       - name: Build and Publish to JFrog Artifactory
         if: ${{ inputs.tag == 'internal' }}
         env:
