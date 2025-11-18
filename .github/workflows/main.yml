@@ -1,9 +1,9 @@
-name: main
+name: V1
 
 on:
   push:
     branches:
-      - main
+      - v1
 
 jobs:
   Test:
@@ -12,7 +12,7 @@ jobs:
     - uses: actions/checkout@v2
     - uses: actions/setup-python@v2
       with:
-        python-version: '3.7'
+        python-version: '3.8'
 
     - name: create-json
       id: create-json

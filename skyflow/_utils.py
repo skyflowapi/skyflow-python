@@ -53,6 +53,7 @@ def log_error(message: str, interface: str):
 class InfoMessages(Enum):
     INITIALIZE_CLIENT = "Initializing skyflow client"
     CLIENT_INITIALIZED = "Initialized skyflow client successfully"
+    CLOSING_SESSION = "Closing the session"
     VALIDATE_INSERT_RECORDS = "Validating insert records"
     VALIDATE_DETOKENIZE_INPUT = "Validating detokenize input"
     VALIDATE_GET_BY_ID_INPUT = "Validating getByID input"
