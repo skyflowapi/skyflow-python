@@ -1,9 +1,9 @@
-name: main
+name: V1
 
 on:
   push:
     branches:
-      - main
+      - v1
 
 jobs:
   Test:

@@ -3,7 +3,7 @@ name: Semgrep Scan
 on:
   pull_request:
     branches:
-      - main
+      - v1
 
 jobs:
   build:
