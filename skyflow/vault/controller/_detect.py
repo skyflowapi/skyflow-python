@@ -192,6 +192,7 @@ class Detect:
             return None
         return {
             'default': getattr(request.token_format, "default", None),
+            'vault_token': getattr(request.token_format, "vault_token", None),
             'entity_unq_counter': getattr(request.token_format, "entity_unique_counter", None),
             'entity_only': getattr(request.token_format, "entity_only", None),
         }
