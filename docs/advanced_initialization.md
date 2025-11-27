@@ -117,7 +117,3 @@ skyflow_client = (
 # within the configured Skyflow vaults.
 
 ```
-Notes
-- If both Skyflow common credentials and individual credentials at the configuration level are specified, the individual credentials at the configuration level will take precedence.
-- If neither Skyflow common credentials nor individual configuration-level credentials are provided, the SDK attempts to retrieve credentials from the SKYFLOW_CREDENTIALS environment variable.
-- All Vault operations require a client instance.
