@@ -71,7 +71,7 @@ credentials_string = json.dumps(skyflow_credentials)  # Converts JSON object to 
 # Step 5: Define secondary credentials (API key-based authentication as an example).
 # Demonstrates a different type of authentication mechanism for Skyflow vaults.
 secondary_credentials = {
-    'token': '<BEARER_TOKEN>'  # Replace with your API Key for authentication.
+    'api_key': '<API_KEY>'  # Replace with your API Key for authentication.
 }
 
 # Step 6: Configure the secondary vault details.
@@ -86,7 +86,7 @@ secondary_vault_config = {
 # Step 7: Define tertiary credentials using a path to a credentials JSON file.
 # This method demonstrates an alternative authentication method.
 tertiary_credentials = {
-    'token': '<BEARER_TOKEN>'  # Replace with the path to your credentials file.
+    'path': '<YOUR_CREDENTIALS_FILE_PATH>'  # Replace with the path to your credentials file.
 }
 
 # Step 8: Configure the tertiary vault details.

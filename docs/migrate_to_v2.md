@@ -19,11 +19,11 @@ These options allow you to choose the authentication method that best suits your
 ```python
 # User defined function to provide access token to the vault apis
 def token_provider():
-    global bearerToken
-    if !(is_expired(bearerToken)):
-        return bearerToken
-    bearerToken, _ = generate_bearer_token('<YOUR_CREDENTIALS_FILE_PATH>')
-    return bearerToken
+    global bearer_token
+    if not is_expired(bearer_token):
+        return bearer_token
+    bearer_token, _ = generate_bearer_token('<YOUR_CREDENTIALS_FILE_PATH>')
+    return bearer_token
 ```
 
 #### V2 (New): Passing one of the following:
@@ -44,7 +44,7 @@ credentials = {
 
 # Option 4: Stringified JSON
 credentials = {
-    'credentials_string': '<YOUR_CREDENTIALS_sTRING>', # Credentials as string
+    'credentials_string': '<YOUR_CREDENTIALS_STRING>', # Credentials as string
 }
 
 # Option 5: Bearer Token
@@ -95,13 +95,13 @@ client = (
 ```
 
 **Key Changes:**
-- `vault_url` replaced with `cluster_Id`.
+- `vault_url` replaced with `cluster_id`.
 - Added environment specification (`env`).
 - Instance-specific log levels.
 
 ### Request & Response Structure
 
-In V2, with the introduction of constructor parameters, you can now pass parameters to `InsertRequest`. This request need 
+In V2, with the introduction of constructor parameters, you can now pass parameters to `InsertRequest`. This request needs 
 - **`table_name`**: The name of the table.
 - **`values`**: An array of objects containing the data to be inserted.
 The response will be of type `InsertResponse` class, which contains `inserted_fields` and errors.
@@ -230,7 +230,7 @@ The error response now includes:
 
 #### V2 (New) Error Structure:
 
-```typescript
+```python
 {
     "http_status": "<http_status>",
     "grpc_code": <grpc_code>,
