@@ -128,7 +128,7 @@ config = {
 }
 
 # Initialize Skyflow client
-client = (
+skyflow_client = (
     Skyflow.builder()
     .add_vault_config(config)
     .set_log_level(LogLevel.ERROR)
@@ -164,7 +164,7 @@ insert_response = skyflow_client.vault('<VAULT_ID>').insert(insert_request)
 print('Insert response:', insert_response)
 ```
 
-## Upgrade from V1 to V2
+## Upgrade from v1 to v2
 
 Upgrade from `skyflow-python` v1 using the dedicated guide in [docs/migrate_to_v2.md](docs/migrate_to_v2.md).
 
@@ -646,6 +646,8 @@ The SDK accepts one of several types of credentials object.
    JSON-formatted string containing service account credentials. Use when integrating with secret management systems or when credentials are passed programmatically.
 
    ```python
+   import os
+
    credentials = {
     "credentials_string": os.getenv("SKYFLOW_CREDENTIALS")
     }
@@ -717,7 +719,7 @@ Digitally sign data tokens with a service account's private key to add an extra 
 
 ## Logging
 
-The  SDK provides logging using python's inbuilt `logging` library. By default the logging level of the SDK is set to `LogLevel.ERROR`. This can be changed by using `set_log_level(log_level)` as shown below:
+The SDK provides logging using Python's inbuilt `logging` library. By default the logging level of the SDK is set to `LogLevel.ERROR`. This can be changed by using `set_log_level(log_level)` as shown below:
 
 Currently, the following five log levels are supported:
 
@@ -737,7 +739,15 @@ When `LogLevel.ERROR` is passed, only ERROR logs will be printed.
 ### Example: Setting LogLevel to INFO
 
 ```python
-from skyflow import Skyflow, LogLevel
+from skyflow import Skyflow, LogLevel, Env
+
+# Define vault configuration
+vault_config = {
+    'vault_id': '<VAULT_ID>',
+    'cluster_id': '<CLUSTER_ID>',
+    'env': Env.PROD,
+    'credentials': {'api_key': '<API_KEY>'}
+}
 
 skyflow_client = (
     Skyflow.builder()
@@ -754,6 +764,8 @@ skyflow_client = (
 Wrap your calls to the Skyflow SDK in try/except blocks as a best practice. Use the `SkyflowError` class to identify errors coming from Skyflow versus general request/response errors.
 
 ```python
+from skyflow.error import SkyflowError
+
 try:
     # ...call the Skyflow SDK
     pass

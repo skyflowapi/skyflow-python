@@ -1,10 +1,10 @@
-# Migrate from V1 to V2
+# Migrate from v1 to v2
 
-This guide outlines the steps required to migrate the Skyflow Python SDK from version 1 (V1) to version 2 (V2).
+This guide outlines the steps required to migrate the Skyflow Python SDK from version 1 (v1) to version 2 (v2).
 
 ## Authentication
 
-In V2, multiple authentication options have been introduced. You can now provide credentials in the following ways:
+In v2, multiple authentication options have been introduced. You can now provide credentials in the following ways:
 
 - **Passing credentials in ENV** (`SKYFLOW_CREDENTIALS`) (**Recommended**)
 - **API Key**
@@ -14,7 +14,7 @@ In V2, multiple authentication options have been introduced. You can now provide
 
 These options allow you to choose the authentication method that best suits your use case.
 
-### V1 (Old): Passing the token provider function below as a parameter to the Configuration.
+### v1 (Old): Passing the token provider function below as a parameter to the Configuration.
 
 ```python
 # User defined function to provide access token to the vault apis
@@ -26,7 +26,7 @@ def token_provider():
     return bearer_token
 ```
 
-#### V2 (New): Passing one of the following:
+#### v2 (New): Passing one of the following:
 
 ```python
 # Option 1: API Key (Recommended)
@@ -60,7 +60,7 @@ credentials = {
 
 ### Initializing the client
 
-In V2, we have introduced a Builder design pattern for client initialization and added support for multi-vault. This allows you to configure multiple vaults during client initialization. 
+In v2, we have introduced a Builder design pattern for client initialization and added support for multi-vault. This allows you to configure multiple vaults during client initialization. 
 
 During client initialization, you can pass the following parameters:
 
@@ -68,7 +68,7 @@ During client initialization, you can pass the following parameters:
 - **`env`**: Specify the environment (e.g., SANDBOX or PROD).
 - **`credentials`**: The necessary authentication credentials.
 
-#### V1 (Old):
+#### v1 (Old):
 
 ```python
 # Initializing a Skyflow Client instance with a SkyflowConfiguration object
@@ -76,7 +76,7 @@ config = Configuration('<VAULT_ID>', '<VAULT_URL>', token_provider)
 client = Client(config)
 ```
 
-#### V2 (New):
+#### v2 (New):
 
 ```python
 # Initializing a Skyflow Client instance
@@ -101,14 +101,14 @@ client = (
 
 ### Request & Response Structure
 
-In V2, with the introduction of constructor parameters, you can now pass parameters to `InsertRequest`. This request needs 
+In v2, with the introduction of constructor parameters, you can now pass parameters to `InsertRequest`. This request needs 
 - **`table_name`**: The name of the table.
 - **`values`**: An array of objects containing the data to be inserted.
 The response will be of type `InsertResponse` class, which contains `inserted_fields` and errors.
 
 **Note:** Similar patterns apply to other operations like Get, Update, Delete. See the [README](../README.md) for complete examples.
 
-#### V1 (Old): Request Building
+#### v1 (Old): Request Building
 
 ```python
 client.insert(
@@ -127,9 +127,11 @@ client.insert(
 )
 ```
 
-#### V2 (New): Request Building
+#### v2 (New): Request Building
 
 ```python
+from skyflow.vault.data import InsertRequest
+
 # Prepare Insertion Data
 insert_data = [
    {
@@ -152,7 +154,7 @@ insert_request = InsertRequest(
 response = skyflow_client.vault(primary_vault_config.get('<VAULT_ID>')).insert(insert_request)
 ```
 
-#### V1 (Old): Response Structure
+#### v1 (Old): Response Structure
 
 ```json
 {
@@ -170,7 +172,7 @@ response = skyflow_client.vault(primary_vault_config.get('<VAULT_ID>')).insert(i
 }
 ```
 
-#### V2 (New): Response Structure
+#### v2 (New): Response Structure
 
 ```python
 InsertResponse(
@@ -186,9 +188,9 @@ InsertResponse(
 
 ### Request Options
 
-In V2, we have introduced constructor parameters, allowing you to set options as key-value pairs as parameters in request.
+In v2, we have introduced constructor parameters, allowing you to set options as key-value pairs as parameters in request.
 
-#### V1 (Old):
+#### v1 (Old):
 
 ```python
 options = InsertOptions(
@@ -196,30 +198,30 @@ options = InsertOptions(
 )
 ```
 
-#### V2 (New):
+#### v2 (New):
 
 ```python
 insert_request = InsertRequest(
-   table=table_name,        # Replace with the table name
-   values=insert_data,
-   return_tokens=False,          # Do not return tokens
-   continue_on_error=False,      # Stop inserting if any record fails
-   upsert='<UPSERT_COLUMN>',     # Replace with the column name used for upsert logic
-   token_mode=TokenMode.DISABLE, # Disable BYOT
-   tokens='<TOKENS>'             # Replace with tokens when TokenMode is ENABLE.
+    table=table_name,             # Replace with the table name
+    values=insert_data,
+    return_tokens=False,          # Do not return tokens
+    continue_on_error=False,      # Stop inserting if any record fails
+    upsert='<UPSERT_COLUMN>',     # Replace with the column name used for upsert logic, if any
+    token_mode=TokenMode.DISABLE, # Disable BYOT
+    tokens='<TOKENS>'             # Set with tokens when TokenMode is ENABLE
 )
 ```
 
 ### Error Structure
 
-In V2, we have enriched the error details to provide better debugging capabilities. 
+In v2, we have enriched the error details to provide better debugging capabilities. 
 The error response now includes: 
 - **http_status**: The HTTP status code. 
 - **grpc_code**: The gRPC code associated with the error. 
 - **details** & **message**: A detailed description of the error. 
 - **request_id**: A unique request identifier for easier debugging.
 
-#### V1 (Old) Error Structure:
+#### v1 (Old) Error Structure:
 
 ```json
 {
@@ -228,7 +230,7 @@ The error response now includes:
 }
 ```
 
-#### V2 (New) Error Structure:
+#### v2 (New) Error Structure:
 
 ```python
 {

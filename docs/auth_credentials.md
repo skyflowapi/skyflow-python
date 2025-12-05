@@ -1,6 +1,6 @@
 # Authentication credentials options
 
-> **Note:** Only one type of credential can be used at a time. If multiple credentials are provided, the order of precedence depends on how they are passed to the configuration.
+> **Note:** Only one type of credential can be used at a time. If multiple credentials are provided, the last one added takes precedence.
 
 1. **API keys**
    A unique identifier used to authenticate and authorize requests to an API.
@@ -41,4 +41,4 @@
    ```
 
 5. **Environment variables**
-   If no credentials are explicitly provided the SDK automatically looks for the SKYFLOW_CREDENTIALS environment variable. This variable must return an object like one of the examples above.
+   If no credentials are explicitly provided, the SDK automatically looks for the `SKYFLOW_CREDENTIALS` environment variable. This variable must contain a JSON string like one of the examples above.
