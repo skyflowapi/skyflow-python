@@ -151,7 +151,7 @@ insert_request = InsertRequest(
 )
 
 # Perform Secure Insertion
-response = skyflow_client.vault(primary_vault_config.get('<VAULT_ID>')).insert(insert_request)
+response = skyflow_client.vault('<VAULT_ID>').insert(insert_request)
 ```
 
 #### v1 (Old): Response Structure
