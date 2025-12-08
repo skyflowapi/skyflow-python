@@ -33,5 +33,10 @@ setup(
         'python-dotenv~=1.0.1',
         'httpx'
     ],
+    extras_require={
+        'dev': [
+            'codespell',
+        ]
+    },
     python_requires=">=3.8",
 )

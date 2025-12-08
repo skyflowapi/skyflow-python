@@ -89,7 +89,7 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
-- Request headers not getting overriden due to case sensitivity
+- Request headers not getting overridden due to case sensitivity
 
 ## [1.5.0] - 2022-03-22
 

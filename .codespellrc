@@ -1,0 +1,13 @@
+[codespell]
+# custom words file
+ignore-words-list = Skyflow,skyflow,skyflowapi,skyflowapis,deidentify,reidentify,detokenize,upsert,upserting,binlookup,byot,creds,fpe,devsecops,formdata,vaultid,dotenv,usecwd,runid,dateutil,Homogenous
+
+# Skip these files and folders
+skip = .git,.venv,venv,env,__pycache__,*.pyc,*.egg-info,dist,build,.idea,.vscode,*.log,requirements.txt,./skyflow/generated,setup.py
+
+# If you want to verify it is working, you can uncomment this line to see what files it checks
+# count = 
+
+# Ignore lines that match these patterns
+# This ignores lines with long alphanumeric strings or UUIDs
+ignore-regex = \b[A-Z0-9]{20,}\b|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|\b[A-Za-z0-9_]{7,}\b(?=])

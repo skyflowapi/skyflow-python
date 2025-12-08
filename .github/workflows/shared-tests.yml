@@ -29,6 +29,12 @@ jobs:
           pip install --upgrade pip setuptools wheel
           python setup.py sdist bdist_wheel
           pip install dist/skyflow-*.whl
+
+      - name: Install Dev Dependencies
+        run: pip install ".[dev]"
+
+      - name: Run Spell Check
+        run: codespell
       
       - name: 'Run Tests'
         run: |
