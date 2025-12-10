@@ -19,7 +19,7 @@ credentials_string = json.dumps(skyflow_credentials)
 
 
 options = {
-    'ctx': 'CONTEX_ID',
+    'ctx': 'CONTEXT_ID',
     'data_tokens': ['DATA_TOKEN1', 'DATA_TOKEN2'],
     'time_to_live': 90,  # in seconds
 }
