@@ -1,6 +1,6 @@
 [codespell]
 # custom words file
-ignore-words-list = Skyflow,skyflow,skyflowapi,skyflowapis,deidentify,reidentify,detokenize,upsert,upserting,binlookup,byot,creds,fpe,devsecops,formdata,vaultid,dotenv,usecwd,runid,dateutil,Homogenous
+ignore-words-list = Skyflow,skyflow,skyflowapi,skyflowapis,deidentify,reidentify,detokenize,upsert,upserting,binlookup,byot,creds,fpe,devsecops,formdata,vaultid,dotenv,usecwd,runid,dateutil
 
 # Skip these files and folders
 skip = .git,.venv,venv,env,__pycache__,*.pyc,*.egg-info,dist,build,.idea,.vscode,*.log,requirements.txt,./skyflow/generated,setup.py
