@@ -33,6 +33,9 @@ jobs:
 
       - name: Run Spell Check
         run: codespell
+
+      - name: Run Linter Ruff
+        run: ruff check .
       
       - name: 'Run Tests'
         run: |

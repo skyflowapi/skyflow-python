@@ -1,0 +1,21 @@
+# ruff.toml
+
+exclude = [
+    "skyflow/generated",
+    ".git",
+    ".ruff_cache",
+    ".venv",
+    "venv",
+    "build",
+    "dist",
+    "tests"
+]
+
+line-length = 120
+
+[lint]
+select = ["N"]
+
+ignore = []
+
+[lint.pep8-naming]
