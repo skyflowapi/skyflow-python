@@ -16,6 +16,4 @@ line-length = 120
 [lint]
 select = ["N"]
 
-ignore = []
-
 [lint.pep8-naming]

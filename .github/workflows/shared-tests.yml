@@ -35,7 +35,7 @@ jobs:
         run: codespell
 
       - name: Run Linter Ruff
-        run: ruff check .
+        run: ruff check . --output-format=github
       
       - name: 'Run Tests'
         run: |
