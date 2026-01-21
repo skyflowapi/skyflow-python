@@ -36,6 +36,7 @@ setup(
     extras_require={
         'dev': [
             'codespell',
+            'ruff'
         ]
     },
     python_requires=">=3.8",

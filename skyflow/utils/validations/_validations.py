@@ -818,4 +818,3 @@ def validate_reidentify_text_request(self, request: ReidentifyTextRequest):
 def validate_get_detect_run_request(self, request: GetDetectRunRequest):
     if not request.run_id or not isinstance(request.run_id, str) or not request.run_id.strip():
         raise SkyflowError(SkyflowMessages.Error.INVALID_RUN_ID.value, invalid_input_error_code)
-
