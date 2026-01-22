@@ -52,3 +52,10 @@ class TestHelperFunctions(unittest.TestCase):
 
     def test_is_valid_url_no_scheme(self):
         self.assertFalse(is_valid_url("www.example.com"))
+
+    def test_is_valid_url_exception(self):
+        class BadStr:
+            def __str__(self):
+                raise Exception("bad str")
+
+        self.assertFalse(is_valid_url(BadStr()))
