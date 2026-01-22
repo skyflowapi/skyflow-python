@@ -10,6 +10,7 @@ from skyflow.utils.logger import log_info, log_error_log
 from skyflow.vault.detect import DeidentifyTextRequest, ReidentifyTextRequest, TokenFormat, Transformations, \
     GetDetectRunRequest, Bleep, DeidentifyFileRequest
 from skyflow.vault.detect._file_input import FileInput
+from skyflow.utils._helpers import is_valid_url
 
 valid_vault_config_keys = ["vault_id", "cluster_id", "credentials", "env"]
 valid_connection_config_keys = ["connection_id", "connection_url", "credentials"]
@@ -138,6 +139,15 @@ def validate_credentials(logger, credentials, config_id_type=None, config_id=Non
             raise SkyflowError(SkyflowMessages.Error.INVALID_API_KEY.value.format(config_id_type, config_id)
                                if config_id_type and config_id else SkyflowMessages.Error.INVALID_API_KEY.value,
                                invalid_input_error_code)
+        
+    if "token_uri" in credentials:
+        token_uri = credentials.get("token_uri")
+        if (
+            token_uri is None
+            or not isinstance(token_uri, str)
+            or not is_valid_url(token_uri)
+        ):
+            raise SkyflowError(SkyflowMessages.Error.INVALID_TOKEN_URI.value, invalid_input_error_code)
 
 def validate_log_level(logger, log_level):
     if not isinstance(log_level, LogLevel):
@@ -202,10 +212,8 @@ def validate_update_vault_config(logger, config):
     if "env" in config and config.get("env") not in Env:
         raise SkyflowError(SkyflowMessages.Error.INVALID_ENV.value.format(vault_id), invalid_input_error_code)
 
-    if "credentials" not in config:
-        raise SkyflowError(SkyflowMessages.Error.EMPTY_CREDENTIALS.value.format("vault", vault_id), invalid_input_error_code)
-
-    validate_credentials(logger, config.get("credentials"), "vault", vault_id)
+    if "credentials" in config and config.get("credentials"):
+        validate_credentials(logger, config.get("credentials"), "vault", vault_id)
 
     return True
 
@@ -412,9 +420,6 @@ def validate_insert_request(logger, request):
         for key, value in item.items():
             if key is None or key == "":
                 log_error_log(SkyflowMessages.ErrorLogs.EMPTY_OR_NULL_KEY_IN_VALUES.value.format("INSERT"), logger = logger)
-
-            if value is None or value == "":
-                log_error_log(SkyflowMessages.ErrorLogs.EMPTY_OR_NULL_VALUE_IN_VALUES.value.format("INSERT", key), logger = logger)
 
     if request.upsert is not None and (not isinstance(request.upsert, str) or not request.upsert.strip()):
         log_error_log(SkyflowMessages.ErrorLogs.EMPTY_UPSERT.value("INSERT"), logger = logger)

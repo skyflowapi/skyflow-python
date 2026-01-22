@@ -1,13 +1,15 @@
 import unittest
 from unittest.mock import patch, Mock
 import os
-import json
 from unittest.mock import MagicMock
 from urllib.parse import quote
+import tempfile, json
 from requests import PreparedRequest
 from requests.models import HTTPError
 from skyflow.error import SkyflowError
 from skyflow.generated.rest import ErrorResponse
+from skyflow.service_account import generate_bearer_token, generate_signed_data_tokens, \
+    generate_signed_data_tokens_from_creds, generate_bearer_token_from_creds
 from skyflow.utils import get_credentials, SkyflowMessages, get_vault_url, construct_invoke_connection_request, \
     parse_insert_response, parse_update_record_response, parse_delete_response, parse_get_response, \
     parse_detokenize_response, parse_tokenize_response, parse_query_response, parse_invoke_connection_response, \
@@ -597,3 +599,194 @@ class TestUtils(unittest.TestCase):
         self.assertEqual(result.text_index.end, 0)
         self.assertEqual(result.processed_index.start, 0)
         self.assertEqual(result.processed_index.end, 0)
+
+    def test_generate_bearer_token_invalid_token_uri_type(self):
+        creds = {
+            'privateKey': 'private_key',
+            'clientID': 'client_id',
+            'keyID': 'key_id',
+            'tokenURI': 12345  # invalid type
+        }
+
+        with tempfile.NamedTemporaryFile(mode='w+', delete=False) as tmp:
+            json.dump(creds, tmp)
+            tmp.flush()
+            with self.assertRaises(SkyflowError) as context:
+                generate_bearer_token(tmp.name)
+            self.assertEqual(context.exception.message, SkyflowMessages.Error.INVALID_TOKEN_URI.value)
+
+    def test_generate_bearer_token_invalid_token_uri_url(self):
+        creds = {
+            'privateKey': 'private_key',
+            'clientID': 'client_id',
+            'keyID': 'key_id',
+            'tokenURI': 'not_a_url'
+        }
+        import tempfile, json
+        with tempfile.NamedTemporaryFile(mode='w+', delete=False) as tmp:
+            json.dump(creds, tmp)
+            tmp.flush()
+            with self.assertRaises(SkyflowError) as context:
+                generate_bearer_token(tmp.name)
+            self.assertEqual(context.exception.message, SkyflowMessages.Error.INVALID_TOKEN_URI.value)
+
+    def test_generate_bearer_token_options_override_token_uri(self):
+        creds = {
+            'privateKey': 'private_key',
+            'clientID': 'client_id',
+            'keyID': 'key_id',
+            'tokenURI': 'https://valid-url.com'
+        }
+        options = {"token_uri": "https://another-valid-url.com"}
+        import tempfile, json
+        with tempfile.NamedTemporaryFile(mode='w+', delete=False) as tmp:
+            json.dump(creds, tmp)
+            tmp.flush()
+            # Patch AuthClient and jwt.encode to avoid real HTTP and signing
+            with patch("skyflow.service_account._utils.get_signed_jwt") as mock_get_signed_jwt:
+                mock_get_signed_jwt.return_value = "signed"
+                with patch("skyflow.service_account._utils.AuthClient") as mock_auth_client:
+                    mock_auth_api = mock_auth_client.return_value.get_auth_api.return_value
+                    mock_auth_api.authentication_service_get_auth_token.return_value = type("obj", (),
+                                                                                            {"access_token": "token",
+                                                                                             "token_type": "bearer"})
+                    generate_bearer_token(tmp.name, options)
+                    args, kwargs = mock_get_signed_jwt.call_args
+                    self.assertEqual(args[3], options["token_uri"])
+
+    def test_generate_bearer_token_from_creds_invalid_token_uri_type(self):
+        creds = {
+            'privateKey': 'private_key',
+            'clientID': 'client_id',
+            'keyID': 'key_id',
+            'tokenURI': 12345
+        }
+        creds_str = json.dumps(creds)
+        with self.assertRaises(SkyflowError) as context:
+            generate_bearer_token_from_creds(creds_str)
+        self.assertEqual(context.exception.message, SkyflowMessages.Error.INVALID_TOKEN_URI.value)
+
+    def test_generate_bearer_token_from_creds_invalid_token_uri_url(self):
+        creds = {
+            'privateKey': 'private_key',
+            'clientID': 'client_id',
+            'keyID': 'key_id',
+            'tokenURI': 'not_a_url'
+        }
+        creds_str = json.dumps(creds)
+        with self.assertRaises(SkyflowError) as context:
+            generate_bearer_token_from_creds(creds_str)
+        self.assertEqual(context.exception.message, SkyflowMessages.Error.INVALID_TOKEN_URI.value)
+
+    def test_generate_bearer_token_from_creds_options_override_token_uri(self):
+        creds = {
+            'privateKey': 'private_key',
+            'clientID': 'client_id',
+            'keyID': 'key_id',
+            'tokenURI': 'https://valid-url.com'
+        }
+        options = {"token_uri": "https://another-valid-url.com"}
+        creds_str = json.dumps(creds)
+        with patch("skyflow.service_account._utils.get_signed_jwt") as mock_get_signed_jwt:
+            mock_get_signed_jwt.return_value = "signed"
+            with patch("skyflow.service_account._utils.AuthClient") as mock_auth_client:
+                mock_auth_api = mock_auth_client.return_value.get_auth_api.return_value
+                mock_auth_api.authentication_service_get_auth_token.return_value = type("obj", (),
+                                                                                        {"access_token": "token",
+                                                                                         "token_type": "bearer"})
+                generate_bearer_token_from_creds(creds_str, options)
+                args, kwargs = mock_get_signed_jwt.call_args
+                self.assertEqual(args[3], options["token_uri"])
+
+    def test_generate_signed_data_tokens_invalid_token_uri_type(self):
+        creds = {
+            'privateKey': 'private_key',
+            'clientID': 'client_id',
+            'keyID': 'key_id',
+            'tokenURI': 12345
+        }
+        options = {"data_tokens": ["token1"]}
+        import tempfile, json
+        with tempfile.NamedTemporaryFile(mode='w+', delete=False) as tmp:
+            json.dump(creds, tmp)
+            tmp.flush()
+            with self.assertRaises(SkyflowError) as context:
+                generate_signed_data_tokens(tmp.name, options)
+            self.assertEqual(context.exception.message, SkyflowMessages.Error.INVALID_TOKEN_URI.value)
+
+    def test_generate_signed_data_tokens_invalid_token_uri_url(self):
+        creds = {
+            'privateKey': 'private_key',
+            'clientID': 'client_id',
+            'keyID': 'key_id',
+            'tokenURI': 'not_a_url'
+        }
+        options = {"data_tokens": ["token1"]}
+        import tempfile, json
+        with tempfile.NamedTemporaryFile(mode='w+', delete=False) as tmp:
+            json.dump(creds, tmp)
+            tmp.flush()
+            with self.assertRaises(SkyflowError) as context:
+                generate_signed_data_tokens(tmp.name, options)
+            self.assertEqual(context.exception.message, SkyflowMessages.Error.INVALID_TOKEN_URI.value)
+
+    def test_generate_signed_data_tokens_from_creds_invalid_token_uri_type(self):
+        creds = {
+            'privateKey': 'private_key',
+            'clientID': 'client_id',
+            'keyID': 'key_id',
+            'tokenURI': 12345
+        }
+        options = {"data_tokens": ["token1"]}
+        creds_str = json.dumps(creds)
+        with self.assertRaises(SkyflowError) as context:
+            generate_signed_data_tokens_from_creds(creds_str, options)
+        self.assertEqual(context.exception.message, SkyflowMessages.Error.INVALID_TOKEN_URI.value)
+
+    def test_generate_signed_data_tokens_from_creds_invalid_token_uri_url(self):
+        creds = {
+            'privateKey': 'private_key',
+            'clientID': 'client_id',
+            'keyID': 'key_id',
+            'tokenURI': 'not_a_url'
+        }
+        options = {"data_tokens": ["token1"]}
+        creds_str = json.dumps(creds)
+        with self.assertRaises(SkyflowError) as context:
+            generate_signed_data_tokens_from_creds(creds_str, options)
+        self.assertEqual(context.exception.message, SkyflowMessages.Error.INVALID_TOKEN_URI.value)
+
+    def test_generate_signed_data_tokens_options_override_token_uri(self):
+        creds = {
+            'privateKey': 'private_key',
+            'clientID': 'client_id',
+            'keyID': 'key_id',
+            'tokenURI': 'https://valid-url.com'
+        }
+        options = {"data_tokens": ["token1"], "token_uri": "https://another-valid-url.com"}
+        import tempfile, json
+        with tempfile.NamedTemporaryFile(mode='w+', delete=False) as tmp:
+            json.dump(creds, tmp)
+            tmp.flush()
+            with patch("jwt.encode") as mock_jwt_encode:
+                mock_jwt_encode.return_value = "signed"
+                result = generate_signed_data_tokens(tmp.name, options)
+                self.assertIsInstance(result, tuple)
+                self.assertEqual(result[0], "token1")
+                self.assertEqual(result[1], "signed_token_signed")
+
+    def test_generate_signed_data_tokens_from_creds_options_override_token_uri(self):
+        creds = {
+            'privateKey': 'private_key',
+            'clientID': 'client_id',
+            'keyID': 'key_id',
+            'tokenURI': 'https://valid-url.com'
+        }
+        options = {"data_tokens": ["token1"], "token_uri": "https://another-valid-url.com"}
+        creds_str = json.dumps(creds)
+        with patch("jwt.encode") as mock_jwt_encode:
+            mock_jwt_encode.return_value = "signed"
+            result = generate_signed_data_tokens_from_creds(creds_str, options)
+            self.assertIsInstance(result, tuple)
+            self.assertEqual(result[0], "token1")
+            self.assertEqual(result[1], "signed_token_signed")

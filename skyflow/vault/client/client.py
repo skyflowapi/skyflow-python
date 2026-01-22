@@ -1,3 +1,4 @@
+from skyflow.error import SkyflowError
 from skyflow.generated.rest.client import Skyflow
 from skyflow.service_account import generate_bearer_token, generate_bearer_token_from_creds, is_expired
 from skyflow.utils import get_vault_url, get_credentials, SkyflowMessages
@@ -62,6 +63,8 @@ class VaultClient:
             "role_ids": self.__config.get("roles"),
             "ctx": self.__config.get("ctx")
         }
+        if "token_uri" in credentials and credentials.get("token_uri"):
+            options["token_uri"] = credentials.get("token_uri")
 
         if self.__bearer_token is None or self.__is_config_updated:
             if 'path' in credentials:
@@ -85,7 +88,7 @@ class VaultClient:
 
         if is_expired(self.__bearer_token):
             self.__is_config_updated = True
-            raise SyntaxError(SkyflowMessages.Error.EXPIRED_TOKEN.value, SkyflowMessages.ErrorCodes.INVALID_INPUT.value)
+            raise SkyflowError(SkyflowMessages.Error.EXPIRED_TOKEN.value, SkyflowMessages.ErrorCodes.INVALID_INPUT.value)
 
         return self.__bearer_token
 
