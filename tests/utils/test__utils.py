@@ -622,7 +622,6 @@ class TestUtils(unittest.TestCase):
             'keyID': 'key_id',
             'tokenURI': 'not_a_url'
         }
-        import tempfile, json
         with tempfile.NamedTemporaryFile(mode='w+', delete=False) as tmp:
             json.dump(creds, tmp)
             tmp.flush()
@@ -638,7 +637,6 @@ class TestUtils(unittest.TestCase):
             'tokenURI': 'https://valid-url.com'
         }
         options = {"token_uri": "https://another-valid-url.com"}
-        import tempfile, json
         with tempfile.NamedTemporaryFile(mode='w+', delete=False) as tmp:
             json.dump(creds, tmp)
             tmp.flush()
@@ -706,7 +704,6 @@ class TestUtils(unittest.TestCase):
             'tokenURI': 12345
         }
         options = {"data_tokens": ["token1"]}
-        import tempfile, json
         with tempfile.NamedTemporaryFile(mode='w+', delete=False) as tmp:
             json.dump(creds, tmp)
             tmp.flush()
@@ -722,7 +719,6 @@ class TestUtils(unittest.TestCase):
             'tokenURI': 'not_a_url'
         }
         options = {"data_tokens": ["token1"]}
-        import tempfile, json
         with tempfile.NamedTemporaryFile(mode='w+', delete=False) as tmp:
             json.dump(creds, tmp)
             tmp.flush()
@@ -764,7 +760,6 @@ class TestUtils(unittest.TestCase):
             'tokenURI': 'https://valid-url.com'
         }
         options = {"data_tokens": ["token1"], "token_uri": "https://another-valid-url.com"}
-        import tempfile, json
         with tempfile.NamedTemporaryFile(mode='w+', delete=False) as tmp:
             json.dump(creds, tmp)
             tmp.flush()
