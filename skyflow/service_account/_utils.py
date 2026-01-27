@@ -2,10 +2,13 @@ import json
 import datetime
 import time
 import jwt
+from urllib.parse import urlparse
 from skyflow.error import SkyflowError
 from skyflow.service_account.client.auth_client import AuthClient
 from skyflow.utils.logger import log_info, log_error_log
 from skyflow.utils import get_base_url, format_scope, SkyflowMessages
+from skyflow.generated.rest.errors.unauthorized_error import UnauthorizedError
+from skyflow.utils import is_valid_url
 
 
 invalid_input_error_code = SkyflowMessages.ErrorCodes.INVALID_INPUT.value
@@ -78,7 +81,14 @@ def get_service_account_token(credentials, options, logger):
     except:
         log_error_log(SkyflowMessages.ErrorLogs.TOKEN_URI_IS_REQUIRED.value, logger=logger)
         raise SkyflowError(SkyflowMessages.Error.MISSING_TOKEN_URI.value, invalid_input_error_code)
+    
+    if not isinstance(token_uri, str) or not is_valid_url(token_uri):
+        log_error_log(SkyflowMessages.ErrorLogs.INVALID_TOKEN_URI.value, logger=logger)
+        raise SkyflowError(SkyflowMessages.Error.INVALID_TOKEN_URI.value, invalid_input_error_code)
 
+    if options and "token_uri" in options:
+        token_uri = options["token_uri"]
+    
     signed_token = get_signed_jwt(options, client_id, key_id, token_uri, private_key, logger)
     base_url = get_base_url(token_uri)
     auth_client = AuthClient(base_url)
@@ -88,10 +98,17 @@ def get_service_account_token(credentials, options, logger):
     if options and "role_ids" in options:
         formatted_scope = format_scope(options.get("role_ids"))
 
-    response = auth_api.authentication_service_get_auth_token(assertion = signed_token,
+    try:
+        response = auth_api.authentication_service_get_auth_token(assertion = signed_token,
                                     grant_type="urn:ietf:params:oauth:grant-type:jwt-bearer",
                                     scope=formatted_scope)
-    log_info(SkyflowMessages.Info.GET_BEARER_TOKEN_SUCCESS.value, logger)
+        log_info(SkyflowMessages.Info.GET_BEARER_TOKEN_SUCCESS.value, logger)
+    except UnauthorizedError:
+        log_error_log(SkyflowMessages.ErrorLogs.UNAUTHORIZED_ERROR_IN_GETTING_BEARER_TOKEN.value, logger=logger)
+        raise SkyflowError(SkyflowMessages.Error.UNAUTHORIZED_ERROR_IN_GETTING_BEARER_TOKEN.value, invalid_input_error_code)
+    except Exception:
+        log_error_log(SkyflowMessages.ErrorLogs.FAILED_TO_GET_BEARER_TOKEN.value, logger=logger)
+        raise SkyflowError(SkyflowMessages.Error.FAILED_TO_GET_BEARER_TOKEN.value, invalid_input_error_code)
     return response.access_token, response.token_type
 
 def get_signed_jwt(options, client_id, key_id, token_uri, private_key, logger):
@@ -112,32 +129,41 @@ def get_signed_jwt(options, client_id, key_id, token_uri, private_key, logger):
 
 
 def get_signed_tokens(credentials_obj, options):
-    try:
-        expiry_time = int(time.time()) + options.get("time_to_live", 60)
-        prefix = "signed_token_"
+    expiry_time = int(time.time()) + options.get("time_to_live", 60)
+    prefix = "signed_token_"
 
-        if options and options.get("data_tokens"):
-            for token in options["data_tokens"]:
-                claims = {
-                    "iss": "sdk",
-                    "key": credentials_obj.get("keyID"),
-                    "exp": expiry_time,
-                    "sub": credentials_obj.get("clientID"),
-                    "tok": token,
-                    "iat": int(time.time()),
-                }
+    token_uri = credentials_obj.get("tokenURI")
+    if not isinstance(token_uri, str) or not is_valid_url(token_uri):
+        log_error_log(SkyflowMessages.ErrorLogs.INVALID_TOKEN_URI.value)
+        raise SkyflowError(SkyflowMessages.Error.INVALID_TOKEN_URI.value, invalid_input_error_code)
+    
+    if options and "token_uri" in options:
+        token_uri = options["token_uri"]
 
-                if "ctx" in options:
-                    claims["ctx"] = options["ctx"]
 
-                private_key = credentials_obj.get("privateKey")
+    if options and options.get("data_tokens"):
+        for token in options["data_tokens"]:
+            claims = {
+                "iss": "sdk",
+                "key": credentials_obj.get("keyID"),
+                "exp": expiry_time,
+                "sub": credentials_obj.get("clientID"),
+                "tok": token,
+                "iat": int(time.time()),
+            }
+
+            if "ctx" in options:
+                claims["ctx"] = options["ctx"]
+
+            private_key = credentials_obj.get("privateKey")
+            try: 
                 signed_jwt = jwt.encode(claims, private_key, algorithm="RS256")
-                response_object = get_signed_data_token_response_object(prefix + signed_jwt, token)
-        log_info(SkyflowMessages.Info.GET_SIGNED_DATA_TOKEN_SUCCESS.value)
-        return response_object
+            except Exception:
+                raise SkyflowError(SkyflowMessages.Error.INVALID_CREDENTIALS.value, invalid_input_error_code)
 
-    except Exception:
-        raise SkyflowError(SkyflowMessages.Error.INVALID_CREDENTIALS.value, invalid_input_error_code)
+            response_object = get_signed_data_token_response_object(prefix + signed_jwt, token)
+    log_info(SkyflowMessages.Info.GET_SIGNED_DATA_TOKEN_SUCCESS.value)
+    return response_object
 
 
 def generate_signed_data_tokens(credentials_file_path, options):

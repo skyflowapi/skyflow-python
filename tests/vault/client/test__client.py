@@ -98,3 +98,23 @@ class TestVaultClient(unittest.TestCase):
         mock_logger = MagicMock()
         self.vault_client.set_logger("INFO", mock_logger)
         self.assertEqual(self.vault_client.get_logger(), mock_logger)
+
+    def test_get_bearer_token_with_token(self):
+        credentials = {"token": "dummy_token"}
+        token = self.vault_client.get_bearer_token(credentials)
+        self.assertEqual(token, "dummy_token")
+
+    def test_get_bearer_token_with_token_uri_in_credentials(self):
+        credentials = {
+            "path": "dummy_path",
+            "token_uri": "https://valid-url.com"
+        }
+        with patch("skyflow.vault.client.client.generate_bearer_token") as mock_generate_bearer_token, \
+                patch("skyflow.vault.client.client.is_expired", return_value=False):
+            mock_generate_bearer_token.return_value = ("bearer_token", "bearer")
+            token = self.vault_client.get_bearer_token(credentials)
+            mock_generate_bearer_token.assert_called_once()
+            args, kwargs = mock_generate_bearer_token.call_args
+            self.assertIn("token_uri", args[1])
+            self.assertEqual(args[1]["token_uri"], "https://valid-url.com")
+            self.assertEqual(token, "bearer_token")

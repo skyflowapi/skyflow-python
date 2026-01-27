@@ -1,5 +1,5 @@
 import unittest
-from skyflow.utils import get_base_url, format_scope
+from skyflow.utils import get_base_url, format_scope, is_valid_url
 
 VALID_URL = "https://example.com/path?query=1"
 BASE_URL = "https://example.com"
@@ -36,3 +36,26 @@ class TestHelperFunctions(unittest.TestCase):
         scopes_with_special_chars = ["admin", "user:write", "read-only"]
         expected_result = "role:admin role:user:write role:read-only"
         self.assertEqual(format_scope(scopes_with_special_chars), expected_result)
+
+    def test_is_valid_url_valid(self):
+        self.assertTrue(is_valid_url("https://example.com"))
+        self.assertTrue(is_valid_url("http://example.com/path"))
+
+    def test_is_valid_url_invalid(self):
+        self.assertFalse(is_valid_url("ftp://example.com"))
+        self.assertFalse(is_valid_url("example.com"))
+        self.assertFalse(is_valid_url("invalid-url"))
+        self.assertFalse(is_valid_url(""))
+
+    def test_is_valid_url_none(self):
+        self.assertFalse(is_valid_url(None))
+
+    def test_is_valid_url_no_scheme(self):
+        self.assertFalse(is_valid_url("www.example.com"))
+
+    def test_is_valid_url_exception(self):
+        class BadStr:
+            def __str__(self):
+                raise Exception("bad str")
+
+        self.assertFalse(is_valid_url(BadStr()))

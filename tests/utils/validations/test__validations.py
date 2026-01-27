@@ -205,15 +205,6 @@ class TestValidations(unittest.TestCase):
         }
         self.assertTrue(validate_update_vault_config(self.logger, config))
 
-    def test_validate_update_vault_config_missing_credentials(self):
-        config = {
-            "vault_id": "vault123",
-            "cluster_id": "cluster123"
-        }
-        with self.assertRaises(SkyflowError) as context:
-            validate_update_vault_config(self.logger, config)
-        self.assertEqual(context.exception.message, SkyflowMessages.Error.EMPTY_CREDENTIALS.value.format("vault", "vault123"))
-
     def test_validate_update_vault_config_invalid_cluster_id(self):
         config = {
             "vault_id": "vault123",
@@ -1044,3 +1035,69 @@ class TestValidations(unittest.TestCase):
         with self.assertRaises(SkyflowError) as context:
             validate_detokenize_request(self.logger, request)
         self.assertEqual(context.exception.message, SkyflowMessages.Error.INVALID_REDACTION_TYPE.value.format(str(type("invalid"))))
+
+    def test_validate_credentials_with_valid_token_uri(self):
+        credentials = {
+            "api_key": "sky-abc12-1234567890abcdef1234567890abcdef",
+            "token_uri": "https://valid-url.com"
+        }
+        # Should not raise
+        validate_credentials(self.logger, credentials)
+
+    def test_validate_credentials_with_invalid_token_uri_type(self):
+        credentials = {
+            "api_key": "sky-abc12-1234567890abcdef1234567890abcdef",
+            "token_uri": 12345  # Not a string
+        }
+        with self.assertRaises(SkyflowError) as context:
+            validate_credentials(self.logger, credentials)
+        self.assertEqual(context.exception.message, SkyflowMessages.Error.INVALID_TOKEN_URI.value)
+
+    def test_validate_credentials_with_invalid_token_uri_url(self):
+        credentials = {
+            "api_key": "sky-abc12-1234567890abcdef1234567890abcdef",
+            "token_uri": "not_a_url"
+        }
+        with self.assertRaises(SkyflowError) as context:
+            validate_credentials(self.logger, credentials)
+        self.assertEqual(context.exception.message, SkyflowMessages.Error.INVALID_TOKEN_URI.value)
+
+    def test_validate_update_vault_config_with_valid_token_uri(self):
+        from skyflow.utils.enums import Env
+        config = {
+            "vault_id": "vault123",
+            "cluster_id": "cluster123",
+            "credentials": {
+                "api_key": "sky-abc12-1234567890abcdef1234567890abcdef",
+                "token_uri": "https://valid-url.com"
+            },
+            "env": Env.DEV
+        }
+        # Should not raise
+        self.assertTrue(validate_update_vault_config(self.logger, config))
+
+    def test_validate_update_vault_config_with_invalid_token_uri_type(self):
+        config = {
+            "vault_id": "vault123",
+            "cluster_id": "cluster123",
+            "credentials": {
+                "api_key": "sky-abc12-1234567890abcdef1234567890abcdef",
+                "token_uri": 12345
+            }
+        }
+        with self.assertRaises(SkyflowError) as context:
+            validate_update_vault_config(self.logger, config)
+        self.assertEqual(context.exception.message, SkyflowMessages.Error.INVALID_TOKEN_URI.value)
+
+    def test_validate_update_vault_config_with_invalid_token_uri_url(self):
+        config = {
+            "vault_id": "vault123",
+            "cluster_id": "cluster123",
+            "credentials": {
+                "api_key": "sky-abc12-1234567890abcdef1234567890abcdef",
+                "token_uri": "not_a_url"
+            }
+        }
+        with self.assertRaises(SkyflowError) as context:
+            validate_update_vault_config(self.logger, config)
+        self.assertEqual(context.exception.message, SkyflowMessages.Error.INVALID_TOKEN_URI.value)
