@@ -6,6 +6,7 @@ from skyflow.utils.enums import LogLevel, Env, RedactionType, TokenMode, DetectE
     MaskingMethod
 from skyflow.error import SkyflowError
 from skyflow.utils import SkyflowMessages
+from skyflow.utils.constants import ApiKey, ResponseField
 from skyflow.utils.logger import log_info, log_error_log
 from skyflow.vault.detect import DeidentifyTextRequest, ReidentifyTextRequest, TokenFormat, Transformations, \
     GetDetectRunRequest, Bleep, DeidentifyFileRequest
@@ -50,11 +51,11 @@ def validate_required_field(logger, config, field_name, expected_type, empty_err
         raise SkyflowError(empty_error, invalid_input_error_code)
 
 def validate_api_key(api_key: str, logger = None) -> bool:
-    if not api_key.startswith('sky-'):
+    if not api_key.startswith(ApiKey.SKY_PREFIX):
         log_error_log(SkyflowMessages.ErrorLogs.INVALID_API_KEY.value, logger=logger)
         return False
 
-    if len(api_key) != 42:
+    if len(api_key) != ApiKey.LENGTH:
         log_error_log(SkyflowMessages.ErrorLogs.INVALID_API_KEY.value, logger = logger)
         return False
 
@@ -582,10 +583,10 @@ def validate_get_request(logger, request):
 
 def validate_update_request(logger, request):
     skyflow_id = ""
-    field = {key: value for key, value in request.data.items() if key != "skyflow_id"}
+    field = {key: value for key, value in request.data.items() if key != ResponseField.SKYFLOW_ID}
 
     try:
-        skyflow_id = request.data.get("skyflow_id")
+        skyflow_id = request.data.get(ResponseField.SKYFLOW_ID)
     except Exception:
         log_error_log(SkyflowMessages.ErrorLogs.SKYFLOW_ID_IS_REQUIRED.value.format("UPDATE"), logger=logger)
 
