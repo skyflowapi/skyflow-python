@@ -112,9 +112,12 @@ class Vault:
                 api_response = records_api.record_service_insert_record(self.__vault_client.get_vault_id(),
                                                                         request.table, records=insert_body,tokenization= request.return_tokens, upsert=request.upsert, homogeneous=request.homogeneous, byot=request.token_mode.value, request_options=self.__get_headers())
 
-            insert_response = parse_insert_response(api_response, request.continue_on_error)
-            log_info(SkyflowMessages.Info.INSERT_SUCCESS.value, self.__vault_client.get_logger())
-            return insert_response
+            try:
+                insert_response = parse_insert_response(api_response, request.continue_on_error)
+                log_info(SkyflowMessages.Info.INSERT_SUCCESS.value, self.__vault_client.get_logger())
+                return insert_response
+            finally:
+                api_response.close()
 
         except Exception as e:
             log_error_log(SkyflowMessages.ErrorLogs.INSERT_RECORDS_REJECTED.value, self.__vault_client.get_logger())
@@ -239,9 +242,12 @@ class Vault:
                 continue_on_error = request.continue_on_error,
                 request_options=self.__get_headers()
             )
-            log_info(SkyflowMessages.Info.DETOKENIZE_SUCCESS.value, self.__vault_client.get_logger())
-            detokenize_response = parse_detokenize_response(api_response)
-            return detokenize_response
+            try:
+                log_info(SkyflowMessages.Info.DETOKENIZE_SUCCESS.value, self.__vault_client.get_logger())
+                detokenize_response = parse_detokenize_response(api_response)
+                return detokenize_response
+            finally:
+                api_response.close()
         except Exception as e:
             log_error_log(SkyflowMessages.ErrorLogs.DETOKENIZE_REQUEST_REJECTED.value, logger = self.__vault_client.get_logger())
             handle_exception(e, self.__vault_client.get_logger())
@@ -287,13 +293,16 @@ class Vault:
                 return_file_metadata= False,
                 request_options=self.__get_headers()
             )
-            log_info(SkyflowMessages.Info.FILE_UPLOAD_REQUEST_RESOLVED.value, self.__vault_client.get_logger())            
-            log_info(SkyflowMessages.Info.FILE_UPLOAD_SUCCESS.value, self.__vault_client.get_logger())
-            upload_response = FileUploadResponse(
-                skyflow_id=api_response.data.skyflow_id,
-                errors=None
-            )
-            return upload_response
+            try:
+                log_info(SkyflowMessages.Info.FILE_UPLOAD_REQUEST_RESOLVED.value, self.__vault_client.get_logger())            
+                log_info(SkyflowMessages.Info.FILE_UPLOAD_SUCCESS.value, self.__vault_client.get_logger())
+                upload_response = FileUploadResponse(
+                    skyflow_id=api_response.data.skyflow_id,
+                    errors=None
+                )
+                return upload_response
+            finally:
+                api_response.close()
         except Exception as e:
             log_error_log(SkyflowMessages.ErrorLogs.FILE_UPLOAD_REQUEST_REJECTED.value, logger = self.__vault_client.get_logger())
             handle_exception(e, self.__vault_client.get_logger())

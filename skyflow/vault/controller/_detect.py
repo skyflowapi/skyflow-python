@@ -62,22 +62,28 @@ class Detect:
         current_wait_time = 1  # Start with 1 second
         try:
             while True:
-                response = files_api.get_run(run_id, vault_id=self.__vault_client.get_vault_id(), request_options=self.__get_headers()).data
-                status = response.status
-                if status == 'IN_PROGRESS':
-                    if current_wait_time >= max_wait_time:
-                        return DeidentifyFileResponse(run_id=run_id, status='IN_PROGRESS')
-                    else:
-                        next_wait_time = current_wait_time * 2
-                        if next_wait_time >= max_wait_time:
-                            wait_time = max_wait_time - current_wait_time
-                            current_wait_time = max_wait_time
+                http_response = files_api.get_run(run_id, vault_id=self.__vault_client.get_vault_id(), request_options=self.__get_headers())
+                try:
+                    response = http_response.data
+                    status = response.status
+                    if status == 'IN_PROGRESS':
+                        if current_wait_time >= max_wait_time:
+                            return DeidentifyFileResponse(run_id=run_id, status='IN_PROGRESS')
                         else:
-                            wait_time = next_wait_time
-                            current_wait_time = next_wait_time
-                        time.sleep(wait_time)
-                elif status == 'SUCCESS' or status == 'FAILED':
-                    return response
+                            next_wait_time = current_wait_time * 2
+                            if next_wait_time >= max_wait_time:
+                                wait_time = max_wait_time - current_wait_time
+                                current_wait_time = max_wait_time
+                            else:
+                                wait_time = next_wait_time
+                                current_wait_time = next_wait_time
+                            time.sleep(wait_time)
+                    elif status == 'SUCCESS' or status == 'FAILED':
+                        # Create a copy of the response data before closing
+                        result = response
+                        return result
+                finally:
+                    http_response.close()
         except Exception as e:
             raise e
 
@@ -271,7 +277,7 @@ class Detect:
             
         # Check for file_path if file is not provided
         if hasattr(file_input, 'file_path') and file_input.file_path is not None:
-                return open(file_input.file_path, 'rb')
+            return open(file_input.file_path, 'rb')
 
     def deidentify_file(self, request: DeidentifyFileRequest):
         log_info(SkyflowMessages.Info.DETECT_FILE_TRIGGERED.value, self.__vault_client.get_logger())
@@ -281,8 +287,19 @@ class Detect:
         file_obj = self.__get_file_from_request(request)
         file_name = getattr(file_obj, 'name', None)
         file_extension = self._get_file_extension(file_name) if file_name else None
-        file_content = file_obj.read()
-        base64_string = base64.b64encode(file_content).decode('utf-8')
+        
+        # Track if we need to close the file (only if it was opened from file_path)
+        file_needs_closing = False
+        file_input = request.file
+        if hasattr(file_input, 'file_path') and file_input.file_path is not None:
+            file_needs_closing = True
+        
+        try:
+            file_content = file_obj.read()
+            base64_string = base64.b64encode(file_content).decode('utf-8')
+        finally:
+            if file_needs_closing and hasattr(file_obj, 'close'):
+                file_obj.close()
 
         try:
             if file_extension == 'txt':
@@ -420,16 +437,19 @@ class Detect:
             log_info(SkyflowMessages.Info.DETECT_FILE_REQUEST_RESOLVED.value, self.__vault_client.get_logger())
             api_response = api_call(**api_kwargs)
 
-            run_id = getattr(api_response.data, 'run_id', None)
+            try:
+                run_id = getattr(api_response.data, 'run_id', None)
 
-            processed_response = self.__poll_for_processed_file(run_id, request.wait_time)
-            if request.output_directory and processed_response.status == 'SUCCESS':
-                name_without_ext, _ = os.path.splitext(file_name)
-                self.__save_deidentify_file_response_output(processed_response, request.output_directory, file_name, name_without_ext)
+                processed_response = self.__poll_for_processed_file(run_id, request.wait_time)
+                if request.output_directory and processed_response.status == 'SUCCESS':
+                    name_without_ext, _ = os.path.splitext(file_name)
+                    self.__save_deidentify_file_response_output(processed_response, request.output_directory, file_name, name_without_ext)
 
-            parsed_response = self.__parse_deidentify_file_response(processed_response, run_id)
-            log_info(SkyflowMessages.Info.DETECT_FILE_SUCCESS.value, self.__vault_client.get_logger())
-            return parsed_response
+                parsed_response = self.__parse_deidentify_file_response(processed_response, run_id)
+                log_info(SkyflowMessages.Info.DETECT_FILE_SUCCESS.value, self.__vault_client.get_logger())
+                return parsed_response
+            finally:
+                api_response.close()
 
         except Exception as e:
             log_error_log(SkyflowMessages.ErrorLogs.DETECT_FILE_REQUEST_REJECTED.value,
@@ -445,17 +465,20 @@ class Detect:
         files_api = self.__vault_client.get_detect_file_api().with_raw_response
         run_id = request.run_id
         try:
-            response = files_api.get_run(
+            http_response = files_api.get_run(
                 run_id,
                 vault_id=self.__vault_client.get_vault_id(),
                 request_options=self.__get_headers()
             )
-            if response.data.status == 'IN_PROGRESS':
-                parsed_response = self.__parse_deidentify_file_response(DeidentifyFileResponse(run_id=run_id, status='IN_PROGRESS'))
-            else:
-                parsed_response = self.__parse_deidentify_file_response(response.data, run_id, response.data.status)
-            log_info(SkyflowMessages.Info.GET_DETECT_RUN_SUCCESS.value,self.__vault_client.get_logger())
-            return parsed_response
+            try:
+                if http_response.data.status == 'IN_PROGRESS':
+                    parsed_response = self.__parse_deidentify_file_response(DeidentifyFileResponse(run_id=run_id, status='IN_PROGRESS'))
+                else:
+                    parsed_response = self.__parse_deidentify_file_response(http_response.data, run_id, http_response.data.status)
+                log_info(SkyflowMessages.Info.GET_DETECT_RUN_SUCCESS.value,self.__vault_client.get_logger())
+                return parsed_response
+            finally:
+                http_response.close()
         except Exception as e:
             log_error_log(SkyflowMessages.ErrorLogs.DETECT_FILE_REQUEST_REJECTED.value,
                           self.__vault_client.get_logger())
