@@ -79,7 +79,7 @@ class Detect:
                                 current_wait_time = next_wait_time
                             time.sleep(wait_time)
                     elif status == 'SUCCESS' or status == 'FAILED':
-                        # Create a copy of the response data before closing
+                        # Retrieve the response data before closing the HTTP response
                         result = response
                         return result
                 finally:
