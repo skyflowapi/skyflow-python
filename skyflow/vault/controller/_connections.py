@@ -31,12 +31,15 @@ class Connection:
 
         try:
             response = session.send(invoke_connection_request)
-            session.close()
-            invoke_connection_response = parse_invoke_connection_response(response)
-            return invoke_connection_response
-
+            try:
+                invoke_connection_response = parse_invoke_connection_response(response)
+                return invoke_connection_response
+            finally:
+                response.close()
         except Exception as e:
             log_error_log(SkyflowMessages.ErrorLogs.INVOKE_CONNECTION_REQUEST_REJECTED.value, self.__vault_client.get_logger())
             if isinstance(e, SkyflowError): raise e
             raise SkyflowError(SkyflowMessages.Error.INVOKE_CONNECTION_FAILED.value,
                                SkyflowMessages.ErrorCodes.SERVER_ERROR.value)
+        finally:
+            session.close()
