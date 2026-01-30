@@ -290,8 +290,7 @@ class Detect:
         
         # Track if we need to close the file (only if it was opened from file_path)
         file_needs_closing = False
-        file_input = request.file
-        if hasattr(file_input, 'file_path') and file_input.file_path is not None:
+        if hasattr(request.file, 'file_path') and request.file.file_path is not None:
             file_needs_closing = True
         
         try:
