@@ -1250,3 +1250,170 @@ class TestUtils(unittest.TestCase):
         self.assertEqual(result.data, "Binary data response")
         self.assertEqual(result.metadata["request_id"], "1234")
         self.assertIsNone(result.errors)
+
+    def test_construct_invoke_connection_request_headers_json_error(self):
+        """Test exception handling when json.dumps fails for headers."""
+        mock_connection_request = Mock()
+        mock_connection_request.path_params = {}
+
+        class UnserializableObject:
+            def __repr__(self):
+                raise TypeError("Object is not JSON serializable")
+
+        mock_connection_request.headers = {"key": UnserializableObject()}
+        mock_connection_request.body = None
+        mock_connection_request.method.value = "GET"
+        mock_connection_request.query_params = {}
+
+        connection_url = "https://example.com/endpoint"
+
+        with patch('json.dumps', side_effect=TypeError("Object is not JSON serializable")):
+            with self.assertRaises(SkyflowError) as context:
+                construct_invoke_connection_request(mock_connection_request, connection_url, logger=None)
+
+            self.assertEqual(context.exception.message, SkyflowMessages.Error.INVALID_REQUEST_HEADERS.value)
+            self.assertEqual(context.exception.http_code, SkyflowMessages.ErrorCodes.INVALID_INPUT.value)
+
+    def test_construct_invoke_connection_request_headers_generic_exception(self):
+        """Test generic exception handling for headers processing."""
+        mock_connection_request = Mock()
+        mock_connection_request.path_params = {}
+        mock_connection_request.headers = {"Content-Type": "application/json"}
+        mock_connection_request.body = None
+        mock_connection_request.method.value = "GET"
+        mock_connection_request.query_params = {}
+
+        connection_url = "https://example.com/endpoint"
+
+        with patch('skyflow.utils._utils.to_lowercase_keys', side_effect=Exception("Generic error")):
+            with self.assertRaises(SkyflowError) as context:
+                construct_invoke_connection_request(mock_connection_request, connection_url, logger=None)
+
+            self.assertEqual(context.exception.message, SkyflowMessages.Error.INVALID_REQUEST_HEADERS.value)
+            self.assertEqual(context.exception.http_code, SkyflowMessages.ErrorCodes.INVALID_INPUT.value)
+
+    def test_construct_invoke_connection_request_body_processing_exception(self):
+        """Test exception handling when body processing fails."""
+        mock_connection_request = Mock()
+        mock_connection_request.path_params = {}
+        mock_connection_request.headers = {"Content-Type": ContentType.JSON.value}
+        mock_connection_request.body = {"key": "value"}
+        mock_connection_request.method.value = "POST"
+        mock_connection_request.query_params = {}
+
+        connection_url = "https://example.com/endpoint"
+
+        with patch('skyflow.utils._utils.get_data_from_content_type', side_effect=Exception("Body processing error")):
+            with self.assertRaises(SkyflowError) as context:
+                construct_invoke_connection_request(mock_connection_request, connection_url, logger=None)
+
+            self.assertEqual(context.exception.message, SkyflowMessages.Error.INVALID_REQUEST_BODY.value)
+            self.assertEqual(context.exception.http_code, SkyflowMessages.ErrorCodes.INVALID_INPUT.value)
+
+    def test_construct_invoke_connection_request_body_json_dumps_exception(self):
+        """Test exception handling when json.dumps fails in get_data_from_content_type."""
+        mock_connection_request = Mock()
+        mock_connection_request.path_params = {}
+        mock_connection_request.headers = {"Content-Type": ContentType.JSON.value}
+
+        class UnserializableObject:
+            pass
+
+        mock_connection_request.body = {"key": UnserializableObject()}
+        mock_connection_request.method.value = "POST"
+        mock_connection_request.query_params = {}
+
+        connection_url = "https://example.com/endpoint"
+
+        with self.assertRaises(SkyflowError) as context:
+            construct_invoke_connection_request(mock_connection_request, connection_url, logger=None)
+
+        self.assertEqual(context.exception.message, SkyflowMessages.Error.INVALID_REQUEST_BODY.value)
+        self.assertEqual(context.exception.http_code, SkyflowMessages.ErrorCodes.INVALID_INPUT.value)
+
+    def test_construct_invoke_connection_request_invalid_url_exception(self):
+        """Test exception handling when requests.Request.prepare() fails with invalid URL."""
+        mock_connection_request = Mock()
+        mock_connection_request.path_params = {}
+        mock_connection_request.headers = None
+        mock_connection_request.body = None
+        mock_connection_request.method.value = "GET"
+        mock_connection_request.query_params = {}
+
+        connection_url = "https://example.com/endpoint"
+
+        with patch('requests.Request') as mock_request_class:
+            mock_request_instance = Mock()
+            mock_request_instance.prepare.side_effect = Exception("Invalid URL structure")
+            mock_request_class.return_value = mock_request_instance
+
+            with self.assertRaises(SkyflowError) as context:
+                construct_invoke_connection_request(mock_connection_request, connection_url, logger=None)
+
+            self.assertEqual(
+                context.exception.message,
+                SkyflowMessages.Error.INVALID_URL.value.format(connection_url)
+            )
+            self.assertEqual(context.exception.http_code, SkyflowMessages.ErrorCodes.INVALID_INPUT.value)
+
+    def test_construct_invoke_connection_request_prepare_exception(self):
+        """Test exception handling when prepare() method fails."""
+        mock_connection_request = Mock()
+        mock_connection_request.path_params = {}
+        mock_connection_request.headers = {"Content-Type": ContentType.JSON.value}
+        mock_connection_request.body = None
+        mock_connection_request.method.value = "GET"
+        mock_connection_request.query_params = {}
+
+        connection_url = "https://example.com/endpoint"
+
+        with patch('requests.Request') as mock_request_class:
+            mock_request_instance = Mock()
+            mock_request_instance.prepare.side_effect = Exception("Prepare failed")
+            mock_request_class.return_value = mock_request_instance
+
+            with self.assertRaises(SkyflowError) as context:
+                construct_invoke_connection_request(mock_connection_request, connection_url, logger=None)
+
+            self.assertEqual(
+                context.exception.message,
+                SkyflowMessages.Error.INVALID_URL.value.format(connection_url)
+            )
+            self.assertEqual(context.exception.http_code, SkyflowMessages.ErrorCodes.INVALID_INPUT.value)
+
+    def test_construct_invoke_connection_request_body_not_dict_raises_error(self):
+        """Test that non-dict body raises SkyflowError which is caught and re-raised."""
+        mock_connection_request = Mock()
+        mock_connection_request.path_params = {}
+        mock_connection_request.headers = {"Content-Type": ContentType.JSON.value}
+        mock_connection_request.body = "not a dict"  # Invalid body type
+        mock_connection_request.method.value = "POST"
+        mock_connection_request.query_params = {}
+
+        connection_url = "https://example.com/endpoint"
+
+        with self.assertRaises(SkyflowError) as context:
+            construct_invoke_connection_request(mock_connection_request, connection_url, logger=None)
+
+        self.assertEqual(context.exception.message, SkyflowMessages.Error.INVALID_REQUEST_BODY.value)
+        self.assertEqual(context.exception.http_code, SkyflowMessages.ErrorCodes.INVALID_INPUT.value)
+
+    @patch('skyflow.utils._utils.validate_invoke_connection_params')
+    def test_construct_invoke_connection_request_validation_exception(self, mock_validate):
+        """Test that validation exceptions are properly propagated."""
+        mock_connection_request = Mock()
+        mock_connection_request.path_params = {"param": "value"}
+        mock_connection_request.headers = None
+        mock_connection_request.body = None
+        mock_connection_request.method.value = "GET"
+        mock_connection_request.query_params = {"query": "value"}
+
+        connection_url = "https://example.com/endpoint"
+
+        mock_validate.side_effect = SkyflowError("Validation failed", 400)
+
+        with self.assertRaises(SkyflowError) as context:
+            construct_invoke_connection_request(mock_connection_request, connection_url, logger=None)
+
+        self.assertEqual(context.exception.message, "Validation failed")
+        self.assertEqual(context.exception.http_code, 400)
