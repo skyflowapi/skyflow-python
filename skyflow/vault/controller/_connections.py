@@ -29,17 +29,17 @@ class Connection:
 
         log_info(SkyflowMessages.Info.INVOKE_CONNECTION_TRIGGERED.value, self.__vault_client.get_logger())
 
+        response = None
         try:
             response = session.send(invoke_connection_request)
-            try:
-                invoke_connection_response = parse_invoke_connection_response(response)
-                return invoke_connection_response
-            finally:
-                response.close()
+            return parse_invoke_connection_response(response)
+
         except Exception as e:
             log_error_log(SkyflowMessages.ErrorLogs.INVOKE_CONNECTION_REQUEST_REJECTED.value, self.__vault_client.get_logger())
             if isinstance(e, SkyflowError): raise e
             raise SkyflowError(SkyflowMessages.Error.INVOKE_CONNECTION_FAILED.value,
                                SkyflowMessages.ErrorCodes.SERVER_ERROR.value)
         finally:
+            if response is not None:
+                response.close()
             session.close()

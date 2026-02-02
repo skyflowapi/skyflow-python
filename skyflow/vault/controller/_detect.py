@@ -79,9 +79,7 @@ class Detect:
                                 current_wait_time = next_wait_time
                             time.sleep(wait_time)
                     elif status == 'SUCCESS' or status == 'FAILED':
-                        # Retrieve the response data before closing the HTTP response
-                        result = response
-                        return result
+                        return response
                 finally:
                     http_response.close()
         except Exception as e:
@@ -289,9 +287,7 @@ class Detect:
         file_extension = self._get_file_extension(file_name) if file_name else None
         
         # Track if we need to close the file (only if it was opened from file_path)
-        file_needs_closing = False
-        if hasattr(request.file, 'file_path') and request.file.file_path is not None:
-            file_needs_closing = True
+        file_needs_closing = hasattr(request.file, 'file_path') and request.file.file_path is not None
         
         try:
             file_content = file_obj.read()

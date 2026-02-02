@@ -38,7 +38,7 @@ def generate_bearer_token(credentials_file_path, options = None, logger = None):
             except Exception:
                 log_error_log(SkyflowMessages.ErrorLogs.INVALID_CREDENTIALS_FILE.value, logger = logger)
                 raise SkyflowError(SkyflowMessages.Error.FILE_INVALID_JSON.value.format(credentials_file_path), invalid_input_error_code)
-    except FileNotFoundError:
+    except OSError:
         raise SkyflowError(SkyflowMessages.Error.INVALID_CREDENTIAL_FILE_PATH.value, invalid_input_error_code)
     
     result = get_service_account_token(credentials, options, logger)
