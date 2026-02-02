@@ -13,11 +13,13 @@ class HttpHeader:
     X_REQUEST_ID = 'x-request-id'
     ERROR_FROM_CLIENT = 'error-from-client'
     AUTHORIZATION = 'Authorization'
+    X_SKYFLOW_AUTHORIZATION_HEADER = 'X-Skyflow-Authorization'
 
 
 class HttpStatusCode:
     OK = 200
     BAD_REQUEST = 400
+    UNAUTHORIZED = 401
     INTERNAL_SERVER_ERROR = 500
 
 
@@ -123,6 +125,8 @@ class CredentialField:
     API_KEY = 'api_key'
     TOKEN = 'token'
     PATH = 'path'
+    CONTEXT = 'context'
+    ROLES = 'roles'
 
 
 class JwtField:
@@ -165,3 +169,114 @@ class RequestParameter:
     COLUMN_GROUP = 'column_group'
     REDACTION = 'redaction'
 
+
+class FileUploadField:
+    TABLE = 'table'
+    SKYFLOW_ID = 'skyflow_id'
+    COLUMN_NAME = 'column_name'
+    FILE_PATH = 'file_path'
+    BASE64 = 'base64'
+    FILE_OBJECT = 'file_object'
+    FILE_NAME = 'file_name'
+    FILE = 'file'
+    NAME = 'name'
+
+
+class DeidentifyFileRequestField:
+    ENTITIES = 'entities'
+    ALLOW_REGEX_LIST = 'allow_regex_list'
+    RESTRICT_REGEX_LIST = 'restrict_regex_list'
+    OUTPUT_PROCESSED_IMAGE = 'output_processed_image'
+    OUTPUT_OCR_TEXT = 'output_ocr_text'
+    MASKING_METHOD = 'masking_method'
+    PIXEL_DENSITY = 'pixel_density'
+    MAX_RESOLUTION = 'max_resolution'
+    OUTPUT_PROCESSED_AUDIO = 'output_processed_audio'
+    OUTPUT_TRANSCRIPTION = 'output_transcription'
+    BLEEP = 'bleep'
+    OUTPUT_DIRECTORY = 'output_directory'
+    WAIT_TIME = 'wait_time'
+
+
+class DeidentifyField:
+    TEXT = 'text'
+    ENTITY_TYPES = 'entity_types'
+    TOKEN_TYPE = 'token_type'
+    ALLOW_REGEX = 'allow_regex'
+    RESTRICT_REGEX = 'restrict_regex'
+    TRANSFORMATIONS = 'transformations'
+    FORMAT = 'format'
+    OUTPUT = 'output'
+    STATUS = 'status'
+    RUN_ID = 'run_id'
+    WORD_CHARACTER_COUNT = 'word_character_count'
+    WORD_COUNT = 'word_count'
+    CHARACTER_COUNT = 'character_count'
+    SIZE = 'size'
+    DURATION = 'duration'
+    PAGES = 'pages'
+    SLIDES = 'slides'
+    PROCESSED_FILE = 'processed_file'
+    PROCESSED_FILE_TYPE = 'processed_file_type'
+    PROCESSED_FILE_EXTENSION = 'processed_file_extension'
+    REDACTED_FILE = 'redacted_file'
+    SHIFT_DATES = 'shift_dates'
+    DEFAULT = 'default'
+    ENTITY_UNQ_COUNTER = 'entity_unq_counter'
+    ENTITY_UNIQUE_COUNTER = 'entity_unique_counter'
+    ENTITY_ONLY = 'entity_only'
+    ENTITIES = 'entities'
+    MAX_DAYS = 'max_days'
+    MIN_DAYS = 'min_days'
+    MAX = 'max'
+    MIN = 'min'
+    FILE = 'file'
+    TYPE = 'type'
+    EXTENSION = 'extension'
+    IN_PROGRESS = 'IN_PROGRESS'
+    REQUEST_OPTIONS = 'request_options'
+    BLEEP_GAIN = 'bleep_gain'
+    BLEEP_FREQUENCY = 'bleep_frequency'
+    BLEEP_START_PADDING = 'bleep_start_padding'
+    BLEEP_STOP_PADDING = 'bleep_stop_padding'
+    DENSITY = 'density'
+    TOKEN_FORMAT = 'token_format'
+    PROCESSED_FILE_RESPONSE_KEY = 'processedFile'
+    PROCESSED_FILE_TYPE_RESPONSE_KEY = 'processedFileType'
+    PROCESSED_FILE_EXTENSION_RESPONSE_KEY = 'processedFileExtension'
+
+
+class RequestOperation:
+    INSERT = 'INSERT'
+    DELETE = 'DELETE'
+    GET = 'GET'
+    UPDATE = 'UPDATE'
+    QUERY = 'QUERY'
+    TOKENIZE = 'TOKENIZE'
+    DETOKENIZE = 'DETOKENIZE'
+    FILE_UPLOAD = 'FILE_UPLOAD'
+
+
+class ConfigType:
+    VAULT = 'vault'
+    CONNECTION = 'connection'
+
+
+class SqlCommand:
+    SELECT = 'SELECT'
+
+
+class SdkPrefix:
+    SKYFLOW_PYTHON = 'skyflow-python@'
+    PYTHON_RUNTIME = 'Python '
+
+
+class SdkMetricsKey:
+    SDK_NAME_VERSION = 'sdk_name_version'
+    SDK_CLIENT_DEVICE_MODEL = 'sdk_client_device_model'
+    SDK_CLIENT_OS_DETAILS = 'sdk_client_os_details'
+    SDK_RUNTIME_DETAILS = 'sdk_runtime_details'
+
+
+class ErrorDefaults:
+    UNKNOWN_REQUEST_ID = 'unknown-request-id'

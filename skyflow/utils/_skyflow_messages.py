@@ -389,6 +389,7 @@ class SkyflowMessages:
         SAVING_DEIDENTIFY_FILE_FAILED = f"{ERROR}: [{error_prefix}] Error while saving deidentified file to output directory."
         REIDENTIFY_TEXT_REQUEST_REJECTED = f"{ERROR}: [{error_prefix}] Reidentify text resulted in failure."
         DETECT_FILE_REQUEST_REJECTED = f"{ERROR}: [{error_prefix}] Deidentify file resulted in failure."
+        EMPTY_FILE_COLUMN_NAME = f"{ERROR}: [{error_prefix}] Empty column name in FILE_UPLOAD"
 
     class Interface(Enum):
         INSERT = "INSERT"
