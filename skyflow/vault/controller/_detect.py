@@ -8,7 +8,8 @@ from skyflow.generated.rest import FileDataDeidentifyText, FileDataDeidentifyPdf
     FileDataDeidentifyImage, Format, FileDataDeidentifyAudio, WordCharacterCount, DetectRunsResponse
 from skyflow.utils._skyflow_messages import SkyflowMessages
 from skyflow.utils._utils import get_attribute, get_metrics, handle_exception, parse_deidentify_text_response, parse_reidentify_text_response
-from skyflow.utils.constants import SKY_META_DATA_HEADER
+from skyflow.utils.constants import (SKY_META_DATA_HEADER, DetectStatus, FileExtension, 
+                                      FileProcessing, EncodingType)
 from skyflow.utils.logger import log_info, log_error_log
 from skyflow.utils.validations import validate_deidentify_file_request, validate_get_detect_run_request
 from skyflow.utils.validations._validations import validate_deidentify_text_request, validate_reidentify_text_request
@@ -66,7 +67,7 @@ class Detect:
                 try:
                     response = http_response.data
                     status = response.status
-                    if status == 'IN_PROGRESS':
+                    if status == DetectStatus.IN_PROGRESS:
                         if current_wait_time >= max_wait_time:
                             return DeidentifyFileResponse(run_id=run_id, status='IN_PROGRESS')
                         else:
@@ -78,7 +79,7 @@ class Detect:
                                 wait_time = next_wait_time
                                 current_wait_time = next_wait_time
                             time.sleep(wait_time)
-                    elif status == 'SUCCESS' or status == 'FAILED':
+                    elif status == DetectStatus.SUCCESS or status == DetectStatus.FAILED:
                         return response
                 finally:
                     http_response.close()
@@ -92,7 +93,7 @@ class Detect:
         if not os.path.exists(output_directory):
             return
 
-        deidentify_file_prefix = "processed-"
+        deidentify_file_prefix = FileProcessing.PROCESSED_PREFIX
         output_list = response.output
 
         base_original_filename = os.path.basename(original_file_name)
@@ -163,7 +164,7 @@ class Detect:
         output_list = output_to_dict_list(output)
         first_output = output_list[0] if output_list else {}
 
-        entities = [o for o in output_list if o.get("type") == "entities"]
+        entities = [o for o in output_list if o.get("type") == FileProcessing.ENTITIES]
 
         base64_string = first_output.get("file", None)
         extension = first_output.get("extension", None)
@@ -171,14 +172,14 @@ class Detect:
         if base64_string is not None:
                 file_bytes = base64.b64decode(base64_string)
                 file_obj = io.BytesIO(file_bytes)
-                file_obj.name = f"deidentified.{extension}" if extension else "processed_file"
+                file_obj.name = f"{FileProcessing.DEIDENTIFIED_PREFIX}{extension}" if extension else "processed_file"
         else:
             file_obj = None
     
         return DeidentifyFileResponse(
             file_base64=base64_string,
             file=file_obj,
-            type=first_output.get("type", "UNKNOWN"),
+            type=first_output.get("type", DetectStatus.UNKNOWN),
             extension=extension,
             word_count=word_count,
             char_count=char_count,
@@ -291,14 +292,14 @@ class Detect:
         
         try:
             file_content = file_obj.read()
-            base64_string = base64.b64encode(file_content).decode('utf-8')
+            base64_string = base64.b64encode(file_content).decode(EncodingType.UTF_8)
         finally:
             if file_needs_closing and hasattr(file_obj, 'close'):
                 file_obj.close()
 
         try:
-            if file_extension == 'txt':
-                req_file = FileDataDeidentifyText(base_64=base64_string, data_format="txt")
+            if file_extension == FileExtension.TXT:
+                req_file = FileDataDeidentifyText(base_64=base64_string, data_format=FileExtension.TXT)
                 api_call = files_api.deidentify_text
                 api_kwargs = {
                     'vault_id': self.__vault_client.get_vault_id(),
@@ -311,7 +312,7 @@ class Detect:
                     'request_options': self.__get_headers()
                 }
 
-            elif file_extension in ['mp3', 'wav']:
+            elif file_extension in [FileExtension.MP3, FileExtension.WAV]:
                 req_file = FileDataDeidentifyAudio(base_64=base64_string, data_format=file_extension)
                 api_call = files_api.deidentify_audio
                 api_kwargs = {
@@ -331,7 +332,7 @@ class Detect:
                     'request_options': self.__get_headers()
                 }
 
-            elif file_extension == 'pdf':
+            elif file_extension == FileExtension.PDF:
                 req_file = FileDataDeidentifyPdf(base_64=base64_string)
                 api_call = files_api.deidentify_pdf
                 api_kwargs = {
@@ -346,7 +347,7 @@ class Detect:
                     'request_options': self.__get_headers()
                 }
 
-            elif file_extension in ['jpeg', 'jpg', 'png', 'bmp', 'tif', 'tiff']:
+            elif file_extension in [FileExtension.JPEG, FileExtension.JPG, FileExtension.PNG, FileExtension.BMP, FileExtension.TIF, FileExtension.TIFF]:
                 req_file = FileDataDeidentifyImage(base_64=base64_string, data_format=file_extension)
                 api_call = files_api.deidentify_image
                 api_kwargs = {
@@ -362,7 +363,7 @@ class Detect:
                     'request_options': self.__get_headers()
                 }
 
-            elif file_extension in ['ppt', 'pptx']:
+            elif file_extension in [FileExtension.PPT, FileExtension.PPTX]:
                 req_file = FileDataDeidentifyPresentation(base_64=base64_string, data_format=file_extension)
                 api_call = files_api.deidentify_presentation
                 api_kwargs = {
@@ -375,7 +376,7 @@ class Detect:
                     'request_options': self.__get_headers()
                 }
 
-            elif file_extension in ['csv', 'xls', 'xlsx']:
+            elif file_extension in [FileExtension.CSV, FileExtension.XLS, FileExtension.XLSX]:
                 req_file = FileDataDeidentifySpreadsheet(base_64=base64_string, data_format=file_extension)
                 api_call = files_api.deidentify_spreadsheet
                 api_kwargs = {
@@ -388,7 +389,7 @@ class Detect:
                     'request_options': self.__get_headers()
                 }
 
-            elif file_extension in ['doc', 'docx']:
+            elif file_extension in [FileExtension.DOC, FileExtension.DOCX]:
                 req_file = FileDataDeidentifyDocument(base_64=base64_string, data_format=file_extension)
                 api_call = files_api.deidentify_document
                 api_kwargs = {
@@ -401,7 +402,7 @@ class Detect:
                     'request_options': self.__get_headers()
                 }
 
-            elif file_extension in ['json', 'xml']:
+            elif file_extension in [FileExtension.JSON, FileExtension.XML]:
                 req_file = FileDataDeidentifyStructuredText(base_64=base64_string, data_format=file_extension)
                 api_call = files_api.deidentify_structured_text
                 api_kwargs = {
@@ -436,7 +437,7 @@ class Detect:
                 run_id = getattr(api_response.data, 'run_id', None)
 
                 processed_response = self.__poll_for_processed_file(run_id, request.wait_time)
-                if request.output_directory and processed_response.status == 'SUCCESS':
+                if request.output_directory and processed_response.status == DetectStatus.SUCCESS:
                     name_without_ext, _ = os.path.splitext(file_name)
                     self.__save_deidentify_file_response_output(processed_response, request.output_directory, file_name, name_without_ext)
 
@@ -466,7 +467,7 @@ class Detect:
                 request_options=self.__get_headers()
             )
             try:
-                if http_response.data.status == 'IN_PROGRESS':
+                if http_response.data.status == DetectStatus.IN_PROGRESS:
                     parsed_response = self.__parse_deidentify_file_response(DeidentifyFileResponse(run_id=run_id, status='IN_PROGRESS'))
                 else:
                     parsed_response = self.__parse_deidentify_file_response(http_response.data, run_id, http_response.data.status)
