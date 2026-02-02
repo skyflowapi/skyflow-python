@@ -8,7 +8,8 @@ exclude = [
     "venv",
     "build",
     "dist",
-    "tests"
+    "tests",
+    "samples"
 ]
 
 line-length = 120
