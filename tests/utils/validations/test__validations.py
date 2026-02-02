@@ -116,7 +116,7 @@ class TestValidations(unittest.TestCase):
         with patch('skyflow.service_account.is_expired', return_value=True):
             with self.assertRaises(SkyflowError) as context:
                 validate_credentials(self.logger, credentials)
-            self.assertEqual(context.exception.message, SkyflowMessages.Error.INVALID_CREDENTIALS_TOKEN.value)
+            self.assertEqual(context.exception.message, SkyflowMessages.Error.EXPIRED_BEARER_TOKEN.value)
 
     def test_validate_credentials_empty_credentials(self):
         credentials = {}

@@ -131,7 +131,9 @@ class TestConnection(unittest.TestCase):
         
         mock_response = Mock()
         mock_response.status_code = FAILURE_STATUS_CODE
-        mock_response.content = ERROR_RESPONSE_CONTENT
+        mock_response.content = ERROR_RESPONSE_CONTENT.encode('utf-8')  # Convert to bytes
+        mock_response.headers = {"x-request-id": "test-request-id"}
+        mock_response.raise_for_status.side_effect = requests.HTTPError("400 Error")
         mock_send.return_value = mock_response
 
         request = InvokeConnectionRequest(
@@ -144,8 +146,10 @@ class TestConnection(unittest.TestCase):
 
         with self.assertRaises(SkyflowError) as context:
             self.connection.invoke(request)
-        self.assertEqual(context.exception.message, SkyflowMessages.Error.RESPONSE_NOT_JSON.value.format(ERROR_RESPONSE_CONTENT))
-        self.assertEqual(context.exception.http_code, 400)
+        
+        self.assertEqual(context.exception.message, ERROR_RESPONSE_CONTENT)
+        self.assertEqual(context.exception.http_code, FAILURE_STATUS_CODE)
+        self.assertEqual(context.exception.request_id, "test-request-id")
 
     @patch('skyflow.vault.controller._connections.get_credentials')
     @patch('requests.Session.send')
