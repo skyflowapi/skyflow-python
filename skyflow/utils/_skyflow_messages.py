@@ -71,6 +71,9 @@ class SkyflowMessages:
         RESPONSE_NOT_JSON = f"{error_prefix} Response {{}} is not valid JSON."
         API_ERROR = f"{error_prefix} Server returned status code {{}}"
 
+        INVALID_JSON_RESPONSE = f"{error_prefix} Invalid JSON response received."
+        UNKNOWN_ERROR_DEFAULT_MESSAGE = f"{error_prefix} An unknown error occurred."
+
         INVALID_FILE_INPUT = f"{error_prefix} Validation error. Invalid file input. Specify a valid file input."
         INVALID_DETECT_ENTITIES_TYPE = f"{error_prefix} Validation error. Invalid type of detect entities. Specify detect entities as list of DetectEntities enum."
         INVALID_TYPE_FOR_DEFAULT_TOKEN_TYPE = f"{error_prefix} Validation error. Invalid type of default token type. Specify default token type as TokenType enum."
@@ -386,6 +389,7 @@ class SkyflowMessages:
         SAVING_DEIDENTIFY_FILE_FAILED = f"{ERROR}: [{error_prefix}] Error while saving deidentified file to output directory."
         REIDENTIFY_TEXT_REQUEST_REJECTED = f"{ERROR}: [{error_prefix}] Reidentify text resulted in failure."
         DETECT_FILE_REQUEST_REJECTED = f"{ERROR}: [{error_prefix}] Deidentify file resulted in failure."
+        EMPTY_FILE_COLUMN_NAME = f"{ERROR}: [{error_prefix}] Empty column name in FILE_UPLOAD"
 
     class Interface(Enum):
         INSERT = "INSERT"

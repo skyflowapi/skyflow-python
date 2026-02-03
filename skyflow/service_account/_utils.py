@@ -6,6 +6,7 @@ from skyflow.error import SkyflowError
 from skyflow.service_account.client.auth_client import AuthClient
 from skyflow.utils.logger import log_info, log_error_log
 from skyflow.utils import get_base_url, format_scope, SkyflowMessages
+from skyflow.utils.constants import JWT, CredentialField, JwtField, OptionField, ResponseField
 
 
 invalid_input_error_code = SkyflowMessages.ErrorCodes.INVALID_INPUT.value
@@ -17,8 +18,8 @@ def is_expired(token, logger = None):
 
     try:
         decoded = jwt.decode(
-            token, options={"verify_signature": False, "verify_aud": False})
-        if time.time() >= decoded['exp']:
+            token, options={OptionField.VERIFY_SIGNATURE: False, OptionField.VERIFY_AUD: False})
+        if time.time() >= decoded[JwtField.EXP]:
             log_info(SkyflowMessages.Info.BEARER_TOKEN_EXPIRED.value, logger)
             log_error_log(SkyflowMessages.ErrorLogs.INVALID_BEARER_TOKEN.value)
             return True
@@ -59,22 +60,22 @@ def generate_bearer_token_from_creds(credentials, options = None, logger = None)
 
 def get_service_account_token(credentials, options, logger):
     try:
-        private_key = credentials["privateKey"]
+        private_key = credentials[CredentialField.PRIVATE_KEY]
     except:
         log_error_log(SkyflowMessages.ErrorLogs.PRIVATE_KEY_IS_REQUIRED.value, logger = logger)
         raise SkyflowError(SkyflowMessages.Error.MISSING_PRIVATE_KEY.value, invalid_input_error_code)
     try:
-        client_id = credentials["clientID"]
+        client_id = credentials[CredentialField.CLIENT_ID]
     except:
         log_error_log(SkyflowMessages.ErrorLogs.CLIENT_ID_IS_REQUIRED.value, logger=logger)
         raise SkyflowError(SkyflowMessages.Error.MISSING_CLIENT_ID.value, invalid_input_error_code)
     try:
-        key_id = credentials["keyID"]
+        key_id = credentials[CredentialField.KEY_ID]
     except:
         log_error_log(SkyflowMessages.ErrorLogs.KEY_ID_IS_REQUIRED.value, logger=logger)
         raise SkyflowError(SkyflowMessages.Error.MISSING_KEY_ID.value, invalid_input_error_code)
     try:
-        token_uri = credentials["tokenURI"]
+        token_uri = credentials[CredentialField.TOKEN_URI]
     except:
         log_error_log(SkyflowMessages.ErrorLogs.TOKEN_URI_IS_REQUIRED.value, logger=logger)
         raise SkyflowError(SkyflowMessages.Error.MISSING_TOKEN_URI.value, invalid_input_error_code)
@@ -85,27 +86,27 @@ def get_service_account_token(credentials, options, logger):
     auth_api = auth_client.get_auth_api()
 
     formatted_scope = None
-    if options and "role_ids" in options:
-        formatted_scope = format_scope(options.get("role_ids"))
+    if options and OptionField.ROLE_IDS in options:
+        formatted_scope = format_scope(options.get(OptionField.ROLE_IDS))
 
     response = auth_api.authentication_service_get_auth_token(assertion = signed_token,
-                                    grant_type="urn:ietf:params:oauth:grant-type:jwt-bearer",
+                                    grant_type=JWT.GRANT_TYPE_JWT_BEARER,
                                     scope=formatted_scope)
     log_info(SkyflowMessages.Info.GET_BEARER_TOKEN_SUCCESS.value, logger)
     return response.access_token, response.token_type
 
 def get_signed_jwt(options, client_id, key_id, token_uri, private_key, logger):
     payload = {
-        "iss": client_id,
-        "key": key_id,
-        "aud": token_uri,
-        "sub": client_id,
-        "exp": datetime.datetime.utcnow() + datetime.timedelta(minutes=60)
+        JwtField.ISS: client_id,
+        JwtField.KEY: key_id,
+        JwtField.AUD: token_uri,
+        JwtField.SUB: client_id,
+        JwtField.EXP: datetime.datetime.utcnow() + datetime.timedelta(minutes=60)
     }
-    if options and "ctx" in options:
-        payload["ctx"] = options.get("ctx")
+    if options and JwtField.CTX in options:
+        payload[JwtField.CTX] = options.get(JwtField.CTX)
     try:
-        return jwt.encode(payload=payload, key=private_key, algorithm="RS256")
+        return jwt.encode(payload=payload, key=private_key, algorithm=JWT.ALGORITHM_RS256)
     except Exception:
         raise SkyflowError(SkyflowMessages.Error.JWT_INVALID_FORMAT.value, invalid_input_error_code)
 
@@ -113,25 +114,25 @@ def get_signed_jwt(options, client_id, key_id, token_uri, private_key, logger):
 
 def get_signed_tokens(credentials_obj, options):
     try:
-        expiry_time = int(time.time()) + options.get("time_to_live", 60)
-        prefix = "signed_token_"
+        expiry_time = int(time.time()) + options.get(OptionField.TIME_TO_LIVE, 60)
+        prefix = JWT.SIGNED_TOKEN_PREFIX
 
-        if options and options.get("data_tokens"):
-            for token in options["data_tokens"]:
+        if options and options.get(OptionField.DATA_TOKENS):
+            for token in options[OptionField.DATA_TOKENS]:
                 claims = {
-                    "iss": "sdk",
-                    "key": credentials_obj.get("keyID"),
-                    "exp": expiry_time,
-                    "sub": credentials_obj.get("clientID"),
-                    "tok": token,
-                    "iat": int(time.time()),
+                    JwtField.ISS: JWT.ISSUER_SDK,
+                    JwtField.KEY: credentials_obj.get(CredentialField.KEY_ID),
+                    JwtField.EXP: expiry_time,
+                    JwtField.SUB: credentials_obj.get(CredentialField.CLIENT_ID),
+                    JwtField.TOK: token,
+                    JwtField.IAT: int(time.time()),
                 }
 
-                if "ctx" in options:
-                    claims["ctx"] = options["ctx"]
+                if JwtField.CTX in options:
+                    claims[JwtField.CTX] = options[JwtField.CTX]
 
-                private_key = credentials_obj.get("privateKey")
-                signed_jwt = jwt.encode(claims, private_key, algorithm="RS256")
+                private_key = credentials_obj.get(CredentialField.PRIVATE_KEY)
+                signed_jwt = jwt.encode(claims, private_key, algorithm=JWT.ALGORITHM_RS256)
                 response_object = get_signed_data_token_response_object(prefix + signed_jwt, token)
         log_info(SkyflowMessages.Info.GET_SIGNED_DATA_TOKEN_SUCCESS.value)
         return response_object
@@ -170,7 +171,7 @@ def generate_signed_data_tokens_from_creds(credentials, options):
 
 def get_signed_data_token_response_object(signed_token, actual_token):
     response_object = {
-        "token": actual_token,
-        "signed_token": signed_token
+        ResponseField.TOKEN: actual_token,
+        ResponseField.SIGNED_TOKEN: signed_token
     }
-    return response_object.get("token"), response_object.get("signed_token")
+    return response_object.get(ResponseField.TOKEN), response_object.get(ResponseField.SIGNED_TOKEN)

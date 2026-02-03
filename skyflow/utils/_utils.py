@@ -20,7 +20,9 @@ from skyflow.utils.logger import log_error_log
 from skyflow.vault.detect import DeidentifyTextResponse, ReidentifyTextResponse
 from skyflow.vault.detect import EntityInfo, TextIndex
 from . import SkyflowMessages, SDK_VERSION
-from .constants import PROTOCOL
+from .constants import (PROTOCOL, HttpHeader, ApiKey, ContentType as ContentTypeConstants, 
+                        EncodingType, BooleanString, ResponseField, CredentialField, SdkPrefix, 
+                        SdkMetricsKey, ErrorDefaults, HttpStatusCode)
 from .enums import Env, ContentType, EnvUrls
 from skyflow.vault.data import InsertResponse, UpdateResponse, DeleteResponse, QueryResponse, GetResponse
 from .validations import validate_invoke_connection_params
@@ -44,7 +46,7 @@ def get_credentials(config_level_creds = None, common_skyflow_creds = None, logg
         try:
             env_creds = env_skyflow_credentials.replace('\n', '\\n')
             return {
-                'credentials_string': env_creds
+                CredentialField.CREDENTIALS_STRING: env_creds
             }
         except json.JSONDecodeError:
             raise SkyflowError(SkyflowMessages.Error.INVALID_JSON_FORMAT_IN_CREDENTIALS_ENV.value, invalid_input_error_code)
@@ -52,7 +54,7 @@ def get_credentials(config_level_creds = None, common_skyflow_creds = None, logg
         raise SkyflowError(SkyflowMessages.Error.INVALID_CREDENTIALS.value, invalid_input_error_code)
 
 def validate_api_key(api_key: str, logger = None) -> bool:
-    if len(api_key) != 42:
+    if len(api_key) != ApiKey.LENGTH:
         log_error_log(SkyflowMessages.ErrorLogs.INVALID_API_KEY.value, logger = logger)
         return False
     api_key_pattern = re.compile(r'^sky-[a-zA-Z0-9]{5}-[a-fA-F0-9]{32}$')
@@ -113,13 +115,13 @@ def construct_invoke_connection_request(request, connection_url, logger) -> Prep
     except Exception:
         raise SkyflowError(SkyflowMessages.Error.INVALID_REQUEST_HEADERS.value, invalid_input_error_code)
 
-    if not 'Content-Type'.lower() in header:
-        header['content-type'] = ContentType.JSON.value
+    if not HttpHeader.CONTENT_TYPE.lower() in header:
+        header[HttpHeader.CONTENT_TYPE_LOWERCASE] = ContentType.JSON.value
 
     try:
         if isinstance(request.body, dict):
             json_data, files = get_data_from_content_type(
-                request.body, header["content-type"]
+                request.body, header[HttpHeader.CONTENT_TYPE_LOWERCASE]
             )
         else:
             raise SkyflowError(SkyflowMessages.Error.INVALID_REQUEST_BODY.value, invalid_input_error_code)
@@ -128,7 +130,7 @@ def construct_invoke_connection_request(request, connection_url, logger) -> Prep
 
     validate_invoke_connection_params(logger, request.query_params, request.path_params)
 
-    if not hasattr(request.method, 'value'):
+    if not hasattr(request.method, ResponseField.VALUE):
         raise SkyflowError(SkyflowMessages.Error.INVALID_REQUEST_METHOD.value, invalid_input_error_code)
 
     try:
@@ -186,7 +188,7 @@ def get_data_from_content_type(data, content_type):
 
 
 def get_metrics():
-    sdk_name_version = "skyflow-python@" + SDK_VERSION
+    sdk_name_version = SdkPrefix.SKYFLOW_PYTHON + SDK_VERSION
 
     try:
         sdk_client_device_model = platform.node()
@@ -204,10 +206,10 @@ def get_metrics():
         sdk_runtime_details = ""
 
     details_dic = {
-        'sdk_name_version': sdk_name_version,
-        'sdk_client_device_model': sdk_client_device_model,
-        'sdk_client_os_details': sdk_client_os_details,
-        'sdk_runtime_details': "Python " + sdk_runtime_details,
+        SdkMetricsKey.SDK_NAME_VERSION: sdk_name_version,
+        SdkMetricsKey.SDK_CLIENT_DEVICE_MODEL: sdk_client_device_model,
+        SdkMetricsKey.SDK_CLIENT_OS_DETAILS: sdk_client_os_details,
+        SdkMetricsKey.SDK_RUNTIME_DETAILS: SdkPrefix.PYTHON_RUNTIME + sdk_runtime_details,
     }
     return details_dic
 
@@ -216,30 +218,30 @@ def parse_insert_response(api_response, continue_on_error):
     api_response_headers = api_response.headers
     api_response_data = api_response.data
     # Retrieve the request ID from the headers
-    request_id = api_response_headers.get('x-request-id')
+    request_id = api_response_headers.get(HttpHeader.X_REQUEST_ID)
     inserted_fields = []
     errors = []
     insert_response = InsertResponse()
     if continue_on_error:
         for idx, response in enumerate(api_response_data.responses):
-            if response['Status'] == 200:
-                body = response['Body']
-                if 'records' in body:
-                    for record in body['records']:
+            if response[ResponseField.STATUS] == HttpStatusCode.OK:
+                body = response[ResponseField.BODY]
+                if ResponseField.RECORDS in body:
+                    for record in body[ResponseField.RECORDS]:
                         inserted_field = {
-                            'skyflow_id': record['skyflow_id'],
-                            'request_index': idx
+                            ResponseField.SKYFLOW_ID: record[ResponseField.SKYFLOW_ID],
+                            ResponseField.REQUEST_INDEX: idx
                         }
 
-                        if 'tokens' in record:
-                            inserted_field.update(record['tokens'])
+                        if ResponseField.TOKENS in record:
+                            inserted_field.update(record[ResponseField.TOKENS])
                         inserted_fields.append(inserted_field)
-            elif response['Status'] == 400:
+            elif response[ResponseField.STATUS] == HttpStatusCode.BAD_REQUEST:
                 error = {
-                    'request_index': idx,
-                    'request_id': request_id,
-                    'error': response['Body']['error'],
-                    'http_code': response['Status'],
+                    ResponseField.REQUEST_INDEX: idx,
+                    ResponseField.REQUEST_ID: request_id,
+                    ResponseField.ERROR: response[ResponseField.BODY][ResponseField.ERROR],
+                    ResponseField.HTTP_CODE: response[ResponseField.STATUS],
                 }
                 errors.append(error)
 
@@ -248,7 +250,7 @@ def parse_insert_response(api_response, continue_on_error):
     else:
         for record in api_response_data.records:
             field_data = {
-                'skyflow_id': record.skyflow_id
+                ResponseField.SKYFLOW_ID: record.skyflow_id
             }
 
             if record.tokens:
@@ -263,7 +265,7 @@ def parse_insert_response(api_response, continue_on_error):
 def parse_update_record_response(api_response: V1UpdateRecordResponse):
     update_response = UpdateResponse()
     updated_field = dict()
-    updated_field['skyflow_id'] = api_response.skyflow_id
+    updated_field[ResponseField.SKYFLOW_ID] = api_response.skyflow_id
     if api_response.tokens is not None:
         updated_field.update(api_response.tokens)
 
@@ -293,23 +295,23 @@ def parse_detokenize_response(api_response: HttpResponse[V1DetokenizeResponse]):
     api_response_headers = api_response.headers
     api_response_data = api_response.data
     # Retrieve the request ID from the headers
-    request_id = api_response_headers.get('x-request-id')
+    request_id = api_response_headers.get(HttpHeader.X_REQUEST_ID)
     detokenized_fields = []
     errors = []
 
     for record in api_response_data.records:
         if record.error:
             errors.append({
-                "token": record.token,
-                "error": record.error,
-                "request_id": request_id
+                ResponseField.TOKEN: record.token,
+                ResponseField.ERROR: record.error,
+                ResponseField.REQUEST_ID: request_id
             })
         else:
             value_type = record.value_type if record.value_type else None
             detokenized_fields.append({
-                "token": record.token,
-                "value": record.value,
-                "type": value_type
+                ResponseField.TOKEN: record.token,
+                ResponseField.VALUE: record.value,
+                ResponseField.TYPE: value_type
             })
 
     detokenized_fields = detokenized_fields
@@ -322,7 +324,7 @@ def parse_detokenize_response(api_response: HttpResponse[V1DetokenizeResponse]):
 
 def parse_tokenize_response(api_response: V1TokenizeResponse):
     tokenize_response = TokenizeResponse()
-    tokenized_fields = [{"token": record.token} for record in api_response.records]
+    tokenized_fields = [{ResponseField.TOKEN: record.token} for record in api_response.records]
 
     tokenize_response.tokenized_fields = tokenized_fields
 
@@ -334,7 +336,7 @@ def parse_query_response(api_response: V1GetQueryResponse):
     for record in api_response.records:
         field_object = {
             **record.fields,
-            "tokenized_data": {}
+            ResponseField.TOKENIZED_DATA: {}
         }
         fields.append(field_object)
     query_response.fields = fields
@@ -344,14 +346,14 @@ def parse_invoke_connection_response(api_response: requests.Response):
     status_code = api_response.status_code
     content = api_response.content
     if isinstance(content, bytes):
-        content = content.decode('utf-8')
+        content = content.decode(EncodingType.UTF_8)
     try:
         api_response.raise_for_status()
         try:
             data = json.loads(content)
             metadata = {}
-            if 'x-request-id' in api_response.headers:
-                metadata['request_id'] = api_response.headers['x-request-id']
+            if HttpHeader.X_REQUEST_ID in api_response.headers:
+                metadata[ResponseField.REQUEST_ID] = api_response.headers[HttpHeader.X_REQUEST_ID]
 
             return InvokeConnectionResponse(data=data, metadata=metadata, errors=None)
         except Exception as e:
@@ -360,19 +362,19 @@ def parse_invoke_connection_response(api_response: requests.Response):
         message = SkyflowMessages.Error.API_ERROR.value.format(status_code)  
         try:
             error_response = json.loads(content)                    
-            request_id = api_response.headers['x-request-id']
-            error_from_client = api_response.headers.get('error-from-client')
+            request_id = api_response.headers[HttpHeader.X_REQUEST_ID]
+            error_from_client = api_response.headers.get(HttpHeader.ERROR_FROM_CLIENT)
 
-            status_code = error_response.get('error', {}).get('http_code', 500)  # Default to 500 if not found
-            http_status = error_response.get('error', {}).get('http_status')
-            grpc_code = error_response.get('error', {}).get('grpc_code')
-            details = error_response.get('error', {}).get('details')
-            message = error_response.get('error', {}).get('message', "An unknown error occurred.")
+            status_code = error_response.get(ResponseField.ERROR, {}).get(ResponseField.HTTP_CODE, 500)  # Default to 500 if not found
+            http_status = error_response.get(ResponseField.ERROR, {}).get(ResponseField.HTTP_STATUS)
+            grpc_code = error_response.get(ResponseField.ERROR, {}).get(ResponseField.GRPC_CODE)
+            details = error_response.get(ResponseField.ERROR, {}).get(ResponseField.DETAILS)
+            message = error_response.get(ResponseField.ERROR, {}).get(ResponseField.MESSAGE, SkyflowMessages.Error.UNKNOWN_ERROR_DEFAULT_MESSAGE.value)
             
             if error_from_client is not None:
                 if details is None: details = []
-                error_from_client_bool = error_from_client.lower() == 'true'
-                details.append({'error_from_client': error_from_client_bool})
+                error_from_client_bool = error_from_client.lower() == BooleanString.TRUE
+                details.append({ResponseField.ERROR_FROM_CLIENT: error_from_client_bool})
 
             raise SkyflowError(message, status_code, request_id, grpc_code, http_status, details)
         except json.JSONDecodeError:
@@ -399,14 +401,14 @@ def handle_exception(error, logger):
     if (isinstance(error, httpx.ConnectError)):
         handle_generic_error(error, None, SkyflowMessages.ErrorCodes.INVALID_INPUT.value, logger)
         
-    request_id = error.headers.get('x-request-id', 'unknown-request-id')
-    content_type = error.headers.get('content-type')
+    request_id = error.headers.get(HttpHeader.X_REQUEST_ID, ErrorDefaults.UNKNOWN_REQUEST_ID)
+    content_type = error.headers.get(HttpHeader.CONTENT_TYPE_LOWERCASE)
     data = error.body
 
     if content_type:
-        if 'application/json' in content_type:
+        if ContentTypeConstants.APPLICATION_JSON in content_type:
             handle_json_error(error, data, request_id, logger)
-        elif 'text/plain' in content_type:
+        elif ContentTypeConstants.TEXT_PLAIN in content_type:
             handle_text_error(error, data, request_id, logger)
         else:
             handle_generic_error(error, request_id, logger)
@@ -421,15 +423,15 @@ def handle_json_error(err, data, request_id, logger):
             description = data.dict()
         else:
             description = json.loads(data)
-        status_code = description.get('error', {}).get('http_code', 500)  # Default to 500 if not found
-        http_status = description.get('error', {}).get('http_status')
-        grpc_code = description.get('error', {}).get('grpc_code')
-        details = description.get('error', {}).get('details', [])
+        status_code = description.get(ResponseField.ERROR, {}).get(ResponseField.HTTP_CODE, 500)  # Default to 500 if not found
+        http_status = description.get(ResponseField.ERROR, {}).get(ResponseField.HTTP_STATUS)
+        grpc_code = description.get(ResponseField.ERROR, {}).get(ResponseField.GRPC_CODE)
+        details = description.get(ResponseField.ERROR, {}).get(ResponseField.DETAILS, [])
 
-        description_message = description.get('error', {}).get('message', "An unknown error occurred.")
+        description_message = description.get(ResponseField.ERROR, {}).get(ResponseField.MESSAGE, SkyflowMessages.Error.UNKNOWN_ERROR_DEFAULT_MESSAGE.value)
         log_and_reject_error(description_message, status_code, request_id, http_status, grpc_code, details, logger = logger)
     except json.JSONDecodeError:
-        log_and_reject_error("Invalid JSON response received.", err, request_id, logger = logger)
+        log_and_reject_error(SkyflowMessages.Error.INVALID_JSON_RESPONSE.value, err, request_id, logger = logger)
 
 def handle_text_error(err, data, request_id, logger):
     log_and_reject_error(data, err.status, request_id, logger =  logger)

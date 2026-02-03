@@ -8,7 +8,7 @@ from skyflow.generated.rest.core.file import File
 from skyflow.utils import SkyflowMessages, parse_insert_response, \
     handle_exception, parse_update_record_response, parse_delete_response, parse_detokenize_response, \
     parse_tokenize_response, parse_query_response, parse_get_response, encode_column_values, get_metrics
-from skyflow.utils.constants import SKY_META_DATA_HEADER
+from skyflow.utils.constants import SKY_META_DATA_HEADER, ResponseField, RequestParameter, FileUploadField
 from skyflow.utils.enums import RequestMethod
 from skyflow.utils.enums.redaction_type import RedactionType
 from skyflow.utils.logger import log_info, log_error_log
@@ -82,7 +82,7 @@ class Vault:
             return (request.file_name, decoded_bytes)
 
         elif request.file_object is not None:
-            if hasattr(request.file_object, "name") and request.file_object.name:
+            if hasattr(request.file_object, FileUploadField.NAME) and request.file_object.name:
                 file_name = os.path.basename(request.file_object.name)
                 return (file_name, request.file_object)
 
@@ -125,7 +125,7 @@ class Vault:
         validate_update_request(self.__vault_client.get_logger(), request)
         log_info(SkyflowMessages.Info.UPDATE_REQUEST_RESOLVED.value, self.__vault_client.get_logger())
         self.__initialize()
-        field = {key: value for key, value in request.data.items() if key != "skyflow_id"}
+        field = {key: value for key, value in request.data.items() if key != ResponseField.SKYFLOW_ID}
         record = V1FieldRecords(fields=field, tokens = request.tokens)
 
         records_api = self.__vault_client.get_records_api()
@@ -134,7 +134,7 @@ class Vault:
             api_response = records_api.record_service_update_record(
                 self.__vault_client.get_vault_id(),
                 request.table,
-                id=request.data.get("skyflow_id"),
+                id=request.data.get(ResponseField.SKYFLOW_ID),
                 record=record,
                 tokenization=request.return_tokens,
                 byot=request.token_mode.value,
@@ -225,8 +225,8 @@ class Vault:
         self.__initialize()
         tokens_list = [
             V1DetokenizeRecordRequest(
-                token=item.get('token'),
-                redaction=item.get('redaction', RedactionType.DEFAULT)
+                token=item.get(ResponseField.TOKEN),
+                redaction=item.get(RequestParameter.REDACTION, RedactionType.DEFAULT)
             )
             for item in request.data
         ]
@@ -253,7 +253,7 @@ class Vault:
         self.__initialize()
 
         records_list = [
-            V1TokenizeRecordRequest(value=item["value"], column_group=item["column_group"])
+            V1TokenizeRecordRequest(value=item[RequestParameter.VALUE], column_group=item[RequestParameter.COLUMN_GROUP])
             for item in request.values
         ]
         tokens_api = self.__vault_client.get_tokens_api()
