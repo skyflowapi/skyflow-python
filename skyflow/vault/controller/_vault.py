@@ -8,7 +8,7 @@ from skyflow.generated.rest.core.file import File
 from skyflow.utils import SkyflowMessages, parse_insert_response, \
     handle_exception, parse_update_record_response, parse_delete_response, parse_detokenize_response, \
     parse_tokenize_response, parse_query_response, parse_get_response, encode_column_values, get_metrics
-from skyflow.utils.constants import SKY_META_DATA_HEADER, ResponseField, RequestParameter
+from skyflow.utils.constants import SKY_META_DATA_HEADER, ResponseField, RequestParameter, FileUploadField
 from skyflow.utils.enums import RequestMethod
 from skyflow.utils.enums.redaction_type import RedactionType
 from skyflow.utils.logger import log_info, log_error_log
@@ -82,7 +82,7 @@ class Vault:
             return (request.file_name, decoded_bytes)
 
         elif request.file_object is not None:
-            if hasattr(request.file_object, "name") and request.file_object.name:
+            if hasattr(request.file_object, FileUploadField.NAME) and request.file_object.name:
                 file_name = os.path.basename(request.file_object.name)
                 return (file_name, request.file_object)
 

@@ -5,7 +5,7 @@ from skyflow.utils import construct_invoke_connection_request, SkyflowMessages, 
     parse_invoke_connection_response
 from skyflow.utils.logger import log_info, log_error_log
 from skyflow.vault.connection import InvokeConnectionRequest
-from skyflow.utils.constants import SKY_META_DATA_HEADER, SKYFLOW
+from skyflow.utils.constants import SKY_META_DATA_HEADER, SKYFLOW, HttpHeader
 
 
 class Connection:
@@ -23,7 +23,7 @@ class Connection:
         invoke_connection_request = construct_invoke_connection_request(request, connection_url, self.__vault_client.get_logger())
         log_info(SkyflowMessages.Info.INVOKE_CONNECTION_REQUEST_RESOLVED.value, self.__vault_client.get_logger())
 
-        if not 'X-Skyflow-Authorization'.lower() in invoke_connection_request.headers:
+        if not HttpHeader.X_SKYFLOW_AUTHORIZATION_HEADER.lower() in invoke_connection_request.headers:
             invoke_connection_request.headers[SKYFLOW.X_SKYFLOW_AUTHORIZATION] = bearer_token
 
         invoke_connection_request.headers[SKY_META_DATA_HEADER] = json.dumps(get_metrics())
