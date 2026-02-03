@@ -220,7 +220,7 @@ class Detect:
         validate_deidentify_text_request(self.__vault_client.get_logger(), request)
         log_info(SkyflowMessages.Info.DEIDENTIFY_TEXT_REQUEST_RESOLVED.value, self.__vault_client.get_logger())
         self.__initialize()
-        detect_api = self.__vault_client.get_detect_text_api()
+        detect_api = self.__vault_client.get_detect_text_api().with_raw_response
         deidentify_text_body = self.___build_deidentify_text_body(request)
         
         try:
@@ -235,9 +235,12 @@ class Detect:
               transformations=deidentify_text_body[DeidentifyField.TRANSFORMATIONS],
               request_options=self.__get_headers()
             )
-            deidentify_text_response = parse_deidentify_text_response(api_response)
-            log_info(SkyflowMessages.Info.DEIDENTIFY_TEXT_SUCCESS.value, self.__vault_client.get_logger())
-            return deidentify_text_response
+            try:
+                deidentify_text_response = parse_deidentify_text_response(api_response)
+                log_info(SkyflowMessages.Info.DEIDENTIFY_TEXT_SUCCESS.value, self.__vault_client.get_logger())
+                return deidentify_text_response
+            finally:
+                api_response.close()
 
         except Exception as e:
             log_error_log(SkyflowMessages.ErrorLogs.DEIDENTIFY_TEXT_REQUEST_REJECTED.value, self.__vault_client.get_logger())
@@ -248,7 +251,7 @@ class Detect:
         validate_reidentify_text_request(self.__vault_client.get_logger(), request)
         log_info(SkyflowMessages.Info.REIDENTIFY_TEXT_REQUEST_RESOLVED.value, self.__vault_client.get_logger())
         self.__initialize()
-        detect_api = self.__vault_client.get_detect_text_api()
+        detect_api = self.__vault_client.get_detect_text_api().with_raw_response
         reidentify_text_body = self.___build_reidentify_text_body(request)
         
         try:
@@ -259,9 +262,12 @@ class Detect:
                 format=reidentify_text_body[DeidentifyField.FORMAT],
                 request_options=self.__get_headers()
             )
-            reidentify_text_response = parse_reidentify_text_response(api_response)
-            log_info(SkyflowMessages.Info.REIDENTIFY_TEXT_SUCCESS.value, self.__vault_client.get_logger())
-            return reidentify_text_response
+            try:
+                reidentify_text_response = parse_reidentify_text_response(api_response)
+                log_info(SkyflowMessages.Info.REIDENTIFY_TEXT_SUCCESS.value, self.__vault_client.get_logger())
+                return reidentify_text_response
+            finally:
+                api_response.close()
 
         except Exception as e:
             log_error_log(SkyflowMessages.ErrorLogs.REIDENTIFY_TEXT_REQUEST_REJECTED.value, self.__vault_client.get_logger())
