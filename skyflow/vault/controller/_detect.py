@@ -220,7 +220,7 @@ class Detect:
         validate_deidentify_text_request(self.__vault_client.get_logger(), request)
         log_info(SkyflowMessages.Info.DEIDENTIFY_TEXT_REQUEST_RESOLVED.value, self.__vault_client.get_logger())
         self.__initialize()
-        detect_api = self.__vault_client.get_detect_text_api().with_raw_response
+        detect_api = self.__vault_client.get_detect_text_api()
         deidentify_text_body = self.___build_deidentify_text_body(request)
         
         try:
@@ -251,7 +251,7 @@ class Detect:
         validate_reidentify_text_request(self.__vault_client.get_logger(), request)
         log_info(SkyflowMessages.Info.REIDENTIFY_TEXT_REQUEST_RESOLVED.value, self.__vault_client.get_logger())
         self.__initialize()
-        detect_api = self.__vault_client.get_detect_text_api().with_raw_response
+        detect_api = self.__vault_client.get_detect_text_api()
         reidentify_text_body = self.___build_reidentify_text_body(request)
         
         try:
