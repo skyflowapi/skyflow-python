@@ -9,7 +9,7 @@ from skyflow.utils import SkyflowMessages
 from skyflow.utils.constants import (
     ApiKey, ResponseField, RequestParameter,
     FileUploadField,
-    DeidentifyFileRequestField, RequestOperation, ConfigType, SqlCommand, ConfigField, OptionField, CredentialField
+    DeidentifyFileRequestField, RequestOperation, ConfigType, SqlCommand, ConfigField, OptionField, CredentialField, Detect
 )
 from skyflow.utils.logger import log_info, log_error_log
 from skyflow.vault.detect import DeidentifyTextRequest, ReidentifyTextRequest, TokenFormat, Transformations, \
@@ -406,7 +406,7 @@ def validate_deidentify_file_request(logger, request: DeidentifyFileRequest):
     if hasattr(request, DeidentifyFileRequestField.WAIT_TIME) and request.wait_time is not None:
         if not isinstance(request.wait_time, (int, float)):
             raise SkyflowError(SkyflowMessages.Error.INVALID_WAIT_TIME.value, invalid_input_error_code)
-        if request.wait_time < 0 or request.wait_time > 64:
+        if request.wait_time < 0 or request.wait_time > Detect.WAIT_TIME:
             raise SkyflowError(SkyflowMessages.Error.WAIT_TIME_GREATER_THEN_64.value, invalid_input_error_code)
 
 def validate_insert_request(logger, request):

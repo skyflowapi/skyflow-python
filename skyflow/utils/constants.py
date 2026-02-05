@@ -35,6 +35,8 @@ class DetectStatus:
     FAILED = 'FAILED'
     UNKNOWN = 'UNKNOWN'
 
+class Detect:
+    WAIT_TIME = 64
 
 class FileExtension:
     JSON = 'json'
