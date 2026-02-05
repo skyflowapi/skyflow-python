@@ -21,7 +21,8 @@ from skyflow.vault.detect import DeidentifyTextResponse, ReidentifyTextResponse
 from skyflow.vault.detect import EntityInfo, TextIndex
 from . import SkyflowMessages, SDK_VERSION
 from .constants import (PROTOCOL, HttpHeader, ApiKey, ContentType as ContentTypeConstants, 
-                        EncodingType, BooleanString, ResponseField, CredentialField)
+                        EncodingType, BooleanString, ResponseField, CredentialField, SdkPrefix, 
+                        SdkMetricsKey, ErrorDefaults, HttpStatusCode)
 from .enums import Env, ContentType, EnvUrls
 from skyflow.vault.data import InsertResponse, UpdateResponse, DeleteResponse, QueryResponse, GetResponse
 from .validations import validate_invoke_connection_params
@@ -143,7 +144,7 @@ def construct_invoke_connection_request(request, connection_url, logger) -> Prep
 
     validate_invoke_connection_params(logger, request.query_params, request.path_params)
 
-    if not hasattr(request.method, 'value'):
+    if not hasattr(request.method, ResponseField.VALUE):
         raise SkyflowError(SkyflowMessages.Error.INVALID_REQUEST_METHOD.value, invalid_input_error_code)
 
     try:
@@ -239,7 +240,7 @@ def dict_to_xml(data, root_tag='root'):
 
 
 def get_metrics():
-    sdk_name_version = "skyflow-python@" + SDK_VERSION
+    sdk_name_version = SdkPrefix.SKYFLOW_PYTHON + SDK_VERSION
 
     try:
         sdk_client_device_model = platform.node()
@@ -257,10 +258,10 @@ def get_metrics():
         sdk_runtime_details = ""
 
     details_dic = {
-        'sdk_name_version': sdk_name_version,
-        'sdk_client_device_model': sdk_client_device_model,
-        'sdk_client_os_details': sdk_client_os_details,
-        'sdk_runtime_details': "Python " + sdk_runtime_details,
+        SdkMetricsKey.SDK_NAME_VERSION: sdk_name_version,
+        SdkMetricsKey.SDK_CLIENT_DEVICE_MODEL: sdk_client_device_model,
+        SdkMetricsKey.SDK_CLIENT_OS_DETAILS: sdk_client_os_details,
+        SdkMetricsKey.SDK_RUNTIME_DETAILS: SdkPrefix.PYTHON_RUNTIME + sdk_runtime_details,
     }
     return details_dic
 
@@ -275,7 +276,7 @@ def parse_insert_response(api_response, continue_on_error):
     insert_response = InsertResponse()
     if continue_on_error:
         for idx, response in enumerate(api_response_data.responses):
-            if response[ResponseField.STATUS] == 200:
+            if response[ResponseField.STATUS] == HttpStatusCode.OK:
                 body = response[ResponseField.BODY]
                 if ResponseField.RECORDS in body:
                     for record in body[ResponseField.RECORDS]:
@@ -287,7 +288,7 @@ def parse_insert_response(api_response, continue_on_error):
                         if ResponseField.TOKENS in record:
                             inserted_field.update(record[ResponseField.TOKENS])
                         inserted_fields.append(inserted_field)
-            elif response[ResponseField.STATUS] == 400:
+            elif response[ResponseField.STATUS] == HttpStatusCode.BAD_REQUEST:
                 error = {
                     ResponseField.REQUEST_INDEX: idx,
                     ResponseField.REQUEST_ID: request_id,
@@ -414,7 +415,7 @@ def parse_invoke_connection_response(api_response: requests.Response):
         
         metadata = {}
         if HttpHeader.X_REQUEST_ID in api_response.headers:
-            metadata['request_id'] = api_response.headers[HttpHeader.X_REQUEST_ID]
+            metadata[ResponseField.REQUEST_ID] = api_response.headers[HttpHeader.X_REQUEST_ID]
 
         return InvokeConnectionResponse(data=data, metadata=metadata, errors=None)
         
@@ -469,7 +470,7 @@ def handle_exception(error, logger):
         log_and_reject_error(description, SkyflowMessages.ErrorCodes.SERVER_ERROR.value, None, logger=logger)
         return
         
-    request_id = error.headers.get(HttpHeader.X_REQUEST_ID, 'unknown-request-id')
+    request_id = error.headers.get(HttpHeader.X_REQUEST_ID, ErrorDefaults.UNKNOWN_REQUEST_ID)
     content_type = error.headers.get(HttpHeader.CONTENT_TYPE_LOWERCASE)
     data = error.body
 

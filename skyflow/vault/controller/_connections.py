@@ -26,7 +26,7 @@ class Connection:
 
         session = requests.Session()
 
-        if not 'X-Skyflow-Authorization'.lower() in invoke_connection_request.headers:
+        if not HttpHeader.X_SKYFLOW_AUTHORIZATION_HEADER.lower() in invoke_connection_request.headers:
             invoke_connection_request.headers[SKYFLOW.X_SKYFLOW_AUTHORIZATION] = bearer_token
 
         invoke_connection_request.headers[SKY_META_DATA_HEADER] = json.dumps(get_metrics())
