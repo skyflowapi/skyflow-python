@@ -1,5 +1,8 @@
 import unittest
 from unittest.mock import patch, MagicMock
+
+from skyflow.error import SkyflowError
+from skyflow.utils import SkyflowMessages
 from skyflow.vault.client.client import VaultClient
 
 CONFIG = {
@@ -98,3 +101,84 @@ class TestVaultClient(unittest.TestCase):
         mock_logger = MagicMock()
         self.vault_client.set_logger("INFO", mock_logger)
         self.assertEqual(self.vault_client.get_logger(), mock_logger)
+
+    @patch("skyflow.vault.client.client.is_expired")
+    @patch("skyflow.vault.client.client.generate_bearer_token")
+    def test_get_bearer_token_expired_token_raises_error(self, mock_generate_bearer_token, mock_is_expired):
+        """Test that expired token raises SkyflowError."""
+        credentials = {"path": "/path/to/credentials.json"}
+        mock_generate_bearer_token.return_value = ("expired_token", None)
+        mock_is_expired.return_value = True
+
+        with self.assertRaises(SkyflowError) as context:
+            self.vault_client.get_bearer_token(credentials)
+
+        self.assertEqual(context.exception.message, SkyflowMessages.Error.EXPIRED_TOKEN.value)
+        self.assertEqual(context.exception.http_code, SkyflowMessages.ErrorCodes.INVALID_INPUT.value)
+        self.assertTrue(self.vault_client._VaultClient__is_config_updated)
+
+    @patch("skyflow.vault.client.client.is_expired")
+    @patch("skyflow.vault.client.client.generate_bearer_token_from_creds")
+    def test_get_bearer_token_expired_token_from_creds_string_raises_error(self, mock_generate_bearer_token_from_creds, mock_is_expired):
+        """Test that expired token from credentials string raises SkyflowError."""
+        credentials = {"credentials_string": '{"key": "value"}'}
+        mock_generate_bearer_token_from_creds.return_value = ("expired_token", None)
+        mock_is_expired.return_value = True
+
+        with self.assertRaises(SkyflowError) as context:
+            self.vault_client.get_bearer_token(credentials)
+
+        self.assertEqual(context.exception.message, SkyflowMessages.Error.EXPIRED_TOKEN.value)
+        self.assertEqual(context.exception.http_code, SkyflowMessages.ErrorCodes.INVALID_INPUT.value)
+        self.assertTrue(self.vault_client._VaultClient__is_config_updated)
+
+    @patch("skyflow.vault.client.client.is_expired")
+    @patch("skyflow.vault.client.client.generate_bearer_token")
+    def test_get_bearer_token_reuses_valid_token(self, mock_generate_bearer_token, mock_is_expired):
+        """Test that valid bearer token is reused."""
+        credentials = {"path": "/path/to/credentials.json"}
+        mock_generate_bearer_token.return_value = ("valid_token", None)
+        mock_is_expired.return_value = False
+
+        token1 = self.vault_client.get_bearer_token(credentials)
+        self.assertEqual(token1, "valid_token")
+        mock_generate_bearer_token.assert_called_once()
+
+        token2 = self.vault_client.get_bearer_token(credentials)
+        self.assertEqual(token2, "valid_token")
+        mock_generate_bearer_token.assert_called_once()
+
+    @patch("skyflow.vault.client.client.is_expired")
+    @patch("skyflow.vault.client.client.generate_bearer_token")
+    def test_get_bearer_token_regenerates_after_config_update(self, mock_generate_bearer_token, mock_is_expired):
+        """Test that bearer token is regenerated after config update."""
+        credentials = {"path": "/path/to/credentials.json"}
+        mock_generate_bearer_token.side_effect = [("first_token", None), ("second_token", None)]
+        mock_is_expired.return_value = False
+
+        token1 = self.vault_client.get_bearer_token(credentials)
+        self.assertEqual(token1, "first_token")
+
+        self.vault_client.update_config({"new_key": "new_value"})
+
+        token2 = self.vault_client.get_bearer_token(credentials)
+        self.assertEqual(token2, "second_token")
+        self.assertEqual(mock_generate_bearer_token.call_count, 2)
+
+    @patch("skyflow.vault.client.client.is_expired")
+    @patch("skyflow.vault.client.client.generate_bearer_token_from_creds")
+    @patch("skyflow.vault.client.client.log_info")
+    def test_get_bearer_token_with_credentials_string(self, mock_log_info, mock_generate_bearer_token_from_creds, mock_is_expired):
+        """Test get_bearer_token with credentials_string."""
+        credentials = {"credentials_string": '{"clientID": "test", "clientName": "test"}'}
+        mock_generate_bearer_token_from_creds.return_value = ("token_from_creds", None)
+        mock_is_expired.return_value = False
+
+        token = self.vault_client.get_bearer_token(credentials)
+
+        self.assertEqual(token, "token_from_creds")
+        mock_generate_bearer_token_from_creds.assert_called_once()
+        mock_log_info.assert_called_with(
+            SkyflowMessages.Info.GENERATE_BEARER_TOKEN_FROM_CREDENTIALS_STRING_TRIGGERED.value,
+            None
+        )

@@ -106,27 +106,41 @@ def convert_detected_entity_to_entity_info(detected_entity):
 def construct_invoke_connection_request(request, connection_url, logger) -> PreparedRequest:
     url = parse_path_params(connection_url.rstrip('/'), request.path_params)
 
-    try:
-        if isinstance(request.headers, dict):
-            header = to_lowercase_keys(json.loads(
-                json.dumps(request.headers)))
-        else:
+    header = None
+    content_type = None
+
+    if request.headers is not None:
+        try:
+            if isinstance(request.headers, dict):
+                header = to_lowercase_keys(json.loads(
+                    json.dumps(request.headers)))
+
+                content_type = header.get(HttpHeader.CONTENT_TYPE_LOWERCASE)
+            else:
+                raise SkyflowError(SkyflowMessages.Error.INVALID_REQUEST_HEADERS.value, invalid_input_error_code)
+        except SkyflowError:
+            raise
+        except Exception:
             raise SkyflowError(SkyflowMessages.Error.INVALID_REQUEST_HEADERS.value, invalid_input_error_code)
-    except Exception:
-        raise SkyflowError(SkyflowMessages.Error.INVALID_REQUEST_HEADERS.value, invalid_input_error_code)
 
-    if not HttpHeader.CONTENT_TYPE.lower() in header:
-        header[HttpHeader.CONTENT_TYPE_LOWERCASE] = ContentType.JSON.value
-
-    try:
-        if isinstance(request.body, dict):
-            json_data, files = get_data_from_content_type(
-                request.body, header[HttpHeader.CONTENT_TYPE_LOWERCASE]
-            )
-        else:
+    json_data = None
+    files = {}
+    
+    if request.body is not None:
+        try:
+            if isinstance(request.body, dict):
+                json_data, files = get_data_from_content_type(
+                    request.body, content_type
+                )
+            else:
+                raise SkyflowError(SkyflowMessages.Error.INVALID_REQUEST_BODY.value, invalid_input_error_code)
+        except SkyflowError:
+            raise
+        except Exception as e:
             raise SkyflowError(SkyflowMessages.Error.INVALID_REQUEST_BODY.value, invalid_input_error_code)
-    except Exception as e:
-        raise SkyflowError( SkyflowMessages.Error.INVALID_REQUEST_BODY.value, invalid_input_error_code)
+
+    if files and header and content_type == ContentType.FORMDATA.value:
+        header.pop(HttpHeader.CONTENT_TYPE_LOWERCASE, None)
 
     validate_invoke_connection_params(logger, request.query_params, request.path_params)
 
@@ -176,15 +190,53 @@ def render_key(parents):
 def get_data_from_content_type(data, content_type):
     converted_data = data
     files = {}
+    
     if content_type == ContentType.URLENCODED.value:
         converted_data = http_build_query(data)
     elif content_type == ContentType.FORMDATA.value:
-        converted_data = r_urlencode(list(), dict(), data)
-        files = {(None, None)}
+        print("Hello")
+        converted_data = None
+        files = {}
+        for key, value in data.items():
+            files[key] = (None, str(value))
     elif content_type == ContentType.JSON.value:
         converted_data = json.dumps(data)
+    elif content_type == ContentType.XML.value or content_type == 'application/xml' or content_type == 'text/xml':
+        if isinstance(data, dict):
+            converted_data = dict_to_xml(data)
+        else:
+            converted_data = str(data)
+    elif content_type == ContentType.HTML.value or content_type == 'text/html':
+        if isinstance(data, dict):
+            converted_data = json.dumps(data)
+        else:
+            converted_data = str(data)
+    else:
+        if isinstance(data, dict):
+            converted_data = json.dumps(data)
+        else:
+            converted_data = str(data)
 
     return converted_data, files
+
+def dict_to_xml(data, root_tag='root'):
+    def build_xml(d, tag='item'):
+        if isinstance(d, dict):
+            xml_parts = [f'<{tag}>']
+            for key, value in d.items():
+                xml_parts.append(build_xml(value, key))
+            xml_parts.append(f'</{tag}>')
+            return ''.join(xml_parts)
+        elif isinstance(d, list):
+            return ''.join([build_xml(item, tag) for item in d])
+        else:
+            return f'<{tag}>{d}</{tag}>'
+    
+    xml_parts = [f'<{root_tag}>']
+    for key, value in data.items():
+        xml_parts.append(build_xml(value, key))
+    xml_parts.append(f'</{root_tag}>')
+    return ''.join(xml_parts)
 
 
 def get_metrics():
@@ -347,39 +399,50 @@ def parse_invoke_connection_response(api_response: requests.Response):
     content = api_response.content
     if isinstance(content, bytes):
         content = content.decode(EncodingType.UTF_8)
+    
     try:
         api_response.raise_for_status()
-        try:
-            data = json.loads(content)
-            metadata = {}
-            if HttpHeader.X_REQUEST_ID in api_response.headers:
-                metadata[ResponseField.REQUEST_ID] = api_response.headers[HttpHeader.X_REQUEST_ID]
+        
+        content_type = api_response.headers.get(HttpHeader.CONTENT_TYPE_LOWERCASE, '').lower()
+        
+        if ContentTypeConstants.APPLICATION_JSON in content_type or not content_type:
+            try:
+                data = json.loads(content)
+            except json.JSONDecodeError:
+                data = content
+        else:
+            data = content
+        
+        metadata = {}
+        if HttpHeader.X_REQUEST_ID in api_response.headers:
+            metadata[ResponseField.REQUEST_ID] = api_response.headers[HttpHeader.X_REQUEST_ID]
 
-            return InvokeConnectionResponse(data=data, metadata=metadata, errors=None)
-        except Exception as e:
-            raise SkyflowError(SkyflowMessages.Error.RESPONSE_NOT_JSON.value.format(content), status_code)
+        return InvokeConnectionResponse(data=data, metadata=metadata, errors=None)
+        
     except HTTPError:
         message = SkyflowMessages.Error.API_ERROR.value.format(status_code)  
+        request_id = api_response.headers.get(HttpHeader.X_REQUEST_ID)
+        
         try:
-            error_response = json.loads(content)                    
-            request_id = api_response.headers[HttpHeader.X_REQUEST_ID]
+            error_response = json.loads(content)
             error_from_client = api_response.headers.get(HttpHeader.ERROR_FROM_CLIENT)
 
-            status_code = error_response.get(ResponseField.ERROR, {}).get(ResponseField.HTTP_CODE, 500)  # Default to 500 if not found
+            status_code = error_response.get(ResponseField.ERROR, {}).get(ResponseField.HTTP_CODE, status_code)
             http_status = error_response.get(ResponseField.ERROR, {}).get(ResponseField.HTTP_STATUS)
             grpc_code = error_response.get(ResponseField.ERROR, {}).get(ResponseField.GRPC_CODE)
             details = error_response.get(ResponseField.ERROR, {}).get(ResponseField.DETAILS)
             message = error_response.get(ResponseField.ERROR, {}).get(ResponseField.MESSAGE, SkyflowMessages.Error.UNKNOWN_ERROR_DEFAULT_MESSAGE.value)
             
             if error_from_client is not None:
-                if details is None: details = []
+                if details is None: 
+                    details = []
                 error_from_client_bool = error_from_client.lower() == BooleanString.TRUE
                 details.append({ResponseField.ERROR_FROM_CLIENT: error_from_client_bool})
 
             raise SkyflowError(message, status_code, request_id, grpc_code, http_status, details)
+            
         except json.JSONDecodeError:
-            message = SkyflowMessages.Error.RESPONSE_NOT_JSON.value.format(content)
-        raise SkyflowError(message, status_code)
+            raise SkyflowError(content if content else message, status_code, request_id)
 
 def parse_deidentify_text_response(api_response: DeidentifyStringResponse):
     entities = [convert_detected_entity_to_entity_info(entity) for entity in api_response.entities]
@@ -397,9 +460,15 @@ def log_and_reject_error(description, status_code, request_id, http_status=None,
     raise SkyflowError(description, status_code, request_id, grpc_code, http_status, details)
 
 def handle_exception(error, logger):
-    # handle invalid cluster ID error scenario
-    if (isinstance(error, httpx.ConnectError)):
-        handle_generic_error(error, None, SkyflowMessages.ErrorCodes.INVALID_INPUT.value, logger)
+    if isinstance(error, httpx.ConnectError):
+        description = SkyflowMessages.Error.GENERIC_API_ERROR.value
+        log_and_reject_error(description, SkyflowMessages.ErrorCodes.INVALID_INPUT.value, None, logger=logger)
+        return
+    
+    if not hasattr(error, 'headers') or not hasattr(error, 'body') or error.headers is None or error.body is None:
+        description = str(error) if error else SkyflowMessages.Error.GENERIC_API_ERROR.value
+        log_and_reject_error(description, SkyflowMessages.ErrorCodes.SERVER_ERROR.value, None, logger=logger)
+        return
         
     request_id = error.headers.get(HttpHeader.X_REQUEST_ID, ErrorDefaults.UNKNOWN_REQUEST_ID)
     content_type = error.headers.get(HttpHeader.CONTENT_TYPE_LOWERCASE)
@@ -411,9 +480,9 @@ def handle_exception(error, logger):
         elif ContentTypeConstants.TEXT_PLAIN in content_type:
             handle_text_error(error, data, request_id, logger)
         else:
-            handle_generic_error(error, request_id, logger)
+            handle_generic_error_with_status(error, request_id, error.status, logger)
     else:
-        handle_generic_error(error, request_id, logger)
+        handle_generic_error_with_status(error, request_id, error.status, logger)
 
 def handle_json_error(err, data, request_id, logger):
     try:
@@ -436,12 +505,9 @@ def handle_json_error(err, data, request_id, logger):
 def handle_text_error(err, data, request_id, logger):
     log_and_reject_error(data, err.status, request_id, logger =  logger)
 
-def handle_generic_error(err, request_id, logger):
-    handle_generic_error(err, request_id, err.status, logger = logger)
-
-def handle_generic_error(err, request_id, status, logger):
+def handle_generic_error_with_status(err, request_id, status, logger):
     description = SkyflowMessages.Error.GENERIC_API_ERROR.value
-    log_and_reject_error(description, status, request_id, logger = logger)
+    log_and_reject_error(description, status, request_id, logger=logger)
 
 def encode_column_values(get_request):
     encoded_column_values = list()

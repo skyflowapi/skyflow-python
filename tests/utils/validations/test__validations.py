@@ -116,7 +116,7 @@ class TestValidations(unittest.TestCase):
         with patch('skyflow.service_account.is_expired', return_value=True):
             with self.assertRaises(SkyflowError) as context:
                 validate_credentials(self.logger, credentials)
-            self.assertEqual(context.exception.message, SkyflowMessages.Error.INVALID_CREDENTIALS_TOKEN.value)
+            self.assertEqual(context.exception.message, SkyflowMessages.Error.EXPIRED_BEARER_TOKEN.value)
 
     def test_validate_credentials_empty_credentials(self):
         credentials = {}
@@ -1044,3 +1044,66 @@ class TestValidations(unittest.TestCase):
         with self.assertRaises(SkyflowError) as context:
             validate_detokenize_request(self.logger, request)
         self.assertEqual(context.exception.message, SkyflowMessages.Error.INVALID_REDACTION_TYPE.value.format(str(type("invalid"))))
+
+
+    def test_validate_deidentify_file_request_wait_time_negative(self):
+        file_input = FileInput(file_path=self.temp_file_path)
+        request = DeidentifyFileRequest(
+            file=file_input,
+            wait_time=-1,
+            entities=[DetectEntities.SSN]
+        )
+        with self.assertRaises(SkyflowError) as context:
+            validate_deidentify_file_request(self.logger, request)
+        self.assertEqual(context.exception.message, SkyflowMessages.Error.WAIT_TIME_GREATER_THEN_64.value)
+
+    def test_validate_deidentify_file_request_wait_time_greater_than_64(self):
+        file_input = FileInput(file_path=self.temp_file_path)
+        request = DeidentifyFileRequest(
+            file=file_input,
+            wait_time=65,
+            entities=[DetectEntities.SSN]
+        )
+        with self.assertRaises(SkyflowError) as context:
+            validate_deidentify_file_request(self.logger, request)
+        self.assertEqual(context.exception.message, SkyflowMessages.Error.WAIT_TIME_GREATER_THEN_64.value)
+
+    def test_validate_deidentify_file_request_wait_time_valid_boundary_lower(self):
+        file_input = FileInput(file_path=self.temp_file_path)
+        request = DeidentifyFileRequest(
+            file=file_input,
+            wait_time=0,
+            entities=[DetectEntities.SSN]
+        )
+        validate_deidentify_file_request(self.logger, request)
+
+    def test_validate_deidentify_file_request_wait_time_valid_boundary_upper(self):
+        file_input = FileInput(file_path=self.temp_file_path)
+        request = DeidentifyFileRequest(
+            file=file_input,
+            wait_time=64,
+            entities=[DetectEntities.SSN]
+        )
+        # Should not raise an error
+        validate_deidentify_file_request(self.logger, request)
+
+    def test_validate_deidentify_file_request_wait_time_valid_float(self):
+        file_input = FileInput(file_path=self.temp_file_path)
+        request = DeidentifyFileRequest(
+            file=file_input,
+            wait_time=32.5,
+            entities=[DetectEntities.SSN]
+        )
+        # Should not raise an error
+        validate_deidentify_file_request(self.logger, request)
+
+    def test_validate_deidentify_file_request_wait_time_float_out_of_range(self):
+        file_input = FileInput(file_path=self.temp_file_path)
+        request = DeidentifyFileRequest(
+            file=file_input,
+            wait_time=64.1,
+            entities=[DetectEntities.SSN]
+        )
+        with self.assertRaises(SkyflowError) as context:
+            validate_deidentify_file_request(self.logger, request)
+        self.assertEqual(context.exception.message, SkyflowMessages.Error.WAIT_TIME_GREATER_THEN_64.value)

@@ -6,6 +6,7 @@ from skyflow.utils import construct_invoke_connection_request, SkyflowMessages, 
 from skyflow.utils.logger import log_info, log_error_log
 from skyflow.vault.connection import InvokeConnectionRequest
 from skyflow.utils.constants import SKY_META_DATA_HEADER, SKYFLOW, HttpHeader
+from skyflow.utils import get_credentials
 
 
 class Connection:
@@ -13,15 +14,17 @@ class Connection:
         self.__vault_client = vault_client
 
     def invoke(self, request: InvokeConnectionRequest):
-        session = requests.Session()
-
-        config = self.__vault_client.get_config()
-        bearer_token = self.__vault_client.get_bearer_token(config.get("credentials"))
-
-        connection_url = config.get("connection_url")
         log_info(SkyflowMessages.Info.VALIDATING_INVOKE_CONNECTION_REQUEST.value, self.__vault_client.get_logger())
+        config = self.__vault_client.get_config()
+        connection_url = config.get("connection_url")
         invoke_connection_request = construct_invoke_connection_request(request, connection_url, self.__vault_client.get_logger())
         log_info(SkyflowMessages.Info.INVOKE_CONNECTION_REQUEST_RESOLVED.value, self.__vault_client.get_logger())
+                
+        credentials = get_credentials(config.get("credentials"), self.__vault_client.get_common_skyflow_credentials(), self.__vault_client.get_logger())
+
+        bearer_token = self.__vault_client.get_bearer_token(credentials)
+
+        session = requests.Session()
 
         if not HttpHeader.X_SKYFLOW_AUTHORIZATION_HEADER.lower() in invoke_connection_request.headers:
             invoke_connection_request.headers[SKYFLOW.X_SKYFLOW_AUTHORIZATION] = bearer_token

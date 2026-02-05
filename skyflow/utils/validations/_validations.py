@@ -9,7 +9,7 @@ from skyflow.utils import SkyflowMessages
 from skyflow.utils.constants import (
     ApiKey, ResponseField, RequestParameter,
     FileUploadField,
-    DeidentifyFileRequestField, RequestOperation, ConfigType, SqlCommand, ConfigField, OptionField, CredentialField
+    DeidentifyFileRequestField, RequestOperation, ConfigType, SqlCommand, ConfigField, OptionField, CredentialField, Detect
 )
 from skyflow.utils.logger import log_info, log_error_log
 from skyflow.vault.detect import DeidentifyTextRequest, ReidentifyTextRequest, TokenFormat, Transformations, \
@@ -142,8 +142,8 @@ def validate_credentials(logger, credentials, config_id_type=None, config_id=Non
         )
         if is_expired(credentials.get(CredentialField.TOKEN), logger):
             raise SkyflowError(
-                SkyflowMessages.Error.INVALID_CREDENTIALS_TOKEN.value.format(config_id_type, config_id)
-                if config_id_type and config_id else SkyflowMessages.Error.INVALID_CREDENTIALS_TOKEN.value,
+                SkyflowMessages.Error.EXPIRED_BEARER_TOKEN.value
+                if config_id_type and config_id else SkyflowMessages.Error.EXPIRED_BEARER_TOKEN.value,
                 invalid_input_error_code
             )
     elif CredentialField.API_KEY in credentials:
@@ -247,10 +247,8 @@ def validate_connection_config(logger, config):
         SkyflowMessages.Error.INVALID_CONNECTION_URL.value.format(connection_id)
     )
 
-    if ConfigField.CREDENTIALS not in config:
-        raise SkyflowError(SkyflowMessages.Error.EMPTY_CREDENTIALS.value.format(ConfigType.CONNECTION, connection_id), invalid_input_error_code)
-
-    validate_credentials(logger, config.get(ConfigField.CREDENTIALS), ConfigType.CONNECTION, connection_id)
+    if "credentials" in config:
+            validate_credentials(logger, config.get("credentials"), "connection", connection_id)
 
     return True
 
@@ -408,7 +406,7 @@ def validate_deidentify_file_request(logger, request: DeidentifyFileRequest):
     if hasattr(request, DeidentifyFileRequestField.WAIT_TIME) and request.wait_time is not None:
         if not isinstance(request.wait_time, (int, float)):
             raise SkyflowError(SkyflowMessages.Error.INVALID_WAIT_TIME.value, invalid_input_error_code)
-        if request.wait_time < 0 and request.wait_time > 64: # noqa: PLR2004
+        if request.wait_time < 0 or request.wait_time > Detect.WAIT_TIME:
             raise SkyflowError(SkyflowMessages.Error.WAIT_TIME_GREATER_THEN_64.value, invalid_input_error_code)
 
 def validate_insert_request(logger, request):
@@ -431,9 +429,6 @@ def validate_insert_request(logger, request):
         for key, value in item.items():
             if key is None or key == "":
                 log_error_log(SkyflowMessages.ErrorLogs.EMPTY_OR_NULL_KEY_IN_VALUES.value.format(RequestOperation.INSERT), logger = logger)
-
-            if value is None or value == "":
-                log_error_log(SkyflowMessages.ErrorLogs.EMPTY_OR_NULL_VALUE_IN_VALUES.value.format(RequestOperation.INSERT, key), logger = logger)
 
     if request.upsert is not None and (not isinstance(request.upsert, str) or not request.upsert.strip()):
         log_error_log(SkyflowMessages.ErrorLogs.EMPTY_UPSERT.value(RequestOperation.INSERT), logger = logger)
@@ -592,8 +587,8 @@ def validate_get_request(logger, request):
         raise SkyflowError(SkyflowMessages.Error.INVALID_COLUMN_VALUE.value.format(type(column_values)), invalid_input_error_code)
 
     if column_name and not column_values:
-        log_error_log(SkyflowMessages.ErrorLogs.COLUMN_NAME_IS_REQUIRED.value.format(RequestOperation.GET), logger = logger)
-        SkyflowError(SkyflowMessages.Error.INVALID_COLUMN_NAME.value.format(type(column_name)), invalid_input_error_code)
+        log_error_log(SkyflowMessages.ErrorLogs.COLUMN_NAME_IS_REQUIRED.value.format("GET"), logger = logger)
+        raise SkyflowError(SkyflowMessages.Error.INVALID_COLUMN_VALUES.value, invalid_input_error_code)
 
     if (column_name or column_values) and skyflow_ids:
         log_error_log(SkyflowMessages.ErrorLogs.BOTH_IDS_AND_COLUMN_NAME_PASSED.value.format(RequestOperation.GET), logger = logger)

@@ -6,3 +6,4 @@ class ContentType(Enum):
     XML = 'text/xml'
     URLENCODED = 'application/x-www-form-urlencoded'
     FORMDATA = 'multipart/form-data'
+    HTML = 'text/html'

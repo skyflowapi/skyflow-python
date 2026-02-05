@@ -394,14 +394,18 @@ class TestUtils(unittest.TestCase):
 
     @patch("requests.Response")
     def test_parse_invoke_connection_response_json_decode_error(self, mock_response):
-
+        """Test that non-JSON content in successful response is returned as string."""
         mock_response.status_code = 200
         mock_response.content = "Non-JSON Content".encode('utf-8')
+        mock_response.headers = {"x-request-id": "1234"}
+        mock_response.raise_for_status = Mock()
 
-        with self.assertRaises(SkyflowError) as context:
-            parse_invoke_connection_response(mock_response)
+        result = parse_invoke_connection_response(mock_response)
 
-        self.assertEqual(context.exception.message, SkyflowMessages.Error.RESPONSE_NOT_JSON.value.format("Non-JSON Content"))
+        self.assertIsInstance(result, InvokeConnectionResponse)
+        self.assertEqual(result.data, "Non-JSON Content")
+        self.assertEqual(result.metadata["request_id"], "1234")
+        self.assertIsNone(result.errors)
 
     @patch("requests.Response")
     def test_parse_invoke_connection_response_http_error_with_json_error_message(self, mock_response):
@@ -428,7 +432,9 @@ class TestUtils(unittest.TestCase):
         with self.assertRaises(SkyflowError) as context:
             parse_invoke_connection_response(mock_response)
 
-        self.assertEqual(context.exception.message, SkyflowMessages.Error.RESPONSE_NOT_JSON.value.format("Internal Server Error"))
+        self.assertEqual(context.exception.message, "Internal Server Error")
+        self.assertEqual(context.exception.http_code, 500)
+        self.assertEqual(context.exception.request_id, "1234")
 
     @patch("skyflow.utils._utils.log_and_reject_error")
     def test_handle_exception_json_error(self, mock_log_and_reject_error):
@@ -597,3 +603,817 @@ class TestUtils(unittest.TestCase):
         self.assertEqual(result.text_index.end, 0)
         self.assertEqual(result.processed_index.start, 0)
         self.assertEqual(result.processed_index.end, 0)
+
+
+    @patch("skyflow.utils._utils.log_and_reject_error")
+    def test_handle_exception_connect_error(self, mock_log_and_reject_error):
+        """Test handling httpx.ConnectError."""
+        import httpx
+        mock_error = httpx.ConnectError("Connection refused")
+        mock_logger = Mock()
+
+        handle_exception(mock_error, mock_logger)
+
+        mock_log_and_reject_error.assert_called_once_with(
+            SkyflowMessages.Error.GENERIC_API_ERROR.value,
+            SkyflowMessages.ErrorCodes.INVALID_INPUT.value,
+            None,
+            logger=mock_logger
+        )
+
+    @patch("skyflow.utils._utils.log_and_reject_error")
+    def test_handle_exception_no_headers_attribute(self, mock_log_and_reject_error):
+        """Test handling error without headers attribute."""
+        mock_error = Exception("Generic error")
+        mock_logger = Mock()
+
+        handle_exception(mock_error, mock_logger)
+
+        mock_log_and_reject_error.assert_called_once_with(
+            "Generic error",
+            SkyflowMessages.ErrorCodes.SERVER_ERROR.value,
+            None,
+            logger=mock_logger
+        )
+
+    @patch("skyflow.utils._utils.log_and_reject_error")
+    def test_handle_exception_no_body_attribute(self, mock_log_and_reject_error):
+        """Test handling error without body attribute."""
+        mock_error = Mock()
+        mock_error.headers = {"x-request-id": "12345"}
+        delattr(mock_error, 'body')
+        mock_logger = Mock()
+
+        handle_exception(mock_error, mock_logger)
+
+        mock_log_and_reject_error.assert_called_once()
+        self.assertEqual(
+            mock_log_and_reject_error.call_args[0][1],
+            SkyflowMessages.ErrorCodes.SERVER_ERROR.value
+        )
+
+    @patch("skyflow.utils._utils.log_and_reject_error")
+    def test_handle_exception_text_plain_error(self, mock_log_and_reject_error):
+        """Test handling text/plain content type error."""
+        mock_error = Mock()
+        mock_error.headers = {
+            'x-request-id': '1234',
+            'content-type': 'text/plain'
+        }
+        mock_error.body = "Plain text error message"
+        mock_error.status = 500
+        mock_logger = Mock()
+
+        handle_exception(mock_error, mock_logger)
+
+        mock_log_and_reject_error.assert_called_once_with(
+            "Plain text error message",
+            500,
+            "1234",
+            logger=mock_logger
+        )
+
+    @patch("skyflow.utils._utils.log_and_reject_error")
+    def test_handle_exception_generic_error_with_status(self, mock_log_and_reject_error):
+        """Test handling generic error with unknown content type."""
+        mock_error = Mock()
+        mock_error.headers = {
+            'x-request-id': '1234',
+            'content-type': 'application/xml'
+        }
+        mock_error.body = "<error>XML error</error>"
+        mock_error.status = 503
+        mock_logger = Mock()
+
+        handle_exception(mock_error, mock_logger)
+
+        mock_log_and_reject_error.assert_called_once_with(
+            SkyflowMessages.Error.GENERIC_API_ERROR.value,
+            503,
+            "1234",
+            logger=mock_logger
+        )
+
+    @patch("skyflow.utils._utils.log_and_reject_error")
+    def test_handle_exception_no_content_type(self, mock_log_and_reject_error):
+        """Test handling error without content-type header."""
+        mock_error = Mock()
+        mock_error.headers = {'x-request-id': '1234'}
+        mock_error.body = "Some error"
+        mock_error.status = 500
+        mock_logger = Mock()
+
+        handle_exception(mock_error, mock_logger)
+
+        mock_log_and_reject_error.assert_called_once_with(
+            SkyflowMessages.Error.GENERIC_API_ERROR.value,
+            500,
+            "1234",
+            logger=mock_logger
+        )
+
+    @patch("skyflow.utils._utils.log_and_reject_error")
+    def test_handle_json_error_with_json_string(self, mock_log_and_reject_error):
+        """Test handling JSON error when data is a JSON string."""
+        error_json_string = json.dumps({
+            "error": {
+                "message": "String JSON error",
+                "http_code": 422,
+                "http_status": "Unprocessable Entity",
+                "grpc_code": 3,
+                "details": ["validation failed"]
+            }
+        })
+
+        mock_error = Mock()
+        mock_logger = Mock()
+        request_id = "test-request-id-3"
+
+        handle_json_error(mock_error, error_json_string, request_id, mock_logger)
+
+        mock_log_and_reject_error.assert_called_once_with(
+            "String JSON error",
+            422,
+            request_id,
+            "Unprocessable Entity",
+            3,
+            ["validation failed"],
+            logger=mock_logger
+        )
+
+    @patch("skyflow.utils._utils.log_and_reject_error")
+    def test_handle_json_error_with_invalid_json(self, mock_log_and_reject_error):
+        """Test handling JSON decode error."""
+        invalid_json = "This is not valid JSON"
+        mock_error = Mock()
+        mock_error.status = 500
+        mock_logger = Mock()
+        request_id = "test-request-id-4"
+
+        handle_json_error(mock_error, invalid_json, request_id, mock_logger)
+
+        # Should call with INVALID_JSON_RESPONSE error
+        mock_log_and_reject_error.assert_called_once()
+        self.assertEqual(
+            mock_log_and_reject_error.call_args[0][0],
+            SkyflowMessages.Error.INVALID_JSON_RESPONSE.value
+        )
+
+    @patch("skyflow.utils._utils.log_and_reject_error")
+    def test_handle_json_error_missing_error_field(self, mock_log_and_reject_error):
+        """Test handling JSON error with missing error field."""
+        error_dict = {
+            "message": "Error without error wrapper"
+        }
+
+        mock_error = Mock()
+        mock_logger = Mock()
+        request_id = "test-request-id-5"
+
+        handle_json_error(mock_error, error_dict, request_id, mock_logger)
+
+        # Should use defaults for missing fields
+        mock_log_and_reject_error.assert_called_once()
+        args = mock_log_and_reject_error.call_args[0]
+        # Default message when error field is missing
+        self.assertEqual(args[0], SkyflowMessages.Error.UNKNOWN_ERROR_DEFAULT_MESSAGE.value)
+        # Default status code
+        self.assertEqual(args[1], 500)
+        self.assertEqual(args[2], request_id)
+
+    @patch("skyflow.utils._utils.log_and_reject_error")
+    def test_handle_text_error_with_status(self, mock_log_and_reject_error):
+        """Test handle_text_error extracts status correctly."""
+        mock_error = Mock()
+        mock_error.status = 404
+        mock_logger = Mock()
+        request_id = "test-request-id-6"
+        error_data = "Resource not found"
+
+        from skyflow.utils._utils import handle_text_error
+        handle_text_error(mock_error, error_data, request_id, mock_logger)
+
+        mock_log_and_reject_error.assert_called_once_with(
+            "Resource not found",
+            404,
+            request_id,
+            logger=mock_logger
+        )
+
+    @patch("skyflow.utils._utils.log_and_reject_error")
+    def test_handle_generic_error_with_status(self, mock_log_and_reject_error):
+        """Test handle_generic_error_with_status."""
+        mock_error = Mock()
+        mock_logger = Mock()
+        request_id = "test-request-id-7"
+        status = 503
+
+        from skyflow.utils._utils import handle_generic_error_with_status
+        handle_generic_error_with_status(mock_error, request_id, status, mock_logger)
+
+        mock_log_and_reject_error.assert_called_once_with(
+            SkyflowMessages.Error.GENERIC_API_ERROR.value,
+            503,
+            request_id,
+            logger=mock_logger
+        )
+
+    @patch("skyflow.utils._utils.log_and_reject_error")
+    def test_handle_exception_with_none_error(self, mock_log_and_reject_error):
+        """Test handling None error object."""
+        mock_logger = Mock()
+
+        handle_exception(None, mock_logger)
+
+        mock_log_and_reject_error.assert_called_once_with(
+            SkyflowMessages.Error.GENERIC_API_ERROR.value,
+            SkyflowMessages.ErrorCodes.SERVER_ERROR.value,
+            None,
+            logger=mock_logger
+        )
+
+    #failed
+    @patch("skyflow.utils._utils.log_and_reject_error")
+    def test_handle_exception_with_empty_string_error(self, mock_log_and_reject_error):
+        """Test handling empty string error."""
+        mock_logger = Mock()
+        mock_error = Mock()
+        mock_error.headers = None
+        mock_error.body = None
+
+        handle_exception(mock_error, mock_logger)
+
+        mock_log_and_reject_error.assert_called_once()
+        # Should use str(error) or default message
+        self.assertEqual(
+            mock_log_and_reject_error.call_args[0][1],
+            SkyflowMessages.ErrorCodes.SERVER_ERROR.value
+        )
+
+    @patch("skyflow.utils._utils.log_and_reject_error")
+    def test_handle_json_error_with_bytes_data(self, mock_log_and_reject_error):
+        """Test handling JSON error when data is bytes."""
+        error_dict = {
+            "error": {
+                "message": "Bytes error",
+                "http_code": 401,
+                "http_status": "Unauthorized"
+            }
+        }
+        error_bytes = json.dumps(error_dict).encode('utf-8')
+
+        mock_error = Mock()
+        mock_logger = Mock()
+        request_id = "test-request-id-8"
+
+        handle_json_error(mock_error, error_bytes, request_id, mock_logger)
+
+        mock_log_and_reject_error.assert_called_once_with(
+            "Bytes error",
+            401,
+            request_id,
+            "Unauthorized",
+            None,
+            [],
+            logger=mock_logger
+        )
+
+        # Add these new test methods to the TestUtils class:
+
+    def test_construct_invoke_connection_request_with_no_headers(self):
+        """Test construct_invoke_connection_request when headers are None."""
+        mock_connection_request = Mock()
+        mock_connection_request.path_params = {"param1": "value1"}
+        mock_connection_request.headers = None
+        mock_connection_request.body = {"key": "value"}
+        mock_connection_request.method.value = "POST"
+        mock_connection_request.query_params = {"query": "test"}
+
+        connection_url = "https://example.com/{param1}/endpoint"
+
+        result = construct_invoke_connection_request(mock_connection_request, connection_url, logger=None)
+
+        self.assertIsInstance(result, PreparedRequest)
+        # Headers should be None when not provided
+        self.assertIsNone(result.headers.get('Content-Type'))
+
+    def test_construct_invoke_connection_request_with_xml_content_type(self):
+        """Test construct_invoke_connection_request with XML content type."""
+        mock_connection_request = Mock()
+        mock_connection_request.path_params = {}
+        mock_connection_request.headers = {"Content-Type": "application/xml"}
+        mock_connection_request.body = {"root": {"child": "value"}}
+        mock_connection_request.method.value = "POST"
+        mock_connection_request.query_params = {}
+
+        connection_url = "https://example.com/endpoint"
+
+        result = construct_invoke_connection_request(mock_connection_request, connection_url, logger=None)
+
+        self.assertIsInstance(result, PreparedRequest)
+        self.assertEqual(result.headers['content-type'], 'application/xml')
+        # Body should be converted to XML
+        self.assertIn('<root>', result.body)
+        self.assertIn('<child>value</child>', result.body)
+
+    def test_construct_invoke_connection_request_with_html_content_type(self):
+        """Test construct_invoke_connection_request with HTML content type."""
+        mock_connection_request = Mock()
+        mock_connection_request.path_params = {}
+        mock_connection_request.headers = {"Content-Type": "text/html"}
+        mock_connection_request.body = {"message": "Hello"}
+        mock_connection_request.method.value = "POST"
+        mock_connection_request.query_params = {}
+
+        connection_url = "https://example.com/endpoint"
+
+        result = construct_invoke_connection_request(mock_connection_request, connection_url, logger=None)
+
+        self.assertIsInstance(result, PreparedRequest)
+        self.assertEqual(result.headers['content-type'], 'text/html')
+        # Body should be JSON string for HTML
+        self.assertEqual(result.body, json.dumps({"message": "Hello"}))
+
+    def test_construct_invoke_connection_request_multipart_removes_content_type(self):
+        """Test that Content-Type is removed for multipart/form-data."""
+        mock_connection_request = Mock()
+        mock_connection_request.path_params = {}
+        mock_connection_request.headers = {"Content-Type": ContentType.FORMDATA.value}
+        mock_connection_request.body = {"field1": "value1", "field2": "value2"}
+        mock_connection_request.method.value = "POST"
+        mock_connection_request.query_params = {}
+
+        connection_url = "https://example.com/endpoint"
+
+        result = construct_invoke_connection_request(mock_connection_request, connection_url, logger=None)
+
+        self.assertIsInstance(result, PreparedRequest)
+        # Content-Type should be auto-generated by requests library
+        self.assertIn('multipart/form-data', result.headers.get('Content-Type', ''))
+        self.assertIn('boundary=', result.headers.get('Content-Type', ''))
+
+    def test_construct_invoke_connection_request_with_no_body(self):
+        """Test construct_invoke_connection_request when body is None."""
+        mock_connection_request = Mock()
+        mock_connection_request.path_params = {}
+        mock_connection_request.headers = {"Content-Type": ContentType.JSON.value}
+        mock_connection_request.body = None
+        mock_connection_request.method.value = "GET"
+        mock_connection_request.query_params = {}
+
+        connection_url = "https://example.com/endpoint"
+
+        result = construct_invoke_connection_request(mock_connection_request, connection_url, logger=None)
+
+        self.assertIsInstance(result, PreparedRequest)
+        self.assertIsNone(result.body)
+
+    def test_get_data_from_content_type_url_encoded(self):
+        """Test get_data_from_content_type with URL encoded content type."""
+        from skyflow.utils._utils import get_data_from_content_type
+
+        data = {"key1": "value1", "key2": "value2"}
+        content_type = ContentType.URLENCODED.value
+
+        converted_data, files = get_data_from_content_type(data, content_type)
+
+        self.assertEqual(converted_data, "key1=value1&key2=value2")
+        self.assertEqual(files, {})
+
+    def test_get_data_from_content_type_form_data(self):
+        """Test get_data_from_content_type with form data content type."""
+        from skyflow.utils._utils import get_data_from_content_type
+
+        data = {"field1": "value1", "field2": "value2"}
+        content_type = ContentType.FORMDATA.value
+
+        converted_data, files = get_data_from_content_type(data, content_type)
+
+        self.assertIsNone(converted_data)
+        self.assertEqual(files["field1"], (None, "value1"))
+        self.assertEqual(files["field2"], (None, "value2"))
+
+    def test_get_data_from_content_type_json(self):
+        """Test get_data_from_content_type with JSON content type."""
+        from skyflow.utils._utils import get_data_from_content_type
+
+        data = {"key": "value"}
+        content_type = ContentType.JSON.value
+
+        converted_data, files = get_data_from_content_type(data, content_type)
+
+        self.assertEqual(converted_data, json.dumps(data))
+        self.assertEqual(files, {})
+
+    def test_get_data_from_content_type_xml_with_dict(self):
+        """Test get_data_from_content_type with XML content type and dict data."""
+        from skyflow.utils._utils import get_data_from_content_type
+
+        data = {"root": {"child": "value"}}
+        content_type = "application/xml"
+
+        converted_data, files = get_data_from_content_type(data, content_type)
+
+        self.assertIn("<root>", converted_data)
+        self.assertIn("<child>value</child>", converted_data)
+        self.assertEqual(files, {})
+
+    def test_get_data_from_content_type_xml_with_string(self):
+        """Test get_data_from_content_type with XML content type and string data."""
+        from skyflow.utils._utils import get_data_from_content_type
+
+        data = "<root><child>value</child></root>"
+        content_type = "text/xml"
+
+        converted_data, files = get_data_from_content_type(data, content_type)
+
+        self.assertEqual(converted_data, data)
+        self.assertEqual(files, {})
+
+    def test_get_data_from_content_type_html_with_dict(self):
+        """Test get_data_from_content_type with HTML content type and dict data."""
+        from skyflow.utils._utils import get_data_from_content_type
+
+        data = {"message": "Hello"}
+        content_type = "text/html"
+
+        converted_data, files = get_data_from_content_type(data, content_type)
+
+        self.assertEqual(converted_data, json.dumps(data))
+        self.assertEqual(files, {})
+
+    def test_get_data_from_content_type_html_with_string(self):
+        """Test get_data_from_content_type with HTML content type and string data."""
+        from skyflow.utils._utils import get_data_from_content_type
+
+        data = "<html><body>Hello</body></html>"
+        content_type = "text/html"
+
+        converted_data, files = get_data_from_content_type(data, content_type)
+
+        self.assertEqual(converted_data, data)
+        self.assertEqual(files, {})
+
+    def test_get_data_from_content_type_unknown_type_with_dict(self):
+        """Test get_data_from_content_type with unknown content type and dict data."""
+        from skyflow.utils._utils import get_data_from_content_type
+
+        data = {"key": "value"}
+        content_type = "application/custom"
+
+        converted_data, files = get_data_from_content_type(data, content_type)
+
+        self.assertEqual(converted_data, json.dumps(data))
+        self.assertEqual(files, {})
+
+    def test_get_data_from_content_type_unknown_type_with_string(self):
+        """Test get_data_from_content_type with unknown content type and string data."""
+        from skyflow.utils._utils import get_data_from_content_type
+
+        data = "plain text data"
+        content_type = "text/plain"
+
+        converted_data, files = get_data_from_content_type(data, content_type)
+
+        self.assertEqual(converted_data, data)
+        self.assertEqual(files, {})
+
+    def test_dict_to_xml_simple_dict(self):
+        """Test dict_to_xml with simple dictionary."""
+        from skyflow.utils._utils import dict_to_xml
+
+        data = {"name": "John", "age": "30"}
+        result = dict_to_xml(data)
+
+        self.assertIn("<name>John</name>", result)
+        self.assertIn("<age>30</age>", result)
+        self.assertTrue(result.startswith("<root>"))
+        self.assertTrue(result.endswith("</root>"))
+
+    def test_dict_to_xml_nested_dict(self):
+        """Test dict_to_xml with nested dictionary."""
+        from skyflow.utils._utils import dict_to_xml
+
+        data = {"person": {"name": "John", "age": "30"}}
+        result = dict_to_xml(data)
+
+        self.assertIn("<person>", result)
+        self.assertIn("<name>John</name>", result)
+        self.assertIn("<age>30</age>", result)
+
+    def test_dict_to_xml_with_list(self):
+        """Test dict_to_xml with list values."""
+        from skyflow.utils._utils import dict_to_xml
+
+        data = {"items": ["item1", "item2", "item3"]}
+        result = dict_to_xml(data)
+
+        self.assertIn("<items>item1</items>", result)
+        self.assertIn("<items>item2</items>", result)
+        self.assertIn("<items>item3</items>", result)
+
+    @patch("requests.Response")
+    def test_parse_invoke_connection_response_xml_content(self, mock_response):
+        """Test parsing XML response content."""
+        mock_response.status_code = 200
+        mock_response.content = b"<response><status>success</status></response>"
+        mock_response.headers = {
+            "x-request-id": "1234",
+            "content-type": "application/xml"
+        }
+        mock_response.raise_for_status = Mock()
+
+        result = parse_invoke_connection_response(mock_response)
+
+        self.assertIsInstance(result, InvokeConnectionResponse)
+        self.assertEqual(result.data, "<response><status>success</status></response>")
+        self.assertEqual(result.metadata["request_id"], "1234")
+        self.assertIsNone(result.errors)
+
+    @patch("requests.Response")
+    def test_parse_invoke_connection_response_url_encoded_content(self, mock_response):
+        """Test parsing URL encoded response content."""
+        mock_response.status_code = 200
+        mock_response.content = b"card_number=4111111111111111&cvv=123"
+        mock_response.headers = {
+            "x-request-id": "1234",
+            "content-type": "application/x-www-form-urlencoded"
+        }
+        mock_response.raise_for_status = Mock()
+
+        result = parse_invoke_connection_response(mock_response)
+
+        self.assertIsInstance(result, InvokeConnectionResponse)
+        self.assertEqual(result.data, "card_number=4111111111111111&cvv=123")
+        self.assertEqual(result.metadata["request_id"], "1234")
+        self.assertIsNone(result.errors)
+
+    @patch("requests.Response")
+    def test_parse_invoke_connection_response_html_content(self, mock_response):
+        """Test parsing HTML response content."""
+        mock_response.status_code = 200
+        mock_response.content = b"<html><body>Success</body></html>"
+        mock_response.headers = {
+            "x-request-id": "1234",
+            "content-type": "text/html"
+        }
+        mock_response.raise_for_status = Mock()
+
+        result = parse_invoke_connection_response(mock_response)
+
+        self.assertIsInstance(result, InvokeConnectionResponse)
+        self.assertEqual(result.data, "<html><body>Success</body></html>")
+        self.assertEqual(result.metadata["request_id"], "1234")
+        self.assertIsNone(result.errors)
+
+    @patch("requests.Response")
+    def test_parse_invoke_connection_response_html_error(self, mock_response):
+        """Test parsing HTML error response."""
+        html_error = "<!DOCTYPE html><html><body><h1>Error 500</h1></body></html>"
+        mock_response.status_code = 500
+        mock_response.content = html_error.encode('utf-8')
+        mock_response.headers = {
+            "x-request-id": "1234",
+            "content-type": "text/html"
+        }
+        mock_response.raise_for_status = Mock(side_effect=HTTPError("500 Error"))
+
+        with self.assertRaises(SkyflowError) as context:
+            parse_invoke_connection_response(mock_response)
+
+        self.assertEqual(context.exception.message, html_error)
+        self.assertEqual(context.exception.http_code, 500)
+        self.assertEqual(context.exception.request_id, "1234")
+
+    @patch("requests.Response")
+    def test_parse_invoke_connection_response_json_decode_falls_back_to_string(self, mock_response):
+        """Test that JSON decode error falls back to returning string content."""
+        mock_response.status_code = 200
+        mock_response.content = b"Not valid JSON but still success"
+        mock_response.headers = {
+            "x-request-id": "1234",
+            "content-type": "application/json"
+        }
+        mock_response.raise_for_status = Mock()
+
+        result = parse_invoke_connection_response(mock_response)
+
+        self.assertIsInstance(result, InvokeConnectionResponse)
+        self.assertEqual(result.data, "Not valid JSON but still success")
+        self.assertEqual(result.metadata["request_id"], "1234")
+        self.assertIsNone(result.errors)
+
+    @patch("requests.Response")
+    def test_parse_invoke_connection_response_no_content_type_with_json(self, mock_response):
+        """Test parsing response with no content-type but valid JSON."""
+        mock_response.status_code = 200
+        mock_response.content = json.dumps({"success": True}).encode('utf-8')
+        mock_response.headers = {"x-request-id": "1234"}
+        mock_response.raise_for_status = Mock()
+
+        result = parse_invoke_connection_response(mock_response)
+
+        self.assertIsInstance(result, InvokeConnectionResponse)
+        self.assertEqual(result.data, {"success": True})
+        self.assertEqual(result.metadata["request_id"], "1234")
+        self.assertIsNone(result.errors)
+
+    @patch("requests.Response")
+    def test_parse_invoke_connection_response_no_content_type_with_text(self, mock_response):
+        """Test parsing response with no content-type and non-JSON content."""
+        mock_response.status_code = 200
+        mock_response.content = b"Plain text response"
+        mock_response.headers = {"x-request-id": "1234"}
+        mock_response.raise_for_status = Mock()
+
+        result = parse_invoke_connection_response(mock_response)
+
+        self.assertIsInstance(result, InvokeConnectionResponse)
+        self.assertEqual(result.data, "Plain text response")
+        self.assertEqual(result.metadata["request_id"], "1234")
+        self.assertIsNone(result.errors)
+
+    @patch("requests.Response")
+    def test_parse_invoke_connection_response_bytes_content(self, mock_response):
+        """Test parsing response with bytes content."""
+        mock_response.status_code = 200
+        mock_response.content = b"Binary data response"
+        mock_response.headers = {
+            "x-request-id": "1234",
+            "content-type": "application/octet-stream"
+        }
+        mock_response.raise_for_status = Mock()
+
+        result = parse_invoke_connection_response(mock_response)
+
+        self.assertIsInstance(result, InvokeConnectionResponse)
+        self.assertEqual(result.data, "Binary data response")
+        self.assertEqual(result.metadata["request_id"], "1234")
+        self.assertIsNone(result.errors)
+
+    def test_construct_invoke_connection_request_headers_json_error(self):
+        """Test exception handling when json.dumps fails for headers."""
+        mock_connection_request = Mock()
+        mock_connection_request.path_params = {}
+
+        class UnserializableObject:
+            def __repr__(self):
+                raise TypeError("Object is not JSON serializable")
+
+        mock_connection_request.headers = {"key": UnserializableObject()}
+        mock_connection_request.body = None
+        mock_connection_request.method.value = "GET"
+        mock_connection_request.query_params = {}
+
+        connection_url = "https://example.com/endpoint"
+
+        with patch('json.dumps', side_effect=TypeError("Object is not JSON serializable")):
+            with self.assertRaises(SkyflowError) as context:
+                construct_invoke_connection_request(mock_connection_request, connection_url, logger=None)
+
+            self.assertEqual(context.exception.message, SkyflowMessages.Error.INVALID_REQUEST_HEADERS.value)
+            self.assertEqual(context.exception.http_code, SkyflowMessages.ErrorCodes.INVALID_INPUT.value)
+
+    def test_construct_invoke_connection_request_headers_generic_exception(self):
+        """Test generic exception handling for headers processing."""
+        mock_connection_request = Mock()
+        mock_connection_request.path_params = {}
+        mock_connection_request.headers = {"Content-Type": "application/json"}
+        mock_connection_request.body = None
+        mock_connection_request.method.value = "GET"
+        mock_connection_request.query_params = {}
+
+        connection_url = "https://example.com/endpoint"
+
+        with patch('skyflow.utils._utils.to_lowercase_keys', side_effect=Exception("Generic error")):
+            with self.assertRaises(SkyflowError) as context:
+                construct_invoke_connection_request(mock_connection_request, connection_url, logger=None)
+
+            self.assertEqual(context.exception.message, SkyflowMessages.Error.INVALID_REQUEST_HEADERS.value)
+            self.assertEqual(context.exception.http_code, SkyflowMessages.ErrorCodes.INVALID_INPUT.value)
+
+    def test_construct_invoke_connection_request_body_processing_exception(self):
+        """Test exception handling when body processing fails."""
+        mock_connection_request = Mock()
+        mock_connection_request.path_params = {}
+        mock_connection_request.headers = {"Content-Type": ContentType.JSON.value}
+        mock_connection_request.body = {"key": "value"}
+        mock_connection_request.method.value = "POST"
+        mock_connection_request.query_params = {}
+
+        connection_url = "https://example.com/endpoint"
+
+        with patch('skyflow.utils._utils.get_data_from_content_type', side_effect=Exception("Body processing error")):
+            with self.assertRaises(SkyflowError) as context:
+                construct_invoke_connection_request(mock_connection_request, connection_url, logger=None)
+
+            self.assertEqual(context.exception.message, SkyflowMessages.Error.INVALID_REQUEST_BODY.value)
+            self.assertEqual(context.exception.http_code, SkyflowMessages.ErrorCodes.INVALID_INPUT.value)
+
+    def test_construct_invoke_connection_request_body_json_dumps_exception(self):
+        """Test exception handling when json.dumps fails in get_data_from_content_type."""
+        mock_connection_request = Mock()
+        mock_connection_request.path_params = {}
+        mock_connection_request.headers = {"Content-Type": ContentType.JSON.value}
+
+        class UnserializableObject:
+            pass
+
+        mock_connection_request.body = {"key": UnserializableObject()}
+        mock_connection_request.method.value = "POST"
+        mock_connection_request.query_params = {}
+
+        connection_url = "https://example.com/endpoint"
+
+        with self.assertRaises(SkyflowError) as context:
+            construct_invoke_connection_request(mock_connection_request, connection_url, logger=None)
+
+        self.assertEqual(context.exception.message, SkyflowMessages.Error.INVALID_REQUEST_BODY.value)
+        self.assertEqual(context.exception.http_code, SkyflowMessages.ErrorCodes.INVALID_INPUT.value)
+
+    def test_construct_invoke_connection_request_invalid_url_exception(self):
+        """Test exception handling when requests.Request.prepare() fails with invalid URL."""
+        mock_connection_request = Mock()
+        mock_connection_request.path_params = {}
+        mock_connection_request.headers = None
+        mock_connection_request.body = None
+        mock_connection_request.method.value = "GET"
+        mock_connection_request.query_params = {}
+
+        connection_url = "https://example.com/endpoint"
+
+        with patch('requests.Request') as mock_request_class:
+            mock_request_instance = Mock()
+            mock_request_instance.prepare.side_effect = Exception("Invalid URL structure")
+            mock_request_class.return_value = mock_request_instance
+
+            with self.assertRaises(SkyflowError) as context:
+                construct_invoke_connection_request(mock_connection_request, connection_url, logger=None)
+
+            self.assertEqual(
+                context.exception.message,
+                SkyflowMessages.Error.INVALID_URL.value.format(connection_url)
+            )
+            self.assertEqual(context.exception.http_code, SkyflowMessages.ErrorCodes.INVALID_INPUT.value)
+
+    def test_construct_invoke_connection_request_prepare_exception(self):
+        """Test exception handling when prepare() method fails."""
+        mock_connection_request = Mock()
+        mock_connection_request.path_params = {}
+        mock_connection_request.headers = {"Content-Type": ContentType.JSON.value}
+        mock_connection_request.body = None
+        mock_connection_request.method.value = "GET"
+        mock_connection_request.query_params = {}
+
+        connection_url = "https://example.com/endpoint"
+
+        with patch('requests.Request') as mock_request_class:
+            mock_request_instance = Mock()
+            mock_request_instance.prepare.side_effect = Exception("Prepare failed")
+            mock_request_class.return_value = mock_request_instance
+
+            with self.assertRaises(SkyflowError) as context:
+                construct_invoke_connection_request(mock_connection_request, connection_url, logger=None)
+
+            self.assertEqual(
+                context.exception.message,
+                SkyflowMessages.Error.INVALID_URL.value.format(connection_url)
+            )
+            self.assertEqual(context.exception.http_code, SkyflowMessages.ErrorCodes.INVALID_INPUT.value)
+
+    def test_construct_invoke_connection_request_body_not_dict_raises_error(self):
+        """Test that non-dict body raises SkyflowError which is caught and re-raised."""
+        mock_connection_request = Mock()
+        mock_connection_request.path_params = {}
+        mock_connection_request.headers = {"Content-Type": ContentType.JSON.value}
+        mock_connection_request.body = "not a dict"  # Invalid body type
+        mock_connection_request.method.value = "POST"
+        mock_connection_request.query_params = {}
+
+        connection_url = "https://example.com/endpoint"
+
+        with self.assertRaises(SkyflowError) as context:
+            construct_invoke_connection_request(mock_connection_request, connection_url, logger=None)
+
+        self.assertEqual(context.exception.message, SkyflowMessages.Error.INVALID_REQUEST_BODY.value)
+        self.assertEqual(context.exception.http_code, SkyflowMessages.ErrorCodes.INVALID_INPUT.value)
+
+    @patch('skyflow.utils._utils.validate_invoke_connection_params')
+    def test_construct_invoke_connection_request_validation_exception(self, mock_validate):
+        """Test that validation exceptions are properly propagated."""
+        mock_connection_request = Mock()
+        mock_connection_request.path_params = {"param": "value"}
+        mock_connection_request.headers = None
+        mock_connection_request.body = None
+        mock_connection_request.method.value = "GET"
+        mock_connection_request.query_params = {"query": "value"}
+
+        connection_url = "https://example.com/endpoint"
+
+        mock_validate.side_effect = SkyflowError("Validation failed", 400)
+
+        with self.assertRaises(SkyflowError) as context:
+            construct_invoke_connection_request(mock_connection_request, connection_url, logger=None)
+
+        self.assertEqual(context.exception.message, "Validation failed")
+        self.assertEqual(context.exception.http_code, 400)
