@@ -21,8 +21,8 @@ setup(
     long_description=open('README.rst').read(),
     install_requires=[
         'python_dateutil >= 2.5.3',
-    	'setuptools >= 21.0.0',
-        'urllib3 >= 1.25.3, < 2.1.0',
+    	'setuptools >= 80.10.12',
+        'urllib3 >= 1.25.3, < 2.6.3',
         'pydantic >= 2',
         'typing-extensions >= 4.7.1',
         'DateTime~=5.5',
