@@ -3,12 +3,12 @@ from typing import BinaryIO
 class FileUploadRequest:
     def __init__(self,
                  table: str,
-                 skyflow_id: str,
                  column_name: str,
                  file_path: str= None,
                  base64: str= None,
                  file_object: BinaryIO= None,
-                 file_name: str= None):
+                 file_name: str= None,
+                 skyflow_id: str= None):
         self.table = table
         self.skyflow_id = skyflow_id
         self.column_name = column_name

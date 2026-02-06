@@ -704,13 +704,10 @@ def validate_file_upload_request(logger, request):
     elif table.strip() == "":
         raise SkyflowError(SkyflowMessages.Error.EMPTY_TABLE_VALUE.value, invalid_input_error_code)
 
-    # Skyflow ID
     skyflow_id = getattr(request, "skyflow_id", None)
-    if skyflow_id is None:
-        raise SkyflowError(SkyflowMessages.Error.IDS_KEY_ERROR.value, invalid_input_error_code)
-    elif skyflow_id.strip() == "":
-        raise SkyflowError(SkyflowMessages.Error.EMPTY_SKYFLOW_ID.value.format("FILE_UPLOAD"), invalid_input_error_code)
-
+    if skyflow_id is not None and (not isinstance(skyflow_id, str)):
+        raise SkyflowError(SkyflowMessages.Error.INAVLID_SKYFLOW_ID.value.format(type(skyflow_id)), invalid_input_error_code)   
+    
     # Column Name
     column_name = getattr(request, "column_name", None)
     if column_name is None:
