@@ -102,7 +102,7 @@ class SkyflowMessages:
         BULK_DELETE_FAILURE = f"{error_prefix} Delete operation failed."
         EMPTY_SKYFLOW_ID= f"{error_prefix} Validation error. skyflow_id can't be empty."
         INVALID_FILE_COLUMN_NAME= f"{error_prefix} Validation error. 'column_name' can't be empty."
-
+        INAVLID_SKYFLOW_ID = f"{error_prefix} Validation error. Invalid type of skyflow_id. Specify skyflow_id as a string."
         INVALID_QUERY_TYPE = f"{error_prefix} Validation error. Query parameter is of type {{}}. Specify as a string."
         EMPTY_QUERY = f"{error_prefix} Validation error. Query parameter can't be empty. Specify as a string."
         INVALID_QUERY_COMMAND = f"{error_prefix} Validation error. {{}} command was passed instead, but only SELECT commands are supported. Specify the SELECT command."
@@ -278,7 +278,6 @@ class SkyflowMessages:
         VALIDATING_FILE_UPLOAD_REQUEST = f"{INFO}: [{error_prefix}] Validating file upload request."
         FILE_UPLOAD_REQUEST_RESOLVED = f"{INFO}: [{error_prefix}] File upload request resolved."
         FILE_UPLOAD_SUCCESS = f"{INFO}: [{error_prefix}] File uploaded successfully."
-        FILE_UPLOAD_REQUEST_REJECTED = f"{ERROR}: [{error_prefix}] File upload failed."
 
         INVOKE_CONNECTION_TRIGGERED = f"{INFO}: [{error_prefix}] Invoke connection method triggered."
         VALIDATING_INVOKE_CONNECTION_REQUEST = f"{INFO}: [{error_prefix}] Validating invoke connection request."
@@ -308,6 +307,7 @@ class SkyflowMessages:
         DETECT_REQUEST_RESOLVED = f"{INFO}: [{error_prefix}] Detect request is resolved."
 
     class ErrorLogs(Enum):
+        FILE_UPLOAD_REQUEST_REJECTED = f"{ERROR}: [{error_prefix}] File upload failed."
         VAULTID_IS_REQUIRED = f"{ERROR}: [{error_prefix}] Invalid vault config. Vault ID is required."
         EMPTY_VAULTID = f"{ERROR}: [{error_prefix}] Invalid vault config. Vault ID can not be empty."
         CLUSTER_ID_IS_REQUIRED = f"{ERROR}: [{error_prefix}] Invalid vault config. Cluster ID is required."
