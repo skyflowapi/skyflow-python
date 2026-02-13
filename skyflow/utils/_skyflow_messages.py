@@ -16,7 +16,7 @@ class SkyflowMessages:
         REDACTION_WITH_TOKENS_NOT_SUPPORTED = 400
 
     class Error(Enum):
-        GENERIC_API_ERROR = f"{error_prefix} Validation error. Invalid configuration. Please add a valid vault configuration."
+        GENERIC_API_ERROR = f"{error_prefix} API error. Error occurred."
         
         EMPTY_VAULT_ID = f"{error_prefix} Initialization failed. Invalid vault Id. Specify a valid vault Id."
         INVALID_VAULT_ID = f"{error_prefix} Initialization failed. Invalid vault Id. Specify a valid vault Id as a string."
@@ -283,7 +283,6 @@ class SkyflowMessages:
         VALIDATING_FILE_UPLOAD_REQUEST = f"{INFO}: [{error_prefix}] Validating file upload request."
         FILE_UPLOAD_REQUEST_RESOLVED = f"{INFO}: [{error_prefix}] File upload request resolved."
         FILE_UPLOAD_SUCCESS = f"{INFO}: [{error_prefix}] File uploaded successfully."
-        FILE_UPLOAD_REQUEST_REJECTED = f"{ERROR}: [{error_prefix}] File upload failed."
 
         INVOKE_CONNECTION_TRIGGERED = f"{INFO}: [{error_prefix}] Invoke connection method triggered."
         VALIDATING_INVOKE_CONNECTION_REQUEST = f"{INFO}: [{error_prefix}] Validating invoke connection request."
@@ -351,6 +350,7 @@ class SkyflowMessages:
         EMPTY_OR_NULL_VALUE_IN_TOKENS = f"{ERROR}: [{error_prefix}] Invalid {{}} request. Value can not be null or empty in tokens for key {{}}."
         EMPTY_OR_NULL_KEY_IN_TOKENS = f"{ERROR}: [{error_prefix}] Invalid {{}} request. Key can not be null or empty in tokens."
         MISMATCH_OF_FIELDS_AND_TOKENS = f"{ERROR}: [{error_prefix}] Invalid {{}} request. Keys for values and tokens are not matching."
+        FILE_UPLOAD_REQUEST_REJECTED = f"{ERROR}: [{error_prefix}] File upload failed."
 
         EMPTY_IDS = f"{ERROR}: [{error_prefix}] Invalid {{}} request. Ids can not be empty."
         EMPTY_OR_NULL_ID_IN_IDS = f"{ERROR}: [{error_prefix}] Invalid {{}} request. Id can not be null or empty in ids at index {{}}."

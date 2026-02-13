@@ -615,7 +615,7 @@ class TestUtils(unittest.TestCase):
         handle_exception(mock_error, mock_logger)
 
         mock_log_and_reject_error.assert_called_once_with(
-            SkyflowMessages.Error.GENERIC_API_ERROR.value,
+            'Connection refused',
             SkyflowMessages.ErrorCodes.INVALID_INPUT.value,
             None,
             logger=mock_logger
@@ -688,7 +688,7 @@ class TestUtils(unittest.TestCase):
         handle_exception(mock_error, mock_logger)
 
         mock_log_and_reject_error.assert_called_once_with(
-            SkyflowMessages.Error.GENERIC_API_ERROR.value,
+            str(mock_error),
             503,
             "1234",
             logger=mock_logger
@@ -706,7 +706,7 @@ class TestUtils(unittest.TestCase):
         handle_exception(mock_error, mock_logger)
 
         mock_log_and_reject_error.assert_called_once_with(
-            SkyflowMessages.Error.GENERIC_API_ERROR.value,
+            str(mock_error),
             500,
             "1234",
             logger=mock_logger
@@ -812,7 +812,7 @@ class TestUtils(unittest.TestCase):
         handle_generic_error_with_status(mock_error, request_id, status, mock_logger)
 
         mock_log_and_reject_error.assert_called_once_with(
-            SkyflowMessages.Error.GENERIC_API_ERROR.value,
+            str(mock_error),
             503,
             request_id,
             logger=mock_logger
