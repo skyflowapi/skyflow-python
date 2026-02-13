@@ -461,7 +461,7 @@ def log_and_reject_error(description, status_code, request_id, http_status=None,
 
 def handle_exception(error, logger):
     if isinstance(error, httpx.ConnectError):
-        description = SkyflowMessages.Error.GENERIC_API_ERROR.value
+        description = str(error) if error else SkyflowMessages.Error.GENERIC_API_ERROR.value
         log_and_reject_error(description, SkyflowMessages.ErrorCodes.INVALID_INPUT.value, None, logger=logger)
         return
     
@@ -506,7 +506,7 @@ def handle_text_error(err, data, request_id, logger):
     log_and_reject_error(data, err.status, request_id, logger =  logger)
 
 def handle_generic_error_with_status(err, request_id, status, logger):
-    description = SkyflowMessages.Error.GENERIC_API_ERROR.value
+    description = str(err) if err else SkyflowMessages.Error.GENERIC_API_ERROR.value
     log_and_reject_error(description, status, request_id, logger=logger)
 
 def encode_column_values(get_request):
