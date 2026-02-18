@@ -38,11 +38,10 @@ def perform_file_deidentification_async():
 
         # Step 4: Create File Object
         file_path = '<FILE_PATH>'  # Replace with your file path
-        file = open(file_path, 'rb')
-        # Step 5: Configure Deidentify File Request with all options
+        
         deidentify_request = DeidentifyFileRequest(
-            file=FileInput(file),  # File to de-identify (can also provide a file path)
-            entities=[DetectEntities.SSN, DetectEntities.CREDIT_CARD],  # Entities to detect
+            file=FileInput(file_path=file_path),  # File to de-identify
+            # entities=[DetectEntities.SSN, DetectEntities.CREDIT_CARD],  # Entities to detect
             allow_regex_list=['<YOUR_REGEX_PATTERN>'],  # Optional: Patterns to allow
             restrict_regex_list=['<YOUR_REGEX_PATTERN>'],  # Optional: Patterns to restrict
 
@@ -60,22 +59,22 @@ def perform_file_deidentification_async():
             #     )
             # ),
 
-            # Output configuration
-            output_directory='<OUTPUT_DIRECTORY_PATH>',  # Where to save processed file
-            wait_time=15,  # Max wait time in seconds (max 64)
+                # Output configuration
+                output_directory='<OUTPUT_DIRECTORY_PATH>',  # Where to save processed file
+                wait_time=15,  # Max wait time in seconds (max 64)
 
             # Image-specific options
-            # output_processed_image=True,  # Include processed image in output
-            # output_ocr_text=True,  # Include OCR text in response
-            # masking_method=MaskingMethod.BLACKBOX,  # Masking method for images
+            output_processed_image=True,  # Include processed image in output
+            output_ocr_text=True,  # Include OCR text in response
+            masking_method=MaskingMethod.BLACKBOX,  # Masking method for images
 
             # PDF-specific options
-            # pixel_density=15,  # Pixel density for PDF processing
-            # max_resolution=2000,  # Max resolution for PDF
+            pixel_density=15,  # Pixel density for PDF processing
+            max_resolution=2000,  # Max resolution for PDF
 
             # Audio-specific options
-            # output_processed_audio=True,  # Include processed audio
-            # output_transcription=DetectOutputTranscriptions.PLAINTEXT_TRANSCRIPTION,  # Transcription type
+            output_processed_audio=True,  # Include processed audio
+            output_transcription=DetectOutputTranscriptions.PLAINTEXT_TRANSCRIPTION,  # Transcription type
 
             # Audio bleep configuration
 
@@ -86,39 +85,34 @@ def perform_file_deidentification_async():
             #     stop_padding=0.2  # Padding at end (seconds)
             # )
         )
-
-        # Step 6: Call deidentifyFile API
         
         # Create a thread pool executor
         executor = ThreadPoolExecutor(max_workers=1)
         
-        # Wrapper function to call the SDK
-        def call_deidentify():
-            try:
-                return skyflow_client.detect().deidentify_file(deidentify_request)
-            except Exception as e:
-                return e
-        
-        # Submit the deidentify_file call to run in background thread
-        future = executor.submit(call_deidentify)
+        future = executor.submit(
+            lambda: skyflow_client.detect().deidentify_file(deidentify_request)
+        )
         
         def handle_response(future):
+            exception = future.exception()
+            if exception is not None:
+                if isinstance(exception, SkyflowError):
+                    # Handle Skyflow-specific errors
+                    print('\nSkyflow Error:', {
+                        'http_code': exception.http_code,
+                        'grpc_code': exception.grpc_code,
+                        'http_status': exception.http_status,
+                        'message': exception.message,
+                        'details': exception.details
+                    })
+                else:
+                    # Handle unexpected errors
+                    print('Unexpected Error:', exception)
+                return
+            
+            # Handle Successful Response
             result = future.result()
-            if isinstance(result, SkyflowError):
-                # Handle Skyflow-specific errors
-                print('\nSkyflow Error:', {
-                    'http_code': result.http_code,
-                    'grpc_code': result.grpc_code,
-                    'http_status': result.http_status,
-                    'message': result.message,
-                    'details': result.details
-                })
-            elif isinstance(result, Exception):
-                # Handle unexpected errors
-                print('Unexpected Error:', result)
-            else:
-                # Handle Successful Response
-                print("\nDeidentify File Response:", result)
+            print("\nDeidentify File Response:", result)
         
         future.add_done_callback(handle_response)
 
