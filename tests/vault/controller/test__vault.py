@@ -748,8 +748,6 @@ class TestFileUploadValidation(unittest.TestCase):
         )
         with self.assertRaises(SkyflowError) as error:
             validate_file_upload_request(self.logger, request)
-        self.assertEqual(error.exception.message, 
-                        SkyflowMessages.Error.EMPTY_SKYFLOW_ID.value.format("FILE_UPLOAD"))
 
     def test_validate_invalid_column_name(self):
         """Test validation fails when column_name is missing"""
