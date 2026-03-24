@@ -15,6 +15,7 @@ from skyflow.utils.logger import log_info, log_error_log
 from skyflow.vault.detect import DeidentifyTextRequest, ReidentifyTextRequest, TokenFormat, Transformations, \
     GetDetectRunRequest, Bleep, DeidentifyFileRequest
 from skyflow.vault.detect._file_input import FileInput
+from skyflow.utils._helpers import is_valid_url
 
 valid_vault_config_keys = [
     ConfigField.VAULT_ID, 
@@ -158,6 +159,15 @@ def validate_credentials(logger, credentials, config_id_type=None, config_id=Non
             raise SkyflowError(SkyflowMessages.Error.INVALID_API_KEY.value.format(config_id_type, config_id)
                                if config_id_type and config_id else SkyflowMessages.Error.INVALID_API_KEY.value,
                                invalid_input_error_code)
+        
+    if "token_uri" in credentials:
+        token_uri = credentials.get("token_uri")
+        if (
+            token_uri is None
+            or not isinstance(token_uri, str)
+            or not is_valid_url(token_uri)
+        ):
+            raise SkyflowError(SkyflowMessages.Error.INVALID_TOKEN_URI.value, invalid_input_error_code)
 
 def validate_log_level(logger, log_level):
     if not isinstance(log_level, LogLevel):
@@ -222,10 +232,8 @@ def validate_update_vault_config(logger, config):
     if ConfigField.ENV in config and config.get(ConfigField.ENV) not in Env:
         raise SkyflowError(SkyflowMessages.Error.INVALID_ENV.value.format(vault_id), invalid_input_error_code)
 
-    if ConfigField.CREDENTIALS not in config:
-        raise SkyflowError(SkyflowMessages.Error.EMPTY_CREDENTIALS.value.format(ConfigType.VAULT, vault_id), invalid_input_error_code)
-
-    validate_credentials(logger, config.get(ConfigField.CREDENTIALS), ConfigType.VAULT, vault_id)
+    if ConfigField.CREDENTIALS in config and config.get(ConfigField.CREDENTIALS):
+        validate_credentials(logger, config.get(ConfigField.CREDENTIALS), ConfigType.VAULT, vault_id)
 
     return True
 

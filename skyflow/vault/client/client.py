@@ -64,6 +64,8 @@ class VaultClient:
             OptionField.ROLE_IDS: self.__config.get(OptionField.ROLES),
             OptionField.CTX: self.__config.get(OptionField.CTX)
         }
+        if "token_uri" in credentials and credentials.get("token_uri"):
+            options["token_uri"] = credentials.get("token_uri")
 
         if self.__bearer_token is None or self.__is_config_updated:
             if CredentialField.PATH in credentials:

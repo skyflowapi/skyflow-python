@@ -144,3 +144,72 @@ class TestServiceAccountUtils(unittest.TestCase):
         with self.assertRaises(SkyflowError) as context:
             result = generate_signed_data_tokens_from_creds(credentials_string, options)
         self.assertEqual(context.exception.message, SkyflowMessages.Error.INVALID_CREDENTIALS_STRING.value)
+
+    @patch("skyflow.service_account._utils.AuthClient")
+    @patch("skyflow.service_account._utils.get_signed_jwt")
+    def test_get_service_account_token_with_role_ids_formats_scope(self, mock_get_signed_jwt, mock_auth_client):
+        creds = {
+            "privateKey": "private_key",
+            "clientID": "client_id",
+            "keyID": "key_id",
+            "tokenURI": "https://valid-url.com"
+        }
+        options = {"role_ids": ["role1", "role2"]}
+        mock_get_signed_jwt.return_value = "signed"
+        mock_auth_api = mock_auth_client.return_value.get_auth_api.return_value
+        mock_auth_api.authentication_service_get_auth_token.return_value = type("obj", (), {"access_token": "token",
+                                                                                            "token_type": "bearer"})
+        access_token, token_type = get_service_account_token(creds, options, None)
+        self.assertEqual(access_token, "token")
+        self.assertEqual(token_type, "bearer")
+        args, kwargs = mock_auth_api.authentication_service_get_auth_token.call_args
+        self.assertIn("scope", kwargs)
+        self.assertEqual(kwargs["scope"], "role:role1 role:role2")
+
+    @patch("skyflow.service_account._utils.AuthClient")
+    @patch("skyflow.service_account._utils.get_signed_jwt")
+    def test_get_service_account_token_unauthorized_error(self, mock_get_signed_jwt, mock_auth_client):
+        creds = {
+            "privateKey": "private_key",
+            "clientID": "client_id",
+            "keyID": "key_id",
+            "tokenURI": "https://valid-url.com"
+        }
+        mock_get_signed_jwt.return_value = "signed"
+        mock_auth_api = mock_auth_client.return_value.get_auth_api.return_value
+        from skyflow.generated.rest.errors.unauthorized_error import UnauthorizedError
+        mock_auth_api.authentication_service_get_auth_token.side_effect = UnauthorizedError("unauthorized")
+        with self.assertRaises(SkyflowError) as context:
+            get_service_account_token(creds, {}, None)
+        self.assertEqual(context.exception.message,
+                         SkyflowMessages.Error.UNAUTHORIZED_ERROR_IN_GETTING_BEARER_TOKEN.value)
+
+    @patch("skyflow.service_account._utils.AuthClient")
+    @patch("skyflow.service_account._utils.get_signed_jwt")
+    def test_get_service_account_token_generic_exception(self, mock_get_signed_jwt, mock_auth_client):
+        creds = {
+            "privateKey": "private_key",
+            "clientID": "client_id",
+            "keyID": "key_id",
+            "tokenURI": "https://valid-url.com"
+        }
+        mock_get_signed_jwt.return_value = "signed"
+        mock_auth_api = mock_auth_client.return_value.get_auth_api.return_value
+        mock_auth_api.authentication_service_get_auth_token.side_effect = Exception("some error")
+        with self.assertRaises(SkyflowError) as context:
+            get_service_account_token(creds, {}, None)
+        self.assertEqual(context.exception.message, SkyflowMessages.Error.FAILED_TO_GET_BEARER_TOKEN.value)
+
+    @patch("jwt.encode", side_effect=Exception("jwt error"))
+    def test_get_signed_tokens_jwt_encode_exception(self, mock_jwt_encode):
+        creds = {
+            "privateKey": "private_key",
+            "clientID": "client_id",
+            "keyID": "key_id",
+            "tokenURI": "https://valid-url.com"
+        }
+        options = {"data_tokens": ["token1"]}
+        with self.assertRaises(SkyflowError) as context:
+            from skyflow.service_account._utils import get_signed_tokens
+            get_signed_tokens(creds, options)
+        self.assertEqual(context.exception.message, SkyflowMessages.Error.INVALID_CREDENTIALS.value)
