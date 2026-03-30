@@ -18,42 +18,54 @@ skyflow_credentials = {
 credentials_string = json.dumps(skyflow_credentials)
 
 
-options = {
-    'ctx': 'CONTEXT_ID',
-    'data_tokens': ['DATA_TOKEN1', 'DATA_TOKEN2'],
-    'time_to_live': 90,  # in seconds
-}
-
-def get_signed_bearer_token_from_file_path():
-    # Generate signed bearer token from credentials file path.
-    global bearer_token
-
+# Approach 1: Signed data tokens with string context
+def get_signed_tokens_with_string_context():
+    options = {
+        'ctx': 'user_12345',
+        'data_tokens': ['DATA_TOKEN1', 'DATA_TOKEN2'],
+        'time_to_live': 90,  # in seconds
+    }
     try:
-        if not is_expired(bearer_token):
-            return bearer_token
-        else:
-            data_token, signed_data_token = generate_signed_data_tokens(file_path, options)
-            return data_token, signed_data_token
-
+        data_token, signed_data_token = generate_signed_data_tokens(file_path, options)
+        return data_token, signed_data_token
     except Exception as e:
-        print(f'Error generating token from file path: {str(e)}')
+        print(f'Error: {str(e)}')
 
 
-def get_signed_bearer_token_from_credentials_string():
-    # Generate signed bearer token from credentials string.
-    global bearer_token
-
+# Approach 2: Signed data tokens with JSON object context (dict)
+# Each key maps to a Skyflow CEL policy variable under request.context.*
+# For example: request.context.role == "analyst" and request.context.department == "research"
+def get_signed_tokens_with_object_context():
+    options = {
+        'ctx': {
+            'role': 'analyst',
+            'department': 'research',
+            'user_id': 'user_67890',
+        },
+        'data_tokens': ['DATA_TOKEN1', 'DATA_TOKEN2'],
+        'time_to_live': 90,
+    }
     try:
-        if not is_expired(bearer_token):
-            return bearer_token
-        else:
-            data_token, signed_data_token = generate_signed_data_tokens_from_creds(credentials_string, options)
-            return data_token, signed_data_token
-
+        data_token, signed_data_token = generate_signed_data_tokens(file_path, options)
+        return data_token, signed_data_token
     except Exception as e:
-        print(f'Error generating token from credentials string: {str(e)}')
+        print(f'Error: {str(e)}')
 
 
-print(get_signed_bearer_token_from_file_path())
+# Approach 3: Signed data tokens from credentials string
+def get_signed_tokens_from_credentials_string():
+    options = {
+        'ctx': 'user_12345',
+        'data_tokens': ['DATA_TOKEN1', 'DATA_TOKEN2'],
+        'time_to_live': 90,
+    }
+    try:
+        data_token, signed_data_token = generate_signed_data_tokens_from_creds(credentials_string, options)
+        return data_token, signed_data_token
+    except Exception as e:
+        print(f'Error: {str(e)}')
 
-print(get_signed_bearer_token_from_credentials_string())
+
+print("String context:", get_signed_tokens_with_string_context())
+print("Object context:", get_signed_tokens_with_object_context())
+print("Creds string:", get_signed_tokens_from_credentials_string())
