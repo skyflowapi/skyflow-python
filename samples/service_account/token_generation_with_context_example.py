@@ -18,11 +18,13 @@ skyflow_credentials = {
 }
 credentials_string = json.dumps(skyflow_credentials)
 
-options = {'ctx': '<CONTEXT_ID>'}
 
-def get_bearer_token_with_context_from_file_path():
-    # Generate bearer token with context from credentials file path.
+# Approach 1: Bearer token with string context
+# Use a simple string identifier when your policy references a single context value.
+# In your Skyflow policy, reference this as: request.context
+def get_bearer_token_with_string_context():
     global bearer_token
+    options = {'ctx': 'user_12345'}
 
     try:
         if not is_expired(bearer_token):
@@ -31,14 +33,40 @@ def get_bearer_token_with_context_from_file_path():
             token, _ = generate_bearer_token(file_path, options)
             bearer_token = token
             return bearer_token
-
     except Exception as e:
-        print(f'Error generating token from file path: {str(e)}')
+        print(f'Error generating token: {str(e)}')
 
 
-def get_bearer_token_with_context_from_credentials_string():
-    # Generate bearer token with context from credentials string.
+# Approach 2: Bearer token with JSON object context (dict)
+# Use a dict when your policy needs multiple context values for conditional data access.
+# Each key maps to a Skyflow CEL policy variable under request.context.*
+# For example: request.context.role == "admin" and request.context.department == "finance"
+def get_bearer_token_with_object_context():
     global bearer_token
+    options = {
+        'ctx': {
+            'role': 'admin',
+            'department': 'finance',
+            'user_id': 'user_12345',
+        }
+    }
+
+    try:
+        if not is_expired(bearer_token):
+            return bearer_token
+        else:
+            token, _ = generate_bearer_token(file_path, options)
+            bearer_token = token
+            return bearer_token
+    except Exception as e:
+        print(f'Error generating token: {str(e)}')
+
+
+# Approach 3: Bearer token with string context from credentials string
+def get_bearer_token_with_context_from_credentials_string():
+    global bearer_token
+    options = {'ctx': 'user_12345'}
+
     try:
         if not is_expired(bearer_token):
             return bearer_token
@@ -47,9 +75,9 @@ def get_bearer_token_with_context_from_credentials_string():
             bearer_token = token
             return bearer_token
     except Exception as e:
-        print(f"Error generating token from credentials string: {str(e)}")
+        print(f"Error generating token: {str(e)}")
 
 
-print(get_bearer_token_with_context_from_file_path())
-
-print(get_bearer_token_with_context_from_credentials_string())
+print("String context:", get_bearer_token_with_string_context())
+print("Object context:", get_bearer_token_with_object_context())
+print("Creds string:", get_bearer_token_with_context_from_credentials_string())

@@ -1,5 +1,6 @@
 import json
 import datetime
+import re
 import time
 import jwt
 from skyflow.error import SkyflowError
@@ -9,6 +10,34 @@ from skyflow.utils import get_base_url, format_scope, SkyflowMessages
 
 
 invalid_input_error_code = SkyflowMessages.ErrorCodes.INVALID_INPUT.value
+
+_CTX_KEY_PATTERN = re.compile(r'^[a-zA-Z0-9_]+$')
+
+
+def _validate_and_resolve_ctx(ctx):
+    """Validate ctx value and return resolved value for JWT claims.
+    Returns None if ctx should be omitted, the value if valid, or raises SkyflowError if invalid.
+    """
+    if ctx is None:
+        return None
+    if isinstance(ctx, str):
+        if ctx.strip() == '':
+            return None
+        return ctx
+    if isinstance(ctx, dict):
+        if len(ctx) == 0:
+            return None
+        for key in ctx:
+            if not isinstance(key, str) or not _CTX_KEY_PATTERN.match(key):
+                raise SkyflowError(
+                    SkyflowMessages.Error.INVALID_CTX_MAP_KEY.value.format(key),
+                    invalid_input_error_code
+                )
+        return ctx
+    raise SkyflowError(
+        SkyflowMessages.Error.INVALID_CTX_TYPE.value,
+        invalid_input_error_code
+    )
 
 def is_expired(token, logger = None):
     if len(token) == 0:
@@ -103,7 +132,9 @@ def get_signed_jwt(options, client_id, key_id, token_uri, private_key, logger):
         "exp": datetime.datetime.utcnow() + datetime.timedelta(minutes=60)
     }
     if options and "ctx" in options:
-        payload["ctx"] = options.get("ctx")
+        resolved_ctx = _validate_and_resolve_ctx(options.get("ctx"))
+        if resolved_ctx is not None:
+            payload["ctx"] = resolved_ctx
     try:
         return jwt.encode(payload=payload, key=private_key, algorithm="RS256")
     except Exception:
@@ -128,7 +159,9 @@ def get_signed_tokens(credentials_obj, options):
                 }
 
                 if "ctx" in options:
-                    claims["ctx"] = options["ctx"]
+                    resolved_ctx = _validate_and_resolve_ctx(options["ctx"])
+                    if resolved_ctx is not None:
+                        claims["ctx"] = resolved_ctx
 
                 private_key = credentials_obj.get("privateKey")
                 signed_jwt = jwt.encode(claims, private_key, algorithm="RS256")
