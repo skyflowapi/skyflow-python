@@ -40,15 +40,13 @@ class VaultClient:
                                              self.__config.get("vault_id"),
                                              logger=self.__logger)
             self.__is_static_token = 'token' in self.__credentials or 'api_key' in self.__credentials
-        token = self.get_bearer_token(self.__credentials)
+        bearer_token = self.get_bearer_token(self.__credentials)
         if needs_reinit:
-            self.initialize_api_client(self.__vault_url, token)
+            self.initialize_api_client(self.__vault_url, bearer_token)
 
-    def initialize_api_client(self, vault_url, token):
-        self.__api_client = Skyflow(
-            base_url=vault_url,
-            token=lambda: self.__bearer_token if self.__bearer_token else token,
-        )
+    def initialize_api_client(self, vault_url, bearer_token):
+        token_provider = lambda: self.__bearer_token if self.__bearer_token else bearer_token  # noqa: E731
+        self.__api_client = Skyflow(base_url=vault_url, token=token_provider)
 
     def get_records_api(self):
         return self.__api_client.records
