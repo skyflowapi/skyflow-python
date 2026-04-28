@@ -177,8 +177,12 @@ def get_data_from_content_type(data, content_type):
     return converted_data, files
 
 
+_CACHED_METRICS: dict = {}
+
 def get_metrics():
-    sdk_name_version = "skyflow-python@" + SDK_VERSION
+    global _CACHED_METRICS
+    if _CACHED_METRICS:
+        return _CACHED_METRICS
 
     try:
         sdk_client_device_model = platform.node()
@@ -195,13 +199,13 @@ def get_metrics():
     except Exception:
         sdk_runtime_details = ""
 
-    details_dic = {
-        'sdk_name_version': sdk_name_version,
+    _CACHED_METRICS = {
+        'sdk_name_version': "skyflow-python@" + SDK_VERSION,
         'sdk_client_device_model': sdk_client_device_model,
         'sdk_client_os_details': sdk_client_os_details,
         'sdk_runtime_details': "Python " + sdk_runtime_details,
     }
-    return details_dic
+    return _CACHED_METRICS
 
 def parse_insert_response(api_response, continue_on_error):
     # Retrieve the headers and data from the API response
