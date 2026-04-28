@@ -7,11 +7,12 @@ from skyflow.error import SkyflowError
 from skyflow.service_account.client.auth_client import AuthClient
 from skyflow.utils.logger import log_info, log_error_log
 from skyflow.utils import get_base_url, format_scope, SkyflowMessages
+from skyflow.utils.constants import CTX_KEY_REGEX
 
 
 invalid_input_error_code = SkyflowMessages.ErrorCodes.INVALID_INPUT.value
 
-_CTX_KEY_PATTERN = re.compile(r'^[a-zA-Z0-9_]+$')
+_CTX_KEY_PATTERN = re.compile(CTX_KEY_REGEX)
 
 
 def _validate_and_resolve_ctx(ctx):
