@@ -8,7 +8,7 @@ from skyflow.error import SkyflowError
 from skyflow.service_account import is_expired, generate_bearer_token, \
     generate_bearer_token_from_creds
 from skyflow.utils import SkyflowMessages
-from skyflow.service_account._utils import get_service_account_token, get_signed_jwt, generate_signed_data_tokens, get_signed_data_token_response_object, generate_signed_data_tokens_from_creds
+from skyflow.service_account._utils import get_service_account_token, get_signed_jwt, generate_signed_data_tokens, get_signed_data_token_response_object, generate_signed_data_tokens_from_creds, _validate_and_resolve_ctx
 
 creds_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "credentials.json")
 with open(creds_path, 'r') as file:
@@ -144,3 +144,68 @@ class TestServiceAccountUtils(unittest.TestCase):
         with self.assertRaises(SkyflowError) as context:
             result = generate_signed_data_tokens_from_creds(credentials_string, options)
         self.assertEqual(context.exception.message, SkyflowMessages.Error.INVALID_CREDENTIALS_STRING.value)
+
+    # ctx JSON object support tests
+
+    def test_validate_and_resolve_ctx_none(self):
+        self.assertIsNone(_validate_and_resolve_ctx(None))
+
+    def test_validate_and_resolve_ctx_empty_string(self):
+        self.assertIsNone(_validate_and_resolve_ctx(''))
+        self.assertIsNone(_validate_and_resolve_ctx('   '))
+
+    def test_validate_and_resolve_ctx_valid_string(self):
+        self.assertEqual(_validate_and_resolve_ctx('user_12345'), 'user_12345')
+
+    def test_validate_and_resolve_ctx_empty_dict(self):
+        self.assertIsNone(_validate_and_resolve_ctx({}))
+
+    def test_validate_and_resolve_ctx_valid_dict(self):
+        ctx = {"role": "admin", "department": "finance"}
+        self.assertEqual(_validate_and_resolve_ctx(ctx), ctx)
+
+    def test_validate_and_resolve_ctx_dict_with_alphanumeric_keys(self):
+        ctx = {"role_1": "admin", "dept2": "finance", "ABC_123": "value"}
+        self.assertEqual(_validate_and_resolve_ctx(ctx), ctx)
+
+    def test_validate_and_resolve_ctx_dict_with_invalid_key_hyphen(self):
+        ctx = {"valid_key": "value", "invalid-key": "value"}
+        with self.assertRaises(SkyflowError):
+            _validate_and_resolve_ctx(ctx)
+
+    def test_validate_and_resolve_ctx_dict_with_invalid_key_space(self):
+        ctx = {"invalid key": "value"}
+        with self.assertRaises(SkyflowError):
+            _validate_and_resolve_ctx(ctx)
+
+    def test_validate_and_resolve_ctx_dict_with_invalid_key_dot(self):
+        ctx = {"invalid.key": "value"}
+        with self.assertRaises(SkyflowError):
+            _validate_and_resolve_ctx(ctx)
+
+    def test_validate_and_resolve_ctx_invalid_type_int(self):
+        with self.assertRaises(SkyflowError):
+            _validate_and_resolve_ctx(42)
+
+    def test_validate_and_resolve_ctx_invalid_type_list(self):
+        with self.assertRaises(SkyflowError):
+            _validate_and_resolve_ctx(["a", "b"])
+
+    def test_validate_and_resolve_ctx_dict_with_mixed_value_types(self):
+        ctx = {"role": "admin", "level": 3, "active": True, "timestamp": "2025-12-25T10:30:00Z"}
+        self.assertEqual(_validate_and_resolve_ctx(ctx), ctx)
+
+    def test_validate_and_resolve_ctx_dict_with_nested_objects(self):
+        ctx = {"role": "admin", "metadata": {"level": 2, "tags": ["a", "b"]}}
+        self.assertEqual(_validate_and_resolve_ctx(ctx), ctx)
+
+    def test_generate_signed_data_tokens_with_dict_ctx(self):
+        creds_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "credentials.json")
+        options = {"data_tokens": ["token1"], "ctx": {"role": "admin", "department": "finance"}}
+        result = generate_signed_data_tokens(creds_path, options)
+        self.assertEqual(len(result), 2)
+
+    def test_generate_signed_data_tokens_from_creds_with_dict_ctx(self):
+        options = {"data_tokens": ["token1"], "ctx": {"role": "admin", "level": 3}}
+        result = generate_signed_data_tokens_from_creds(VALID_CREDENTIALS_STRING, options)
+        self.assertEqual(len(result), 2)
