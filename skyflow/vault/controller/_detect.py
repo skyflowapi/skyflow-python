@@ -62,7 +62,7 @@ class Detect:
         current_wait_time = 1  # Start with 1 second
         try:
             while True:
-                response = files_api.get_run(run_id, vault_id=self.__vault_client.get_vault_id(), request_options=self.__get_headers()).data
+                response = files_api.get_run(run_id, vault_id=self.__vault_client.get_vault_id(), request_options={'additional_headers': self.__get_headers()}).data
                 status = response.status
                 if status == 'IN_PROGRESS':
                     if current_wait_time >= max_wait_time:
@@ -228,7 +228,7 @@ class Detect:
               restrict_regex=deidentify_text_body['restrict_regex'],
               token_type=deidentify_text_body['token_type'],
               transformations=deidentify_text_body['transformations'],
-              request_options=self.__get_headers()
+              request_options={'additional_headers': self.__get_headers()}
             )
             deidentify_text_response = parse_deidentify_text_response(api_response)
             log_info(SkyflowMessages.Info.DEIDENTIFY_TEXT_SUCCESS.value, self.__vault_client.get_logger())
@@ -252,7 +252,7 @@ class Detect:
                 vault_id=self.__vault_client.get_vault_id(),
                 text=reidentify_text_body['text'],
                 format=reidentify_text_body['format'],
-                request_options=self.__get_headers()
+                request_options={'additional_headers': self.__get_headers()}
             )
             reidentify_text_response = parse_reidentify_text_response(api_response)
             log_info(SkyflowMessages.Info.REIDENTIFY_TEXT_SUCCESS.value, self.__vault_client.get_logger())
@@ -296,7 +296,7 @@ class Detect:
                     'allow_regex': request.allow_regex_list,
                     'restrict_regex': request.restrict_regex_list,
                     'transformations': self.__get_transformations(request),
-                    'request_options': self.__get_headers()
+                    'request_options': {'additional_headers': self.__get_headers()}
                 }
 
             elif file_extension in ['mp3', 'wav']:
@@ -316,7 +316,7 @@ class Detect:
                     'bleep_frequency': getattr(request, 'bleep', None).frequency if getattr(request, 'bleep', None) is not None else None,
                     'bleep_start_padding': getattr(request, 'bleep', None).start_padding if getattr(request, 'bleep', None) is not None else None,
                     'bleep_stop_padding': getattr(request, 'bleep', None).stop_padding if getattr(request, 'bleep', None) is not None else None,
-                    'request_options': self.__get_headers()
+                    'request_options': {'additional_headers': self.__get_headers()}
                 }
 
             elif file_extension == 'pdf':
@@ -331,7 +331,7 @@ class Detect:
                     'restrict_regex': request.restrict_regex_list,
                     'max_resolution': getattr(request, 'max_resolution', None),
                     'density': getattr(request, 'pixel_density', None),
-                    'request_options': self.__get_headers()
+                    'request_options': {'additional_headers': self.__get_headers()}
                 }
 
             elif file_extension in ['jpeg', 'jpg', 'png', 'bmp', 'tif', 'tiff']:
@@ -347,7 +347,7 @@ class Detect:
                     'masking_method': getattr(request, 'masking_method', None),
                     'output_ocr_text': getattr(request, 'output_ocr_text', None),
                     'output_processed_image': getattr(request, 'output_processed_image', None),
-                    'request_options': self.__get_headers()
+                    'request_options': {'additional_headers': self.__get_headers()}
                 }
 
             elif file_extension in ['ppt', 'pptx']:
@@ -360,7 +360,7 @@ class Detect:
                     'token_type': self.__get_token_format(request),
                     'allow_regex': request.allow_regex_list,
                     'restrict_regex': request.restrict_regex_list,
-                    'request_options': self.__get_headers()
+                    'request_options': {'additional_headers': self.__get_headers()}
                 }
 
             elif file_extension in ['csv', 'xls', 'xlsx']:
@@ -373,7 +373,7 @@ class Detect:
                     'token_type': self.__get_token_format(request),
                     'allow_regex': request.allow_regex_list,
                     'restrict_regex': request.restrict_regex_list,
-                    'request_options': self.__get_headers()
+                    'request_options': {'additional_headers': self.__get_headers()}
                 }
 
             elif file_extension in ['doc', 'docx']:
@@ -386,7 +386,7 @@ class Detect:
                     'token_type': self.__get_token_format(request),
                     'allow_regex': request.allow_regex_list,
                     'restrict_regex': request.restrict_regex_list,
-                    'request_options': self.__get_headers()
+                    'request_options': {'additional_headers': self.__get_headers()}
                 }
 
             elif file_extension in ['json', 'xml']:
@@ -400,7 +400,7 @@ class Detect:
                     'allow_regex': request.allow_regex_list,
                     'restrict_regex': request.restrict_regex_list,
                     'transformations': self.__get_transformations(request),
-                    'request_options': self.__get_headers()
+                    'request_options': {'additional_headers': self.__get_headers()}
                 }
 
             else:
@@ -414,7 +414,7 @@ class Detect:
                     'allow_regex': request.allow_regex_list,
                     'restrict_regex': request.restrict_regex_list,
                     'transformations': self.__get_transformations(request),
-                    'request_options': self.__get_headers()
+                    'request_options': {'additional_headers': self.__get_headers()}
                 }
 
             log_info(SkyflowMessages.Info.DETECT_FILE_REQUEST_RESOLVED.value, self.__vault_client.get_logger())
@@ -448,7 +448,7 @@ class Detect:
             response = files_api.get_run(
                 run_id,
                 vault_id=self.__vault_client.get_vault_id(),
-                request_options=self.__get_headers()
+                request_options={'additional_headers': self.__get_headers()}
             )
             if response.data.status == 'IN_PROGRESS':
                 parsed_response = self.__parse_deidentify_file_response(DeidentifyFileResponse(run_id=run_id, status='IN_PROGRESS'))

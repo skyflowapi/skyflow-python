@@ -122,8 +122,8 @@ def validate_credentials(logger, credentials, config_id_type=None, config_id=Non
         )
         if is_expired(credentials.get("token"), logger):
             raise SkyflowError(
-                SkyflowMessages.Error.INVALID_CREDENTIALS_TOKEN.value.format(config_id_type, config_id)
-                if config_id_type and config_id else SkyflowMessages.Error.INVALID_CREDENTIALS_TOKEN.value,
+                SkyflowMessages.Error.EXPIRED_TOKEN.value
+                if config_id_type and config_id else SkyflowMessages.Error.EXPIRED_TOKEN.value,
                 invalid_input_error_code
             )
     elif "api_key" in credentials:
@@ -389,7 +389,7 @@ def validate_deidentify_file_request(logger, request: DeidentifyFileRequest):
     if hasattr(request, 'wait_time') and request.wait_time is not None:
         if not isinstance(request.wait_time, (int, float)):
             raise SkyflowError(SkyflowMessages.Error.INVALID_WAIT_TIME.value, invalid_input_error_code)
-        if request.wait_time < 0 and request.wait_time > 64:
+        if request.wait_time < 0 or request.wait_time > 64:
             raise SkyflowError(SkyflowMessages.Error.WAIT_TIME_GREATER_THEN_64.value, invalid_input_error_code)
 
 def validate_insert_request(logger, request):

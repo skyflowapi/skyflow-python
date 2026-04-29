@@ -30,26 +30,18 @@ from ..vault.tokens import DetokenizeResponse, TokenizeResponse
 invalid_input_error_code = SkyflowMessages.ErrorCodes.INVALID_INPUT.value
 
 def get_credentials(config_level_creds = None, common_skyflow_creds = None, logger = None):
-    dotenv.load_dotenv()
-    dotenv_path = dotenv.find_dotenv(usecwd=True)
-    if dotenv_path:
-        load_dotenv(dotenv_path)
-    env_skyflow_credentials = os.getenv("SKYFLOW_CREDENTIALS")
     if config_level_creds:
         return config_level_creds
     if common_skyflow_creds:
         return common_skyflow_creds
+    dotenv_path = dotenv.find_dotenv(usecwd=True)
+    if dotenv_path:
+        load_dotenv(dotenv_path)
+    env_skyflow_credentials = os.getenv("SKYFLOW_CREDENTIALS")
     if env_skyflow_credentials:
-        env_skyflow_credentials.strip()
-        try:
-            env_creds = env_skyflow_credentials.replace('\n', '\\n')
-            return {
-                'credentials_string': env_creds
-            }
-        except json.JSONDecodeError:
-            raise SkyflowError(SkyflowMessages.Error.INVALID_JSON_FORMAT_IN_CREDENTIALS_ENV.value, invalid_input_error_code)
-    else:
-        raise SkyflowError(SkyflowMessages.Error.INVALID_CREDENTIALS.value, invalid_input_error_code)
+        env_creds = env_skyflow_credentials.strip().replace('\n', '\\n')
+        return {'credentials_string': env_creds}
+    raise SkyflowError(SkyflowMessages.Error.INVALID_CREDENTIALS.value, invalid_input_error_code)
 
 def validate_api_key(api_key: str, logger = None) -> bool:
     if len(api_key) != 42:
@@ -185,8 +177,12 @@ def get_data_from_content_type(data, content_type):
     return converted_data, files
 
 
+_CACHED_METRICS: dict = {}
+
 def get_metrics():
-    sdk_name_version = "skyflow-python@" + SDK_VERSION
+    global _CACHED_METRICS
+    if _CACHED_METRICS:
+        return _CACHED_METRICS
 
     try:
         sdk_client_device_model = platform.node()
@@ -203,13 +199,13 @@ def get_metrics():
     except Exception:
         sdk_runtime_details = ""
 
-    details_dic = {
-        'sdk_name_version': sdk_name_version,
+    _CACHED_METRICS = {
+        'sdk_name_version': "skyflow-python@" + SDK_VERSION,
         'sdk_client_device_model': sdk_client_device_model,
         'sdk_client_os_details': sdk_client_os_details,
         'sdk_runtime_details': "Python " + sdk_runtime_details,
     }
-    return details_dic
+    return _CACHED_METRICS
 
 def parse_insert_response(api_response, continue_on_error):
     # Retrieve the headers and data from the API response
