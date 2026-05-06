@@ -60,6 +60,8 @@ class SkyflowMessages:
         EMPTY_CONTEXT = f"{error_prefix} Initialization failed. Invalid context provided. Specify context as type Context."
         INVALID_CONTEXT_IN_CONFIG = f"{error_prefix} Initialization failed. Invalid context for {{}} with id {{}}. Specify a valid context."
         INVALID_CONTEXT = f"{error_prefix} Initialization failed. Invalid context. Specify a valid context."
+        INVALID_CTX_TYPE = f"{error_prefix} Initialization failed. Invalid ctx type. Specify ctx as a string or a dict."
+        INVALID_CTX_MAP_KEY = f"{error_prefix} Initialization failed. Invalid key '{{}}' in ctx dict. Keys must contain only alphanumeric characters and underscores."
         INVALID_LOG_LEVEL = f"{error_prefix} Initialization failed. Invalid log level. Specify a valid log level."
         EMPTY_LOG_LEVEL = f"{error_prefix} Initialization failed. Specify a valid log level."
 

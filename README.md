@@ -703,18 +703,65 @@ options = {
 
 Embed context values into a bearer token during generation so you can reference those values in your policies. This enables more flexible access controls, such as tracking end-user identity when making API calls using service accounts, and facilitates using signed data tokens during detokenization.
 
-Generate bearer tokens containing context information using a service account with the context_id identifier. Context information is represented as a JWT claim in a Skyflow-generated bearer token. Tokens generated from such service accounts include a context_identifier claim, are valid for 60 minutes, and can be used to make API calls to the Data and Management APIs, depending on the service account's permissions.
+Generate bearer tokens containing context information using a service account with the `context_id` identifier. Context information is represented as a JWT claim in a Skyflow-generated bearer token. Tokens generated from such service accounts include a `context_identifier` claim, are valid for 60 minutes, and can be used to make API calls to the Data and Management APIs, depending on the service account's permissions.
+
+The `ctx` parameter accepts either a **string** or a **dict**:
+
+**String context** — use when your policy references a single context value:
+
+```python
+options = {'ctx': 'user_12345'}
+token, _ = generate_bearer_token(filepath, options)
+```
+
+**Dict context** — use when your policy needs multiple context values for conditional data access. Each key in the dict maps to a Skyflow CEL policy variable under `request.context.*`:
+
+```python
+options = {
+    'ctx': {
+        'role': 'admin',
+        'department': 'finance',
+        'user_id': 'user_12345',
+    }
+}
+token, _ = generate_bearer_token(filepath, options)
+```
+
+With the dict above, your Skyflow policies can reference `request.context.role`, `request.context.department`, and `request.context.user_id` to make conditional access decisions.
+
+Dict keys must contain only alphanumeric characters and underscores (`[a-zA-Z0-9_]`). Invalid keys will raise a `SkyflowError`.
 
 > [!TIP]
-> See the full example in the samples directory: [token_generation_with_context_example.py](samples/service_account/token_generation_with_context_example.py)  
-> See [docs.skyflow.com](https://docs.skyflow.com) for more details on authentication, access control, and governance for Skyflow.
+> See the full example in the samples directory: [token_generation_with_context_example.py](samples/service_account/token_generation_with_context_example.py)
+> See Skyflow's [context-aware authorization](https://docs.skyflow.com) and [conditional data access](https://docs.skyflow.com) docs for policy variable syntax like `request.context.*`.
 
 #### Generate signed data tokens: `generate_signed_data_tokens(filepath, options)`
 
 Digitally sign data tokens with a service account's private key to add an extra layer of protection. Skyflow generates data tokens when sensitive data is inserted into the vault. Detokenize signed tokens only by providing the signed data token along with a bearer token generated from the service account's credentials. The service account must have the necessary permissions and context to successfully detokenize the signed data tokens.
 
+The `ctx` parameter on signed data tokens also accepts either a **string** or a **dict**, using the same format as bearer tokens:
+
+```python
+# String context
+options = {
+    'ctx': 'user_12345',
+    'data_tokens': ['dataToken1', 'dataToken2'],
+    'time_to_live': 90,
+}
+
+# Dict context
+options = {
+    'ctx': {
+        'role': 'analyst',
+        'department': 'research',
+    },
+    'data_tokens': ['dataToken1', 'dataToken2'],
+    'time_to_live': 90,
+}
+```
+
 > [!TIP]
-> See the full example in the samples directory: [signed_token_generation_example.py](samples/service_account/signed_token_generation_example.py)  
+> See the full example in the samples directory: [signed_token_generation_example.py](samples/service_account/signed_token_generation_example.py)
 > See [docs.skyflow.com](https://docs.skyflow.com) for more details on authentication, access control, and governance for Skyflow.
 
 ## Logging
