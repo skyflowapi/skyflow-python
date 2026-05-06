@@ -114,6 +114,27 @@ class TestServiceAccountUtils(unittest.TestCase):
             get_signed_jwt({}, "client_id", "key_id", "token_uri", "private_key", None)
         self.assertEqual(context.exception.message, SkyflowMessages.Error.JWT_INVALID_FORMAT.value)
 
+    @patch("skyflow.service_account._utils.jwt.encode")
+    def test_get_signed_jwt_with_valid_string_ctx(self, mock_jwt_encode):
+        mock_jwt_encode.return_value = "mock_token"
+        get_signed_jwt({"ctx": "valid_ctx"}, "client_id", "key_id", "token_uri", "private_key", None)
+        payload = mock_jwt_encode.call_args.kwargs["payload"]
+        self.assertEqual(payload["ctx"], "valid_ctx")
+
+    @patch("skyflow.service_account._utils.jwt.encode")
+    def test_get_signed_jwt_with_valid_dict_ctx(self, mock_jwt_encode):
+        mock_jwt_encode.return_value = "mock_token"
+        get_signed_jwt({"ctx": {"role": "admin"}}, "client_id", "key_id", "token_uri", "private_key", None)
+        payload = mock_jwt_encode.call_args.kwargs["payload"]
+        self.assertEqual(payload["ctx"], {"role": "admin"})
+
+    @patch("skyflow.service_account._utils.jwt.encode")
+    def test_get_signed_jwt_with_empty_string_ctx_not_added(self, mock_jwt_encode):
+        mock_jwt_encode.return_value = "mock_token"
+        get_signed_jwt({"ctx": ""}, "client_id", "key_id", "token_uri", "private_key", None)
+        payload = mock_jwt_encode.call_args.kwargs["payload"]
+        self.assertNotIn("ctx", payload)
+
     def test_get_signed_data_token_response_object(self):
         token = "sample_token"
         signed_token = "signed_sample_token"
@@ -183,9 +204,17 @@ class TestServiceAccountUtils(unittest.TestCase):
         with self.assertRaises(SkyflowError):
             _validate_and_resolve_ctx(ctx)
 
-    def test_validate_and_resolve_ctx_invalid_type_int(self):
-        with self.assertRaises(SkyflowError):
-            _validate_and_resolve_ctx(42)
+    def test_validate_and_resolve_ctx_valid_type_int(self):
+        self.assertEqual(_validate_and_resolve_ctx(42), 42)
+
+    def test_validate_and_resolve_ctx_valid_type_float(self):
+        self.assertEqual(_validate_and_resolve_ctx(3.14), 3.14)
+
+    def test_validate_and_resolve_ctx_valid_type_bool_true(self):
+        self.assertEqual(_validate_and_resolve_ctx(True), True)
+
+    def test_validate_and_resolve_ctx_valid_type_bool_false(self):
+        self.assertEqual(_validate_and_resolve_ctx(False), False)
 
     def test_validate_and_resolve_ctx_invalid_type_list(self):
         with self.assertRaises(SkyflowError):

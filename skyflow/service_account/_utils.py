@@ -35,6 +35,8 @@ def _validate_and_resolve_ctx(ctx):
                     invalid_input_error_code
                 )
         return ctx
+    if isinstance(ctx, (bool, int, float)):
+        return ctx
     raise SkyflowError(
         SkyflowMessages.Error.INVALID_CTX_TYPE.value,
         invalid_input_error_code
