@@ -16,6 +16,9 @@ class VaultClient:
         self.__logger = None
         self.__is_config_updated = False
         self.__bearer_token = None
+        self.__credentials = None
+        self.__vault_url = None
+        self.__is_static_token = None
 
     def set_common_skyflow_credentials(self, credentials):
         self.__common_skyflow_credentials = credentials
@@ -25,16 +28,27 @@ class VaultClient:
         self.__logger = logger
 
     def initialize_client_configuration(self):
-        credentials = get_credentials(self.__config.get(ConfigField.CREDENTIALS), self.__common_skyflow_credentials, logger = self.__logger)
-        token = self.get_bearer_token(credentials)
-        vault_url = get_vault_url(self.__config.get(ConfigField.CLUSTER_ID),
-                                  self.__config.get(ConfigField.ENV),
-                                  self.__config.get(ConfigField.VAULT_ID),
-                                  logger = self.__logger)
-        self.initialize_api_client(vault_url, token)
+        if self.__api_client is not None and not self.__is_config_updated:
+            if self.__is_static_token:
+                return
+            if self.__bearer_token is not None and not is_expired(self.__bearer_token):
+                return
 
-    def initialize_api_client(self, vault_url, token):
-        self.__api_client =  Skyflow(base_url=vault_url, token=token)
+        needs_reinit = self.__api_client is None or self.__is_config_updated
+        if needs_reinit:
+            self.__credentials = get_credentials(self.__config.get("credentials"), self.__common_skyflow_credentials, logger=self.__logger)
+            self.__vault_url = get_vault_url(self.__config.get("cluster_id"),
+                                             self.__config.get("env"),
+                                             self.__config.get("vault_id"),
+                                             logger=self.__logger)
+            self.__is_static_token = 'token' in self.__credentials or 'api_key' in self.__credentials
+        bearer_token = self.get_bearer_token(self.__credentials)
+        if needs_reinit:
+            self.initialize_api_client(self.__vault_url, bearer_token)
+
+    def initialize_api_client(self, vault_url, bearer_token):
+        token_provider = lambda: self.__bearer_token if self.__bearer_token else bearer_token  # noqa: E731
+        self.__api_client = Skyflow(base_url=vault_url, token=token_provider)
 
     def get_records_api(self):
         return self.__api_client.records
@@ -67,11 +81,10 @@ class VaultClient:
         if "token_uri" in credentials and credentials.get("token_uri"):
             options["token_uri"] = credentials.get("token_uri")
 
-        if self.__bearer_token is None or self.__is_config_updated:
-            if CredentialField.PATH in credentials:
-                path = credentials.get(CredentialField.PATH)
+        if self.__bearer_token is None or self.__is_config_updated or is_expired(self.__bearer_token):
+            if 'path' in credentials:
                 self.__bearer_token, _ = generate_bearer_token(
-                    path,
+                    credentials.get("path"),
                     options,
                     self.__logger
                 )
@@ -86,10 +99,6 @@ class VaultClient:
             self.__is_config_updated = False
         else:
             log_info(SkyflowMessages.Info.REUSE_BEARER_TOKEN.value, self.__logger)
-
-        if is_expired(self.__bearer_token):
-            self.__is_config_updated = True
-            raise SkyflowError(SkyflowMessages.Error.EXPIRED_TOKEN.value, SkyflowMessages.ErrorCodes.INVALID_INPUT.value)
 
         return self.__bearer_token
 

@@ -1,5 +1,6 @@
 import json
 import datetime
+import re
 import time
 import jwt
 from urllib.parse import urlparse
@@ -10,9 +11,40 @@ from skyflow.utils import get_base_url, format_scope, SkyflowMessages
 from skyflow.utils.constants import JWT, CredentialField, JwtField, OptionField, ResponseField
 from skyflow.generated.rest.errors.unauthorized_error import UnauthorizedError
 from skyflow.utils import is_valid_url
+from skyflow.utils.constants import CTX_KEY_REGEX
 
 
 invalid_input_error_code = SkyflowMessages.ErrorCodes.INVALID_INPUT.value
+
+_CTX_KEY_PATTERN = re.compile(CTX_KEY_REGEX)
+
+
+def _validate_and_resolve_ctx(ctx):
+    """Validate ctx value and return resolved value for JWT claims.
+    Returns None if ctx should be omitted, the value if valid, or raises SkyflowError if invalid.
+    """
+    if ctx is None:
+        return None
+    if isinstance(ctx, str):
+        if ctx.strip() == '':
+            return None
+        return ctx
+    if isinstance(ctx, dict):
+        if len(ctx) == 0:
+            return None
+        for key in ctx:
+            if not isinstance(key, str) or not _CTX_KEY_PATTERN.match(key):
+                raise SkyflowError(
+                    SkyflowMessages.Error.INVALID_CTX_MAP_KEY.value.format(key),
+                    invalid_input_error_code
+                )
+        return ctx
+    if isinstance(ctx, (bool, int, float)):
+        return ctx
+    raise SkyflowError(
+        SkyflowMessages.Error.INVALID_CTX_TYPE.value,
+        invalid_input_error_code
+    )
 
 def is_expired(token, logger = None):
     if len(token) == 0:
@@ -120,8 +152,10 @@ def get_signed_jwt(options, client_id, key_id, token_uri, private_key, logger):
         JwtField.SUB: client_id,
         JwtField.EXP: datetime.datetime.utcnow() + datetime.timedelta(minutes=60)
     }
-    if options and JwtField.CTX in options:
-        payload[JwtField.CTX] = options.get(JwtField.CTX)
+    if options and "ctx" in options:
+        resolved_ctx = _validate_and_resolve_ctx(options.get("ctx"))
+        if resolved_ctx is not None:
+            payload["ctx"] = resolved_ctx
     try:
         return jwt.encode(payload=payload, key=private_key, algorithm=JWT.ALGORITHM_RS256)
     except Exception:
@@ -141,6 +175,10 @@ def get_signed_tokens(credentials_obj, options):
     if options and "token_uri" in options:
         token_uri = options["token_uri"]
 
+    if "ctx" in options:
+        resolved_ctx = _validate_and_resolve_ctx(options["ctx"])
+        if resolved_ctx is not None:
+            claims["ctx"] = resolved_ctx
 
     if options and options.get(OptionField.DATA_TOKENS):
         for token in options[OptionField.DATA_TOKENS]:

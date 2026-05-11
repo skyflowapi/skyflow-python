@@ -63,7 +63,7 @@ class Detect:
         current_wait_time = 1  # Start with 1 second
         try:
             while True:
-                response = files_api.get_run(run_id, vault_id=self.__vault_client.get_vault_id(), request_options=self.__get_headers()).data
+                response = files_api.get_run(run_id, vault_id=self.__vault_client.get_vault_id(), request_options={'additional_headers': self.__get_headers()}).data
                 status = response.status
                 if status == DetectStatus.IN_PROGRESS:
                     if current_wait_time >= max_wait_time:
@@ -229,7 +229,7 @@ class Detect:
               restrict_regex=deidentify_text_body[DeidentifyField.RESTRICT_REGEX],
               token_type=deidentify_text_body[DeidentifyField.TOKEN_TYPE],
               transformations=deidentify_text_body[DeidentifyField.TRANSFORMATIONS],
-              request_options=self.__get_headers()
+              request_options={'additional_headers': self.__get_headers()}
             )
             deidentify_text_response = parse_deidentify_text_response(api_response)
             log_info(SkyflowMessages.Info.DEIDENTIFY_TEXT_SUCCESS.value, self.__vault_client.get_logger())
@@ -253,7 +253,7 @@ class Detect:
                 vault_id=self.__vault_client.get_vault_id(),
                 text=reidentify_text_body[DeidentifyField.TEXT],
                 format=reidentify_text_body[DeidentifyField.FORMAT],
-                request_options=self.__get_headers()
+                request_options={'additional_headers': self.__get_headers()}
             )
             reidentify_text_response = parse_reidentify_text_response(api_response)
             log_info(SkyflowMessages.Info.REIDENTIFY_TEXT_SUCCESS.value, self.__vault_client.get_logger())
@@ -297,7 +297,7 @@ class Detect:
                     DeidentifyField.ALLOW_REGEX: request.allow_regex_list,
                     DeidentifyField.RESTRICT_REGEX: request.restrict_regex_list,
                     DeidentifyField.TRANSFORMATIONS: self.__get_transformations(request),
-                    DeidentifyField.REQUEST_OPTIONS: self.__get_headers()
+                    DeidentifyField.REQUEST_OPTIONS: {'additional_headers': self.__get_headers()}
                 }
 
             elif file_extension in [FileExtension.MP3, FileExtension.WAV]:
@@ -317,7 +317,7 @@ class Detect:
                     DeidentifyField.BLEEP_FREQUENCY: getattr(request, DeidentifyFileRequestField.BLEEP, None).frequency if getattr(request, DeidentifyFileRequestField.BLEEP, None) is not None else None,
                     DeidentifyField.BLEEP_START_PADDING: getattr(request, DeidentifyFileRequestField.BLEEP, None).start_padding if getattr(request, DeidentifyFileRequestField.BLEEP, None) is not None else None,
                     DeidentifyField.BLEEP_STOP_PADDING: getattr(request, DeidentifyFileRequestField.BLEEP, None).stop_padding if getattr(request, DeidentifyFileRequestField.BLEEP, None) is not None else None,
-                    DeidentifyField.REQUEST_OPTIONS: self.__get_headers()
+                    DeidentifyField.REQUEST_OPTIONS: {'additional_headers': self.__get_headers()}
                 }
 
             elif file_extension == FileExtension.PDF:
@@ -332,7 +332,7 @@ class Detect:
                     DeidentifyField.RESTRICT_REGEX: request.restrict_regex_list,
                     DeidentifyFileRequestField.MAX_RESOLUTION: getattr(request, DeidentifyFileRequestField.MAX_RESOLUTION, None),
                     DeidentifyFileRequestField.PIXEL_DENSITY: getattr(request, DeidentifyFileRequestField.PIXEL_DENSITY, None),
-                    DeidentifyField.REQUEST_OPTIONS: self.__get_headers()
+                    DeidentifyField.REQUEST_OPTIONS: {'additional_headers': self.__get_headers()}
                 }
 
             elif file_extension in [FileExtension.JPEG, FileExtension.JPG, FileExtension.PNG, FileExtension.BMP, FileExtension.TIF, FileExtension.TIFF]:
@@ -348,7 +348,7 @@ class Detect:
                     DeidentifyFileRequestField.MASKING_METHOD: getattr(request, DeidentifyFileRequestField.MASKING_METHOD, None),
                     DeidentifyFileRequestField.OUTPUT_OCR_TEXT: getattr(request, DeidentifyFileRequestField.OUTPUT_OCR_TEXT, None),
                     DeidentifyFileRequestField.OUTPUT_PROCESSED_IMAGE: getattr(request, DeidentifyFileRequestField.OUTPUT_PROCESSED_IMAGE, None),
-                    DeidentifyField.REQUEST_OPTIONS: self.__get_headers()
+                    DeidentifyField.REQUEST_OPTIONS: {'additional_headers': self.__get_headers()}
                 }
 
             elif file_extension in [FileExtension.PPT, FileExtension.PPTX]:
@@ -361,7 +361,7 @@ class Detect:
                     DeidentifyField.TOKEN_TYPE: self.__get_token_format(request),
                     DeidentifyField.ALLOW_REGEX: request.allow_regex_list,
                     DeidentifyField.RESTRICT_REGEX: request.restrict_regex_list,
-                    DeidentifyField.REQUEST_OPTIONS: self.__get_headers()
+                    DeidentifyField.REQUEST_OPTIONS: {'additional_headers': self.__get_headers()}
                 }
 
             elif file_extension in [FileExtension.CSV, FileExtension.XLS, FileExtension.XLSX]:
@@ -374,7 +374,7 @@ class Detect:
                     DeidentifyField.TOKEN_TYPE: self.__get_token_format(request),
                     DeidentifyField.ALLOW_REGEX: request.allow_regex_list,
                     DeidentifyField.RESTRICT_REGEX: request.restrict_regex_list,
-                    DeidentifyField.REQUEST_OPTIONS: self.__get_headers()
+                    DeidentifyField.REQUEST_OPTIONS: {'additional_headers': self.__get_headers()}
                 }
 
             elif file_extension in [FileExtension.DOC, FileExtension.DOCX]:
@@ -387,7 +387,7 @@ class Detect:
                     DeidentifyField.TOKEN_TYPE: self.__get_token_format(request),
                     DeidentifyField.ALLOW_REGEX: request.allow_regex_list,
                     DeidentifyField.RESTRICT_REGEX: request.restrict_regex_list,
-                    DeidentifyField.REQUEST_OPTIONS: self.__get_headers()
+                    DeidentifyField.REQUEST_OPTIONS: {'additional_headers': self.__get_headers()}
                 }
 
             elif file_extension in [FileExtension.JSON, FileExtension.XML]:
@@ -401,7 +401,7 @@ class Detect:
                     DeidentifyField.ALLOW_REGEX: request.allow_regex_list,
                     DeidentifyField.RESTRICT_REGEX: request.restrict_regex_list,
                     DeidentifyField.TRANSFORMATIONS: self.__get_transformations(request),
-                    DeidentifyField.REQUEST_OPTIONS: self.__get_headers()
+                    DeidentifyField.REQUEST_OPTIONS: {'additional_headers': self.__get_headers()}
                 }
 
             else:
@@ -415,7 +415,7 @@ class Detect:
                     DeidentifyField.ALLOW_REGEX: request.allow_regex_list,
                     DeidentifyField.RESTRICT_REGEX: request.restrict_regex_list,
                     DeidentifyField.TRANSFORMATIONS: self.__get_transformations(request),
-                    DeidentifyField.REQUEST_OPTIONS: self.__get_headers()
+                    DeidentifyField.REQUEST_OPTIONS: {'additional_headers': self.__get_headers()}
                 }
 
             log_info(SkyflowMessages.Info.DETECT_FILE_REQUEST_RESOLVED.value, self.__vault_client.get_logger())
@@ -449,7 +449,7 @@ class Detect:
             response = files_api.get_run(
                 run_id,
                 vault_id=self.__vault_client.get_vault_id(),
-                request_options=self.__get_headers()
+                request_options={'additional_headers': self.__get_headers()}
             )
             if response.data.status == DetectStatus.IN_PROGRESS:
                 parsed_response = self.__parse_deidentify_file_response(DeidentifyFileResponse(run_id=run_id, status=DetectStatus.IN_PROGRESS))

@@ -89,10 +89,9 @@ class Vault:
         return None
     
     def __get_headers(self):
-        headers = {
-            SKY_META_DATA_HEADER: json.dumps(get_metrics())
-        }
-        return headers
+        if not hasattr(self, '_cached_headers'):
+            self._cached_headers = {SKY_META_DATA_HEADER: json.dumps(get_metrics())}
+        return self._cached_headers
 
     def insert(self, request: InsertRequest):
         log_info(SkyflowMessages.Info.VALIDATE_INSERT_REQUEST.value, self.__vault_client.get_logger())
@@ -106,11 +105,11 @@ class Vault:
             log_info(SkyflowMessages.Info.INSERT_TRIGGERED.value, self.__vault_client.get_logger())
             if request.continue_on_error:
                 api_response = records_api.record_service_batch_operation(self.__vault_client.get_vault_id(),
-                                                                          records=insert_body, continue_on_error=request.continue_on_error, byot=request.token_mode.value, request_options=self.__get_headers())
+                                                                          records=insert_body, continue_on_error=request.continue_on_error, byot=request.token_mode.value, request_options={'additional_headers': self.__get_headers()})
 
             else:
                 api_response = records_api.record_service_insert_record(self.__vault_client.get_vault_id(),
-                                                                        request.table, records=insert_body,tokenization= request.return_tokens, upsert=request.upsert, homogeneous=request.homogeneous, byot=request.token_mode.value, request_options=self.__get_headers())
+                                                                        request.table, records=insert_body,tokenization= request.return_tokens, upsert=request.upsert, homogeneous=request.homogeneous, byot=request.token_mode.value, request_options={'additional_headers': self.__get_headers()})
 
             insert_response = parse_insert_response(api_response, request.continue_on_error)
             log_info(SkyflowMessages.Info.INSERT_SUCCESS.value, self.__vault_client.get_logger())
@@ -138,7 +137,7 @@ class Vault:
                 record=record,
                 tokenization=request.return_tokens,
                 byot=request.token_mode.value,
-                request_options = self.__get_headers()
+                request_options={'additional_headers': self.__get_headers()}
             )
             log_info(SkyflowMessages.Info.UPDATE_SUCCESS.value, self.__vault_client.get_logger())
             update_response = parse_update_record_response(api_response)
@@ -159,7 +158,7 @@ class Vault:
                 self.__vault_client.get_vault_id(),
                 request.table,
                 skyflow_ids=request.ids,
-                request_options=self.__get_headers()
+                request_options={'additional_headers': self.__get_headers()}
             )
             log_info(SkyflowMessages.Info.DELETE_SUCCESS.value, self.__vault_client.get_logger())
             delete_response = parse_delete_response(api_response)
@@ -189,7 +188,7 @@ class Vault:
                 download_url=request.download_url,
                 column_name=request.column_name,
                 column_values=request.column_values,
-                request_options=self.__get_headers()
+                request_options={'additional_headers': self.__get_headers()}
             )
             log_info(SkyflowMessages.Info.GET_SUCCESS.value, self.__vault_client.get_logger())
             get_response = parse_get_response(api_response)
@@ -209,7 +208,7 @@ class Vault:
             api_response = query_api.query_service_execute_query(
                 self.__vault_client.get_vault_id(),
                 query=request.query,
-                request_options=self.__get_headers()
+                request_options={'additional_headers': self.__get_headers()}
             )
             log_info(SkyflowMessages.Info.QUERY_SUCCESS.value, self.__vault_client.get_logger())
             query_response = parse_query_response(api_response)
@@ -237,7 +236,7 @@ class Vault:
                 self.__vault_client.get_vault_id(),
                 detokenization_parameters=tokens_list,
                 continue_on_error = request.continue_on_error,
-                request_options=self.__get_headers()
+                request_options={'additional_headers': self.__get_headers()}
             )
             log_info(SkyflowMessages.Info.DETOKENIZE_SUCCESS.value, self.__vault_client.get_logger())
             detokenize_response = parse_detokenize_response(api_response)
@@ -262,7 +261,7 @@ class Vault:
             api_response = tokens_api.record_service_tokenize(
                 self.__vault_client.get_vault_id(),
                 tokenization_parameters=records_list,
-                request_options=self.__get_headers()
+                request_options={'additional_headers': self.__get_headers()}
             )
             tokenize_response = parse_tokenize_response(api_response)
             log_info(SkyflowMessages.Info.TOKENIZE_SUCCESS.value, self.__vault_client.get_logger())
@@ -285,7 +284,7 @@ class Vault:
                 file=self.__get_file_for_file_upload(request),
                 skyflow_id=request.skyflow_id,
                 return_file_metadata= False,
-                request_options=self.__get_headers()
+                request_options={'additional_headers': self.__get_headers()}
             )
             log_info(SkyflowMessages.Info.FILE_UPLOAD_REQUEST_RESOLVED.value, self.__vault_client.get_logger())            
             log_info(SkyflowMessages.Info.FILE_UPLOAD_SUCCESS.value, self.__vault_client.get_logger())
