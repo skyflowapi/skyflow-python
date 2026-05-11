@@ -1585,9 +1585,10 @@ class TestUtils(unittest.TestCase):
             with patch("jwt.encode") as mock_jwt_encode:
                 mock_jwt_encode.return_value = "signed"
                 result = generate_signed_data_tokens(tmp.name, options)
-                self.assertIsInstance(result, tuple)
-                self.assertEqual(result[0], "token1")
-                self.assertEqual(result[1], "signed_token_signed")
+                self.assertIsInstance(result, list)
+                self.assertEqual(len(result), 1)
+                self.assertEqual(result[0][0], "token1")
+                self.assertEqual(result[0][1], "signed_token_signed")
 
     def test_generate_signed_data_tokens_from_creds_options_override_token_uri(self):
         creds = {
@@ -1601,6 +1602,7 @@ class TestUtils(unittest.TestCase):
         with patch("jwt.encode") as mock_jwt_encode:
             mock_jwt_encode.return_value = "signed"
             result = generate_signed_data_tokens_from_creds(creds_str, options)
-            self.assertIsInstance(result, tuple)
-            self.assertEqual(result[0], "token1")
-            self.assertEqual(result[1], "signed_token_signed")
+            self.assertIsInstance(result, list)
+            self.assertEqual(len(result), 1)
+            self.assertEqual(result[0][0], "token1")
+            self.assertEqual(result[0][1], "signed_token_signed")

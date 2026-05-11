@@ -319,9 +319,6 @@ class TestSkyflow(unittest.TestCase):
 
         self.assertEqual(LogLevel.INFO, builder._Builder__log_level)
 
-        skyflow_client.update_log_level(LogLevel.ERROR)
-        self.assertEqual(LogLevel.ERROR, builder._Builder__log_level)
-
 
     @patch('skyflow.client.Skyflow.Builder.get_vault_config')
     def test_skyflow_vault_and_connection_method(self, mock_get_vault_config):

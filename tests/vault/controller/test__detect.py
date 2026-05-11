@@ -513,16 +513,12 @@ class TestDetect(unittest.TestCase):
 
         self.vault_client.get_detect_file_api.return_value = files_api
 
-        # Execute
-        with patch.object(self.detect, "_Detect__parse_deidentify_file_response") as mock_parse:
-            result = self.detect.get_detect_run(req)
+        # Execute — IN_PROGRESS is returned directly without going through the parser
+        result = self.detect.get_detect_run(req)
 
-            # Verify IN_PROGRESS handling
-            mock_parse.assert_called_once()
-            args = mock_parse.call_args[0][0]
-            self.assertIsInstance(args, DeidentifyFileResponse)
-            self.assertEqual(args.status, 'IN_PROGRESS')
-            self.assertEqual(args.run_id, run_id)
+        self.assertIsInstance(result, DeidentifyFileResponse)
+        self.assertEqual(result.status, 'IN_PROGRESS')
+        self.assertEqual(result.run_id, run_id)
 
     def test_get_transformations_with_shift_dates(self):
 

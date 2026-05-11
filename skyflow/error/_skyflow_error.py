@@ -1,5 +1,4 @@
 from skyflow.utils import SkyflowMessages
-from skyflow.utils.logger import log_error
 
 class SkyflowError(Exception):
     def __init__(self,

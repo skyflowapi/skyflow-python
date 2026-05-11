@@ -89,9 +89,7 @@ class Vault:
         return None
     
     def __get_headers(self):
-        if not hasattr(self, '_cached_headers'):
-            self._cached_headers = {SKY_META_DATA_HEADER: json.dumps(get_metrics())}
-        return self._cached_headers
+        return {SKY_META_DATA_HEADER: json.dumps(get_metrics())}
 
     def insert(self, request: InsertRequest):
         log_info(SkyflowMessages.Info.VALIDATE_INSERT_REQUEST.value, self.__vault_client.get_logger())

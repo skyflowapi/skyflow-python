@@ -124,6 +124,8 @@ class CredentialField:
     CLIENT_ID = 'clientID'
     KEY_ID = 'keyID'
     TOKEN_URI = 'tokenURI'
+    TOKEN_URI_OPTION = 'token_uri'
+    CLIENT_NAME = 'clientName'
     CREDENTIALS_STRING = 'credentials_string'
     API_KEY = 'api_key'
     TOKEN = 'token'

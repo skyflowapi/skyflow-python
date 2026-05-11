@@ -32,9 +32,9 @@ from ..vault.tokens import DetokenizeResponse, TokenizeResponse
 invalid_input_error_code = SkyflowMessages.ErrorCodes.INVALID_INPUT.value
 
 def get_credentials(config_level_creds = None, common_skyflow_creds = None, logger = None):
-    if config_level_creds:
+    if config_level_creds is not None:
         return config_level_creds
-    if common_skyflow_creds:
+    if common_skyflow_creds is not None:
         return common_skyflow_creds
     dotenv_path = dotenv.find_dotenv(usecwd=True)
     if dotenv_path:
@@ -72,9 +72,9 @@ def parse_path_params(url, path_params):
 
     return result
 
-def to_lowercase_keys(dict):
+def to_lowercase_keys(data):
     result = {}
-    for key, value in dict.items():
+    for key, value in data.items():
         result[key.lower()] = value
 
     return result
@@ -128,7 +128,7 @@ def construct_invoke_connection_request(request, connection_url, logger) -> Prep
                 raise SkyflowError(SkyflowMessages.Error.INVALID_REQUEST_BODY.value, invalid_input_error_code)
         except SkyflowError:
             raise
-        except Exception as e:
+        except Exception:
             raise SkyflowError(SkyflowMessages.Error.INVALID_REQUEST_BODY.value, invalid_input_error_code)
 
     if files and header and content_type == ContentType.FORMDATA.value:
@@ -186,7 +186,6 @@ def get_data_from_content_type(data, content_type):
     if content_type == ContentType.URLENCODED.value:
         converted_data = http_build_query(data)
     elif content_type == ContentType.FORMDATA.value:
-        print("Hello")
         converted_data = None
         files = {}
         for key, value in data.items():
@@ -234,7 +233,6 @@ def dict_to_xml(data, root_tag='root'):
 _CACHED_METRICS: dict = {}
 
 def get_metrics():
-    global _CACHED_METRICS
     if _CACHED_METRICS:
         return _CACHED_METRICS
 
@@ -253,12 +251,12 @@ def get_metrics():
     except Exception:
         sdk_runtime_details = ""
 
-    _CACHED_METRICS = {
-        'sdk_name_version': "skyflow-python@" + SDK_VERSION,
-        'sdk_client_device_model': sdk_client_device_model,
-        'sdk_client_os_details': sdk_client_os_details,
-        'sdk_runtime_details': "Python " + sdk_runtime_details,
-    }
+    _CACHED_METRICS.update({
+        SdkMetricsKey.SDK_NAME_VERSION: SdkPrefix.SKYFLOW_PYTHON + SDK_VERSION,
+        SdkMetricsKey.SDK_CLIENT_DEVICE_MODEL: sdk_client_device_model,
+        SdkMetricsKey.SDK_CLIENT_OS_DETAILS: sdk_client_os_details,
+        SdkMetricsKey.SDK_RUNTIME_DETAILS: SdkPrefix.PYTHON_RUNTIME + sdk_runtime_details,
+    })
     return _CACHED_METRICS
 
 def parse_insert_response(api_response, continue_on_error):
@@ -488,7 +486,7 @@ def handle_json_error(err, data, request_id, logger):
             description = data.dict()
         else:
             description = json.loads(data)
-        status_code = description.get(ResponseField.ERROR, {}).get(ResponseField.HTTP_CODE, 500)  # Default to 500 if not found
+        status_code = description.get(ResponseField.ERROR, {}).get(ResponseField.HTTP_CODE, HttpStatusCode.INTERNAL_SERVER_ERROR)
         http_status = description.get(ResponseField.ERROR, {}).get(ResponseField.HTTP_STATUS)
         grpc_code = description.get(ResponseField.ERROR, {}).get(ResponseField.GRPC_CODE)
         details = description.get(ResponseField.ERROR, {}).get(ResponseField.DETAILS, [])

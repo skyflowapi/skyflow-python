@@ -36,18 +36,18 @@ class VaultClient:
 
         needs_reinit = self.__api_client is None or self.__is_config_updated
         if needs_reinit:
-            self.__credentials = get_credentials(self.__config.get("credentials"), self.__common_skyflow_credentials, logger=self.__logger)
-            self.__vault_url = get_vault_url(self.__config.get("cluster_id"),
-                                             self.__config.get("env"),
-                                             self.__config.get("vault_id"),
+            self.__credentials = get_credentials(self.__config.get(ConfigField.CREDENTIALS), self.__common_skyflow_credentials, logger=self.__logger)
+            self.__vault_url = get_vault_url(self.__config.get(ConfigField.CLUSTER_ID),
+                                             self.__config.get(ConfigField.ENV),
+                                             self.__config.get(ConfigField.VAULT_ID),
                                              logger=self.__logger)
-            self.__is_static_token = 'token' in self.__credentials or 'api_key' in self.__credentials
+            self.__is_static_token = CredentialField.TOKEN in self.__credentials or CredentialField.API_KEY in self.__credentials
         bearer_token = self.get_bearer_token(self.__credentials)
         if needs_reinit:
             self.initialize_api_client(self.__vault_url, bearer_token)
 
     def initialize_api_client(self, vault_url, bearer_token):
-        token_provider = lambda: self.__bearer_token if self.__bearer_token else bearer_token  # noqa: E731
+        token_provider = lambda: self.__bearer_token if self.__bearer_token is not None else bearer_token  # noqa: E731
         self.__api_client = Skyflow(base_url=vault_url, token=token_provider)
 
     def get_records_api(self):
@@ -78,13 +78,13 @@ class VaultClient:
             OptionField.ROLE_IDS: self.__config.get(OptionField.ROLES),
             OptionField.CTX: self.__config.get(OptionField.CTX)
         }
-        if "token_uri" in credentials and credentials.get("token_uri"):
-            options["token_uri"] = credentials.get("token_uri")
+        if CredentialField.TOKEN_URI_OPTION in credentials and credentials.get(CredentialField.TOKEN_URI_OPTION):
+            options[CredentialField.TOKEN_URI_OPTION] = credentials.get(CredentialField.TOKEN_URI_OPTION)
 
         if self.__bearer_token is None or self.__is_config_updated or is_expired(self.__bearer_token):
-            if 'path' in credentials:
+            if CredentialField.PATH in credentials:
                 self.__bearer_token, _ = generate_bearer_token(
-                    credentials.get("path"),
+                    credentials.get(CredentialField.PATH),
                     options,
                     self.__logger
                 )

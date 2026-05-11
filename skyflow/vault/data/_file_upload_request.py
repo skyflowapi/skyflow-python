@@ -1,10 +1,10 @@
-from typing import BinaryIO
+from typing import BinaryIO, Optional
 
 class FileUploadRequest:
     def __init__(self,
                  table: str,
-                 skyflow_id: str,
                  column_name: str,
+                 skyflow_id: Optional[str] = None,
                  file_path: str= None,
                  base64: str= None,
                  file_object: BinaryIO= None,
