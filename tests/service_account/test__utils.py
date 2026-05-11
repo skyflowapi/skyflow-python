@@ -57,6 +57,9 @@ class TestServiceAccountUtils(unittest.TestCase):
 
     # ── is_expired ────────────────────────────────────────────────────────────
 
+    def test_is_expired_none_token(self):
+        self.assertTrue(is_expired(None))
+
     def test_is_expired_empty_token(self):
         self.assertTrue(is_expired(""))
 
@@ -158,6 +161,18 @@ class TestServiceAccountUtils(unittest.TestCase):
         }
         with self.assertRaises(SkyflowError) as context:
             get_service_account_token(creds, {}, None)
+        self.assertEqual(context.exception.message, SkyflowMessages.Error.INVALID_TOKEN_URI.value)
+
+    def test_get_service_account_token_invalid_token_uri_in_options(self):
+        creds = {
+            'privateKey': 'key',
+            'clientID': 'id',
+            'keyID': 'kid',
+            'tokenURI': 'https://valid-url.com',
+        }
+        options = {'token_uri': 'not-a-valid-url'}
+        with self.assertRaises(SkyflowError) as context:
+            get_service_account_token(creds, options, None)
         self.assertEqual(context.exception.message, SkyflowMessages.Error.INVALID_TOKEN_URI.value)
 
     @patch("skyflow.service_account._utils.AuthClient")

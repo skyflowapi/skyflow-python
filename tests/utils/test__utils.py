@@ -1,7 +1,6 @@
 import unittest
-from unittest.mock import patch, Mock
+from unittest.mock import patch, Mock, MagicMock, PropertyMock
 import os
-from unittest.mock import MagicMock
 from urllib.parse import quote
 import tempfile, json
 from requests import PreparedRequest
@@ -15,7 +14,7 @@ from skyflow.utils import get_credentials, SkyflowMessages, get_vault_url, const
     parse_detokenize_response, parse_tokenize_response, parse_query_response, parse_invoke_connection_response, \
     handle_exception, validate_api_key, encode_column_values, parse_deidentify_text_response, \
     parse_reidentify_text_response, convert_detected_entity_to_entity_info
-from skyflow.utils._utils import parse_path_params, to_lowercase_keys, get_metrics, handle_json_error
+from skyflow.utils._utils import parse_path_params, to_lowercase_keys, get_metrics, handle_json_error, r_urlencode
 from skyflow.utils.enums import EnvUrls, Env, ContentType
 from skyflow.vault.connection import InvokeConnectionResponse
 from skyflow.vault.data import InsertResponse, DeleteResponse, GetResponse, QueryResponse
@@ -35,6 +34,13 @@ class TestUtils(unittest.TestCase):
         credentials = get_credentials()
         credentials_string = credentials.get('credentials_string')
         self.assertEqual(credentials_string, json.dumps(VALID_ENV_CREDENTIALS).replace('\n', '\\n'))
+
+    @patch("skyflow.utils._utils.dotenv.find_dotenv", return_value=None)
+    @patch.dict(os.environ, {}, clear=True)
+    def test_get_credentials_no_credentials_raises(self, mock_find_dotenv):
+        with self.assertRaises(SkyflowError) as context:
+            get_credentials(config_level_creds=None, common_skyflow_creds=None)
+        self.assertEqual(context.exception.message, SkyflowMessages.Error.INVALID_CREDENTIALS.value)
 
     def test_get_credentials_with_config_level_creds(self):
         test_creds = {"authToken": "test_token"}
@@ -140,12 +146,53 @@ class TestUtils(unittest.TestCase):
         expected_output = {"key1": "value1", "key2": "value2"}
         self.assertEqual(to_lowercase_keys(input_dict), expected_output)
 
+    def test_r_urlencode_with_list_input(self):
+        pairs = {}
+        r_urlencode([], pairs, ["a", "b"])
+        self.assertIn("[0]", pairs)
+        self.assertIn("[1]", pairs)
+        self.assertEqual(pairs["[0]"], "a")
+        self.assertEqual(pairs["[1]"], "b")
+
+    def test_r_urlencode_with_tuple_input(self):
+        pairs = {}
+        r_urlencode([], pairs, ("x", "y"))
+        self.assertIn("[0]", pairs)
+        self.assertEqual(pairs["[0]"], "x")
+
     def test_get_metrics(self):
         metrics = get_metrics()
         self.assertIn('sdk_name_version', metrics)
         self.assertIn('sdk_client_device_model', metrics)
         self.assertIn('sdk_client_os_details', metrics)
         self.assertIn('sdk_runtime_details', metrics)
+
+    def test_get_metrics_platform_node_exception(self):
+        import skyflow.utils._utils as utils_module
+        utils_module._CACHED_METRICS.clear()
+        with patch("skyflow.utils._utils.platform") as mock_platform:
+            mock_platform.node.side_effect = OSError("no node")
+            metrics = utils_module.get_metrics()
+        self.assertEqual(metrics["sdk_client_device_model"], "")
+        utils_module._CACHED_METRICS.clear()
+
+    def test_get_metrics_sys_attribute_exception(self):
+        import skyflow.utils._utils as utils_module
+        utils_module._CACHED_METRICS.clear()
+
+        class _RaisingSys:
+            @property
+            def platform(self):
+                raise RuntimeError("no platform")
+            @property
+            def version(self):
+                raise RuntimeError("no version")
+
+        with patch("skyflow.utils._utils.sys", _RaisingSys()):
+            metrics = utils_module.get_metrics()
+        self.assertEqual(metrics["sdk_client_os_details"], "")
+        self.assertIn("sdk_runtime_details", metrics)
+        utils_module._CACHED_METRICS.clear()
 
 
     def test_construct_invoke_connection_request_valid(self):
@@ -243,6 +290,16 @@ class TestUtils(unittest.TestCase):
         result = construct_invoke_connection_request(mock_connection_request, connection_url, logger=None)
 
         self.assertIsInstance(result, PreparedRequest)
+
+    def test_parse_insert_response_with_tokens_continue_on_error(self):
+        api_response = Mock()
+        api_response.headers = {"x-request-id": "req-1"}
+        api_response.data = Mock(responses=[
+            {"Status": 200, "Body": {"records": [{"skyflow_id": "id1", "tokens": {"col1": "tok1"}}]}},
+        ])
+        result = parse_insert_response(api_response, continue_on_error=True)
+        self.assertEqual(result.inserted_fields[0]["col1"], "tok1")
+        self.assertEqual(result.inserted_fields[0]["skyflow_id"], "id1")
 
     def test_parse_insert_response(self):
         api_response = Mock()
@@ -422,6 +479,31 @@ class TestUtils(unittest.TestCase):
 
         self.assertEqual(context.exception.message, "Not Found")
         self.assertEqual(context.exception.request_id, "1234")
+
+    @patch("requests.Response")
+    def test_parse_invoke_connection_response_with_error_from_client_header(self, mock_response):
+        from requests.models import HTTPError
+        mock_response.status_code = 400
+        mock_response.content = json.dumps({
+            "error": {
+                "message": "Client error",
+                "http_code": 400,
+                "http_status": "Bad Request",
+                "grpc_code": 3,
+                "details": None,
+            }
+        }).encode("utf-8")
+        mock_response.headers = {
+            "x-request-id": "rid-1",
+            "error-from-client": "true",
+        }
+        mock_response.raise_for_status.side_effect = HTTPError("400")
+        with self.assertRaises(SkyflowError) as context:
+            parse_invoke_connection_response(mock_response)
+        err = context.exception
+        self.assertEqual(err.message, "Client error")
+        self.assertIsNotNone(err.details)
+        self.assertTrue(any(d.get("error_from_client") is True for d in err.details))
 
     @patch("requests.Response")
     def test_parse_invoke_connection_response_http_error_without_json_error_message(self, mock_response):
