@@ -509,7 +509,7 @@ def handle_json_error(err, data, request_id, logger):
             for resp in responses:
                 resp_status = resp.get(ResponseField.STATUS, HttpStatusCode.INTERNAL_SERVER_ERROR)
                 resp_body = resp.get(ResponseField.BODY, {})
-                if isinstance(resp_status, int) and resp_status >= 400:
+                if isinstance(resp_status, int) and resp_status >= HttpStatusCode.BAD_REQUEST:
                     status_code = resp_status
                     error_msg = resp_body.get(ResponseField.ERROR)
                     if error_msg:
