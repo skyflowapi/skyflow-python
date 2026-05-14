@@ -5,56 +5,52 @@ import json
 from unittest.mock import patch
 import os
 from skyflow.error import SkyflowError
-from skyflow.service_account import is_expired, generate_bearer_token, \
-    generate_bearer_token_from_creds
+from skyflow.service_account import is_expired, generate_bearer_token, generate_bearer_token_from_creds
 from skyflow.utils import SkyflowMessages
 from skyflow.service_account._utils import (
-    get_service_account_token, get_signed_jwt, generate_signed_data_tokens,
-    get_signed_data_token_response_object, generate_signed_data_tokens_from_creds,
-    _validate_and_resolve_ctx, _normalize_credentials, get_signed_tokens,
+    get_service_account_token,
+    get_signed_jwt,
+    generate_signed_data_tokens,
+    get_signed_data_token_response_object,
+    generate_signed_data_tokens_from_creds,
+    _validate_and_resolve_ctx,
+    _normalize_credentials,
+    get_signed_tokens,
 )
 
 creds_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "credentials.json")
-with open(creds_path, 'r') as file:
+with open(creds_path, "r") as file:
     credentials = json.load(file)
 
 VALID_CREDENTIALS_STRING = json.dumps(credentials)
 
-CREDENTIALS_WITHOUT_CLIENT_ID = {
-    'privateKey': 'private_key'
-}
+CREDENTIALS_WITHOUT_CLIENT_ID = {"privateKey": "private_key"}
 
-CREDENTIALS_WITHOUT_KEY_ID = {
-    'privateKey': 'private_key',
-    'clientID': 'client_id'
-}
+CREDENTIALS_WITHOUT_KEY_ID = {"privateKey": "private_key", "clientID": "client_id"}
 
-CREDENTIALS_WITHOUT_TOKEN_URI = {
-    'privateKey': 'private_key',
-    'clientID': 'client_id',
-    'keyID': 'key_id'
-}
+CREDENTIALS_WITHOUT_TOKEN_URI = {"privateKey": "private_key", "clientID": "client_id", "keyID": "key_id"}
 
 VALID_SERVICE_ACCOUNT_CREDS = credentials
 
 # Snake-case version of the real credentials (keys remapped to snake_case)
 SNAKE_CASE_CREDS = {
-    'private_key': credentials['privateKey'],
-    'client_id':   credentials['clientID'],
-    'key_id':      credentials['keyID'],
-    'token_uri':   credentials['tokenURI'],
+    "private_key": credentials["privateKey"],
+    "client_id": credentials["clientID"],
+    "key_id": credentials["keyID"],
+    "token_uri": credentials["tokenURI"],
 }
 
-SNAKE_CASE_CREDS_STRING = json.dumps({
-    'private_key': credentials['privateKey'],
-    'client_id':   credentials['clientID'],
-    'key_id':      credentials['keyID'],
-    'token_uri':   credentials['tokenURI'],
-})
+SNAKE_CASE_CREDS_STRING = json.dumps(
+    {
+        "private_key": credentials["privateKey"],
+        "client_id": credentials["clientID"],
+        "key_id": credentials["keyID"],
+        "token_uri": credentials["tokenURI"],
+    }
+)
 
 
 class TestServiceAccountUtils(unittest.TestCase):
-
     # ── is_expired ────────────────────────────────────────────────────────────
 
     def test_is_expired_none_token(self):
@@ -144,9 +140,9 @@ class TestServiceAccountUtils(unittest.TestCase):
 
     def test_get_service_account_token_missing_private_key_snake(self):
         creds = {
-            'client_id': 'id',
-            'key_id': 'kid',
-            'token_uri': 'https://example.com',
+            "client_id": "id",
+            "key_id": "kid",
+            "token_uri": "https://example.com",
         }
         with self.assertRaises(SkyflowError) as context:
             get_service_account_token(creds, {}, None)
@@ -154,10 +150,10 @@ class TestServiceAccountUtils(unittest.TestCase):
 
     def test_get_service_account_token_invalid_token_uri(self):
         creds = {
-            'privateKey': 'key',
-            'clientID': 'id',
-            'keyID': 'kid',
-            'tokenURI': 'not-a-url',
+            "privateKey": "key",
+            "clientID": "id",
+            "keyID": "kid",
+            "tokenURI": "not-a-url",
         }
         with self.assertRaises(SkyflowError) as context:
             get_service_account_token(creds, {}, None)
@@ -165,12 +161,12 @@ class TestServiceAccountUtils(unittest.TestCase):
 
     def test_get_service_account_token_invalid_token_uri_in_options(self):
         creds = {
-            'privateKey': 'key',
-            'clientID': 'id',
-            'keyID': 'kid',
-            'tokenURI': 'https://valid-url.com',
+            "privateKey": "key",
+            "clientID": "id",
+            "keyID": "kid",
+            "tokenURI": "https://valid-url.com",
         }
-        options = {'token_uri': 'not-a-valid-url'}
+        options = {"token_uri": "not-a-valid-url"}
         with self.assertRaises(SkyflowError) as context:
             get_service_account_token(creds, options, None)
         self.assertEqual(context.exception.message, SkyflowMessages.Error.INVALID_TOKEN_URI.value)
@@ -182,14 +178,14 @@ class TestServiceAccountUtils(unittest.TestCase):
             "privateKey": "private_key",
             "clientID": "client_id",
             "keyID": "key_id",
-            "tokenURI": "https://valid-url.com"
+            "tokenURI": "https://valid-url.com",
         }
         options = {"role_ids": ["role1", "role2"]}
         mock_get_signed_jwt.return_value = "signed"
         mock_auth_api = mock_auth_client.return_value.get_auth_api.return_value
-        mock_auth_api.authentication_service_get_auth_token.return_value = type("obj", (), {
-            "access_token": "token", "token_type": "bearer"
-        })
+        mock_auth_api.authentication_service_get_auth_token.return_value = type(
+            "obj", (), {"access_token": "token", "token_type": "bearer"}
+        )
         access_token, token_type = get_service_account_token(creds, options, None)
         self.assertEqual(access_token, "token")
         self.assertEqual(token_type, "bearer")
@@ -204,16 +200,18 @@ class TestServiceAccountUtils(unittest.TestCase):
             "privateKey": "private_key",
             "clientID": "client_id",
             "keyID": "key_id",
-            "tokenURI": "https://valid-url.com"
+            "tokenURI": "https://valid-url.com",
         }
         mock_get_signed_jwt.return_value = "signed"
         mock_auth_api = mock_auth_client.return_value.get_auth_api.return_value
         from skyflow.generated.rest.errors.unauthorized_error import UnauthorizedError
+
         mock_auth_api.authentication_service_get_auth_token.side_effect = UnauthorizedError("unauthorized")
         with self.assertRaises(SkyflowError) as context:
             get_service_account_token(creds, {}, None)
-        self.assertEqual(context.exception.message,
-                         SkyflowMessages.Error.UNAUTHORIZED_ERROR_IN_GETTING_BEARER_TOKEN.value)
+        self.assertEqual(
+            context.exception.message, SkyflowMessages.Error.UNAUTHORIZED_ERROR_IN_GETTING_BEARER_TOKEN.value
+        )
 
     @patch("skyflow.service_account._utils.AuthClient")
     @patch("skyflow.service_account._utils.get_signed_jwt")
@@ -222,7 +220,7 @@ class TestServiceAccountUtils(unittest.TestCase):
             "privateKey": "private_key",
             "clientID": "client_id",
             "keyID": "key_id",
-            "tokenURI": "https://valid-url.com"
+            "tokenURI": "https://valid-url.com",
         }
         mock_get_signed_jwt.return_value = "signed"
         mock_auth_api = mock_auth_client.return_value.get_auth_api.return_value
@@ -266,9 +264,9 @@ class TestServiceAccountUtils(unittest.TestCase):
         token = "sample_token"
         signed_token = "signed_sample_token"
         response = get_signed_data_token_response_object(signed_token, token)
-        self.assertIsInstance(response, dict)
-        self.assertEqual(response["token"], token)
-        self.assertEqual(response["signed_token"], signed_token)
+        self.assertIsInstance(response, tuple)
+        self.assertEqual(response[0], token)
+        self.assertEqual(response[1], signed_token)
 
     # ── get_signed_tokens ─────────────────────────────────────────────────────
 
@@ -278,7 +276,7 @@ class TestServiceAccountUtils(unittest.TestCase):
             "privateKey": "private_key",
             "clientID": "client_id",
             "keyID": "key_id",
-            "tokenURI": "https://valid-url.com"
+            "tokenURI": "https://valid-url.com",
         }
         options = {"data_tokens": ["token1"]}
         with self.assertRaises(SkyflowError) as context:
@@ -290,16 +288,14 @@ class TestServiceAccountUtils(unittest.TestCase):
         self.assertIsInstance(result, list)
         self.assertEqual(len(result), 2)
 
-    def test_get_signed_tokens_items_are_dicts_with_token_and_signed_token(self):
+    def test_get_signed_tokens_items_are_tuples_with_token_and_signed_token(self):
         result = generate_signed_data_tokens(creds_path, {"data_tokens": ["token1", "token2"]})
         for item in result:
-            self.assertIsInstance(item, dict)
-            self.assertIn("token", item)
-            self.assertIn("signed_token", item)
-        self.assertEqual(result[0]["token"], "token1")
-        self.assertEqual(result[1]["token"], "token2")
-        self.assertTrue(result[0]["signed_token"].startswith("signed_token_"))
-        self.assertTrue(result[1]["signed_token"].startswith("signed_token_"))
+            self.assertIsInstance(item, tuple)
+        self.assertEqual(result[0][0], "token1")
+        self.assertEqual(result[1][0], "token2")
+        self.assertTrue(result[0][1].startswith("signed_token_"))
+        self.assertTrue(result[1][1].startswith("signed_token_"))
 
     def test_get_signed_tokens_returns_list_single_token(self):
         result = generate_signed_data_tokens(creds_path, {"data_tokens": ["token1"]})
@@ -396,14 +392,14 @@ class TestServiceAccountUtils(unittest.TestCase):
     # ── generate_signed_data_tokens (file path) ───────────────────────────────
 
     def test_generate_signed_data_tokens_from_file_path(self):
-        options = {"data_tokens": ["token1", "token2"], "ctx": 'ctx'}
+        options = {"data_tokens": ["token1", "token2"], "ctx": "ctx"}
         result = generate_signed_data_tokens(creds_path, options)
         self.assertEqual(len(result), 2)
 
     def test_generate_signed_data_tokens_from_invalid_file_path(self):
         options = {"data_tokens": ["token1", "token2"]}
         with self.assertRaises(SkyflowError) as context:
-            generate_signed_data_tokens('credentials1.json', options)
+            generate_signed_data_tokens("credentials1.json", options)
         self.assertEqual(context.exception.message, SkyflowMessages.Error.INVALID_CREDENTIAL_FILE_PATH.value)
 
     def test_generate_signed_data_tokens_with_dict_ctx(self):
@@ -421,7 +417,7 @@ class TestServiceAccountUtils(unittest.TestCase):
     def test_generate_signed_data_tokens_from_creds_with_invalid_string(self):
         options = {"data_tokens": ["token1", "token2"]}
         with self.assertRaises(SkyflowError) as context:
-            generate_signed_data_tokens_from_creds('{', options)
+            generate_signed_data_tokens_from_creds("{", options)
         self.assertEqual(context.exception.message, SkyflowMessages.Error.INVALID_CREDENTIALS_STRING.value)
 
     def test_generate_signed_data_tokens_from_creds_with_dict_ctx(self):
@@ -446,54 +442,54 @@ class TestServiceAccountUtils(unittest.TestCase):
 
     def test_normalize_credentials_snake_case(self):
         snake = {
-            'private_key': 'pk',
-            'client_id': 'cid',
-            'key_id': 'kid',
-            'token_uri': 'https://uri',
-            'client_name': 'name',
+            "private_key": "pk",
+            "client_id": "cid",
+            "key_id": "kid",
+            "token_uri": "https://uri",
+            "client_name": "name",
         }
         result = _normalize_credentials(snake)
-        self.assertEqual(result['privateKey'], 'pk')
-        self.assertEqual(result['clientID'], 'cid')
-        self.assertEqual(result['keyID'], 'kid')
-        self.assertEqual(result['tokenURI'], 'https://uri')
-        self.assertEqual(result['clientName'], 'name')
-        self.assertNotIn('private_key', result)
-        self.assertNotIn('client_id', result)
-        self.assertNotIn('key_id', result)
-        self.assertNotIn('token_uri', result)
-        self.assertNotIn('client_name', result)
+        self.assertEqual(result["privateKey"], "pk")
+        self.assertEqual(result["clientID"], "cid")
+        self.assertEqual(result["keyID"], "kid")
+        self.assertEqual(result["tokenURI"], "https://uri")
+        self.assertEqual(result["clientName"], "name")
+        self.assertNotIn("private_key", result)
+        self.assertNotIn("client_id", result)
+        self.assertNotIn("key_id", result)
+        self.assertNotIn("token_uri", result)
+        self.assertNotIn("client_name", result)
 
     def test_normalize_credentials_camel_case_unchanged(self):
         camel = {
-            'privateKey': 'pk',
-            'clientID': 'cid',
-            'keyID': 'kid',
-            'tokenURI': 'https://uri',
+            "privateKey": "pk",
+            "clientID": "cid",
+            "keyID": "kid",
+            "tokenURI": "https://uri",
         }
         result = _normalize_credentials(camel)
         self.assertEqual(result, camel)
 
     def test_normalize_credentials_mixed_keys(self):
         mixed = {
-            'private_key': 'pk',
-            'clientID': 'cid',
-            'key_id': 'kid',
-            'tokenURI': 'https://uri',
+            "private_key": "pk",
+            "clientID": "cid",
+            "key_id": "kid",
+            "tokenURI": "https://uri",
         }
         result = _normalize_credentials(mixed)
-        self.assertEqual(result['privateKey'], 'pk')
-        self.assertEqual(result['clientID'], 'cid')
-        self.assertEqual(result['keyID'], 'kid')
-        self.assertEqual(result['tokenURI'], 'https://uri')
-        self.assertNotIn('private_key', result)
-        self.assertNotIn('key_id', result)
+        self.assertEqual(result["privateKey"], "pk")
+        self.assertEqual(result["clientID"], "cid")
+        self.assertEqual(result["keyID"], "kid")
+        self.assertEqual(result["tokenURI"], "https://uri")
+        self.assertNotIn("private_key", result)
+        self.assertNotIn("key_id", result)
 
     def test_normalize_credentials_unknown_key_passes_through(self):
-        creds = {'unknown_field': 'value', 'anotherField': 'val2'}
+        creds = {"unknown_field": "value", "anotherField": "val2"}
         result = _normalize_credentials(creds)
-        self.assertEqual(result['unknown_field'], 'value')
-        self.assertEqual(result['anotherField'], 'val2')
+        self.assertEqual(result["unknown_field"], "value")
+        self.assertEqual(result["anotherField"], "val2")
 
     def test_normalize_credentials_empty_dict(self):
         self.assertEqual(_normalize_credentials({}), {})
@@ -504,11 +500,11 @@ class TestServiceAccountUtils(unittest.TestCase):
         self.assertIsNone(_validate_and_resolve_ctx(None))
 
     def test_validate_and_resolve_ctx_empty_string(self):
-        self.assertIsNone(_validate_and_resolve_ctx(''))
-        self.assertIsNone(_validate_and_resolve_ctx('   '))
+        self.assertIsNone(_validate_and_resolve_ctx(""))
+        self.assertIsNone(_validate_and_resolve_ctx("   "))
 
     def test_validate_and_resolve_ctx_valid_string(self):
-        self.assertEqual(_validate_and_resolve_ctx('user_12345'), 'user_12345')
+        self.assertEqual(_validate_and_resolve_ctx("user_12345"), "user_12345")
 
     def test_validate_and_resolve_ctx_empty_dict(self):
         self.assertIsNone(_validate_and_resolve_ctx({}))
@@ -577,9 +573,9 @@ class TestServiceAccountUtils(unittest.TestCase):
         options = {"token_uri": override_uri}
         mock_get_signed_jwt.return_value = "signed"
         mock_auth_api = mock_auth_client.return_value.get_auth_api.return_value
-        mock_auth_api.authentication_service_get_auth_token.return_value = type("obj", (), {
-            "access_token": "token", "token_type": "bearer"
-        })
+        mock_auth_api.authentication_service_get_auth_token.return_value = type(
+            "obj", (), {"access_token": "token", "token_type": "bearer"}
+        )
         get_service_account_token(creds, options, None)
         mock_get_signed_jwt.assert_called_once()
         call_args = mock_get_signed_jwt.call_args

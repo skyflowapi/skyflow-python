@@ -239,8 +239,6 @@ def generate_signed_data_tokens_from_creds(credentials, options):
         raise SkyflowError(SkyflowMessages.Error.INVALID_CREDENTIALS_STRING.value, invalid_input_error_code)
     return get_signed_tokens(json_credentials, options)
 
+
 def get_signed_data_token_response_object(signed_token, actual_token):
-    return {
-        ResponseField.TOKEN: actual_token,
-        ResponseField.SIGNED_TOKEN: signed_token,
-    }
+    return actual_token, signed_token
