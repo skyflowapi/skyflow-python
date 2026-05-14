@@ -516,7 +516,7 @@ class TestUtils(unittest.TestCase):
         with self.assertRaises(SkyflowError) as context:
             parse_invoke_connection_response(mock_response)
 
-        self.assertEqual(context.exception.message, "Internal Server Error")
+        self.assertEqual(context.exception.message, SkyflowMessages.Error.API_ERROR.value.format(500))
         self.assertEqual(context.exception.http_code, 500)
         self.assertEqual(context.exception.request_id, "1234")
 
@@ -1265,7 +1265,7 @@ class TestUtils(unittest.TestCase):
         with self.assertRaises(SkyflowError) as context:
             parse_invoke_connection_response(mock_response)
 
-        self.assertEqual(context.exception.message, html_error)
+        self.assertEqual(context.exception.message, SkyflowMessages.Error.API_ERROR.value.format(500))
         self.assertEqual(context.exception.http_code, 500)
         self.assertEqual(context.exception.request_id, "1234")
 
@@ -1669,8 +1669,8 @@ class TestUtils(unittest.TestCase):
                 result = generate_signed_data_tokens(tmp.name, options)
                 self.assertIsInstance(result, list)
                 self.assertEqual(len(result), 1)
-                self.assertEqual(result[0][0], "token1")
-                self.assertEqual(result[0][1], "signed_token_signed")
+                self.assertEqual(result[0]["token"], "token1")
+                self.assertEqual(result[0]["signed_token"], "signed_token_signed")
 
     def test_generate_signed_data_tokens_from_creds_options_override_token_uri(self):
         creds = {
@@ -1686,5 +1686,5 @@ class TestUtils(unittest.TestCase):
             result = generate_signed_data_tokens_from_creds(creds_str, options)
             self.assertIsInstance(result, list)
             self.assertEqual(len(result), 1)
-            self.assertEqual(result[0][0], "token1")
-            self.assertEqual(result[0][1], "signed_token_signed")
+            self.assertEqual(result[0]["token"], "token1")
+            self.assertEqual(result[0]["signed_token"], "signed_token_signed")

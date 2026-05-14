@@ -240,8 +240,7 @@ def generate_signed_data_tokens_from_creds(credentials, options):
     return get_signed_tokens(json_credentials, options)
 
 def get_signed_data_token_response_object(signed_token, actual_token):
-    response_object = {
+    return {
         ResponseField.TOKEN: actual_token,
-        ResponseField.SIGNED_TOKEN: signed_token
+        ResponseField.SIGNED_TOKEN: signed_token,
     }
-    return response_object.get(ResponseField.TOKEN), response_object.get(ResponseField.SIGNED_TOKEN)

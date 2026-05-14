@@ -232,8 +232,10 @@ def validate_update_vault_config(logger, config):
     if ConfigField.ENV in config and config.get(ConfigField.ENV) not in Env:
         raise SkyflowError(SkyflowMessages.Error.INVALID_ENV.value.format(vault_id), invalid_input_error_code)
 
-    if ConfigField.CREDENTIALS in config and config.get(ConfigField.CREDENTIALS):
-        validate_credentials(logger, config.get(ConfigField.CREDENTIALS), ConfigType.VAULT, vault_id)
+    if ConfigField.CREDENTIALS not in config:
+        raise SkyflowError(SkyflowMessages.Error.EMPTY_CREDENTIALS.value.format(ConfigType.VAULT, vault_id), invalid_input_error_code)
+
+    validate_credentials(logger, config.get(ConfigField.CREDENTIALS), ConfigType.VAULT, vault_id)
 
     return True
 
@@ -255,8 +257,10 @@ def validate_connection_config(logger, config):
         SkyflowMessages.Error.INVALID_CONNECTION_URL.value.format(connection_id)
     )
 
-    if ConfigField.CREDENTIALS in config:
-        validate_credentials(logger, config.get(ConfigField.CREDENTIALS), ConfigType.CONNECTION, connection_id)
+    if ConfigField.CREDENTIALS not in config:
+        raise SkyflowError(SkyflowMessages.Error.EMPTY_CREDENTIALS.value.format(ConfigType.CONNECTION, connection_id), invalid_input_error_code)
+
+    validate_credentials(logger, config.get(ConfigField.CREDENTIALS), ConfigType.CONNECTION, connection_id)
 
     return True
 
@@ -298,7 +302,7 @@ def validate_file_from_request(file_input: FileInput):
     if has_file:
         file = file_input.file
         # Validate file object has required attributes
-        if not hasattr(file, FileUploadField.FILE_NAME) or not isinstance(file.name, str) or not file.name.strip():
+        if not hasattr(file, FileUploadField.NAME) or not isinstance(file.name, str) or not file.name.strip():
             raise SkyflowError(SkyflowMessages.Error.INVALID_FILE_TYPE.value, invalid_input_error_code)
         
         # Validate file name

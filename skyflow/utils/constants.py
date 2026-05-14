@@ -117,6 +117,7 @@ class ResponseField:
     TYPE = 'type'
     TOKENIZED_DATA = 'tokenized_data'
     SIGNED_TOKEN = 'signed_token'
+    RESPONSES = 'responses'
 
 
 class CredentialField:
@@ -195,6 +196,7 @@ class DeidentifyFileRequestField:
     OUTPUT_OCR_TEXT = 'output_ocr_text'
     MASKING_METHOD = 'masking_method'
     PIXEL_DENSITY = 'pixel_density'
+    DENSITY = 'density'
     MAX_RESOLUTION = 'max_resolution'
     OUTPUT_PROCESSED_AUDIO = 'output_processed_audio'
     OUTPUT_TRANSCRIPTION = 'output_transcription'
@@ -230,6 +232,7 @@ class DeidentifyField:
     ENTITY_UNQ_COUNTER = 'entity_unq_counter'
     ENTITY_UNIQUE_COUNTER = 'entity_unique_counter'
     ENTITY_ONLY = 'entity_only'
+    VAULT_TOKEN = 'vault_token'
     ENTITIES = 'entities'
     MAX_DAYS = 'max_days'
     MIN_DAYS = 'min_days'

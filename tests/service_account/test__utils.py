@@ -266,8 +266,9 @@ class TestServiceAccountUtils(unittest.TestCase):
         token = "sample_token"
         signed_token = "signed_sample_token"
         response = get_signed_data_token_response_object(signed_token, token)
-        self.assertEqual(response[0], token)
-        self.assertEqual(response[1], signed_token)
+        self.assertIsInstance(response, dict)
+        self.assertEqual(response["token"], token)
+        self.assertEqual(response["signed_token"], signed_token)
 
     # ── get_signed_tokens ─────────────────────────────────────────────────────
 
@@ -288,6 +289,17 @@ class TestServiceAccountUtils(unittest.TestCase):
         result = generate_signed_data_tokens(creds_path, {"data_tokens": ["token1", "token2"]})
         self.assertIsInstance(result, list)
         self.assertEqual(len(result), 2)
+
+    def test_get_signed_tokens_items_are_dicts_with_token_and_signed_token(self):
+        result = generate_signed_data_tokens(creds_path, {"data_tokens": ["token1", "token2"]})
+        for item in result:
+            self.assertIsInstance(item, dict)
+            self.assertIn("token", item)
+            self.assertIn("signed_token", item)
+        self.assertEqual(result[0]["token"], "token1")
+        self.assertEqual(result[1]["token"], "token2")
+        self.assertTrue(result[0]["signed_token"].startswith("signed_token_"))
+        self.assertTrue(result[1]["signed_token"].startswith("signed_token_"))
 
     def test_get_signed_tokens_returns_list_single_token(self):
         result = generate_signed_data_tokens(creds_path, {"data_tokens": ["token1"]})

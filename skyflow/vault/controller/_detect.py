@@ -187,7 +187,7 @@ class Detect:
         return DeidentifyFileResponse(
             file_base64=base64_string,
             file=file_obj,
-            type=first_output.get(DeidentifyField.TYPE, DetectStatus.UNKNOWN),
+            type=first_output.get(DeidentifyField.TYPE, None),
             extension=extension,
             word_count=word_count,
             char_count=char_count,
@@ -207,6 +207,7 @@ class Detect:
             DeidentifyField.DEFAULT: getattr(request.token_format, DeidentifyField.DEFAULT, None),
             DeidentifyField.ENTITY_UNQ_COUNTER: getattr(request.token_format, DeidentifyField.ENTITY_UNIQUE_COUNTER, None),
             DeidentifyField.ENTITY_ONLY: getattr(request.token_format, DeidentifyField.ENTITY_ONLY, None),
+            DeidentifyField.VAULT_TOKEN: getattr(request.token_format, DeidentifyField.VAULT_TOKEN, None)
         }
 
     def __get_transformations(self, request):
@@ -346,7 +347,7 @@ class Detect:
                     DeidentifyField.ALLOW_REGEX: request.allow_regex_list,
                     DeidentifyField.RESTRICT_REGEX: request.restrict_regex_list,
                     DeidentifyFileRequestField.MAX_RESOLUTION: getattr(request, DeidentifyFileRequestField.MAX_RESOLUTION, None),
-                    DeidentifyFileRequestField.PIXEL_DENSITY: getattr(request, DeidentifyFileRequestField.PIXEL_DENSITY, None),
+                    DeidentifyFileRequestField.DENSITY: getattr(request, DeidentifyFileRequestField.PIXEL_DENSITY, None),
                     DeidentifyField.REQUEST_OPTIONS: {'additional_headers': self.__get_headers()}
                 }
 
