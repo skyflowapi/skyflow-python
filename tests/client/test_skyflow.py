@@ -1,42 +1,41 @@
 import unittest
-from unittest.mock import  patch
+from unittest.mock import patch, Mock
 
 from skyflow import LogLevel, Env
 from skyflow.error import SkyflowError
 from skyflow.utils import SkyflowMessages
 from skyflow import Skyflow
+from skyflow.vault.client.client import VaultClient
 
 VALID_VAULT_CONFIG = {
     "vault_id": "VAULT_ID",
     "cluster_id": "CLUSTER_ID",
     "env": Env.DEV,
-    "credentials": {"path": "/path/to/valid_credentials.json"}
+    "credentials": {"path": "/path/to/valid_credentials.json"},
 }
 
 INVALID_VAULT_CONFIG = {
     "cluster_id": "CLUSTER_ID",  # Missing vault_id
     "env": Env.DEV,
-    "credentials": {"path": "/path/to/valid_credentials.json"}
+    "credentials": {"path": "/path/to/valid_credentials.json"},
 }
 
 VALID_CONNECTION_CONFIG = {
     "connection_id": "CONNECTION_ID",
     "connection_url": "https://CONNECTION_URL",
-    "credentials": {"path": "/path/to/valid_credentials.json"}
+    "credentials": {"path": "/path/to/valid_credentials.json"},
 }
 
 INVALID_CONNECTION_CONFIG = {
     "connection_url": "https://CONNECTION_URL",
     # Missing connection_id
-    "credentials": {"path": "/path/to/valid_credentials.json"}
+    "credentials": {"path": "/path/to/valid_credentials.json"},
 }
 
-VALID_CREDENTIALS = {
-    "path": "/path/to/valid_credentials.json"
-}
+VALID_CREDENTIALS = {"path": "/path/to/valid_credentials.json"}
+
 
 class TestSkyflow(unittest.TestCase):
-
     def setUp(self):
         self.builder = Skyflow.builder()
 
@@ -49,8 +48,10 @@ class TestSkyflow(unittest.TestCase):
         builder = self.builder.add_vault_config(VALID_VAULT_CONFIG)
         with self.assertRaises(SkyflowError) as context:
             builder.add_vault_config(VALID_VAULT_CONFIG)
-        self.assertEqual(context.exception.message, SkyflowMessages.Error.VAULT_ID_ALREADY_EXISTS.value.format(VALID_VAULT_CONFIG.get("vault_id")))
-
+        self.assertEqual(
+            context.exception.message,
+            SkyflowMessages.Error.VAULT_ID_ALREADY_EXISTS.value.format(VALID_VAULT_CONFIG.get("vault_id")),
+        )
 
     def test_add_vault_config_invalid(self):
         with self.assertRaises(SkyflowError) as context:
@@ -61,11 +62,11 @@ class TestSkyflow(unittest.TestCase):
     def test_remove_vault_config_valid(self):
         self.builder.add_vault_config(VALID_VAULT_CONFIG)
         self.builder.build()
-        result = self.builder.remove_vault_config(VALID_VAULT_CONFIG['vault_id'])
+        result = self.builder.remove_vault_config(VALID_VAULT_CONFIG["vault_id"])
 
-        self.assertNotIn(VALID_VAULT_CONFIG['vault_id'], self.builder._Builder__vault_configs)
+        self.assertNotIn(VALID_VAULT_CONFIG["vault_id"], self.builder._Builder__vault_configs)
 
-    @patch('skyflow.utils.logger.log_error')
+    @patch("skyflow.utils.logger.log_error")
     def test_remove_vault_config_invalid(self, mock_log_error):
         self.builder.add_vault_config(VALID_VAULT_CONFIG)
         self.builder.build()
@@ -73,8 +74,7 @@ class TestSkyflow(unittest.TestCase):
             self.builder.remove_vault_config("invalid_id")
         self.assertEqual(context.exception.message, SkyflowMessages.Error.INVALID_VAULT_ID.value)
 
-
-    @patch('skyflow.vault.client.client.VaultClient.update_config')
+    @patch("skyflow.vault.client.client.VaultClient.update_config")
     def test_update_vault_config_valid(self, mock_validate):
         self.builder.add_vault_config(VALID_VAULT_CONFIG)
         self.builder.build()
@@ -94,7 +94,7 @@ class TestSkyflow(unittest.TestCase):
     def test_get_vault_with_vault_id_none(self):
         self.builder.add_vault_config(VALID_VAULT_CONFIG)
         self.builder.build()
-        vault  = self.builder.get_vault_config(None)
+        vault = self.builder.get_vault_config(None)
         config = vault.get("vault_client").get_config()
         self.assertEqual(self.builder._Builder__vault_list[0], config)
 
@@ -107,19 +107,23 @@ class TestSkyflow(unittest.TestCase):
     def test_get_vault_with_invalid_vault_id_raises_error(self):
         self.builder.build()
         with self.assertRaises(SkyflowError) as context:
-            self.builder.get_vault_config('invalid_id')
-        self.assertEqual(context.exception.message, SkyflowMessages.Error.VAULT_ID_NOT_IN_CONFIG_LIST.value.format('invalid_id'))
+            self.builder.get_vault_config("invalid_id")
+        self.assertEqual(
+            context.exception.message, SkyflowMessages.Error.VAULT_ID_NOT_IN_CONFIG_LIST.value.format("invalid_id")
+        )
 
     def test_get_vault_with_invalid_vault_id_and_non_empty_list_raises_error(self):
         self.builder.add_vault_config(VALID_VAULT_CONFIG)
         self.builder.build()
         with self.assertRaises(SkyflowError) as context:
-            self.builder.get_vault_config('invalid_vault_id')
+            self.builder.get_vault_config("invalid_vault_id")
 
-        self.assertEqual(context.exception.message, SkyflowMessages.Error.VAULT_ID_NOT_IN_CONFIG_LIST.value.format("invalid_vault_id"))
+        self.assertEqual(
+            context.exception.message,
+            SkyflowMessages.Error.VAULT_ID_NOT_IN_CONFIG_LIST.value.format("invalid_vault_id"),
+        )
 
-
-    @patch('skyflow.client.skyflow.validate_vault_config')
+    @patch("skyflow.client.skyflow.validate_vault_config")
     def test_build_calls_validate_vault_config(self, mock_validate_vault_config):
         self.builder.add_vault_config(VALID_VAULT_CONFIG)
         self.builder.build()
@@ -143,7 +147,9 @@ class TestSkyflow(unittest.TestCase):
         with self.assertRaises(SkyflowError) as context:
             builder.add_connection_config(VALID_CONNECTION_CONFIG)
 
-        self.assertEqual(context.exception.message, SkyflowMessages.Error.CONNECTION_ID_ALREADY_EXISTS.value.format(connection_id))
+        self.assertEqual(
+            context.exception.message, SkyflowMessages.Error.CONNECTION_ID_ALREADY_EXISTS.value.format(connection_id)
+        )
 
     def test_add_connection_config_invalid(self):
         with self.assertRaises(SkyflowError) as context:
@@ -158,8 +164,7 @@ class TestSkyflow(unittest.TestCase):
 
         self.assertNotIn(VALID_CONNECTION_CONFIG.get("connection_id"), self.builder._Builder__connection_configs)
 
-
-    @patch('skyflow.utils.logger.log_error')
+    @patch("skyflow.utils.logger.log_error")
     def test_remove_connection_config_invalid(self, mock_log_error):
         self.builder.add_connection_config(VALID_CONNECTION_CONFIG)
         self.builder.build()
@@ -167,7 +172,7 @@ class TestSkyflow(unittest.TestCase):
             self.builder.remove_connection_config("invalid_id")
         self.assertEqual(context.exception.message, SkyflowMessages.Error.INVALID_CONNECTION_ID.value)
 
-    @patch('skyflow.vault.client.client.VaultClient.update_config')
+    @patch("skyflow.vault.client.client.VaultClient.update_config")
     def test_update_connection_config_valid(self, mock_validate):
         self.builder.add_connection_config(VALID_CONNECTION_CONFIG)
         self.builder.build()
@@ -194,16 +199,21 @@ class TestSkyflow(unittest.TestCase):
     def test_get_connection_with_empty_connection_list_raises_error(self):
         self.builder.build()
         with self.assertRaises(SkyflowError) as context:
-            self.builder.get_connection_config('invalid_id')
-        self.assertEqual(context.exception.message, SkyflowMessages.Error.CONNECTION_ID_NOT_IN_CONFIG_LIST.value.format('invalid_id'))
+            self.builder.get_connection_config("invalid_id")
+        self.assertEqual(
+            context.exception.message, SkyflowMessages.Error.CONNECTION_ID_NOT_IN_CONFIG_LIST.value.format("invalid_id")
+        )
 
     def test_get_connection_with_invalid_connection_id_raises_error(self):
         self.builder.add_connection_config(VALID_CONNECTION_CONFIG)
         self.builder.build()
         with self.assertRaises(SkyflowError) as context:
-            self.builder.get_connection_config('invalid_connection_id')
+            self.builder.get_connection_config("invalid_connection_id")
 
-        self.assertEqual(context.exception.message, SkyflowMessages.Error.CONNECTION_ID_NOT_IN_CONFIG_LIST.value.format('invalid_connection_id'))
+        self.assertEqual(
+            context.exception.message,
+            SkyflowMessages.Error.CONNECTION_ID_NOT_IN_CONFIG_LIST.value.format("invalid_connection_id"),
+        )
 
     def test_get_connection_with_invalid_connection_id_and_empty_list_raises_Error(self):
         self.builder.build()
@@ -212,12 +222,11 @@ class TestSkyflow(unittest.TestCase):
 
         self.assertEqual(context.exception.message, SkyflowMessages.Error.EMPTY_CONNECTION_CONFIGS.value)
 
-    @patch('skyflow.client.skyflow.validate_connection_config')
+    @patch("skyflow.client.skyflow.validate_connection_config")
     def test_build_calls_validate_connection_config(self, mock_validate):
         self.builder.add_connection_config(VALID_CONNECTION_CONFIG)
         self.builder.build()
         mock_validate.assert_called_once_with(self.builder._Builder__logger, VALID_CONNECTION_CONFIG)
-
 
     def test_build_valid(self):
         self.builder.add_vault_config(VALID_VAULT_CONFIG).add_connection_config(VALID_CONNECTION_CONFIG)
@@ -236,30 +245,31 @@ class TestSkyflow(unittest.TestCase):
         self.assertEqual(VALID_CREDENTIALS, self.builder._Builder__skyflow_credentials)
         self.assertEqual(builder, self.builder)
 
-    @patch('skyflow.client.skyflow.validate_vault_config')
+    @patch("skyflow.client.skyflow.validate_vault_config")
     def test_skyflow_client_add_remove_vault_config(self, mock_validate_vault_config):
         skyflow_client = self.builder.add_vault_config(VALID_VAULT_CONFIG).build()
         new_config = VALID_VAULT_CONFIG.copy()
-        new_config['vault_id'] = "VAULT_ID"
+        new_config["vault_id"] = "VAULT_ID"
         skyflow_client.add_vault_config(new_config)
 
         assert mock_validate_vault_config.call_count == 2
 
-        self.assertEqual("VAULT_ID",
-                         skyflow_client.get_vault_config(new_config['vault_id']).get("vault_id"))
+        self.assertEqual("VAULT_ID", skyflow_client.get_vault_config(new_config["vault_id"]).get("vault_id"))
 
-        skyflow_client.remove_vault_config(new_config['vault_id'])
+        skyflow_client.remove_vault_config(new_config["vault_id"])
         with self.assertRaises(SkyflowError) as context:
-            skyflow_client.get_vault_config(new_config['vault_id']).get("vault_id")
+            skyflow_client.get_vault_config(new_config["vault_id"]).get("vault_id")
 
-        self.assertEqual(context.exception.message, SkyflowMessages.Error.VAULT_ID_NOT_IN_CONFIG_LIST.value.format(
-            new_config['vault_id']))
+        self.assertEqual(
+            context.exception.message,
+            SkyflowMessages.Error.VAULT_ID_NOT_IN_CONFIG_LIST.value.format(new_config["vault_id"]),
+        )
 
-    @patch('skyflow.vault.client.client.VaultClient.update_config')
+    @patch("skyflow.vault.client.client.VaultClient.update_config")
     def test_skyflow_client_update_and_get_vault_config(self, mock_update_config):
         skyflow_client = self.builder.add_vault_config(VALID_VAULT_CONFIG).build()
         new_config = VALID_VAULT_CONFIG.copy()
-        new_config['env'] = Env.SANDBOX
+        new_config["env"] = Env.SANDBOX
         skyflow_client.update_vault_config(new_config)
         mock_update_config.assert_called_once()
 
@@ -267,29 +277,33 @@ class TestSkyflow(unittest.TestCase):
 
         self.assertEqual(VALID_VAULT_CONFIG.get("vault_id"), vault.get("vault_id"))
 
-    @patch('skyflow.client.skyflow.validate_connection_config')
+    @patch("skyflow.client.skyflow.validate_connection_config")
     def test_skyflow_client_add_remove_connection_config(self, mock_validate_connection_config):
         skyflow_client = self.builder.add_connection_config(VALID_CONNECTION_CONFIG).build()
         new_config = VALID_CONNECTION_CONFIG.copy()
-        new_config['connection_id'] = "CONNECTION_ID"
+        new_config["connection_id"] = "CONNECTION_ID"
         skyflow_client.add_connection_config(new_config)
 
         assert mock_validate_connection_config.call_count == 2
-        self.assertEqual("CONNECTION_ID", skyflow_client.get_connection_config(new_config['connection_id']).get("connection_id"))
+        self.assertEqual(
+            "CONNECTION_ID", skyflow_client.get_connection_config(new_config["connection_id"]).get("connection_id")
+        )
 
         skyflow_client.remove_connection_config("CONNECTION_ID")
         with self.assertRaises(SkyflowError) as context:
-            skyflow_client.get_connection_config(new_config['connection_id']).get("connection_id")
+            skyflow_client.get_connection_config(new_config["connection_id"]).get("connection_id")
 
-        self.assertEqual(context.exception.message, SkyflowMessages.Error.CONNECTION_ID_NOT_IN_CONFIG_LIST.value.format(new_config['connection_id']))
+        self.assertEqual(
+            context.exception.message,
+            SkyflowMessages.Error.CONNECTION_ID_NOT_IN_CONFIG_LIST.value.format(new_config["connection_id"]),
+        )
 
-
-    @patch('skyflow.vault.client.client.VaultClient.update_config')
+    @patch("skyflow.vault.client.client.VaultClient.update_config")
     def test_skyflow_client_update_and_get_connection_config(self, mock_update_config):
         builder = self.builder
         skyflow_client = builder.add_connection_config(VALID_CONNECTION_CONFIG).build()
         new_config = VALID_CONNECTION_CONFIG.copy()
-        new_config['connection_url'] = 'updated_url'
+        new_config["connection_url"] = "updated_url"
         skyflow_client.update_connection_config(new_config)
         mock_update_config.assert_called_once()
 
@@ -305,25 +319,56 @@ class TestSkyflow(unittest.TestCase):
         self.assertEqual(VALID_CREDENTIALS, builder._Builder__skyflow_credentials)
 
         new_credentials = VALID_CREDENTIALS.copy()
-        new_credentials['path'] = 'path/to/new_credentials'
+        new_credentials["path"] = "path/to/new_credentials"
 
         skyflow_client.update_skyflow_credentials(new_credentials)
 
         self.assertEqual(new_credentials, builder._Builder__skyflow_credentials)
 
-
     def test_skyflow_add_and_update_log_level(self):
         builder = self.builder
-        skyflow_client =  builder.add_connection_config(VALID_CONNECTION_CONFIG).build()
+        skyflow_client = builder.add_connection_config(VALID_CONNECTION_CONFIG).build()
         skyflow_client.set_log_level(LogLevel.INFO)
 
         self.assertEqual(LogLevel.INFO, builder._Builder__log_level)
 
-
-    @patch('skyflow.client.Skyflow.Builder.get_vault_config')
+    @patch("skyflow.client.Skyflow.Builder.get_vault_config")
     def test_skyflow_vault_and_connection_method(self, mock_get_vault_config):
         builder = self.builder
-        skyflow_client = builder.add_connection_config(VALID_CONNECTION_CONFIG).add_vault_config(VALID_VAULT_CONFIG).build()
+        skyflow_client = (
+            builder.add_connection_config(VALID_CONNECTION_CONFIG).add_vault_config(VALID_VAULT_CONFIG).build()
+        )
         skyflow_client.vault()
         skyflow_client.connection()
         mock_get_vault_config.assert_called_once()
+
+
+class TestVaultClient(unittest.TestCase):
+    def _make_client(self):
+        client = VaultClient({"vault_id": "test_vault"})
+        client._VaultClient__api_client = Mock()
+        return client
+
+    def test_get_detect_text_api_returns_strings(self):
+        client = self._make_client()
+        result = client.get_detect_text_api()
+        self.assertEqual(result, client._VaultClient__api_client.strings)
+
+    def test_get_detect_file_api_returns_files(self):
+        client = self._make_client()
+        result = client.get_detect_file_api()
+        self.assertEqual(result, client._VaultClient__api_client.files)
+
+    @patch("skyflow.vault.client.client.generate_bearer_token_from_creds")
+    @patch("skyflow.vault.client.client.is_expired", return_value=True)
+    def test_get_bearer_token_passes_token_uri_option(self, _mock_expired, mock_gen):
+        mock_gen.return_value = ("test_token", "bearer")
+        client = VaultClient({"vault_id": "test_vault"})
+        credentials = {
+            "credentials_string": '{"clientID":"id","privateKey":"pk","keyID":"kid","tokenURI":"https://token.uri"}',
+            "token_uri": "https://custom-token-uri.com/token",
+        }
+        client.get_bearer_token(credentials)
+        options_passed = mock_gen.call_args[0][1]
+        self.assertIn("token_uri", options_passed)
+        self.assertEqual(options_passed["token_uri"], "https://custom-token-uri.com/token")

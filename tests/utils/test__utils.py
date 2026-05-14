@@ -876,6 +876,47 @@ class TestUtils(unittest.TestCase):
         self.assertEqual(mock_log_and_reject_error.call_args[0][1], SkyflowMessages.ErrorCodes.SERVER_ERROR.value)
 
     @patch("skyflow.utils._utils.log_and_reject_error")
+    def test_handle_json_error_with_responses_key(self, mock_log_and_reject_error):
+        """Test handle_json_error when body has 'responses' key (batch/continue_on_error path)."""
+        error_dict = {
+            "responses": [
+                {"Status": 400, "Body": {"error": "record not found"}},
+                {"Status": 400, "Body": {"error": "invalid field"}},
+            ]
+        }
+        mock_error = Mock()
+        mock_logger = Mock()
+        request_id = "test-request-id-responses"
+
+        handle_json_error(mock_error, error_dict, request_id, mock_logger)
+
+        mock_log_and_reject_error.assert_called_once()
+        args = mock_log_and_reject_error.call_args[0]
+        self.assertIn("record not found", args[0])
+        self.assertIn("invalid field", args[0])
+        self.assertEqual(args[1], 400)
+        self.assertIsNone(args[3])  # http_status
+        self.assertIsNone(args[4])  # grpc_code
+        self.assertEqual(args[5], [])  # details
+
+    @patch("skyflow.utils._utils.log_and_reject_error")
+    def test_handle_json_error_responses_no_error_messages(self, mock_log_and_reject_error):
+        """Test handle_json_error with responses key but no error body — falls back to default message."""
+        error_dict = {
+            "responses": [
+                {"Status": 200, "Body": {"records": [{"skyflow_id": "abc"}]}},
+            ]
+        }
+        mock_error = Mock()
+        request_id = "test-request-id-responses-empty"
+
+        handle_json_error(mock_error, error_dict, request_id, None)
+
+        mock_log_and_reject_error.assert_called_once()
+        args = mock_log_and_reject_error.call_args[0]
+        self.assertEqual(args[0], SkyflowMessages.Error.UNKNOWN_ERROR_DEFAULT_MESSAGE.value)
+
+    @patch("skyflow.utils._utils.log_and_reject_error")
     def test_handle_json_error_with_bytes_data(self, mock_log_and_reject_error):
         """Test handling JSON error when data is bytes."""
         error_dict = {"error": {"message": "Bytes error", "http_code": 401, "http_status": "Unauthorized"}}
