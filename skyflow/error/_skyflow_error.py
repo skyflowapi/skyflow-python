@@ -1,5 +1,4 @@
 from skyflow.utils import SkyflowMessages
-from skyflow.utils.logger import log_error
 
 class SkyflowError(Exception):
     def __init__(self,
@@ -15,4 +14,4 @@ class SkyflowError(Exception):
         self.http_status = http_status if http_status else SkyflowMessages.HttpStatus.BAD_REQUEST.value
         self.details = details
         self.request_id = request_id
-        super().__init__()
+        super().__init__(message)

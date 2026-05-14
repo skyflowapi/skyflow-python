@@ -5,7 +5,7 @@ from skyflow.utils import construct_invoke_connection_request, SkyflowMessages, 
     parse_invoke_connection_response
 from skyflow.utils.logger import log_info, log_error_log
 from skyflow.vault.connection import InvokeConnectionRequest
-from skyflow.utils.constants import SKY_META_DATA_HEADER, SKYFLOW, HttpHeader
+from skyflow.utils.constants import SKY_META_DATA_HEADER, SKYFLOW, HttpHeader, OptionField, ConfigField
 from skyflow.utils import get_credentials
 
 
@@ -16,11 +16,11 @@ class Connection:
     def invoke(self, request: InvokeConnectionRequest):
         log_info(SkyflowMessages.Info.VALIDATING_INVOKE_CONNECTION_REQUEST.value, self.__vault_client.get_logger())
         config = self.__vault_client.get_config()
-        connection_url = config.get("connection_url")
+        connection_url = config.get(OptionField.CONNECTION_URL)
         invoke_connection_request = construct_invoke_connection_request(request, connection_url, self.__vault_client.get_logger())
         log_info(SkyflowMessages.Info.INVOKE_CONNECTION_REQUEST_RESOLVED.value, self.__vault_client.get_logger())
                 
-        credentials = get_credentials(config.get("credentials"), self.__vault_client.get_common_skyflow_credentials(), self.__vault_client.get_logger())
+        credentials = get_credentials(config.get(ConfigField.CREDENTIALS), self.__vault_client.get_common_skyflow_credentials(), self.__vault_client.get_logger())
 
         bearer_token = self.__vault_client.get_bearer_token(credentials)
 

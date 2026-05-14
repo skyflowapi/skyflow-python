@@ -62,9 +62,6 @@ class Skyflow:
     def get_log_level(self):
         return self.__builder._Builder__log_level
 
-    def update_log_level(self, log_level):
-        self.__builder._Builder__set_log_level(log_level)
-
     def vault(self, vault_id = None) -> Vault:
         vault_config = self.__builder.get_vault_config(vault_id)
         return vault_config.get(OptionField.VAULT_CONTROLLER)

@@ -722,6 +722,26 @@ class TestVault(unittest.TestCase):
         self.assertEqual(error.exception.message, SkyflowMessages.Error.MISSING_FILE_SOURCE.value)
         mock_validate.assert_called_once_with(self.vault_client.get_logger(), request)
 
+    @patch("skyflow.vault.controller._vault.validate_file_upload_request")
+    def test_upload_file_without_skyflow_id_successful(self, mock_validate):
+        """Test upload_file succeeds when skyflow_id is None (it is optional)."""
+        request = FileUploadRequest(
+            table="test_table",
+            column_name="file_column",
+            file_path="/path/to/test.txt",
+        )
+        mocked_open = mock_open_func(read_data=b"test file content")
+        mock_api_response = Mock()
+        mock_api_response.data = Mock(skyflow_id="generated-id-123")
+        records_api = self.vault_client.get_records_api.return_value
+        records_api.with_raw_response.upload_file_v_2.return_value = mock_api_response
+        with patch('builtins.open', mocked_open):
+            result = self.vault.upload_file(request)
+        mock_validate.assert_called_once_with(self.vault_client.get_logger(), request)
+        self.assertIsNone(request.skyflow_id)
+        self.assertEqual(result.skyflow_id, "generated-id-123")
+        self.assertIsNone(result.errors)
+
 class TestFileUploadValidation(unittest.TestCase):
     def setUp(self):
         self.logger = Mock()
@@ -874,3 +894,38 @@ class TestFileUploadValidation(unittest.TestCase):
         with self.assertRaises(SkyflowError) as error:
             validate_file_upload_request(self.logger, request)
         self.assertEqual(error.exception.message, SkyflowMessages.Error.MISSING_FILE_SOURCE.value)
+
+    def test_validate_none_skyflow_id_is_allowed(self):
+        """Test that skyflow_id=None passes validation (it is optional)."""
+        request = FileUploadRequest(
+            table="test_table",
+            column_name="file_column",
+            base64="dGVzdCBmaWxlIGNvbnRlbnQ=",
+            file_name="test.txt"
+        )
+        self.assertIsNone(request.skyflow_id)
+        validate_file_upload_request(self.logger, request)
+
+    @patch('os.path.exists')
+    @patch('os.path.isfile')
+    def test_validate_file_path_without_skyflow_id(self, mock_isfile, mock_exists):
+        """Test validation succeeds with file_path and no skyflow_id."""
+        mock_exists.return_value = True
+        mock_isfile.return_value = True
+        request = FileUploadRequest(
+            table="test_table",
+            column_name="file_column",
+            file_path="/path/to/file.txt"
+        )
+        validate_file_upload_request(self.logger, request)
+
+    def test_validate_file_object_without_skyflow_id(self):
+        """Test validation succeeds with file_object and no skyflow_id."""
+        mock_file = Mock()
+        mock_file.seek = Mock()
+        request = FileUploadRequest(
+            table="test_table",
+            column_name="file_column",
+            file_object=mock_file
+        )
+        validate_file_upload_request(self.logger, request)

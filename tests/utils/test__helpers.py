@@ -39,9 +39,10 @@ class TestHelperFunctions(unittest.TestCase):
 
     def test_is_valid_url_valid(self):
         self.assertTrue(is_valid_url("https://example.com"))
-        self.assertTrue(is_valid_url("http://example.com/path"))
+        self.assertTrue(is_valid_url("https://example.com/path"))
 
     def test_is_valid_url_invalid(self):
+        self.assertFalse(is_valid_url("http://example.com"))
         self.assertFalse(is_valid_url("ftp://example.com"))
         self.assertFalse(is_valid_url("example.com"))
         self.assertFalse(is_valid_url("invalid-url"))

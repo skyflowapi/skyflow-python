@@ -1,6 +1,6 @@
 class GetResponse:
     def __init__(self, data=None, errors = None):
-        self.data = data if data else []
+        self.data = data if data is not None else []
         self.errors = errors
 
     def __repr__(self):
