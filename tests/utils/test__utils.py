@@ -7,13 +7,32 @@ from requests import PreparedRequest
 from requests.models import HTTPError
 from skyflow.error import SkyflowError
 from skyflow.generated.rest import ErrorResponse
-from skyflow.service_account import generate_bearer_token, generate_signed_data_tokens, \
-    generate_signed_data_tokens_from_creds, generate_bearer_token_from_creds
-from skyflow.utils import get_credentials, SkyflowMessages, get_vault_url, construct_invoke_connection_request, \
-    parse_insert_response, parse_update_record_response, parse_delete_response, parse_get_response, \
-    parse_detokenize_response, parse_tokenize_response, parse_query_response, parse_invoke_connection_response, \
-    handle_exception, validate_api_key, encode_column_values, parse_deidentify_text_response, \
-    parse_reidentify_text_response, convert_detected_entity_to_entity_info
+from skyflow.service_account import (
+    generate_bearer_token,
+    generate_signed_data_tokens,
+    generate_signed_data_tokens_from_creds,
+    generate_bearer_token_from_creds,
+)
+from skyflow.utils import (
+    get_credentials,
+    SkyflowMessages,
+    get_vault_url,
+    construct_invoke_connection_request,
+    parse_insert_response,
+    parse_update_record_response,
+    parse_delete_response,
+    parse_get_response,
+    parse_detokenize_response,
+    parse_tokenize_response,
+    parse_query_response,
+    parse_invoke_connection_response,
+    handle_exception,
+    validate_api_key,
+    encode_column_values,
+    parse_deidentify_text_response,
+    parse_reidentify_text_response,
+    convert_detected_entity_to_entity_info,
+)
 from skyflow.utils._utils import parse_path_params, to_lowercase_keys, get_metrics, handle_json_error, r_urlencode
 from skyflow.utils.enums import EnvUrls, Env, ContentType
 from skyflow.vault.connection import InvokeConnectionResponse
@@ -21,19 +40,19 @@ from skyflow.vault.data import InsertResponse, DeleteResponse, GetResponse, Quer
 from skyflow.vault.tokens import DetokenizeResponse, TokenizeResponse
 
 creds_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "credentials.json")
-with open(creds_path, 'r') as file:
+with open(creds_path, "r") as file:
     credentials = json.load(file)
 
 TEST_ERROR_MESSAGE = "Test error message."
 VALID_ENV_CREDENTIALS = credentials
 
-class TestUtils(unittest.TestCase):
 
+class TestUtils(unittest.TestCase):
     @patch.dict(os.environ, {"SKYFLOW_CREDENTIALS": json.dumps(VALID_ENV_CREDENTIALS)})
     def test_get_credentials_env_variable(self):
         credentials = get_credentials()
-        credentials_string = credentials.get('credentials_string')
-        self.assertEqual(credentials_string, json.dumps(VALID_ENV_CREDENTIALS).replace('\n', '\\n'))
+        credentials_string = credentials.get("credentials_string")
+        self.assertEqual(credentials_string, json.dumps(VALID_ENV_CREDENTIALS).replace("\n", "\\n"))
 
     @patch("skyflow.utils._utils.dotenv.find_dotenv", return_value=None)
     @patch.dict(os.environ, {}, clear=True)
@@ -66,11 +85,13 @@ class TestUtils(unittest.TestCase):
         valid_vault_id = "vault123"
         with self.assertRaises(SkyflowError) as context:
             url = get_vault_url(valid_cluster_id, valid_env, valid_vault_id)
-        self.assertEqual(context.exception.message, SkyflowMessages.Error.INVALID_CLUSTER_ID.value.format(valid_vault_id))
+        self.assertEqual(
+            context.exception.message, SkyflowMessages.Error.INVALID_CLUSTER_ID.value.format(valid_vault_id)
+        )
 
     def test_get_vault_url_with_invalid_env(self):
         valid_cluster_id = "cluster_id"
-        valid_env =EnvUrls.DEV
+        valid_env = EnvUrls.DEV
         valid_vault_id = "vault123"
         with self.assertRaises(SkyflowError) as context:
             url = get_vault_url(valid_cluster_id, valid_env, valid_vault_id)
@@ -85,7 +106,7 @@ class TestUtils(unittest.TestCase):
                 "http_code": 400,
                 "http_status": "Bad Request",
                 "grpc_code": 3,
-                "details": ["detail1"]
+                "details": ["detail1"],
             }
         }
 
@@ -96,13 +117,7 @@ class TestUtils(unittest.TestCase):
         handle_json_error(mock_error, error_dict, request_id, mock_logger)
 
         mock_log_and_reject_error.assert_called_once_with(
-            "Dict error message",
-            400,
-            request_id,
-            "Bad Request",
-            3,
-            ["detail1"],
-            logger=mock_logger
+            "Dict error message", 400, request_id, "Bad Request", 3, ["detail1"], logger=mock_logger
         )
 
     @patch("skyflow.utils._utils.log_and_reject_error")
@@ -115,7 +130,7 @@ class TestUtils(unittest.TestCase):
                 "http_code": 403,
                 "http_status": "Forbidden",
                 "grpc_code": 7,
-                "details": ["detail2"]
+                "details": ["detail2"],
             }
         }
 
@@ -126,13 +141,7 @@ class TestUtils(unittest.TestCase):
         handle_json_error(mock_error, mock_error_response, request_id, mock_logger)
 
         mock_log_and_reject_error.assert_called_once_with(
-            "ErrorResponse message",
-            403,
-            request_id,
-            "Forbidden",
-            7,
-            ["detail2"],
-            logger=mock_logger
+            "ErrorResponse message", 403, request_id, "Forbidden", 7, ["detail2"], logger=mock_logger
         )
 
     def test_parse_path_params(self):
@@ -162,13 +171,14 @@ class TestUtils(unittest.TestCase):
 
     def test_get_metrics(self):
         metrics = get_metrics()
-        self.assertIn('sdk_name_version', metrics)
-        self.assertIn('sdk_client_device_model', metrics)
-        self.assertIn('sdk_client_os_details', metrics)
-        self.assertIn('sdk_runtime_details', metrics)
+        self.assertIn("sdk_name_version", metrics)
+        self.assertIn("sdk_client_device_model", metrics)
+        self.assertIn("sdk_client_os_details", metrics)
+        self.assertIn("sdk_runtime_details", metrics)
 
     def test_get_metrics_platform_node_exception(self):
         import skyflow.utils._utils as utils_module
+
         utils_module._CACHED_METRICS.clear()
         with patch("skyflow.utils._utils.platform") as mock_platform:
             mock_platform.node.side_effect = OSError("no node")
@@ -178,12 +188,14 @@ class TestUtils(unittest.TestCase):
 
     def test_get_metrics_sys_attribute_exception(self):
         import skyflow.utils._utils as utils_module
+
         utils_module._CACHED_METRICS.clear()
 
         class _RaisingSys:
             @property
             def platform(self):
                 raise RuntimeError("no platform")
+
             @property
             def version(self):
                 raise RuntimeError("no version")
@@ -193,7 +205,6 @@ class TestUtils(unittest.TestCase):
         self.assertEqual(metrics["sdk_client_os_details"], "")
         self.assertIn("sdk_runtime_details", metrics)
         utils_module._CACHED_METRICS.clear()
-
 
     def test_construct_invoke_connection_request_valid(self):
         mock_connection_request = Mock()
@@ -213,7 +224,7 @@ class TestUtils(unittest.TestCase):
         self.assertEqual(result.url, expected_url)
 
         self.assertEqual(result.method, "POST")
-        self.assertEqual(result.headers['Content-Type'], ContentType.JSON.value)
+        self.assertEqual(result.headers["Content-Type"], ContentType.JSON.value)
 
         self.assertEqual(result.body, json.dumps(mock_connection_request.body))
 
@@ -279,9 +290,7 @@ class TestUtils(unittest.TestCase):
         mock_connection_request = Mock()
         mock_connection_request.path_params = {"param1": "value1"}
         mock_connection_request.headers = {"Content-Type": ContentType.FORMDATA.value}
-        mock_connection_request.body = {
-            "name": (None, "John Doe")
-        }
+        mock_connection_request.body = {"name": (None, "John Doe")}
         mock_connection_request.method.value = "POST"
         mock_connection_request.query_params = {"query": "test"}
 
@@ -294,9 +303,11 @@ class TestUtils(unittest.TestCase):
     def test_parse_insert_response_with_tokens_continue_on_error(self):
         api_response = Mock()
         api_response.headers = {"x-request-id": "req-1"}
-        api_response.data = Mock(responses=[
-            {"Status": 200, "Body": {"records": [{"skyflow_id": "id1", "tokens": {"col1": "tok1"}}]}},
-        ])
+        api_response.data = Mock(
+            responses=[
+                {"Status": 200, "Body": {"records": [{"skyflow_id": "id1", "tokens": {"col1": "tok1"}}]}},
+            ]
+        )
         result = parse_insert_response(api_response, continue_on_error=True)
         self.assertEqual(result.inserted_fields[0]["col1"], "tok1")
         self.assertEqual(result.inserted_fields[0]["skyflow_id"], "id1")
@@ -304,10 +315,12 @@ class TestUtils(unittest.TestCase):
     def test_parse_insert_response(self):
         api_response = Mock()
         api_response.headers = {"x-request-id": "12345", "content-type": "application/json"}
-        api_response.data = Mock(responses=[
-            {"Status": 200, "Body": {"records": [{"skyflow_id": "id1"}]}},
-            {"Status": 400, "Body": {"error": TEST_ERROR_MESSAGE}}
-        ])
+        api_response.data = Mock(
+            responses=[
+                {"Status": 200, "Body": {"records": [{"skyflow_id": "id1"}]}},
+                {"Status": 400, "Body": {"error": TEST_ERROR_MESSAGE}},
+            ]
+        )
         result = parse_insert_response(api_response, continue_on_error=True)
         self.assertEqual(len(result.inserted_fields), 1)
         self.assertEqual(len(result.errors), 1)
@@ -321,17 +334,19 @@ class TestUtils(unittest.TestCase):
     def test_parse_insert_response_continue_on_error_false(self):
         mock_api_response = Mock()
         mock_api_response.headers = {"x-request-id": "12345", "content-type": "application/json"}
-        mock_api_response.data = Mock(records=[
-            Mock(skyflow_id="id_1", tokens={"token1": "token_value1"}),
-            Mock(skyflow_id="id_2", tokens={"token2": "token_value2"})
-        ])
+        mock_api_response.data = Mock(
+            records=[
+                Mock(skyflow_id="id_1", tokens={"token1": "token_value1"}),
+                Mock(skyflow_id="id_2", tokens={"token2": "token_value2"}),
+            ]
+        )
         result = parse_insert_response(mock_api_response, continue_on_error=False)
 
         self.assertIsInstance(result, InsertResponse)
 
         expected_inserted_fields = [
             {"skyflow_id": "id_1", "token1": "token_value1"},
-            {"skyflow_id": "id_2", "token2": "token_value2"}
+            {"skyflow_id": "id_2", "token2": "token_value2"},
         ]
         self.assertEqual(result.inserted_fields, expected_inserted_fields)
 
@@ -342,8 +357,8 @@ class TestUtils(unittest.TestCase):
         api_response.skyflow_id = "id1"
         api_response.tokens = {"token1": "value1"}
         result = parse_update_record_response(api_response)
-        self.assertEqual(result.updated_field['skyflow_id'], "id1")
-        self.assertEqual(result.updated_field['token1'], "value1")
+        self.assertEqual(result.updated_field["skyflow_id"], "id1")
+        self.assertEqual(result.updated_field["token1"], "value1")
 
     def test_parse_delete_response_successful(self):
         mock_api_response = Mock()
@@ -361,18 +376,15 @@ class TestUtils(unittest.TestCase):
     def test_parse_get_response_successful(self):
         mock_api_response = Mock()
         mock_api_response.records = [
-            Mock(fields={'field1': 'value1', 'field2': 'value2'}),
-            Mock(fields={'field1': 'value3', 'field2': 'value4'})
+            Mock(fields={"field1": "value1", "field2": "value2"}),
+            Mock(fields={"field1": "value3", "field2": "value4"}),
         ]
 
         result = parse_get_response(mock_api_response)
 
         self.assertIsInstance(result, GetResponse)
 
-        expected_data = [
-            {'field1': 'value1', 'field2': 'value2'},
-            {'field1': 'value3', 'field2': 'value4'}
-        ]
+        expected_data = [{"field1": "value1", "field2": "value2"}, {"field1": "value3", "field2": "value4"}]
         self.assertEqual(result.data, expected_data)
 
         # self.assertEqual(result.errors, None)
@@ -380,23 +392,23 @@ class TestUtils(unittest.TestCase):
     def test_parse_detokenize_response_with_mixed_records(self):
         mock_api_response = Mock()
         mock_api_response.headers = {"x-request-id": "12345", "content-type": "application/json"}
-        mock_api_response.data = Mock(records=[
-            Mock(token="token1", value="value1", value_type="Type1", error=None),
-            Mock(token="token2", value=None, value_type=None, error="Some error"),
-            Mock(token="token3", value="value3", value_type="Type2", error=None),     
-        ])
+        mock_api_response.data = Mock(
+            records=[
+                Mock(token="token1", value="value1", value_type="Type1", error=None),
+                Mock(token="token2", value=None, value_type=None, error="Some error"),
+                Mock(token="token3", value="value3", value_type="Type2", error=None),
+            ]
+        )
 
         result = parse_detokenize_response(mock_api_response)
         self.assertIsInstance(result, DetokenizeResponse)
 
         expected_detokenized_fields = [
             {"token": "token1", "value": "value1", "type": "Type1"},
-            {"token": "token3", "value": "value3", "type": "Type2"}
+            {"token": "token3", "value": "value3", "type": "Type2"},
         ]
 
-        expected_errors = [
-            {"token": "token2", "error": "Some error", "request_id": "12345"}
-        ]
+        expected_errors = [{"token": "token2", "error": "Some error", "request_id": "12345"}]
 
         self.assertEqual(result.detokenized_fields, expected_detokenized_fields)
         self.assertEqual(result.errors, expected_errors)
@@ -412,11 +424,7 @@ class TestUtils(unittest.TestCase):
         result = parse_tokenize_response(mock_api_response)
         self.assertIsInstance(result, TokenizeResponse)
 
-        expected_tokenized_fields = [
-            {"token": "token1"},
-            {"token": "token2"},
-            {"token": "token3"}
-        ]
+        expected_tokenized_fields = [{"token": "token1"}, {"token": "token2"}, {"token": "token3"}]
 
         self.assertEqual(result.tokenized_fields, expected_tokenized_fields)
 
@@ -424,7 +432,7 @@ class TestUtils(unittest.TestCase):
         mock_api_response = Mock()
         mock_api_response.records = [
             Mock(fields={"field1": "value1", "field2": "value2"}),
-            Mock(fields={"field1": "value3", "field2": "value4"})
+            Mock(fields={"field1": "value3", "field2": "value4"}),
         ]
 
         result = parse_query_response(mock_api_response)
@@ -433,7 +441,7 @@ class TestUtils(unittest.TestCase):
 
         expected_fields = [
             {"field1": "value1", "field2": "value2", "tokenized_data": {}},
-            {"field1": "value3", "field2": "value4", "tokenized_data": {}}
+            {"field1": "value3", "field2": "value4", "tokenized_data": {}},
         ]
 
         self.assertEqual(result.fields, expected_fields)
@@ -441,7 +449,7 @@ class TestUtils(unittest.TestCase):
     @patch("requests.Response")
     def test_parse_invoke_connection_response_successful(self, mock_response):
         mock_response.status_code = 200
-        mock_response.content = json.dumps({"key": "value"}).encode('utf-8')
+        mock_response.content = json.dumps({"key": "value"}).encode("utf-8")
         mock_response.headers = {"x-request-id": "1234"}
 
         result = parse_invoke_connection_response(mock_response)
@@ -455,7 +463,7 @@ class TestUtils(unittest.TestCase):
     def test_parse_invoke_connection_response_json_decode_error(self, mock_response):
         """Test that non-JSON content in successful response is returned as string."""
         mock_response.status_code = 200
-        mock_response.content = "Non-JSON Content".encode('utf-8')
+        mock_response.content = "Non-JSON Content".encode("utf-8")
         mock_response.headers = {"x-request-id": "1234"}
         mock_response.raise_for_status = Mock()
 
@@ -469,7 +477,7 @@ class TestUtils(unittest.TestCase):
     @patch("requests.Response")
     def test_parse_invoke_connection_response_http_error_with_json_error_message(self, mock_response):
         mock_response.status_code = 404
-        mock_response.content = json.dumps({"error": {"message": "Not Found"}}).encode('utf-8')
+        mock_response.content = json.dumps({"error": {"message": "Not Found"}}).encode("utf-8")
         mock_response.headers = {"x-request-id": "1234"}
 
         mock_response.raise_for_status.side_effect = HTTPError("404 Error")
@@ -483,16 +491,19 @@ class TestUtils(unittest.TestCase):
     @patch("requests.Response")
     def test_parse_invoke_connection_response_with_error_from_client_header(self, mock_response):
         from requests.models import HTTPError
+
         mock_response.status_code = 400
-        mock_response.content = json.dumps({
-            "error": {
-                "message": "Client error",
-                "http_code": 400,
-                "http_status": "Bad Request",
-                "grpc_code": 3,
-                "details": None,
+        mock_response.content = json.dumps(
+            {
+                "error": {
+                    "message": "Client error",
+                    "http_code": 400,
+                    "http_status": "Bad Request",
+                    "grpc_code": 3,
+                    "details": None,
+                }
             }
-        }).encode("utf-8")
+        ).encode("utf-8")
         mock_response.headers = {
             "x-request-id": "rid-1",
             "error-from-client": "true",
@@ -508,7 +519,7 @@ class TestUtils(unittest.TestCase):
     @patch("requests.Response")
     def test_parse_invoke_connection_response_http_error_without_json_error_message(self, mock_response):
         mock_response.status_code = 500
-        mock_response.content = "Internal Server Error".encode('utf-8')
+        mock_response.content = "Internal Server Error".encode("utf-8")
         mock_response.headers = {"x-request-id": "1234"}
 
         mock_response.raise_for_status.side_effect = HTTPError("500 Error")
@@ -524,31 +535,24 @@ class TestUtils(unittest.TestCase):
     def test_handle_exception_json_error(self, mock_log_and_reject_error):
 
         mock_error = Mock()
-        mock_error.headers = {
-            'x-request-id': '1234',
-            'content-type': 'application/json'
-        }
-        mock_error.body = json.dumps({
-            "error": {
-                "message": "JSON error occurred.",
-                "http_code": 400,
-                "http_status": "Bad Request",
-                "grpc_code": "8",
-                "details": "Detailed message"
+        mock_error.headers = {"x-request-id": "1234", "content-type": "application/json"}
+        mock_error.body = json.dumps(
+            {
+                "error": {
+                    "message": "JSON error occurred.",
+                    "http_code": 400,
+                    "http_status": "Bad Request",
+                    "grpc_code": "8",
+                    "details": "Detailed message",
+                }
             }
-        }).encode('utf-8')
+        ).encode("utf-8")
         mock_logger = Mock()
 
         handle_exception(mock_error, mock_logger)
 
         mock_log_and_reject_error.assert_called_once_with(
-            "JSON error occurred.",
-            400,
-            "1234",
-            "Bad Request",
-            "8",
-            "Detailed message",
-            logger=mock_logger
+            "JSON error occurred.", 400, "1234", "Bad Request", "8", "Detailed message", logger=mock_logger
         )
 
     def test_validate_api_key_valid_key(self):
@@ -584,12 +588,7 @@ class TestUtils(unittest.TestCase):
         mock_entity.value = "sensitive_value"
         mock_entity.entity_type = "EMAIL"
         mock_entity.entity_scores = {"EMAIL": 0.95}
-        mock_entity.location = Mock(
-            start_index=10,
-            end_index=20,
-            start_index_processed=15,
-            end_index_processed=25
-        )
+        mock_entity.location = Mock(start_index=10, end_index=20, start_index_processed=15, end_index_processed=25)
 
         mock_api_response = Mock()
         mock_api_response.processed_text = "Sample processed text"
@@ -646,10 +645,7 @@ class TestUtils(unittest.TestCase):
         mock_detected_entity.entity_type = "EMAIL"
         mock_detected_entity.entity_scores = {"EMAIL": 0.95}
         mock_detected_entity.location = Mock(
-            start_index=10,
-            end_index=20,
-            start_index_processed=15,
-            end_index_processed=25
+            start_index=10, end_index=20, start_index_processed=15, end_index_processed=25
         )
 
         result = convert_detected_entity_to_entity_info(mock_detected_entity)
@@ -670,12 +666,7 @@ class TestUtils(unittest.TestCase):
         mock_detected_entity.value = None
         mock_detected_entity.entity_type = "UNKNOWN"
         mock_detected_entity.entity_scores = {}
-        mock_detected_entity.location = Mock(
-            start_index=0,
-            end_index=0,
-            start_index_processed=0,
-            end_index_processed=0
-        )
+        mock_detected_entity.location = Mock(start_index=0, end_index=0, start_index_processed=0, end_index_processed=0)
 
         result = convert_detected_entity_to_entity_info(mock_detected_entity)
 
@@ -688,21 +679,18 @@ class TestUtils(unittest.TestCase):
         self.assertEqual(result.processed_index.start, 0)
         self.assertEqual(result.processed_index.end, 0)
 
-
     @patch("skyflow.utils._utils.log_and_reject_error")
     def test_handle_exception_connect_error(self, mock_log_and_reject_error):
         """Test handling httpx.ConnectError."""
         import httpx
+
         mock_error = httpx.ConnectError("Connection refused")
         mock_logger = Mock()
 
         handle_exception(mock_error, mock_logger)
 
         mock_log_and_reject_error.assert_called_once_with(
-            'Connection refused',
-            SkyflowMessages.ErrorCodes.INVALID_INPUT.value,
-            None,
-            logger=mock_logger
+            "Connection refused", SkyflowMessages.ErrorCodes.INVALID_INPUT.value, None, logger=mock_logger
         )
 
     @patch("skyflow.utils._utils.log_and_reject_error")
@@ -714,10 +702,7 @@ class TestUtils(unittest.TestCase):
         handle_exception(mock_error, mock_logger)
 
         mock_log_and_reject_error.assert_called_once_with(
-            "Generic error",
-            SkyflowMessages.ErrorCodes.SERVER_ERROR.value,
-            None,
-            logger=mock_logger
+            "Generic error", SkyflowMessages.ErrorCodes.SERVER_ERROR.value, None, logger=mock_logger
         )
 
     @patch("skyflow.utils._utils.log_and_reject_error")
@@ -725,89 +710,67 @@ class TestUtils(unittest.TestCase):
         """Test handling error without body attribute."""
         mock_error = Mock()
         mock_error.headers = {"x-request-id": "12345"}
-        delattr(mock_error, 'body')
+        delattr(mock_error, "body")
         mock_logger = Mock()
 
         handle_exception(mock_error, mock_logger)
 
         mock_log_and_reject_error.assert_called_once()
-        self.assertEqual(
-            mock_log_and_reject_error.call_args[0][1],
-            SkyflowMessages.ErrorCodes.SERVER_ERROR.value
-        )
+        self.assertEqual(mock_log_and_reject_error.call_args[0][1], SkyflowMessages.ErrorCodes.SERVER_ERROR.value)
 
     @patch("skyflow.utils._utils.log_and_reject_error")
     def test_handle_exception_text_plain_error(self, mock_log_and_reject_error):
         """Test handling text/plain content type error."""
         mock_error = Mock()
-        mock_error.headers = {
-            'x-request-id': '1234',
-            'content-type': 'text/plain'
-        }
+        mock_error.headers = {"x-request-id": "1234", "content-type": "text/plain"}
         mock_error.body = "Plain text error message"
         mock_error.status = 500
         mock_logger = Mock()
 
         handle_exception(mock_error, mock_logger)
 
-        mock_log_and_reject_error.assert_called_once_with(
-            "Plain text error message",
-            500,
-            "1234",
-            logger=mock_logger
-        )
+        mock_log_and_reject_error.assert_called_once_with("Plain text error message", 500, "1234", logger=mock_logger)
 
     @patch("skyflow.utils._utils.log_and_reject_error")
     def test_handle_exception_generic_error_with_status(self, mock_log_and_reject_error):
         """Test handling generic error with unknown content type."""
         mock_error = Mock()
-        mock_error.headers = {
-            'x-request-id': '1234',
-            'content-type': 'application/xml'
-        }
+        mock_error.headers = {"x-request-id": "1234", "content-type": "application/xml"}
         mock_error.body = "<error>XML error</error>"
         mock_error.status = 503
         mock_logger = Mock()
 
         handle_exception(mock_error, mock_logger)
 
-        mock_log_and_reject_error.assert_called_once_with(
-            str(mock_error),
-            503,
-            "1234",
-            logger=mock_logger
-        )
+        mock_log_and_reject_error.assert_called_once_with(str(mock_error), 503, "1234", logger=mock_logger)
 
     @patch("skyflow.utils._utils.log_and_reject_error")
     def test_handle_exception_no_content_type(self, mock_log_and_reject_error):
         """Test handling error without content-type header."""
         mock_error = Mock()
-        mock_error.headers = {'x-request-id': '1234'}
+        mock_error.headers = {"x-request-id": "1234"}
         mock_error.body = "Some error"
         mock_error.status = 500
         mock_logger = Mock()
 
         handle_exception(mock_error, mock_logger)
 
-        mock_log_and_reject_error.assert_called_once_with(
-            str(mock_error),
-            500,
-            "1234",
-            logger=mock_logger
-        )
+        mock_log_and_reject_error.assert_called_once_with(str(mock_error), 500, "1234", logger=mock_logger)
 
     @patch("skyflow.utils._utils.log_and_reject_error")
     def test_handle_json_error_with_json_string(self, mock_log_and_reject_error):
         """Test handling JSON error when data is a JSON string."""
-        error_json_string = json.dumps({
-            "error": {
-                "message": "String JSON error",
-                "http_code": 422,
-                "http_status": "Unprocessable Entity",
-                "grpc_code": 3,
-                "details": ["validation failed"]
+        error_json_string = json.dumps(
+            {
+                "error": {
+                    "message": "String JSON error",
+                    "http_code": 422,
+                    "http_status": "Unprocessable Entity",
+                    "grpc_code": 3,
+                    "details": ["validation failed"],
+                }
             }
-        })
+        )
 
         mock_error = Mock()
         mock_logger = Mock()
@@ -816,13 +779,7 @@ class TestUtils(unittest.TestCase):
         handle_json_error(mock_error, error_json_string, request_id, mock_logger)
 
         mock_log_and_reject_error.assert_called_once_with(
-            "String JSON error",
-            422,
-            request_id,
-            "Unprocessable Entity",
-            3,
-            ["validation failed"],
-            logger=mock_logger
+            "String JSON error", 422, request_id, "Unprocessable Entity", 3, ["validation failed"], logger=mock_logger
         )
 
     @patch("skyflow.utils._utils.log_and_reject_error")
@@ -838,17 +795,12 @@ class TestUtils(unittest.TestCase):
 
         # Should call with INVALID_JSON_RESPONSE error
         mock_log_and_reject_error.assert_called_once()
-        self.assertEqual(
-            mock_log_and_reject_error.call_args[0][0],
-            SkyflowMessages.Error.INVALID_JSON_RESPONSE.value
-        )
+        self.assertEqual(mock_log_and_reject_error.call_args[0][0], SkyflowMessages.Error.INVALID_JSON_RESPONSE.value)
 
     @patch("skyflow.utils._utils.log_and_reject_error")
     def test_handle_json_error_missing_error_field(self, mock_log_and_reject_error):
         """Test handling JSON error with missing error field."""
-        error_dict = {
-            "message": "Error without error wrapper"
-        }
+        error_dict = {"message": "Error without error wrapper"}
 
         mock_error = Mock()
         mock_logger = Mock()
@@ -875,14 +827,10 @@ class TestUtils(unittest.TestCase):
         error_data = "Resource not found"
 
         from skyflow.utils._utils import handle_text_error
+
         handle_text_error(mock_error, error_data, request_id, mock_logger)
 
-        mock_log_and_reject_error.assert_called_once_with(
-            "Resource not found",
-            404,
-            request_id,
-            logger=mock_logger
-        )
+        mock_log_and_reject_error.assert_called_once_with("Resource not found", 404, request_id, logger=mock_logger)
 
     @patch("skyflow.utils._utils.log_and_reject_error")
     def test_handle_generic_error_with_status(self, mock_log_and_reject_error):
@@ -893,14 +841,10 @@ class TestUtils(unittest.TestCase):
         status = 503
 
         from skyflow.utils._utils import handle_generic_error_with_status
+
         handle_generic_error_with_status(mock_error, request_id, status, mock_logger)
 
-        mock_log_and_reject_error.assert_called_once_with(
-            str(mock_error),
-            503,
-            request_id,
-            logger=mock_logger
-        )
+        mock_log_and_reject_error.assert_called_once_with(str(mock_error), 503, request_id, logger=mock_logger)
 
     @patch("skyflow.utils._utils.log_and_reject_error")
     def test_handle_exception_with_none_error(self, mock_log_and_reject_error):
@@ -913,10 +857,10 @@ class TestUtils(unittest.TestCase):
             SkyflowMessages.Error.GENERIC_API_ERROR.value,
             SkyflowMessages.ErrorCodes.SERVER_ERROR.value,
             None,
-            logger=mock_logger
+            logger=mock_logger,
         )
 
-    #failed
+    # failed
     @patch("skyflow.utils._utils.log_and_reject_error")
     def test_handle_exception_with_empty_string_error(self, mock_log_and_reject_error):
         """Test handling empty string error."""
@@ -929,22 +873,13 @@ class TestUtils(unittest.TestCase):
 
         mock_log_and_reject_error.assert_called_once()
         # Should use str(error) or default message
-        self.assertEqual(
-            mock_log_and_reject_error.call_args[0][1],
-            SkyflowMessages.ErrorCodes.SERVER_ERROR.value
-        )
+        self.assertEqual(mock_log_and_reject_error.call_args[0][1], SkyflowMessages.ErrorCodes.SERVER_ERROR.value)
 
     @patch("skyflow.utils._utils.log_and_reject_error")
     def test_handle_json_error_with_bytes_data(self, mock_log_and_reject_error):
         """Test handling JSON error when data is bytes."""
-        error_dict = {
-            "error": {
-                "message": "Bytes error",
-                "http_code": 401,
-                "http_status": "Unauthorized"
-            }
-        }
-        error_bytes = json.dumps(error_dict).encode('utf-8')
+        error_dict = {"error": {"message": "Bytes error", "http_code": 401, "http_status": "Unauthorized"}}
+        error_bytes = json.dumps(error_dict).encode("utf-8")
 
         mock_error = Mock()
         mock_logger = Mock()
@@ -953,13 +888,7 @@ class TestUtils(unittest.TestCase):
         handle_json_error(mock_error, error_bytes, request_id, mock_logger)
 
         mock_log_and_reject_error.assert_called_once_with(
-            "Bytes error",
-            401,
-            request_id,
-            "Unauthorized",
-            None,
-            [],
-            logger=mock_logger
+            "Bytes error", 401, request_id, "Unauthorized", None, [], logger=mock_logger
         )
 
         # Add these new test methods to the TestUtils class:
@@ -979,7 +908,7 @@ class TestUtils(unittest.TestCase):
 
         self.assertIsInstance(result, PreparedRequest)
         # Headers should be None when not provided
-        self.assertIsNone(result.headers.get('Content-Type'))
+        self.assertIsNone(result.headers.get("Content-Type"))
 
     def test_construct_invoke_connection_request_with_xml_content_type(self):
         """Test construct_invoke_connection_request with XML content type."""
@@ -995,10 +924,10 @@ class TestUtils(unittest.TestCase):
         result = construct_invoke_connection_request(mock_connection_request, connection_url, logger=None)
 
         self.assertIsInstance(result, PreparedRequest)
-        self.assertEqual(result.headers['content-type'], 'application/xml')
+        self.assertEqual(result.headers["content-type"], "application/xml")
         # Body should be converted to XML
-        self.assertIn('<root>', result.body)
-        self.assertIn('<child>value</child>', result.body)
+        self.assertIn("<root>", result.body)
+        self.assertIn("<child>value</child>", result.body)
 
     def test_construct_invoke_connection_request_with_html_content_type(self):
         """Test construct_invoke_connection_request with HTML content type."""
@@ -1014,7 +943,7 @@ class TestUtils(unittest.TestCase):
         result = construct_invoke_connection_request(mock_connection_request, connection_url, logger=None)
 
         self.assertIsInstance(result, PreparedRequest)
-        self.assertEqual(result.headers['content-type'], 'text/html')
+        self.assertEqual(result.headers["content-type"], "text/html")
         # Body should be JSON string for HTML
         self.assertEqual(result.body, json.dumps({"message": "Hello"}))
 
@@ -1033,8 +962,8 @@ class TestUtils(unittest.TestCase):
 
         self.assertIsInstance(result, PreparedRequest)
         # Content-Type should be auto-generated by requests library
-        self.assertIn('multipart/form-data', result.headers.get('Content-Type', ''))
-        self.assertIn('boundary=', result.headers.get('Content-Type', ''))
+        self.assertIn("multipart/form-data", result.headers.get("Content-Type", ""))
+        self.assertIn("boundary=", result.headers.get("Content-Type", ""))
 
     def test_construct_invoke_connection_request_with_no_body(self):
         """Test construct_invoke_connection_request when body is None."""
@@ -1201,10 +1130,7 @@ class TestUtils(unittest.TestCase):
         """Test parsing XML response content."""
         mock_response.status_code = 200
         mock_response.content = b"<response><status>success</status></response>"
-        mock_response.headers = {
-            "x-request-id": "1234",
-            "content-type": "application/xml"
-        }
+        mock_response.headers = {"x-request-id": "1234", "content-type": "application/xml"}
         mock_response.raise_for_status = Mock()
 
         result = parse_invoke_connection_response(mock_response)
@@ -1219,10 +1145,7 @@ class TestUtils(unittest.TestCase):
         """Test parsing URL encoded response content."""
         mock_response.status_code = 200
         mock_response.content = b"card_number=4111111111111111&cvv=123"
-        mock_response.headers = {
-            "x-request-id": "1234",
-            "content-type": "application/x-www-form-urlencoded"
-        }
+        mock_response.headers = {"x-request-id": "1234", "content-type": "application/x-www-form-urlencoded"}
         mock_response.raise_for_status = Mock()
 
         result = parse_invoke_connection_response(mock_response)
@@ -1237,10 +1160,7 @@ class TestUtils(unittest.TestCase):
         """Test parsing HTML response content."""
         mock_response.status_code = 200
         mock_response.content = b"<html><body>Success</body></html>"
-        mock_response.headers = {
-            "x-request-id": "1234",
-            "content-type": "text/html"
-        }
+        mock_response.headers = {"x-request-id": "1234", "content-type": "text/html"}
         mock_response.raise_for_status = Mock()
 
         result = parse_invoke_connection_response(mock_response)
@@ -1255,11 +1175,8 @@ class TestUtils(unittest.TestCase):
         """Test parsing HTML error response."""
         html_error = "<!DOCTYPE html><html><body><h1>Error 500</h1></body></html>"
         mock_response.status_code = 500
-        mock_response.content = html_error.encode('utf-8')
-        mock_response.headers = {
-            "x-request-id": "1234",
-            "content-type": "text/html"
-        }
+        mock_response.content = html_error.encode("utf-8")
+        mock_response.headers = {"x-request-id": "1234", "content-type": "text/html"}
         mock_response.raise_for_status = Mock(side_effect=HTTPError("500 Error"))
 
         with self.assertRaises(SkyflowError) as context:
@@ -1274,10 +1191,7 @@ class TestUtils(unittest.TestCase):
         """Test that JSON decode error falls back to returning string content."""
         mock_response.status_code = 200
         mock_response.content = b"Not valid JSON but still success"
-        mock_response.headers = {
-            "x-request-id": "1234",
-            "content-type": "application/json"
-        }
+        mock_response.headers = {"x-request-id": "1234", "content-type": "application/json"}
         mock_response.raise_for_status = Mock()
 
         result = parse_invoke_connection_response(mock_response)
@@ -1291,7 +1205,7 @@ class TestUtils(unittest.TestCase):
     def test_parse_invoke_connection_response_no_content_type_with_json(self, mock_response):
         """Test parsing response with no content-type but valid JSON."""
         mock_response.status_code = 200
-        mock_response.content = json.dumps({"success": True}).encode('utf-8')
+        mock_response.content = json.dumps({"success": True}).encode("utf-8")
         mock_response.headers = {"x-request-id": "1234"}
         mock_response.raise_for_status = Mock()
 
@@ -1322,10 +1236,7 @@ class TestUtils(unittest.TestCase):
         """Test parsing response with bytes content."""
         mock_response.status_code = 200
         mock_response.content = b"Binary data response"
-        mock_response.headers = {
-            "x-request-id": "1234",
-            "content-type": "application/octet-stream"
-        }
+        mock_response.headers = {"x-request-id": "1234", "content-type": "application/octet-stream"}
         mock_response.raise_for_status = Mock()
 
         result = parse_invoke_connection_response(mock_response)
@@ -1351,7 +1262,7 @@ class TestUtils(unittest.TestCase):
 
         connection_url = "https://example.com/endpoint"
 
-        with patch('json.dumps', side_effect=TypeError("Object is not JSON serializable")):
+        with patch("json.dumps", side_effect=TypeError("Object is not JSON serializable")):
             with self.assertRaises(SkyflowError) as context:
                 construct_invoke_connection_request(mock_connection_request, connection_url, logger=None)
 
@@ -1369,7 +1280,7 @@ class TestUtils(unittest.TestCase):
 
         connection_url = "https://example.com/endpoint"
 
-        with patch('skyflow.utils._utils.to_lowercase_keys', side_effect=Exception("Generic error")):
+        with patch("skyflow.utils._utils.to_lowercase_keys", side_effect=Exception("Generic error")):
             with self.assertRaises(SkyflowError) as context:
                 construct_invoke_connection_request(mock_connection_request, connection_url, logger=None)
 
@@ -1387,7 +1298,7 @@ class TestUtils(unittest.TestCase):
 
         connection_url = "https://example.com/endpoint"
 
-        with patch('skyflow.utils._utils.get_data_from_content_type', side_effect=Exception("Body processing error")):
+        with patch("skyflow.utils._utils.get_data_from_content_type", side_effect=Exception("Body processing error")):
             with self.assertRaises(SkyflowError) as context:
                 construct_invoke_connection_request(mock_connection_request, connection_url, logger=None)
 
@@ -1426,7 +1337,7 @@ class TestUtils(unittest.TestCase):
 
         connection_url = "https://example.com/endpoint"
 
-        with patch('requests.Request') as mock_request_class:
+        with patch("requests.Request") as mock_request_class:
             mock_request_instance = Mock()
             mock_request_instance.prepare.side_effect = Exception("Invalid URL structure")
             mock_request_class.return_value = mock_request_instance
@@ -1434,10 +1345,7 @@ class TestUtils(unittest.TestCase):
             with self.assertRaises(SkyflowError) as context:
                 construct_invoke_connection_request(mock_connection_request, connection_url, logger=None)
 
-            self.assertEqual(
-                context.exception.message,
-                SkyflowMessages.Error.INVALID_URL.value.format(connection_url)
-            )
+            self.assertEqual(context.exception.message, SkyflowMessages.Error.INVALID_URL.value.format(connection_url))
             self.assertEqual(context.exception.http_code, SkyflowMessages.ErrorCodes.INVALID_INPUT.value)
 
     def test_construct_invoke_connection_request_prepare_exception(self):
@@ -1451,7 +1359,7 @@ class TestUtils(unittest.TestCase):
 
         connection_url = "https://example.com/endpoint"
 
-        with patch('requests.Request') as mock_request_class:
+        with patch("requests.Request") as mock_request_class:
             mock_request_instance = Mock()
             mock_request_instance.prepare.side_effect = Exception("Prepare failed")
             mock_request_class.return_value = mock_request_instance
@@ -1459,10 +1367,7 @@ class TestUtils(unittest.TestCase):
             with self.assertRaises(SkyflowError) as context:
                 construct_invoke_connection_request(mock_connection_request, connection_url, logger=None)
 
-            self.assertEqual(
-                context.exception.message,
-                SkyflowMessages.Error.INVALID_URL.value.format(connection_url)
-            )
+            self.assertEqual(context.exception.message, SkyflowMessages.Error.INVALID_URL.value.format(connection_url))
             self.assertEqual(context.exception.http_code, SkyflowMessages.ErrorCodes.INVALID_INPUT.value)
 
     def test_construct_invoke_connection_request_body_not_dict_raises_error(self):
@@ -1482,7 +1387,7 @@ class TestUtils(unittest.TestCase):
         self.assertEqual(context.exception.message, SkyflowMessages.Error.INVALID_REQUEST_BODY.value)
         self.assertEqual(context.exception.http_code, SkyflowMessages.ErrorCodes.INVALID_INPUT.value)
 
-    @patch('skyflow.utils._utils.validate_invoke_connection_params')
+    @patch("skyflow.utils._utils.validate_invoke_connection_params")
     def test_construct_invoke_connection_request_validation_exception(self, mock_validate):
         """Test that validation exceptions are properly propagated."""
         mock_connection_request = Mock()
@@ -1501,15 +1406,16 @@ class TestUtils(unittest.TestCase):
 
         self.assertEqual(context.exception.message, "Validation failed")
         self.assertEqual(context.exception.http_code, 400)
+
     def test_generate_bearer_token_invalid_token_uri_type(self):
         creds = {
-            'privateKey': 'private_key',
-            'clientID': 'client_id',
-            'keyID': 'key_id',
-            'tokenURI': 12345  # invalid type
+            "privateKey": "private_key",
+            "clientID": "client_id",
+            "keyID": "key_id",
+            "tokenURI": 12345,  # invalid type
         }
 
-        with tempfile.NamedTemporaryFile(mode='w+', delete=False) as tmp:
+        with tempfile.NamedTemporaryFile(mode="w+", delete=False) as tmp:
             json.dump(creds, tmp)
             tmp.flush()
             with self.assertRaises(SkyflowError) as context:
@@ -1517,13 +1423,8 @@ class TestUtils(unittest.TestCase):
             self.assertEqual(context.exception.message, SkyflowMessages.Error.INVALID_TOKEN_URI.value)
 
     def test_generate_bearer_token_invalid_token_uri_url(self):
-        creds = {
-            'privateKey': 'private_key',
-            'clientID': 'client_id',
-            'keyID': 'key_id',
-            'tokenURI': 'not_a_url'
-        }
-        with tempfile.NamedTemporaryFile(mode='w+', delete=False) as tmp:
+        creds = {"privateKey": "private_key", "clientID": "client_id", "keyID": "key_id", "tokenURI": "not_a_url"}
+        with tempfile.NamedTemporaryFile(mode="w+", delete=False) as tmp:
             json.dump(creds, tmp)
             tmp.flush()
             with self.assertRaises(SkyflowError) as context:
@@ -1532,13 +1433,13 @@ class TestUtils(unittest.TestCase):
 
     def test_generate_bearer_token_options_override_token_uri(self):
         creds = {
-            'privateKey': 'private_key',
-            'clientID': 'client_id',
-            'keyID': 'key_id',
-            'tokenURI': 'https://valid-url.com'
+            "privateKey": "private_key",
+            "clientID": "client_id",
+            "keyID": "key_id",
+            "tokenURI": "https://valid-url.com",
         }
         options = {"token_uri": "https://another-valid-url.com"}
-        with tempfile.NamedTemporaryFile(mode='w+', delete=False) as tmp:
+        with tempfile.NamedTemporaryFile(mode="w+", delete=False) as tmp:
             json.dump(creds, tmp)
             tmp.flush()
             # Patch AuthClient and jwt.encode to avoid real HTTP and signing
@@ -1546,32 +1447,22 @@ class TestUtils(unittest.TestCase):
                 mock_get_signed_jwt.return_value = "signed"
                 with patch("skyflow.service_account._utils.AuthClient") as mock_auth_client:
                     mock_auth_api = mock_auth_client.return_value.get_auth_api.return_value
-                    mock_auth_api.authentication_service_get_auth_token.return_value = type("obj", (),
-                                                                                            {"access_token": "token",
-                                                                                             "token_type": "bearer"})
+                    mock_auth_api.authentication_service_get_auth_token.return_value = type(
+                        "obj", (), {"access_token": "token", "token_type": "bearer"}
+                    )
                     generate_bearer_token(tmp.name, options)
                     args, kwargs = mock_get_signed_jwt.call_args
                     self.assertEqual(args[3], options["token_uri"])
 
     def test_generate_bearer_token_from_creds_invalid_token_uri_type(self):
-        creds = {
-            'privateKey': 'private_key',
-            'clientID': 'client_id',
-            'keyID': 'key_id',
-            'tokenURI': 12345
-        }
+        creds = {"privateKey": "private_key", "clientID": "client_id", "keyID": "key_id", "tokenURI": 12345}
         creds_str = json.dumps(creds)
         with self.assertRaises(SkyflowError) as context:
             generate_bearer_token_from_creds(creds_str)
         self.assertEqual(context.exception.message, SkyflowMessages.Error.INVALID_TOKEN_URI.value)
 
     def test_generate_bearer_token_from_creds_invalid_token_uri_url(self):
-        creds = {
-            'privateKey': 'private_key',
-            'clientID': 'client_id',
-            'keyID': 'key_id',
-            'tokenURI': 'not_a_url'
-        }
+        creds = {"privateKey": "private_key", "clientID": "client_id", "keyID": "key_id", "tokenURI": "not_a_url"}
         creds_str = json.dumps(creds)
         with self.assertRaises(SkyflowError) as context:
             generate_bearer_token_from_creds(creds_str)
@@ -1579,10 +1470,10 @@ class TestUtils(unittest.TestCase):
 
     def test_generate_bearer_token_from_creds_options_override_token_uri(self):
         creds = {
-            'privateKey': 'private_key',
-            'clientID': 'client_id',
-            'keyID': 'key_id',
-            'tokenURI': 'https://valid-url.com'
+            "privateKey": "private_key",
+            "clientID": "client_id",
+            "keyID": "key_id",
+            "tokenURI": "https://valid-url.com",
         }
         options = {"token_uri": "https://another-valid-url.com"}
         creds_str = json.dumps(creds)
@@ -1590,22 +1481,17 @@ class TestUtils(unittest.TestCase):
             mock_get_signed_jwt.return_value = "signed"
             with patch("skyflow.service_account._utils.AuthClient") as mock_auth_client:
                 mock_auth_api = mock_auth_client.return_value.get_auth_api.return_value
-                mock_auth_api.authentication_service_get_auth_token.return_value = type("obj", (),
-                                                                                        {"access_token": "token",
-                                                                                         "token_type": "bearer"})
+                mock_auth_api.authentication_service_get_auth_token.return_value = type(
+                    "obj", (), {"access_token": "token", "token_type": "bearer"}
+                )
                 generate_bearer_token_from_creds(creds_str, options)
                 args, kwargs = mock_get_signed_jwt.call_args
                 self.assertEqual(args[3], options["token_uri"])
 
     def test_generate_signed_data_tokens_invalid_token_uri_type(self):
-        creds = {
-            'privateKey': 'private_key',
-            'clientID': 'client_id',
-            'keyID': 'key_id',
-            'tokenURI': 12345
-        }
+        creds = {"privateKey": "private_key", "clientID": "client_id", "keyID": "key_id", "tokenURI": 12345}
         options = {"data_tokens": ["token1"]}
-        with tempfile.NamedTemporaryFile(mode='w+', delete=False) as tmp:
+        with tempfile.NamedTemporaryFile(mode="w+", delete=False) as tmp:
             json.dump(creds, tmp)
             tmp.flush()
             with self.assertRaises(SkyflowError) as context:
@@ -1613,14 +1499,9 @@ class TestUtils(unittest.TestCase):
             self.assertEqual(context.exception.message, SkyflowMessages.Error.INVALID_TOKEN_URI.value)
 
     def test_generate_signed_data_tokens_invalid_token_uri_url(self):
-        creds = {
-            'privateKey': 'private_key',
-            'clientID': 'client_id',
-            'keyID': 'key_id',
-            'tokenURI': 'not_a_url'
-        }
+        creds = {"privateKey": "private_key", "clientID": "client_id", "keyID": "key_id", "tokenURI": "not_a_url"}
         options = {"data_tokens": ["token1"]}
-        with tempfile.NamedTemporaryFile(mode='w+', delete=False) as tmp:
+        with tempfile.NamedTemporaryFile(mode="w+", delete=False) as tmp:
             json.dump(creds, tmp)
             tmp.flush()
             with self.assertRaises(SkyflowError) as context:
@@ -1628,12 +1509,7 @@ class TestUtils(unittest.TestCase):
             self.assertEqual(context.exception.message, SkyflowMessages.Error.INVALID_TOKEN_URI.value)
 
     def test_generate_signed_data_tokens_from_creds_invalid_token_uri_type(self):
-        creds = {
-            'privateKey': 'private_key',
-            'clientID': 'client_id',
-            'keyID': 'key_id',
-            'tokenURI': 12345
-        }
+        creds = {"privateKey": "private_key", "clientID": "client_id", "keyID": "key_id", "tokenURI": 12345}
         options = {"data_tokens": ["token1"]}
         creds_str = json.dumps(creds)
         with self.assertRaises(SkyflowError) as context:
@@ -1641,12 +1517,7 @@ class TestUtils(unittest.TestCase):
         self.assertEqual(context.exception.message, SkyflowMessages.Error.INVALID_TOKEN_URI.value)
 
     def test_generate_signed_data_tokens_from_creds_invalid_token_uri_url(self):
-        creds = {
-            'privateKey': 'private_key',
-            'clientID': 'client_id',
-            'keyID': 'key_id',
-            'tokenURI': 'not_a_url'
-        }
+        creds = {"privateKey": "private_key", "clientID": "client_id", "keyID": "key_id", "tokenURI": "not_a_url"}
         options = {"data_tokens": ["token1"]}
         creds_str = json.dumps(creds)
         with self.assertRaises(SkyflowError) as context:
@@ -1655,13 +1526,13 @@ class TestUtils(unittest.TestCase):
 
     def test_generate_signed_data_tokens_options_override_token_uri(self):
         creds = {
-            'privateKey': 'private_key',
-            'clientID': 'client_id',
-            'keyID': 'key_id',
-            'tokenURI': 'https://valid-url.com'
+            "privateKey": "private_key",
+            "clientID": "client_id",
+            "keyID": "key_id",
+            "tokenURI": "https://valid-url.com",
         }
         options = {"data_tokens": ["token1"], "token_uri": "https://another-valid-url.com"}
-        with tempfile.NamedTemporaryFile(mode='w+', delete=False) as tmp:
+        with tempfile.NamedTemporaryFile(mode="w+", delete=False) as tmp:
             json.dump(creds, tmp)
             tmp.flush()
             with patch("jwt.encode") as mock_jwt_encode:
@@ -1669,15 +1540,15 @@ class TestUtils(unittest.TestCase):
                 result = generate_signed_data_tokens(tmp.name, options)
                 self.assertIsInstance(result, list)
                 self.assertEqual(len(result), 1)
-                self.assertEqual(result[0]["token"], "token1")
-                self.assertEqual(result[0]["signed_token"], "signed_token_signed")
+                self.assertEqual(result[0][0], "token1")
+                self.assertEqual(result[0][1], "signed_token_signed")
 
     def test_generate_signed_data_tokens_from_creds_options_override_token_uri(self):
         creds = {
-            'privateKey': 'private_key',
-            'clientID': 'client_id',
-            'keyID': 'key_id',
-            'tokenURI': 'https://valid-url.com'
+            "privateKey": "private_key",
+            "clientID": "client_id",
+            "keyID": "key_id",
+            "tokenURI": "https://valid-url.com",
         }
         options = {"data_tokens": ["token1"], "token_uri": "https://another-valid-url.com"}
         creds_str = json.dumps(creds)
@@ -1686,5 +1557,5 @@ class TestUtils(unittest.TestCase):
             result = generate_signed_data_tokens_from_creds(creds_str, options)
             self.assertIsInstance(result, list)
             self.assertEqual(len(result), 1)
-            self.assertEqual(result[0]["token"], "token1")
-            self.assertEqual(result[0]["signed_token"], "signed_token_signed")
+            self.assertEqual(result[0][0], "token1")
+            self.assertEqual(result[0][1], "signed_token_signed")
