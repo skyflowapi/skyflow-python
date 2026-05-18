@@ -414,6 +414,15 @@ class SkyflowMessages:
 
     class Warning(Enum):
         WARNING_MESSAGE = "WARNING MESSAGE"
+        UPDATE_LOG_LEVEL_DEPRECATED = (
+            "[DEPRECATED] Skyflow.update_log_level() is deprecated. "
+            "Use Skyflow.set_log_level() instead — identical behavior."
+        )
+        FILE_UPLOAD_REQUEST_ARG_ORDER_DEPRECATED = (
+            "[DEPRECATED] FileUploadRequest: argument order changed. "
+            "Old positional order: (table, skyflow_id, column_name). "
+            "New order: FileUploadRequest(table, column_name=..., skyflow_id=...)."
+        )
 
 
 
