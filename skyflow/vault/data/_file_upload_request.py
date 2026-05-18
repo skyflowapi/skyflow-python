@@ -21,8 +21,8 @@ class FileUploadRequest:
                 stacklevel=2,
             )
             # Old positional order was: (table, skyflow_id, column_name, ...)
-            skyflow_id = args[0] if len(args) >= 1 else skyflow_id
-            column_name = args[1] if len(args) >= 2 else column_name
+            skyflow_id = args[0] if args else skyflow_id
+            column_name = args[1] if len(args) > 1 else column_name
         self.table = table
         self.skyflow_id = skyflow_id
         self.column_name = column_name
