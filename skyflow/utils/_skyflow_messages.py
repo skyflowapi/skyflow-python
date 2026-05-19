@@ -317,6 +317,8 @@ class SkyflowMessages:
         DETECT_REQUEST_RESOLVED = f"{INFO}: [{error_prefix}] Detect request is resolved."
 
     class ErrorLogs(Enum):
+        INVALID_LOG_LEVEL = f"{ERROR}: [{error_prefix}] Invalid log level. Specify a valid log level."
+        INVALID_KEY = f"{ERROR}: [{error_prefix}] Invalid key {{}} in config."
         VAULTID_IS_REQUIRED = f"{ERROR}: [{error_prefix}] Invalid vault config. Vault ID is required."
         EMPTY_VAULTID = f"{ERROR}: [{error_prefix}] Invalid vault config. Vault ID can not be empty."
         CLUSTER_ID_IS_REQUIRED = f"{ERROR}: [{error_prefix}] Invalid vault config. Cluster ID is required."
@@ -413,7 +415,6 @@ class SkyflowMessages:
         BAD_REQUEST = "Bad Request"
 
     class Warning(Enum):
-        WARNING_MESSAGE = "WARNING MESSAGE"
         UPDATE_LOG_LEVEL_DEPRECATED = (
             "[DEPRECATED] Skyflow.update_log_level() is deprecated. "
             "Use Skyflow.set_log_level() instead — identical behavior."

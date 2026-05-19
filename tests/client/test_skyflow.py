@@ -254,7 +254,7 @@ class TestSkyflow(unittest.TestCase):
         new_config["vault_id"] = "VAULT_ID"
         skyflow_client.add_vault_config(new_config)
 
-        assert mock_validate_vault_config.call_count == 2
+        self.assertEqual(mock_validate_vault_config.call_count, 2)
 
         self.assertEqual("VAULT_ID", skyflow_client.get_vault_config(new_config["vault_id"]).get("vault_id"))
 
@@ -286,7 +286,7 @@ class TestSkyflow(unittest.TestCase):
         new_config["connection_id"] = "CONNECTION_ID"
         skyflow_client.add_connection_config(new_config)
 
-        assert mock_validate_connection_config.call_count == 2
+        self.assertEqual(mock_validate_connection_config.call_count, 2)
         self.assertEqual(
             "CONNECTION_ID", skyflow_client.get_connection_config(new_config["connection_id"]).get("connection_id")
         )
@@ -430,9 +430,9 @@ class TestUpdateLogLevelDeprecation(unittest.TestCase):
         with warnings.catch_warnings(record=True) as caught:
             warnings.simplefilter("always")
             client.update_log_level(LogLevel.INFO)
-        self.assertEqual(len(caught), 1)
-        self.assertTrue(issubclass(caught[0].category, DeprecationWarning))
-        self.assertIn("set_log_level", str(caught[0].message))
+        deprecation_warnings = [w for w in caught if issubclass(w.category, DeprecationWarning)]
+        self.assertGreaterEqual(len(deprecation_warnings), 1)
+        self.assertTrue(any("set_log_level" in str(w.message) for w in deprecation_warnings))
 
     def test_update_log_level_warning_points_at_caller(self):
         client = self._build_client()

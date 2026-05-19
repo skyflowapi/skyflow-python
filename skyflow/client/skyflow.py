@@ -1,3 +1,4 @@
+import warnings
 from collections import OrderedDict
 from typing_extensions import deprecated
 from skyflow import LogLevel
@@ -62,6 +63,11 @@ class Skyflow:
 
     @deprecated("[DEPRECATED] Use set_log_level() instead.")
     def update_log_level(self, log_level):
+        warnings.warn(
+            SkyflowMessages.Warning.UPDATE_LOG_LEVEL_DEPRECATED.value,
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return self.set_log_level(log_level)
 
     def get_log_level(self):
