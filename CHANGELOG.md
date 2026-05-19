@@ -2,6 +2,59 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.0.2] - 2026-05-06
+### Added
+- Dict context support for Conditional Data Access.
+
+## [2.0.1] - 2026-04-29
+### Fixed
+- Fern client re-initialisation on token refresh.
+
+## [2.0.0] - 2025-11-11
+### Added
+- Multi-vault and multi-connection support via fluent builder (`Skyflow.builder()`).
+- New typed request and response classes for all vault operations (`InsertRequest`, `GetRequest`, `UpdateRequest`, `DeleteRequest`, `QueryRequest`, `DetokenizeRequest`, `TokenizeRequest`, `FileUploadRequest`).
+- Detect API: `deidentify_text`, `reidentify_text`, `deidentify_file`, and `get_detect_run`.
+- File upload support via `vault().upload_file()`.
+- Flexible credential types: API key, static bearer token, service account credentials string, credentials file path, and `SKYFLOW_CREDENTIALS` environment variable.
+- `SkyflowError` now includes `http_code`, `grpc_code`, `http_status`, `request_id`, and `details` fields.
+- `set_log_level()` on the client for runtime log level changes.
+
+### Changed
+- Complete rewrite of the SDK public API. See [docs/migrate_to_v2.md](docs/migrate_to_v2.md) for migration instructions.
+
+## [1.16.0] - 2025-09-23
+### Fixed
+- Remote disconnect error in vault operations.
+
+## [1.15.8] - 2025-09-30
+### Fixed
+- Retry logic when `continue_on_error` is set to `true` in insert.
+
+## [1.15.7] - 2025-09-23
+### Fixed
+- Retry handling for errors in insert method.
+
+## [1.15.6] - 2025-09-22
+### Fixed
+- Added retry logic for transient errors.
+
+## [1.15.5] - 2025-09-18
+### Fixed
+- Remote disconnected errors in vault operations.
+
+## [1.15.4] - 2025-09-12
+### Fixed
+- Retry on exception during vault requests.
+
+## [1.15.3] - 2025-09-12
+### Fixed
+- Retry on exception during vault requests.
+
+## [1.15.2] - 2025-09-12
+### Fixed
+- Retry on connection error in insert method.
+
 ## [1.15.1] - 2023-12-07
 ## Fixed
 - Not receiving tokens when calling Get with options tokens as true.
