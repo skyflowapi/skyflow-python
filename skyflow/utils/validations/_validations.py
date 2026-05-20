@@ -517,14 +517,14 @@ def validate_insert_request(logger, request):
         raise SkyflowError(SkyflowMessages.Error.TOKENS_PASSED_FOR_TOKEN_MODE_DISABLE.value, invalid_input_error_code)
 
     if request.token_mode == TokenMode.ENABLE_STRICT:
-        if len(request.values) != len(request.tokens):
+        if not request.tokens or len(request.values) != len(request.tokens):
             log_error_log(SkyflowMessages.ErrorLogs.INSUFFICIENT_TOKENS_PASSED_FOR_BYOT_ENABLE_STRICT.value.format(RequestOperation.INSERT), logger = logger)
             raise SkyflowError(SkyflowMessages.Error.INSUFFICIENT_TOKENS_PASSED_FOR_TOKEN_MODE_ENABLE_STRICT.value, invalid_input_error_code)
 
         for v, t in zip(request.values, request.tokens):
             if set(v.keys()) != set(t.keys()):
                 log_error_log(SkyflowMessages.ErrorLogs.MISMATCH_OF_FIELDS_AND_TOKENS.value.format(RequestOperation.INSERT), logger=logger)
-                raise SkyflowError(SkyflowMessages.Error.INSUFFICIENT_TOKENS_PASSED_FOR_TOKEN_MODE_ENABLE_STRICT.value, invalid_input_error_code)
+                raise SkyflowError(SkyflowMessages.Error.MISMATCH_OF_FIELDS_AND_TOKENS.value, invalid_input_error_code)
 
 def validate_delete_request(logger, request):
     if not isinstance(request.table, str):
