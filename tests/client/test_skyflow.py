@@ -1,5 +1,4 @@
 import unittest
-import warnings
 from unittest.mock import patch, Mock
 
 from skyflow import LogLevel, Env
@@ -427,68 +426,59 @@ class TestUpdateLogLevelDeprecation(unittest.TestCase):
 
     def test_update_log_level_emits_deprecation_warning(self):
         client = self._build_client()
-        with warnings.catch_warnings(record=True) as caught:
-            warnings.simplefilter("always")
+        with patch('skyflow.client.skyflow.log_warn') as mock_warn:
             client.update_log_level(LogLevel.INFO)
-        deprecation_warnings = [w for w in caught if issubclass(w.category, DeprecationWarning)]
-        self.assertGreaterEqual(len(deprecation_warnings), 1)
-        self.assertTrue(any("set_log_level" in str(w.message) for w in deprecation_warnings))
-
-    def test_update_log_level_warning_points_at_caller(self):
-        client = self._build_client()
-        with warnings.catch_warnings(record=True) as caught:
-            warnings.simplefilter("always")
-            client.update_log_level(LogLevel.INFO)
-        self.assertEqual(caught[0].filename, __file__)
+        mock_warn.assert_called_once()
+        self.assertIn("set_log_level", mock_warn.call_args[0][0])
 
     def test_update_log_level_delegates_to_set_log_level(self):
         client = self._build_client()
-        with warnings.catch_warnings(record=True):
-            warnings.simplefilter("always")
-            client.update_log_level(LogLevel.INFO)
+        client.update_log_level(LogLevel.INFO)
         self.assertEqual(client.get_log_level(), LogLevel.INFO)
 
 
 class TestFileUploadRequestDeprecation(unittest.TestCase):
     def test_keyword_args_no_warning(self):
-        with warnings.catch_warnings(record=True) as caught:
-            warnings.simplefilter("always")
+        with patch('skyflow.vault.data._file_upload_request.log_warn') as mock_warn:
             req = FileUploadRequest(
                 table="table",
                 column_name="col",
                 skyflow_id="sky123",
             )
-        self.assertEqual(len(caught), 0)
+        mock_warn.assert_not_called()
         self.assertEqual(req.table, "table")
         self.assertEqual(req.column_name, "col")
         self.assertEqual(req.skyflow_id, "sky123")
 
+    def test_only_table_positional_no_warning(self):
+        with patch('skyflow.vault.data._file_upload_request.log_warn') as mock_warn:
+            req = FileUploadRequest("table", column_name="col", skyflow_id="sky123")
+        mock_warn.assert_not_called()
+        self.assertEqual(req.table, "table")
+
     def test_old_positional_order_emits_deprecation_warning(self):
-        with warnings.catch_warnings(record=True) as caught:
-            warnings.simplefilter("always")
+        with patch('skyflow.vault.data._file_upload_request.log_warn') as mock_warn:
             req = FileUploadRequest("table", "sky123", "col")
-        self.assertEqual(len(caught), 1)
-        self.assertTrue(issubclass(caught[0].category, DeprecationWarning))
-        self.assertIn("FileUploadRequest", str(caught[0].message))
+        mock_warn.assert_called_once()
+        self.assertIn("FileUploadRequest", mock_warn.call_args[0][0])
 
     def test_old_positional_order_remaps_args_correctly(self):
-        with warnings.catch_warnings(record=True):
-            warnings.simplefilter("always")
-            req = FileUploadRequest("table", "sky123", "col")
+        req = FileUploadRequest("table", "sky123", "col")
         self.assertEqual(req.skyflow_id, "sky123")
         self.assertEqual(req.column_name, "col")
 
-    def test_old_positional_order_warning_points_at_caller(self):
-        with warnings.catch_warnings(record=True) as caught:
-            warnings.simplefilter("always")
-            FileUploadRequest("table", "sky123", "col")
-        self.assertEqual(caught[0].filename, __file__)
-
     def test_single_positional_arg_emits_warning_and_sets_skyflow_id(self):
-        with warnings.catch_warnings(record=True) as caught:
-            warnings.simplefilter("always")
+        with patch('skyflow.vault.data._file_upload_request.log_warn') as mock_warn:
             req = FileUploadRequest("table", "sky123")
-        self.assertEqual(len(caught), 1)
-        self.assertTrue(issubclass(caught[0].category, DeprecationWarning))
+        mock_warn.assert_called_once()
         self.assertEqual(req.skyflow_id, "sky123")
         self.assertIsNone(req.column_name)
+
+    def test_optional_fields_default_to_none(self):
+        req = FileUploadRequest(table="table")
+        self.assertIsNone(req.skyflow_id)
+        self.assertIsNone(req.column_name)
+        self.assertIsNone(req.file_path)
+        self.assertIsNone(req.base64)
+        self.assertIsNone(req.file_object)
+        self.assertIsNone(req.file_name)
