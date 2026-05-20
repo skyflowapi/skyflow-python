@@ -42,32 +42,32 @@ def validate_required_field(logger, config, field_name, expected_type, empty_err
 
     if field_name not in config or not isinstance(field_value, expected_type):
         if field_name == ConfigField.VAULT_ID:
-            logger.error(SkyflowMessages.ErrorLogs.VAULTID_IS_REQUIRED.value)
+            log_error_log(SkyflowMessages.ErrorLogs.VAULTID_IS_REQUIRED.value, logger)
         if field_name == ConfigField.CLUSTER_ID:
-            logger.error(SkyflowMessages.ErrorLogs.CLUSTER_ID_IS_REQUIRED.value)
+            log_error_log(SkyflowMessages.ErrorLogs.CLUSTER_ID_IS_REQUIRED.value, logger)
         if field_name == OptionField.CONNECTION_ID:
-            logger.error(SkyflowMessages.ErrorLogs.CONNECTION_ID_IS_REQUIRED.value)
+            log_error_log(SkyflowMessages.ErrorLogs.CONNECTION_ID_IS_REQUIRED.value, logger)
         if field_name == OptionField.CONNECTION_URL:
-            logger.error(SkyflowMessages.ErrorLogs.INVALID_CONNECTION_URL.value)
+            log_error_log(SkyflowMessages.ErrorLogs.INVALID_CONNECTION_URL.value, logger)
         raise SkyflowError(invalid_error, invalid_input_error_code)
 
     if isinstance(field_value, str) and not field_value.strip():
         if field_name == ConfigField.VAULT_ID:
-            logger.error(SkyflowMessages.ErrorLogs.EMPTY_VAULTID.value)
+            log_error_log(SkyflowMessages.ErrorLogs.EMPTY_VAULTID.value, logger)
         if field_name == ConfigField.CLUSTER_ID:
-            logger.error(SkyflowMessages.ErrorLogs.EMPTY_CLUSTER_ID.value)
+            log_error_log(SkyflowMessages.ErrorLogs.EMPTY_CLUSTER_ID.value, logger)
         if field_name == OptionField.CONNECTION_ID:
-            logger.error(SkyflowMessages.ErrorLogs.EMPTY_CONNECTION_ID.value)
+            log_error_log(SkyflowMessages.ErrorLogs.EMPTY_CONNECTION_ID.value, logger)
         if field_name == OptionField.CONNECTION_URL:
-            logger.error(SkyflowMessages.ErrorLogs.EMPTY_CONNECTION_URL.value)
+            log_error_log(SkyflowMessages.ErrorLogs.EMPTY_CONNECTION_URL.value, logger)
         if field_name == CredentialField.PATH:
-            logger.error(SkyflowMessages.ErrorLogs.EMPTY_CREDENTIALS_PATH.value)
+            log_error_log(SkyflowMessages.ErrorLogs.EMPTY_CREDENTIALS_PATH.value, logger)
         if field_name == CredentialField.CREDENTIALS_STRING:
-            logger.error(SkyflowMessages.ErrorLogs.EMPTY_CREDENTIALS_STRING.value)
+            log_error_log(SkyflowMessages.ErrorLogs.EMPTY_CREDENTIALS_STRING.value, logger)
         if field_name == CredentialField.TOKEN:
-            logger.error(SkyflowMessages.ErrorLogs.EMPTY_TOKEN_VALUE.value)
+            log_error_log(SkyflowMessages.ErrorLogs.EMPTY_TOKEN_VALUE.value, logger)
         if field_name == CredentialField.API_KEY:
-            logger.error(SkyflowMessages.ErrorLogs.EMPTY_API_KEY_VALUE.value)
+            log_error_log(SkyflowMessages.ErrorLogs.EMPTY_API_KEY_VALUE.value, logger)
         raise SkyflowError(empty_error, invalid_input_error_code)
 
 def validate_api_key(api_key: str, logger = None) -> bool:
@@ -90,6 +90,7 @@ def validate_credentials(logger, credentials, config_id_type=None, config_id=Non
             if config_id_type and config_id else
             SkyflowMessages.Error.INVALID_CREDENTIALS.value
         )
+        log_error_log(error_message, logger)
         raise SkyflowError(error_message, invalid_input_error_code)
     elif len(key_present) > 1:
         error_message = (
@@ -97,6 +98,7 @@ def validate_credentials(logger, credentials, config_id_type=None, config_id=Non
             if config_id_type and config_id else
             SkyflowMessages.Error.MULTIPLE_CREDENTIALS_PASSED.value
         )
+        log_error_log(error_message, logger)
         raise SkyflowError(error_message, invalid_input_error_code)
 
     if CredentialField.ROLES in credentials:
@@ -142,6 +144,7 @@ def validate_credentials(logger, credentials, config_id_type=None, config_id=Non
             if config_id_type and config_id else SkyflowMessages.Error.INVALID_CREDENTIALS_TOKEN.value
         )
         if is_expired(credentials.get(CredentialField.TOKEN), logger):
+            log_error_log(SkyflowMessages.ErrorLogs.INVALID_BEARER_TOKEN.value, logger)
             raise SkyflowError(
                 SkyflowMessages.Error.EXPIRED_BEARER_TOKEN.value
                 if config_id_type and config_id else SkyflowMessages.Error.EXPIRED_BEARER_TOKEN.value,
@@ -160,25 +163,25 @@ def validate_credentials(logger, credentials, config_id_type=None, config_id=Non
                                if config_id_type and config_id else SkyflowMessages.Error.INVALID_API_KEY.value,
                                invalid_input_error_code)
         
-    if "token_uri" in credentials:
-        token_uri = credentials.get("token_uri")
+    if CredentialField.TOKEN_URI_OPTION in credentials:
+        token_uri = credentials.get(CredentialField.TOKEN_URI_OPTION)
         if (
             token_uri is None
             or not isinstance(token_uri, str)
             or not is_valid_url(token_uri)
         ):
+            log_error_log(SkyflowMessages.ErrorLogs.INVALID_TOKEN_URI.value, logger)
             raise SkyflowError(SkyflowMessages.Error.INVALID_TOKEN_URI.value, invalid_input_error_code)
 
 def validate_log_level(logger, log_level):
     if not isinstance(log_level, LogLevel):
-        raise SkyflowError( SkyflowMessages.Error.INVALID_LOG_LEVEL.value, invalid_input_error_code)
-
-    if log_level is None:
-        raise SkyflowError(SkyflowMessages.Error.EMPTY_LOG_LEVEL.value, invalid_input_error_code)
+        log_error_log(SkyflowMessages.ErrorLogs.INVALID_LOG_LEVEL.value, logger)
+        raise SkyflowError(SkyflowMessages.Error.INVALID_LOG_LEVEL.value, invalid_input_error_code)
 
 def validate_keys(logger, config, config_keys):
     for key in config.keys():
         if key not in config_keys:
+            log_error_log(SkyflowMessages.ErrorLogs.INVALID_KEY.value.format(key), logger)
             raise SkyflowError(SkyflowMessages.Error.INVALID_KEY.value.format(key), invalid_input_error_code)
 
 def validate_vault_config(logger, config):
@@ -208,7 +211,7 @@ def validate_vault_config(logger, config):
 
     # Validate env (optional, should be one of LogLevel values)
     if ConfigField.ENV in config and config.get(ConfigField.ENV) not in Env:
-        logger.error(SkyflowMessages.ErrorLogs.VAULTID_IS_REQUIRED.value)
+        log_error_log(SkyflowMessages.ErrorLogs.ENV_IS_REQUIRED.value, logger)
         raise SkyflowError(SkyflowMessages.Error.INVALID_ENV.value.format(vault_id), invalid_input_error_code)
 
     return True
@@ -232,8 +235,10 @@ def validate_update_vault_config(logger, config):
     if ConfigField.ENV in config and config.get(ConfigField.ENV) not in Env:
         raise SkyflowError(SkyflowMessages.Error.INVALID_ENV.value.format(vault_id), invalid_input_error_code)
 
-    if ConfigField.CREDENTIALS in config and config.get(ConfigField.CREDENTIALS):
-        validate_credentials(logger, config.get(ConfigField.CREDENTIALS), ConfigType.VAULT, vault_id)
+    if ConfigField.CREDENTIALS not in config:
+        raise SkyflowError(SkyflowMessages.Error.EMPTY_CREDENTIALS.value.format(ConfigType.VAULT, vault_id), invalid_input_error_code)
+
+    validate_credentials(logger, config.get(ConfigField.CREDENTIALS), ConfigType.VAULT, vault_id)
 
     return True
 
@@ -255,8 +260,10 @@ def validate_connection_config(logger, config):
         SkyflowMessages.Error.INVALID_CONNECTION_URL.value.format(connection_id)
     )
 
-    if "credentials" in config:
-            validate_credentials(logger, config.get("credentials"), "connection", connection_id)
+    if ConfigField.CREDENTIALS not in config:
+        raise SkyflowError(SkyflowMessages.Error.EMPTY_CREDENTIALS.value.format(ConfigType.CONNECTION, connection_id), invalid_input_error_code)
+
+    validate_credentials(logger, config.get(ConfigField.CREDENTIALS), ConfigType.CONNECTION, connection_id)
 
     return True
 
@@ -286,135 +293,164 @@ def validate_update_connection_config(logger, config):
 
 def validate_file_from_request(file_input: FileInput):
     if file_input is None:
+        log_error_log(SkyflowMessages.Error.INVALID_FILE_INPUT.value)
         raise SkyflowError(SkyflowMessages.Error.INVALID_FILE_INPUT.value, invalid_input_error_code)
-    
+
     has_file = hasattr(file_input, FileUploadField.FILE) and file_input.file is not None
     has_file_path = hasattr(file_input, FileUploadField.FILE_PATH) and file_input.file_path is not None
-    
+
     # Must provide exactly one of file or file_path
     if (has_file and has_file_path) or (not has_file and not has_file_path):
+        log_error_log(SkyflowMessages.Error.INVALID_DEIDENTIFY_FILE_INPUT.value)
         raise SkyflowError(SkyflowMessages.Error.INVALID_DEIDENTIFY_FILE_INPUT.value, invalid_input_error_code)
-    
+
     if has_file:
         file = file_input.file
         # Validate file object has required attributes
-        if not hasattr(file, FileUploadField.FILE_NAME) or not isinstance(file.name, str) or not file.name.strip():
+        if not hasattr(file, FileUploadField.NAME) or not isinstance(file.name, str) or not file.name.strip():
+            log_error_log(SkyflowMessages.Error.INVALID_FILE_TYPE.value)
             raise SkyflowError(SkyflowMessages.Error.INVALID_FILE_TYPE.value, invalid_input_error_code)
-        
+
         # Validate file name
         file_name, _ = os.path.splitext(os.path.basename(file.name))
         if not file_name or not file_name.strip():
+            log_error_log(SkyflowMessages.Error.INVALID_FILE_NAME.value)
             raise SkyflowError(SkyflowMessages.Error.INVALID_FILE_NAME.value, invalid_input_error_code)
-            
+
     elif has_file_path:
         file_path = file_input.file_path
         if not isinstance(file_path, str) or not file_path.strip():
+            log_error_log(SkyflowMessages.Error.INVALID_DEIDENTIFY_FILE_PATH.value)
             raise SkyflowError(SkyflowMessages.Error.INVALID_DEIDENTIFY_FILE_PATH.value, invalid_input_error_code)
-        
+
         if not os.path.exists(file_path) or not os.path.isfile(file_path):
+            log_error_log(SkyflowMessages.Error.INVALID_DEIDENTIFY_FILE_PATH.value)
             raise SkyflowError(SkyflowMessages.Error.INVALID_DEIDENTIFY_FILE_PATH.value, invalid_input_error_code)
 
 def validate_deidentify_file_request(logger, request: DeidentifyFileRequest):
     if not hasattr(request, FileUploadField.FILE) or request.file is None:
+        log_error_log(SkyflowMessages.Error.INVALID_FILE_INPUT.value, logger)
         raise SkyflowError(SkyflowMessages.Error.INVALID_FILE_INPUT.value, invalid_input_error_code)
-    
+
     # Validate file input first
     validate_file_from_request(request.file)
 
     # Optional: entities
     if hasattr(request, DeidentifyFileRequestField.ENTITIES) and request.entities is not None:
         if not isinstance(request.entities, list):
+            log_error_log(SkyflowMessages.Error.INVALID_DETECT_ENTITIES_TYPE.value, logger)
             raise SkyflowError(SkyflowMessages.Error.INVALID_DETECT_ENTITIES_TYPE.value, invalid_input_error_code)
 
         if not all(isinstance(entity, DetectEntities) for entity in request.entities):
+            log_error_log(SkyflowMessages.Error.INVALID_DETECT_ENTITIES_TYPE.value, logger)
             raise SkyflowError(SkyflowMessages.Error.INVALID_DETECT_ENTITIES_TYPE.value, invalid_input_error_code)
 
     # Optional: allow_regex_list
     if hasattr(request, DeidentifyFileRequestField.ALLOW_REGEX_LIST) and request.allow_regex_list is not None:
         if not isinstance(request.allow_regex_list, list) or not all(isinstance(x, str) for x in request.allow_regex_list):
+            log_error_log(SkyflowMessages.Error.INVALID_ALLOW_REGEX_LIST.value, logger)
             raise SkyflowError(SkyflowMessages.Error.INVALID_ALLOW_REGEX_LIST.value, invalid_input_error_code)
 
     # Optional: restrict_regex_list
     if hasattr(request, DeidentifyFileRequestField.RESTRICT_REGEX_LIST) and request.restrict_regex_list is not None:
         if not isinstance(request.restrict_regex_list, list) or not all(isinstance(x, str) for x in request.restrict_regex_list):
+            log_error_log(SkyflowMessages.Error.INVALID_RESTRICT_REGEX_LIST.value, logger)
             raise SkyflowError(SkyflowMessages.Error.INVALID_RESTRICT_REGEX_LIST.value, invalid_input_error_code)
 
     # Optional: token_format
     if request.token_format is not None and not isinstance(request.token_format, TokenFormat):
+        log_error_log(SkyflowMessages.Error.INVALID_TOKEN_FORMAT.value, logger)
         raise SkyflowError(SkyflowMessages.Error.INVALID_TOKEN_FORMAT.value, invalid_input_error_code)
 
     # Optional: transformations
     if request.transformations is not None and not isinstance(request.transformations, Transformations):
+        log_error_log(SkyflowMessages.Error.INVALID_TRANSFORMATIONS.value, logger)
         raise SkyflowError(SkyflowMessages.Error.INVALID_TRANSFORMATIONS.value, invalid_input_error_code)
 
     # Optional: output_processed_image
     if hasattr(request, DeidentifyFileRequestField.OUTPUT_PROCESSED_IMAGE) and request.output_processed_image is not None:
         if not isinstance(request.output_processed_image, bool):
+            log_error_log(SkyflowMessages.Error.INVALID_OUTPUT_PROCESSED_IMAGE.value, logger)
             raise SkyflowError(SkyflowMessages.Error.INVALID_OUTPUT_PROCESSED_IMAGE.value, invalid_input_error_code)
 
     # Optional: output_ocr_text
     if hasattr(request, DeidentifyFileRequestField.OUTPUT_OCR_TEXT) and request.output_ocr_text is not None:
         if not isinstance(request.output_ocr_text, bool):
+            log_error_log(SkyflowMessages.Error.INVALID_OUTPUT_OCR_TEXT.value, logger)
             raise SkyflowError(SkyflowMessages.Error.INVALID_OUTPUT_OCR_TEXT.value, invalid_input_error_code)
 
     # Optional: masking_method
     if hasattr(request, DeidentifyFileRequestField.MASKING_METHOD) and request.masking_method is not None:
         if not isinstance(request.masking_method, MaskingMethod):
+            log_error_log(SkyflowMessages.Error.INVALID_MASKING_METHOD.value, logger)
             raise SkyflowError(SkyflowMessages.Error.INVALID_MASKING_METHOD.value, invalid_input_error_code)
 
     # Optional: pixel_density
     if hasattr(request, DeidentifyFileRequestField.PIXEL_DENSITY) and request.pixel_density is not None:
         if not isinstance(request.pixel_density, (int, float)):
+            log_error_log(SkyflowMessages.Error.INVALID_PIXEL_DENSITY.value, logger)
             raise SkyflowError(SkyflowMessages.Error.INVALID_PIXEL_DENSITY.value, invalid_input_error_code)
 
     # Optional: max_resolution
     if hasattr(request, DeidentifyFileRequestField.MAX_RESOLUTION) and request.max_resolution is not None:
         if not isinstance(request.max_resolution, (int, float)):
+            log_error_log(SkyflowMessages.Error.INVALID_MAXIMUM_RESOLUTION.value, logger)
             raise SkyflowError(SkyflowMessages.Error.INVALID_MAXIMUM_RESOLUTION.value, invalid_input_error_code)
 
     # Optional: output_processed_audio
     if hasattr(request, DeidentifyFileRequestField.OUTPUT_PROCESSED_AUDIO) and request.output_processed_audio is not None:
         if not isinstance(request.output_processed_audio, bool):
+            log_error_log(SkyflowMessages.Error.INVALID_OUTPUT_PROCESSED_AUDIO.value, logger)
             raise SkyflowError(SkyflowMessages.Error.INVALID_OUTPUT_PROCESSED_AUDIO.value, invalid_input_error_code)
 
     # Optional: output_transcription
     if hasattr(request, DeidentifyFileRequestField.OUTPUT_TRANSCRIPTION) and request.output_transcription is not None:
         if not isinstance(request.output_transcription, DetectOutputTranscriptions):
+            log_error_log(SkyflowMessages.Error.INVALID_OUTPUT_TRANSCRIPTION.value, logger)
             raise SkyflowError(SkyflowMessages.Error.INVALID_OUTPUT_TRANSCRIPTION.value, invalid_input_error_code)
 
     # Optional: bleep
     if hasattr(request, DeidentifyFileRequestField.BLEEP) and request.bleep is not None:
         if not isinstance(request.bleep, Bleep):
+            log_error_log(SkyflowMessages.Error.INVALID_BLEEP_TYPE.value, logger)
             raise SkyflowError(SkyflowMessages.Error.INVALID_BLEEP_TYPE.value, invalid_input_error_code)
-            
+
         # Validate gain
         if request.bleep.gain is not None and not isinstance(request.bleep.gain, (int, float)):
+            log_error_log(SkyflowMessages.Error.INVALID_BLEEP_GAIN.value, logger)
             raise SkyflowError(SkyflowMessages.Error.INVALID_BLEEP_GAIN.value, invalid_input_error_code)
-            
+
         # Validate frequency
         if request.bleep.frequency is not None and not isinstance(request.bleep.frequency, (int, float)):
+            log_error_log(SkyflowMessages.Error.INVALID_BLEEP_FREQUENCY.value, logger)
             raise SkyflowError(SkyflowMessages.Error.INVALID_BLEEP_FREQUENCY.value, invalid_input_error_code)
-            
+
         # Validate start_padding
         if request.bleep.start_padding is not None and not isinstance(request.bleep.start_padding, (int, float)):
+            log_error_log(SkyflowMessages.Error.INVALID_BLEEP_START_PADDING.value, logger)
             raise SkyflowError(SkyflowMessages.Error.INVALID_BLEEP_START_PADDING.value, invalid_input_error_code)
-            
+
         # Validate stop_padding
         if request.bleep.stop_padding is not None and not isinstance(request.bleep.stop_padding, (int, float)):
+            log_error_log(SkyflowMessages.Error.INVALID_BLEEP_STOP_PADDING.value, logger)
             raise SkyflowError(SkyflowMessages.Error.INVALID_BLEEP_STOP_PADDING.value, invalid_input_error_code)
 
     # Optional: output_directory
     if hasattr(request, DeidentifyFileRequestField.OUTPUT_DIRECTORY) and request.output_directory is not None:
         if not isinstance(request.output_directory, str):
+            log_error_log(SkyflowMessages.Error.INVALID_OUTPUT_DIRECTORY_VALUE.value, logger)
             raise SkyflowError(SkyflowMessages.Error.INVALID_OUTPUT_DIRECTORY_VALUE.value, invalid_input_error_code)
         if not os.path.isdir(request.output_directory):
+            log_error_log(SkyflowMessages.Error.OUTPUT_DIRECTORY_NOT_FOUND.value.format(request.output_directory), logger)
             raise SkyflowError(SkyflowMessages.Error.OUTPUT_DIRECTORY_NOT_FOUND.value.format(request.output_directory), invalid_input_error_code)
 
     # Optional: wait_time
     if hasattr(request, DeidentifyFileRequestField.WAIT_TIME) and request.wait_time is not None:
         if not isinstance(request.wait_time, (int, float)):
+            log_error_log(SkyflowMessages.Error.INVALID_WAIT_TIME.value, logger)
             raise SkyflowError(SkyflowMessages.Error.INVALID_WAIT_TIME.value, invalid_input_error_code)
         if request.wait_time < 0 or request.wait_time > Detect.WAIT_TIME:
+            log_error_log(SkyflowMessages.Error.WAIT_TIME_GREATER_THEN_64.value, logger)
             raise SkyflowError(SkyflowMessages.Error.WAIT_TIME_GREATER_THEN_64.value, invalid_input_error_code)
 
 def validate_insert_request(logger, request):
@@ -429,7 +465,7 @@ def validate_insert_request(logger, request):
         log_error_log(SkyflowMessages.ErrorLogs.VALUES_IS_REQUIRED.value.format(RequestOperation.INSERT), logger = logger)
         raise SkyflowError(SkyflowMessages.Error.INVALID_TYPE_OF_DATA_IN_INSERT.value, invalid_input_error_code)
 
-    if not len(request.values):
+    if not request.values:
         log_error_log(SkyflowMessages.ErrorLogs.EMPTY_VALUES.value.format(RequestOperation.INSERT), logger=logger)
         raise SkyflowError(SkyflowMessages.Error.EMPTY_DATA_IN_INSERT.value, invalid_input_error_code)
 
@@ -439,7 +475,7 @@ def validate_insert_request(logger, request):
                 log_error_log(SkyflowMessages.ErrorLogs.EMPTY_OR_NULL_KEY_IN_VALUES.value.format(RequestOperation.INSERT), logger = logger)
 
     if request.upsert is not None and (not isinstance(request.upsert, str) or not request.upsert.strip()):
-        log_error_log(SkyflowMessages.ErrorLogs.EMPTY_UPSERT.value(RequestOperation.INSERT), logger = logger)
+        log_error_log(SkyflowMessages.ErrorLogs.EMPTY_UPSERT.value.format(RequestOperation.INSERT), logger=logger)
         raise SkyflowError(SkyflowMessages.Error.INVALID_UPSERT_OPTIONS_TYPE.value, invalid_input_error_code)
 
     if request.homogeneous is not None and not isinstance(request.homogeneous, bool):
@@ -471,7 +507,7 @@ def validate_insert_request(logger, request):
                                   logger=logger)
         if not isinstance(request.tokens, list) or not request.tokens or not all(
                 isinstance(t, dict) for t in request.tokens):
-            log_error_log(SkyflowMessages.ErrorLogs.EMPTY_TOKENS.value(RequestOperation.INSERT), logger = logger)
+            log_error_log(SkyflowMessages.ErrorLogs.EMPTY_TOKENS.value.format(RequestOperation.INSERT), logger=logger)
             raise SkyflowError(SkyflowMessages.Error.INVALID_TYPE_OF_DATA_IN_INSERT.value, invalid_input_error_code)
 
     if request.token_mode == TokenMode.ENABLE and not request.tokens:
@@ -481,14 +517,14 @@ def validate_insert_request(logger, request):
         raise SkyflowError(SkyflowMessages.Error.TOKENS_PASSED_FOR_TOKEN_MODE_DISABLE.value, invalid_input_error_code)
 
     if request.token_mode == TokenMode.ENABLE_STRICT:
-        if len(request.values) != len(request.tokens):
+        if not request.tokens or len(request.values) != len(request.tokens):
             log_error_log(SkyflowMessages.ErrorLogs.INSUFFICIENT_TOKENS_PASSED_FOR_BYOT_ENABLE_STRICT.value.format(RequestOperation.INSERT), logger = logger)
             raise SkyflowError(SkyflowMessages.Error.INSUFFICIENT_TOKENS_PASSED_FOR_TOKEN_MODE_ENABLE_STRICT.value, invalid_input_error_code)
 
         for v, t in zip(request.values, request.tokens):
             if set(v.keys()) != set(t.keys()):
                 log_error_log(SkyflowMessages.ErrorLogs.MISMATCH_OF_FIELDS_AND_TOKENS.value.format(RequestOperation.INSERT), logger=logger)
-                raise SkyflowError(SkyflowMessages.Error.INSUFFICIENT_TOKENS_PASSED_FOR_TOKEN_MODE_ENABLE_STRICT.value, invalid_input_error_code)
+                raise SkyflowError(SkyflowMessages.Error.MISMATCH_OF_FIELDS_AND_TOKENS.value, invalid_input_error_code)
 
 def validate_delete_request(logger, request):
     if not isinstance(request.table, str):
@@ -503,21 +539,21 @@ def validate_delete_request(logger, request):
         raise SkyflowError(SkyflowMessages.Error.EMPTY_RECORD_IDS_IN_DELETE.value, invalid_input_error_code)
 
 def validate_query_request(logger, request):
-    if not request.query:
-        log_error_log(SkyflowMessages.ErrorLogs.QUERY_IS_REQUIRED.value.format(RequestOperation.QUERY), logger = logger)
-        raise SkyflowError(SkyflowMessages.Error.EMPTY_QUERY.value, invalid_input_error_code)
-
     if not isinstance(request.query, str):
         query_type = str(type(request.query))
         raise SkyflowError(SkyflowMessages.Error.INVALID_QUERY_TYPE.value.format(query_type), invalid_input_error_code)
 
+    if not request.query:
+        log_error_log(SkyflowMessages.ErrorLogs.QUERY_IS_REQUIRED.value.format(RequestOperation.QUERY), logger=logger)
+        raise SkyflowError(SkyflowMessages.Error.EMPTY_QUERY.value, invalid_input_error_code)
+
     if not request.query.strip():
-        log_error_log(SkyflowMessages.ErrorLogs.EMPTY_QUERY.value.format(RequestOperation.QUERY), logger = logger)
+        log_error_log(SkyflowMessages.ErrorLogs.EMPTY_QUERY.value.format(RequestOperation.QUERY), logger=logger)
         raise SkyflowError(SkyflowMessages.Error.EMPTY_QUERY.value, invalid_input_error_code)
 
     if not request.query.upper().startswith(SqlCommand.SELECT):
         command = request.query
-        raise  SkyflowError(SkyflowMessages.Error.INVALID_QUERY_COMMAND.value.format(command), invalid_input_error_code)
+        raise SkyflowError(SkyflowMessages.Error.INVALID_QUERY_COMMAND.value.format(command), invalid_input_error_code)
 
 def validate_get_request(logger, request):
     redaction_type = request.redaction_type
@@ -565,13 +601,13 @@ def validate_get_request(logger, request):
             invalid_input_error_code)
 
     if offset is not None and not isinstance(offset, str):
-        raise SkyflowError(SkyflowMessages.Error.INVALID_OFF_SET_VALUE.value(type(offset)), invalid_input_error_code)
+        raise SkyflowError(SkyflowMessages.Error.INVALID_OFF_SET_VALUE.value.format(type(offset)), invalid_input_error_code)
 
     if limit is not None and not isinstance(limit, str):
-        raise SkyflowError(SkyflowMessages.Error.INVALID_LIMIT_VALUE.value(type(limit)), invalid_input_error_code)
+        raise SkyflowError(SkyflowMessages.Error.INVALID_LIMIT_VALUE.value.format(type(limit)), invalid_input_error_code)
 
     if download_url is not None and not isinstance(download_url, bool):
-        raise SkyflowError(SkyflowMessages.Error.INVALID_DOWNLOAD_URL_VALUE.value(type(download_url)), invalid_input_error_code)
+        raise SkyflowError(SkyflowMessages.Error.INVALID_DOWNLOAD_URL_VALUE.value.format(type(download_url)), invalid_input_error_code)
 
     if column_name is not None and (not isinstance(column_name, str) or not column_name.strip()):
         raise SkyflowError(SkyflowMessages.Error.INVALID_COLUMN_NAME.value.format(type(column_name)), invalid_input_error_code)
@@ -603,32 +639,29 @@ def validate_get_request(logger, request):
         raise SkyflowError(SkyflowMessages.Error.BOTH_IDS_AND_COLUMN_DETAILS_SPECIFIED.value, invalid_input_error_code)
 
 def validate_update_request(logger, request):
-    skyflow_id = ""
+    if not isinstance(request.data, dict):
+        raise SkyflowError(SkyflowMessages.Error.INVALID_FIELDS_TYPE.value.format(type(request.data)), invalid_input_error_code)
+
+    if not len(request.data.items()):
+        raise SkyflowError(SkyflowMessages.Error.UPDATE_FIELD_KEY_ERROR.value, invalid_input_error_code)
+
     field = {key: value for key, value in request.data.items() if key != ResponseField.SKYFLOW_ID}
 
-    try:
-        skyflow_id = request.data.get(ResponseField.SKYFLOW_ID)
-    except Exception:
+    skyflow_id = request.data.get(ResponseField.SKYFLOW_ID)
+    if skyflow_id is None:
         log_error_log(SkyflowMessages.ErrorLogs.SKYFLOW_ID_IS_REQUIRED.value.format(RequestOperation.UPDATE), logger=logger)
-
-    if not skyflow_id.strip():
-        log_error_log(SkyflowMessages.ErrorLogs.EMPTY_SKYFLOW_ID.value.format(RequestOperation.UPDATE), logger = logger)
+    elif not skyflow_id.strip():
+        log_error_log(SkyflowMessages.ErrorLogs.EMPTY_SKYFLOW_ID.value.format(RequestOperation.UPDATE), logger=logger)
 
     if not isinstance(request.table, str):
         log_error_log(SkyflowMessages.ErrorLogs.TABLE_IS_REQUIRED.value.format(RequestOperation.UPDATE), logger=logger)
         raise SkyflowError(SkyflowMessages.Error.INVALID_TABLE_VALUE.value, invalid_input_error_code)
     if not request.table.strip():
-        log_error_log(SkyflowMessages.ErrorLogs.EMPTY_TABLE_NAME.value.format(RequestOperation.UPDATE), logger = logger)
+        log_error_log(SkyflowMessages.ErrorLogs.EMPTY_TABLE_NAME.value.format(RequestOperation.UPDATE), logger=logger)
         raise SkyflowError(SkyflowMessages.Error.EMPTY_TABLE_VALUE.value, invalid_input_error_code)
 
     if not isinstance(request.return_tokens, bool):
         raise SkyflowError(SkyflowMessages.Error.INVALID_RETURN_TOKENS_TYPE.value, invalid_input_error_code)
-
-    if not isinstance(request.data, dict):
-        raise SkyflowError(SkyflowMessages.Error.INVALID_FIELDS_TYPE.value(type(request.data)), invalid_input_error_code)
-
-    if not len(request.data.items()):
-        raise SkyflowError(SkyflowMessages.Error.UPDATE_FIELD_KEY_ERROR.value, invalid_input_error_code)
 
     if request.token_mode is not None:
         if not isinstance(request.token_mode, TokenMode):
@@ -667,9 +700,9 @@ def validate_detokenize_request(logger, request):
         raise SkyflowError(SkyflowMessages.Error.INVALID_CONTINUE_ON_ERROR_TYPE.value, invalid_input_error_code)
 
     if not isinstance(request.data, list):
-        raise SkyflowError(SkyflowMessages.Error.INVALID_TOKENS_LIST_VALUE.value(type(request.data)), invalid_input_error_code)
+        raise SkyflowError(SkyflowMessages.Error.INVALID_TOKENS_LIST_VALUE.value.format(type(request.data)), invalid_input_error_code)
 
-    if not len(request.data):
+    if not request.data:
         log_error_log(SkyflowMessages.ErrorLogs.TOKENS_REQUIRED.value.format(RequestOperation.DETOKENIZE), logger = logger)
         log_error_log(SkyflowMessages.ErrorLogs.EMPTY_TOKENS.value.format(RequestOperation.DETOKENIZE), logger = logger)
         raise SkyflowError(SkyflowMessages.Error.EMPTY_TOKENS_LIST_VALUE.value, invalid_input_error_code)
@@ -695,7 +728,7 @@ def validate_tokenize_request(logger, request):
     if not isinstance(parameters, list):
         raise SkyflowError(SkyflowMessages.Error.INVALID_TOKENIZE_PARAMETERS.value.format(type(parameters)), invalid_input_error_code)
 
-    if not len(parameters):
+    if not parameters:
         raise SkyflowError(SkyflowMessages.Error.EMPTY_TOKENIZE_PARAMETERS.value, invalid_input_error_code)
 
     for i, param in enumerate(parameters):
@@ -728,9 +761,7 @@ def validate_file_upload_request(logger, request):
 
     # Skyflow ID
     skyflow_id = getattr(request, FileUploadField.SKYFLOW_ID, None)
-    if skyflow_id is None:
-        raise SkyflowError(SkyflowMessages.Error.IDS_KEY_ERROR.value, invalid_input_error_code)
-    elif skyflow_id.strip() == "":
+    if skyflow_id is not None and skyflow_id.strip() == "":
         raise SkyflowError(SkyflowMessages.Error.EMPTY_SKYFLOW_ID.value.format(RequestOperation.FILE_UPLOAD), invalid_input_error_code)
 
     # Column Name
@@ -797,46 +828,57 @@ def validate_invoke_connection_params(logger, query_params, path_params):
     except TypeError:
         raise SkyflowError(SkyflowMessages.Error.INVALID_QUERY_PARAMS.value, invalid_input_error_code)
 
-def validate_deidentify_text_request(self, request: DeidentifyTextRequest):
+def validate_deidentify_text_request(logger, request: DeidentifyTextRequest):
     if not request.text or not isinstance(request.text, str) or not request.text.strip():
+        log_error_log(SkyflowMessages.Error.INVALID_TEXT_IN_DEIDENTIFY.value, logger)
         raise SkyflowError(SkyflowMessages.Error.INVALID_TEXT_IN_DEIDENTIFY.value, invalid_input_error_code)
 
     # Validate entities if present
     if request.entities is not None and not isinstance(request.entities, list):
+        log_error_log(SkyflowMessages.Error.INVALID_ENTITIES_IN_DEIDENTIFY.value, logger)
         raise SkyflowError(SkyflowMessages.Error.INVALID_ENTITIES_IN_DEIDENTIFY.value, invalid_input_error_code)
 
     # Validate allowed_regex_list if present
     if request.allow_regex_list is not None and not isinstance(request.allow_regex_list, list):
+        log_error_log(SkyflowMessages.Error.INVALID_ALLOW_REGEX_LIST.value, logger)
         raise SkyflowError(SkyflowMessages.Error.INVALID_ALLOW_REGEX_LIST.value, invalid_input_error_code)
 
     # Validate restricted_regex_list if present
     if request.restrict_regex_list is not None and not isinstance(request.restrict_regex_list, list):
+        log_error_log(SkyflowMessages.Error.INVALID_RESTRICT_REGEX_LIST.value, logger)
         raise SkyflowError(SkyflowMessages.Error.INVALID_RESTRICT_REGEX_LIST.value, invalid_input_error_code)
 
     # Validate token_format if present
     if request.token_format is not None and not isinstance(request.token_format, TokenFormat):
+        log_error_log(SkyflowMessages.Error.INVALID_TOKEN_FORMAT.value, logger)
         raise SkyflowError(SkyflowMessages.Error.INVALID_TOKEN_FORMAT.value, invalid_input_error_code)
 
     # Validate transformations if present
     if request.transformations is not None and not isinstance(request.transformations, Transformations):
+        log_error_log(SkyflowMessages.Error.INVALID_TRANSFORMATIONS.value, logger)
         raise SkyflowError(SkyflowMessages.Error.INVALID_TRANSFORMATIONS.value, invalid_input_error_code)
 
-def validate_reidentify_text_request(self, request: ReidentifyTextRequest):
+def validate_reidentify_text_request(logger, request: ReidentifyTextRequest):
     if not request.text or not isinstance(request.text, str) or not request.text.strip():
+        log_error_log(SkyflowMessages.Error.INVALID_TEXT_IN_REIDENTIFY.value, logger)
         raise SkyflowError(SkyflowMessages.Error.INVALID_TEXT_IN_REIDENTIFY.value, invalid_input_error_code)
 
     # Validate redacted_entities if present
     if request.redacted_entities is not None and not isinstance(request.redacted_entities, list):
+        log_error_log(SkyflowMessages.Error.INVALID_REDACTED_ENTITIES_IN_REIDENTIFY.value, logger)
         raise SkyflowError(SkyflowMessages.Error.INVALID_REDACTED_ENTITIES_IN_REIDENTIFY.value, invalid_input_error_code)
 
     # Validate masked_entities if present
     if request.masked_entities is not None and not isinstance(request.masked_entities, list):
+        log_error_log(SkyflowMessages.Error.INVALID_MASKED_ENTITIES_IN_REIDENTIFY.value, logger)
         raise SkyflowError(SkyflowMessages.Error.INVALID_MASKED_ENTITIES_IN_REIDENTIFY.value, invalid_input_error_code)
 
     # Validate plain_text_entities if present
     if request.plain_text_entities is not None and not isinstance(request.plain_text_entities, list):
+        log_error_log(SkyflowMessages.Error.INVALID_PLAIN_TEXT_ENTITIES_IN_REIDENTIFY.value, logger)
         raise SkyflowError(SkyflowMessages.Error.INVALID_PLAIN_TEXT_ENTITIES_IN_REIDENTIFY.value, invalid_input_error_code)
 
-def validate_get_detect_run_request(self, request: GetDetectRunRequest):
-    if not request.run_id or not isinstance(request.run_id, str) or not request.run_id.strip():
+def validate_get_detect_run_request(logger, request: GetDetectRunRequest):
+    if request.run_id is None or not isinstance(request.run_id, str) or not request.run_id.strip():
+        log_error_log(SkyflowMessages.ErrorLogs.INVALID_RUN_ID.value, logger)
         raise SkyflowError(SkyflowMessages.Error.INVALID_RUN_ID.value, invalid_input_error_code)

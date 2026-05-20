@@ -61,6 +61,8 @@ class SkyflowMessages:
         EMPTY_CONTEXT = f"{error_prefix} Initialization failed. Invalid context provided. Specify context as type Context."
         INVALID_CONTEXT_IN_CONFIG = f"{error_prefix} Initialization failed. Invalid context for {{}} with id {{}}. Specify a valid context."
         INVALID_CONTEXT = f"{error_prefix} Initialization failed. Invalid context. Specify a valid context."
+        INVALID_CTX_TYPE = f"{error_prefix} Initialization failed. Invalid ctx type. Specify ctx as a string or a dict."
+        INVALID_CTX_MAP_KEY = f"{error_prefix} Initialization failed. Invalid key '{{}}' in ctx dict. Keys must contain only alphanumeric characters and underscores."
         INVALID_LOG_LEVEL = f"{error_prefix} Initialization failed. Invalid log level. Specify a valid log level."
         EMPTY_LOG_LEVEL = f"{error_prefix} Initialization failed. Specify a valid log level."
 
@@ -88,14 +90,15 @@ class SkyflowMessages:
         INVALID_TABLE_NAME_IN_INSERT = f"{error_prefix} Validation error. Invalid table name in insert request. Specify a valid table name."
         INVALID_TYPE_OF_DATA_IN_INSERT = f"{error_prefix} Validation error. Invalid type of data in insert request. Specify data as a object array."
         EMPTY_DATA_IN_INSERT = f"{error_prefix} Validation error. Data array cannot be empty. Specify data in insert request."
-        INVALID_UPSERT_OPTIONS_TYPE = f"{error_prefix} Validation error. 'upsert' key cannot be empty in options. At least one object of table and column is required."
+        INVALID_UPSERT_OPTIONS_TYPE = f"{error_prefix} Validation error. Invalid 'upsert' value in options. Specify 'upsert' as a non-empty string containing the column name."
         INVALID_HOMOGENEOUS_TYPE = f"{error_prefix} Validation error. Invalid type of homogeneous. Specify homogeneous as a string."
         INVALID_TOKEN_MODE_TYPE = f"{error_prefix} Validation error. Invalid type of token mode. Specify token mode as a TokenMode enum."
         INVALID_RETURN_TOKENS_TYPE = f"{error_prefix} Validation error. Invalid type  of return tokens. Specify return tokens as a boolean."
         INVALID_CONTINUE_ON_ERROR_TYPE = f"{error_prefix} Validation error. Invalid type of continue on error. Specify continue on error as a boolean."
         TOKENS_PASSED_FOR_TOKEN_MODE_DISABLE = f"{error_prefix} Validation error. 'token_mode' wasn't specified. Set 'token_mode' to 'ENABLE' to insert tokens."
         INSUFFICIENT_TOKENS_PASSED_FOR_TOKEN_MODE_ENABLE_STRICT = f"{error_prefix} Validation error. 'token_mode' is set to 'ENABLE_STRICT', but some fields are missing tokens. Specify tokens for all fields."
-        NO_TOKENS_IN_INSERT = f"{error_prefix} Validation error. Tokens weren't specified for records while 'token_strict' was {{}}. Specify tokens."
+        MISMATCH_OF_FIELDS_AND_TOKENS = f"{error_prefix} Validation error. Keys for values and tokens are not matching. Ensure each values entry and its corresponding tokens entry have the same keys."
+        NO_TOKENS_IN_INSERT = f"{error_prefix} Validation error. Tokens weren't specified for records while 'token_mode' was {{}}. Specify tokens."
         BATCH_INSERT_FAILURE = f"{error_prefix} Insert operation failed."
         GET_FAILURE = f"{error_prefix} Get operation failed."
         HOMOGENOUS_NOT_SUPPORTED_WITH_UPSERT = f"{error_prefix} Validation error. Homogenous is not supported when upsert is passed."
@@ -315,6 +318,8 @@ class SkyflowMessages:
         DETECT_REQUEST_RESOLVED = f"{INFO}: [{error_prefix}] Detect request is resolved."
 
     class ErrorLogs(Enum):
+        INVALID_LOG_LEVEL = f"{ERROR}: [{error_prefix}] Invalid log level. Specify a valid log level."
+        INVALID_KEY = f"{ERROR}: [{error_prefix}] Invalid key {{}} in config."
         VAULTID_IS_REQUIRED = f"{ERROR}: [{error_prefix}] Invalid vault config. Vault ID is required."
         EMPTY_VAULTID = f"{ERROR}: [{error_prefix}] Invalid vault config. Vault ID can not be empty."
         CLUSTER_ID_IS_REQUIRED = f"{ERROR}: [{error_prefix}] Invalid vault config. Cluster ID is required."
@@ -361,8 +366,8 @@ class SkyflowMessages:
         EMPTY_OR_NULL_ID_IN_IDS = f"{ERROR}: [{error_prefix}] Invalid {{}} request. Id can not be null or empty in ids at index {{}}."
         TOKENIZATION_NOT_SUPPORTED_WITH_REDACTION= f"{ERROR}: [{error_prefix}] Invalid {{}} request. Tokenization is not supported when redaction is applied."
         TOKENIZATION_SUPPORTED_ONLY_WITH_IDS=f"{ERROR}: [{error_prefix}] Invalid {{}} request. Tokenization is not supported when column name and values are passed."
-        TOKENS_NOT_ALLOWED_WITH_BYOT_DISABLE = f"{ERROR}: [{error_prefix}] Invalid {{}} request. Tokens are not allowed when token_strict is DISABLE."
-        INSUFFICIENT_TOKENS_PASSED_FOR_BYOT_ENABLE_STRICT =f"{ERROR}: [{error_prefix}] Invalid {{}} request. For tokenStrict as ENABLE_STRICT, tokens should be passed for all fields."
+        TOKENS_NOT_ALLOWED_WITH_BYOT_DISABLE = f"{ERROR}: [{error_prefix}] Invalid {{}} request. Tokens are not allowed when token_mode is DISABLE."
+        INSUFFICIENT_TOKENS_PASSED_FOR_BYOT_ENABLE_STRICT =f"{ERROR}: [{error_prefix}] Invalid {{}} request. For token_mode as ENABLE_STRICT, tokens should be passed for all fields."
         TOKENS_REQUIRED = f"{ERROR}: [{error_prefix}] Invalid {{}} request. Tokens are required."
         EMPTY_FIELDS = f"{ERROR}: [{error_prefix}] Invalid {{}} request. Fields can not be empty."
         EMPTY_OFFSET = f"{ERROR}: [{error_prefix}] Invalid {{}} request. Offset ca not be empty."
@@ -411,7 +416,15 @@ class SkyflowMessages:
         BAD_REQUEST = "Bad Request"
 
     class Warning(Enum):
-        WARNING_MESSAGE = "WARNING MESSAGE"
+        UPDATE_LOG_LEVEL_DEPRECATED = (
+            "[DEPRECATED] Skyflow.update_log_level() is deprecated. "
+            "Use Skyflow.set_log_level() instead — identical behavior."
+        )
+        FILE_UPLOAD_REQUEST_ARG_ORDER_DEPRECATED = (
+            "[DEPRECATED] FileUploadRequest: argument order changed. "
+            "Old positional order: (table, skyflow_id, column_name). "
+            "New order: FileUploadRequest(table, column_name=..., skyflow_id=...)."
+        )
 
 
 

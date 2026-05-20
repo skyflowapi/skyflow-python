@@ -1,6 +1,7 @@
 OPTIONAL_TOKEN='token'
 PROTOCOL='https'
 SKY_META_DATA_HEADER='sky-metadata'
+CTX_KEY_REGEX=r'^[a-zA-Z0-9_]+$'
 
 class SKYFLOW:
     SKYFLOW_ID = 'skyflowId'
@@ -116,6 +117,7 @@ class ResponseField:
     TYPE = 'type'
     TOKENIZED_DATA = 'tokenized_data'
     SIGNED_TOKEN = 'signed_token'
+    RESPONSES = 'responses'
 
 
 class CredentialField:
@@ -123,6 +125,8 @@ class CredentialField:
     CLIENT_ID = 'clientID'
     KEY_ID = 'keyID'
     TOKEN_URI = 'tokenURI'
+    TOKEN_URI_OPTION = 'token_uri'
+    CLIENT_NAME = 'clientName'
     CREDENTIALS_STRING = 'credentials_string'
     API_KEY = 'api_key'
     TOKEN = 'token'
@@ -192,6 +196,7 @@ class DeidentifyFileRequestField:
     OUTPUT_OCR_TEXT = 'output_ocr_text'
     MASKING_METHOD = 'masking_method'
     PIXEL_DENSITY = 'pixel_density'
+    DENSITY = 'density'
     MAX_RESOLUTION = 'max_resolution'
     OUTPUT_PROCESSED_AUDIO = 'output_processed_audio'
     OUTPUT_TRANSCRIPTION = 'output_transcription'
@@ -227,6 +232,7 @@ class DeidentifyField:
     ENTITY_UNQ_COUNTER = 'entity_unq_counter'
     ENTITY_UNIQUE_COUNTER = 'entity_unique_counter'
     ENTITY_ONLY = 'entity_only'
+    VAULT_TOKEN = 'vault_token'
     ENTITIES = 'entities'
     MAX_DAYS = 'max_days'
     MIN_DAYS = 'min_days'

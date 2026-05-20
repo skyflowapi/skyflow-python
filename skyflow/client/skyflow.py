@@ -1,4 +1,6 @@
+import warnings
 from collections import OrderedDict
+from typing_extensions import deprecated
 from skyflow import LogLevel
 from skyflow.error import SkyflowError
 from skyflow.utils import SkyflowMessages
@@ -59,11 +61,17 @@ class Skyflow:
         self.__builder._Builder__set_log_level(log_level)
         return self
 
+    @deprecated("[DEPRECATED] Use set_log_level() instead.")
+    def update_log_level(self, log_level):
+        warnings.warn(
+            SkyflowMessages.Warning.UPDATE_LOG_LEVEL_DEPRECATED.value,
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.set_log_level(log_level)
+
     def get_log_level(self):
         return self.__builder._Builder__log_level
-
-    def update_log_level(self, log_level):
-        self.__builder._Builder__set_log_level(log_level)
 
     def vault(self, vault_id = None) -> Vault:
         vault_config = self.__builder.get_vault_config(vault_id)
@@ -114,6 +122,8 @@ class Skyflow:
         def update_vault_config(self, config):
             validate_update_vault_config(self.__logger, config)
             vault_id = config.get(OptionField.VAULT_ID)
+            if vault_id not in self.__vault_configs:
+                raise SkyflowError(SkyflowMessages.Error.VAULT_ID_NOT_IN_CONFIG_LIST.value.format(vault_id), SkyflowMessages.ErrorCodes.INVALID_INPUT.value)
             vault_config = self.__vault_configs[vault_id]
             vault_config.get(OptionField.VAULT_CLIENT).update_config(config)
 
@@ -155,6 +165,8 @@ class Skyflow:
         def update_connection_config(self, config):
             validate_update_connection_config(self.__logger, config)
             connection_id = config[OptionField.CONNECTION_ID]
+            if connection_id not in self.__connection_configs:
+                raise SkyflowError(SkyflowMessages.Error.CONNECTION_ID_NOT_IN_CONFIG_LIST.value.format(connection_id), SkyflowMessages.ErrorCodes.INVALID_INPUT.value)
             connection_config = self.__connection_configs[connection_id]
             connection_config.get(OptionField.VAULT_CLIENT).update_config(config)
 

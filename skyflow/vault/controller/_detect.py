@@ -8,8 +8,8 @@ from skyflow.generated.rest import FileDataDeidentifyText, FileDataDeidentifyPdf
     FileDataDeidentifyImage, Format, FileDataDeidentifyAudio, WordCharacterCount, DetectRunsResponse
 from skyflow.utils._skyflow_messages import SkyflowMessages
 from skyflow.utils._utils import get_attribute, get_metrics, handle_exception, parse_deidentify_text_response, parse_reidentify_text_response
-from skyflow.utils.constants import (SKY_META_DATA_HEADER, DetectStatus, FileExtension, 
-                                      FileProcessing, EncodingType, DeidentifyField, DeidentifyFileRequestField, FileUploadField, OptionField)
+from skyflow.utils.constants import (SKY_META_DATA_HEADER, DetectStatus, FileExtension,
+                                      FileProcessing, EncodingType, DeidentifyField, DeidentifyFileRequestField, FileUploadField, OptionField, Detect as DetectConstants)
 from skyflow.utils.logger import log_info, log_error_log
 from skyflow.utils.validations import validate_deidentify_file_request, validate_get_detect_run_request
 from skyflow.utils.validations._validations import validate_deidentify_text_request, validate_reidentify_text_request
@@ -30,7 +30,7 @@ class Detect:
         }
         return headers
       
-    def ___build_deidentify_text_body(self, request: DeidentifyTextRequest) -> Dict[str, Any]:
+    def __build_deidentify_text_body(self, request: DeidentifyTextRequest) -> Dict[str, Any]:
         deidentify_text_body = {}
         parsed_entity_types = request.entities
         
@@ -43,7 +43,7 @@ class Detect:
         
         return deidentify_text_body
 
-    def ___build_reidentify_text_body(self, request: ReidentifyTextRequest) -> Dict[str, Any]:
+    def __build_reidentify_text_body(self, request: ReidentifyTextRequest) -> Dict[str, Any]:
         parsed_format = Format(
             redacted=request.redacted_entities,
             masked=request.masked_entities,
@@ -57,13 +57,13 @@ class Detect:
     def _get_file_extension(self, filename: str):
         return filename.split('.')[-1].lower() if '.' in filename else ''
 
-    def __poll_for_processed_file(self, run_id, max_wait_time=64):
-        max_wait_time = 64 if max_wait_time is None else max_wait_time
+    def __poll_for_processed_file(self, run_id, max_wait_time=None):
+        max_wait_time = DetectConstants.WAIT_TIME if max_wait_time is None else max_wait_time
         files_api = self.__vault_client.get_detect_file_api().with_raw_response
         current_wait_time = 1  # Start with 1 second
         try:
             while True:
-                response = files_api.get_run(run_id, vault_id=self.__vault_client.get_vault_id(), request_options=self.__get_headers()).data
+                response = files_api.get_run(run_id, vault_id=self.__vault_client.get_vault_id(), request_options={'additional_headers': self.__get_headers()}).data
                 status = response.status
                 if status == DetectStatus.IN_PROGRESS:
                     if current_wait_time >= max_wait_time:
@@ -80,7 +80,7 @@ class Detect:
                 elif status == DetectStatus.SUCCESS or status == DetectStatus.FAILED:
                     return response
         except Exception as e:
-            raise e
+            handle_exception(e, self.__vault_client.get_logger())
 
     def __save_deidentify_file_response_output(self, response: DetectRunsResponse, output_directory: str, original_file_name: str, name_without_ext: str):
         if not response or not hasattr(response, DeidentifyField.OUTPUT) or not response.output or not output_directory:
@@ -94,6 +94,7 @@ class Detect:
 
         base_original_filename = os.path.basename(original_file_name)
         base_name_without_ext = os.path.splitext(base_original_filename)[0]
+        real_output_dir = os.path.realpath(output_directory)
 
         for idx, output in enumerate(output_list):
             try:
@@ -105,14 +106,25 @@ class Detect:
                     continue
 
                 decoded_data = base64.b64decode(processed_file)
-                
+
+                # Sanitize extension from API response to prevent path traversal (CWE-22).
+                # Avoid os.path.basename here to keep basename mock-free in tests.
+                safe_ext = None
+                if processed_file_extension:
+                    raw_ext = str(processed_file_extension).replace('\\', '/').split('/')[-1].lstrip('.')
+                    safe_ext = ''.join(c for c in raw_ext if c.isalnum() or c in ('-', '_')) or 'bin'
+
                 if idx == 0 or processed_file_type == DeidentifyField.REDACTED_FILE:
                     output_file_name = os.path.join(output_directory, deidentify_file_prefix + base_original_filename)
-                    if processed_file_extension:
-                        output_file_name = os.path.join(output_directory, f"{deidentify_file_prefix}{base_name_without_ext}.{processed_file_extension}")
+                    if safe_ext:
+                        output_file_name = os.path.join(output_directory, f"{deidentify_file_prefix}{base_name_without_ext}.{safe_ext}")
                 else:
-                    output_file_name = os.path.join(output_directory, f"{deidentify_file_prefix}{base_name_without_ext}.{processed_file_extension}")
-                
+                    output_file_name = os.path.join(output_directory, f"{deidentify_file_prefix}{base_name_without_ext}.{safe_ext or 'bin'}")
+
+                if not os.path.realpath(output_file_name).startswith(real_output_dir + os.sep):
+                    log_error_log(SkyflowMessages.ErrorLogs.SAVING_DEIDENTIFY_FILE_FAILED.value, self.__vault_client.get_logger())
+                    continue
+
                 with open(output_file_name, 'wb') as f:
                     f.write(decoded_data)
             except Exception as e:
@@ -166,16 +178,16 @@ class Detect:
         extension = first_output.get(DeidentifyField.EXTENSION, None)
 
         if base64_string is not None:
-                file_bytes = base64.b64decode(base64_string)
-                file_obj = io.BytesIO(file_bytes)
-                file_obj.name = f"{FileProcessing.DEIDENTIFIED_PREFIX}{extension}" if extension else DeidentifyField.PROCESSED_FILE
+            file_bytes = base64.b64decode(base64_string)
+            file_obj = io.BytesIO(file_bytes)
+            file_obj.name = f"{FileProcessing.DEIDENTIFIED_PREFIX}{extension}" if extension else DeidentifyField.PROCESSED_FILE
         else:
             file_obj = None
     
         return DeidentifyFileResponse(
             file_base64=base64_string,
             file=file_obj,
-            type=first_output.get(DeidentifyField.TYPE, DetectStatus.UNKNOWN),
+            type=first_output.get(DeidentifyField.TYPE, None),
             extension=extension,
             word_count=word_count,
             char_count=char_count,
@@ -195,6 +207,7 @@ class Detect:
             DeidentifyField.DEFAULT: getattr(request.token_format, DeidentifyField.DEFAULT, None),
             DeidentifyField.ENTITY_UNQ_COUNTER: getattr(request.token_format, DeidentifyField.ENTITY_UNIQUE_COUNTER, None),
             DeidentifyField.ENTITY_ONLY: getattr(request.token_format, DeidentifyField.ENTITY_ONLY, None),
+            DeidentifyField.VAULT_TOKEN: getattr(request.token_format, DeidentifyField.VAULT_TOKEN, None)
         }
 
     def __get_transformations(self, request):
@@ -217,7 +230,7 @@ class Detect:
         log_info(SkyflowMessages.Info.DEIDENTIFY_TEXT_REQUEST_RESOLVED.value, self.__vault_client.get_logger())
         self.__initialize()
         detect_api = self.__vault_client.get_detect_text_api()
-        deidentify_text_body = self.___build_deidentify_text_body(request)
+        deidentify_text_body = self.__build_deidentify_text_body(request)
         
         try:
             log_info(SkyflowMessages.Info.DEIDENTIFY_TEXT_TRIGGERED.value, self.__vault_client.get_logger())
@@ -229,7 +242,7 @@ class Detect:
               restrict_regex=deidentify_text_body[DeidentifyField.RESTRICT_REGEX],
               token_type=deidentify_text_body[DeidentifyField.TOKEN_TYPE],
               transformations=deidentify_text_body[DeidentifyField.TRANSFORMATIONS],
-              request_options=self.__get_headers()
+              request_options={'additional_headers': self.__get_headers()}
             )
             deidentify_text_response = parse_deidentify_text_response(api_response)
             log_info(SkyflowMessages.Info.DEIDENTIFY_TEXT_SUCCESS.value, self.__vault_client.get_logger())
@@ -245,7 +258,7 @@ class Detect:
         log_info(SkyflowMessages.Info.REIDENTIFY_TEXT_REQUEST_RESOLVED.value, self.__vault_client.get_logger())
         self.__initialize()
         detect_api = self.__vault_client.get_detect_text_api()
-        reidentify_text_body = self.___build_reidentify_text_body(request)
+        reidentify_text_body = self.__build_reidentify_text_body(request)
         
         try:
             log_info(SkyflowMessages.Info.REIDENTIFY_TEXT_TRIGGERED.value, self.__vault_client.get_logger())
@@ -253,7 +266,7 @@ class Detect:
                 vault_id=self.__vault_client.get_vault_id(),
                 text=reidentify_text_body[DeidentifyField.TEXT],
                 format=reidentify_text_body[DeidentifyField.FORMAT],
-                request_options=self.__get_headers()
+                request_options={'additional_headers': self.__get_headers()}
             )
             reidentify_text_response = parse_reidentify_text_response(api_response)
             log_info(SkyflowMessages.Info.REIDENTIFY_TEXT_SUCCESS.value, self.__vault_client.get_logger())
@@ -265,14 +278,16 @@ class Detect:
 
     def __get_file_from_request(self, request: DeidentifyFileRequest):
         file_input = request.file
-        
-        # Check for file
+
         if hasattr(file_input, FileUploadField.FILE) and file_input.file is not None:
             return file_input.file
-            
-        # Check for file_path if file is not provided
+
         if hasattr(file_input, FileUploadField.FILE_PATH) and file_input.file_path is not None:
-                return open(file_input.file_path, 'rb')
+            with open(file_input.file_path, 'rb') as f:
+                content = f.read()
+            bio = io.BytesIO(content)
+            bio.name = file_input.file_path
+            return bio
 
     def deidentify_file(self, request: DeidentifyFileRequest):
         log_info(SkyflowMessages.Info.DETECT_FILE_TRIGGERED.value, self.__vault_client.get_logger())
@@ -297,12 +312,13 @@ class Detect:
                     DeidentifyField.ALLOW_REGEX: request.allow_regex_list,
                     DeidentifyField.RESTRICT_REGEX: request.restrict_regex_list,
                     DeidentifyField.TRANSFORMATIONS: self.__get_transformations(request),
-                    DeidentifyField.REQUEST_OPTIONS: self.__get_headers()
+                    DeidentifyField.REQUEST_OPTIONS: {'additional_headers': self.__get_headers()}
                 }
 
             elif file_extension in [FileExtension.MP3, FileExtension.WAV]:
                 req_file = FileDataDeidentifyAudio(base_64=base64_string, data_format=file_extension)
                 api_call = files_api.deidentify_audio
+                bleep = request.bleep
                 api_kwargs = {
                     OptionField.VAULT_ID: self.__vault_client.get_vault_id(),
                     DeidentifyField.FILE: req_file,
@@ -313,11 +329,11 @@ class Detect:
                     DeidentifyField.TRANSFORMATIONS: self.__get_transformations(request),
                     DeidentifyFileRequestField.OUTPUT_TRANSCRIPTION: getattr(request, DeidentifyFileRequestField.OUTPUT_TRANSCRIPTION, None),
                     DeidentifyFileRequestField.OUTPUT_PROCESSED_AUDIO: getattr(request, DeidentifyFileRequestField.OUTPUT_PROCESSED_AUDIO, None),
-                    DeidentifyField.BLEEP_GAIN: getattr(request, DeidentifyFileRequestField.BLEEP, None).gain if getattr(request, DeidentifyFileRequestField.BLEEP, None) is not None else None,
-                    DeidentifyField.BLEEP_FREQUENCY: getattr(request, DeidentifyFileRequestField.BLEEP, None).frequency if getattr(request, DeidentifyFileRequestField.BLEEP, None) is not None else None,
-                    DeidentifyField.BLEEP_START_PADDING: getattr(request, DeidentifyFileRequestField.BLEEP, None).start_padding if getattr(request, DeidentifyFileRequestField.BLEEP, None) is not None else None,
-                    DeidentifyField.BLEEP_STOP_PADDING: getattr(request, DeidentifyFileRequestField.BLEEP, None).stop_padding if getattr(request, DeidentifyFileRequestField.BLEEP, None) is not None else None,
-                    DeidentifyField.REQUEST_OPTIONS: self.__get_headers()
+                    DeidentifyField.BLEEP_GAIN: bleep.gain if bleep is not None else None,
+                    DeidentifyField.BLEEP_FREQUENCY: bleep.frequency if bleep is not None else None,
+                    DeidentifyField.BLEEP_START_PADDING: bleep.start_padding if bleep is not None else None,
+                    DeidentifyField.BLEEP_STOP_PADDING: bleep.stop_padding if bleep is not None else None,
+                    DeidentifyField.REQUEST_OPTIONS: {'additional_headers': self.__get_headers()}
                 }
 
             elif file_extension == FileExtension.PDF:
@@ -331,8 +347,8 @@ class Detect:
                     DeidentifyField.ALLOW_REGEX: request.allow_regex_list,
                     DeidentifyField.RESTRICT_REGEX: request.restrict_regex_list,
                     DeidentifyFileRequestField.MAX_RESOLUTION: getattr(request, DeidentifyFileRequestField.MAX_RESOLUTION, None),
-                    DeidentifyFileRequestField.PIXEL_DENSITY: getattr(request, DeidentifyFileRequestField.PIXEL_DENSITY, None),
-                    DeidentifyField.REQUEST_OPTIONS: self.__get_headers()
+                    DeidentifyFileRequestField.DENSITY: getattr(request, DeidentifyFileRequestField.PIXEL_DENSITY, None),
+                    DeidentifyField.REQUEST_OPTIONS: {'additional_headers': self.__get_headers()}
                 }
 
             elif file_extension in [FileExtension.JPEG, FileExtension.JPG, FileExtension.PNG, FileExtension.BMP, FileExtension.TIF, FileExtension.TIFF]:
@@ -348,7 +364,7 @@ class Detect:
                     DeidentifyFileRequestField.MASKING_METHOD: getattr(request, DeidentifyFileRequestField.MASKING_METHOD, None),
                     DeidentifyFileRequestField.OUTPUT_OCR_TEXT: getattr(request, DeidentifyFileRequestField.OUTPUT_OCR_TEXT, None),
                     DeidentifyFileRequestField.OUTPUT_PROCESSED_IMAGE: getattr(request, DeidentifyFileRequestField.OUTPUT_PROCESSED_IMAGE, None),
-                    DeidentifyField.REQUEST_OPTIONS: self.__get_headers()
+                    DeidentifyField.REQUEST_OPTIONS: {'additional_headers': self.__get_headers()}
                 }
 
             elif file_extension in [FileExtension.PPT, FileExtension.PPTX]:
@@ -361,7 +377,7 @@ class Detect:
                     DeidentifyField.TOKEN_TYPE: self.__get_token_format(request),
                     DeidentifyField.ALLOW_REGEX: request.allow_regex_list,
                     DeidentifyField.RESTRICT_REGEX: request.restrict_regex_list,
-                    DeidentifyField.REQUEST_OPTIONS: self.__get_headers()
+                    DeidentifyField.REQUEST_OPTIONS: {'additional_headers': self.__get_headers()}
                 }
 
             elif file_extension in [FileExtension.CSV, FileExtension.XLS, FileExtension.XLSX]:
@@ -374,7 +390,7 @@ class Detect:
                     DeidentifyField.TOKEN_TYPE: self.__get_token_format(request),
                     DeidentifyField.ALLOW_REGEX: request.allow_regex_list,
                     DeidentifyField.RESTRICT_REGEX: request.restrict_regex_list,
-                    DeidentifyField.REQUEST_OPTIONS: self.__get_headers()
+                    DeidentifyField.REQUEST_OPTIONS: {'additional_headers': self.__get_headers()}
                 }
 
             elif file_extension in [FileExtension.DOC, FileExtension.DOCX]:
@@ -387,7 +403,7 @@ class Detect:
                     DeidentifyField.TOKEN_TYPE: self.__get_token_format(request),
                     DeidentifyField.ALLOW_REGEX: request.allow_regex_list,
                     DeidentifyField.RESTRICT_REGEX: request.restrict_regex_list,
-                    DeidentifyField.REQUEST_OPTIONS: self.__get_headers()
+                    DeidentifyField.REQUEST_OPTIONS: {'additional_headers': self.__get_headers()}
                 }
 
             elif file_extension in [FileExtension.JSON, FileExtension.XML]:
@@ -401,7 +417,7 @@ class Detect:
                     DeidentifyField.ALLOW_REGEX: request.allow_regex_list,
                     DeidentifyField.RESTRICT_REGEX: request.restrict_regex_list,
                     DeidentifyField.TRANSFORMATIONS: self.__get_transformations(request),
-                    DeidentifyField.REQUEST_OPTIONS: self.__get_headers()
+                    DeidentifyField.REQUEST_OPTIONS: {'additional_headers': self.__get_headers()}
                 }
 
             else:
@@ -415,7 +431,7 @@ class Detect:
                     DeidentifyField.ALLOW_REGEX: request.allow_regex_list,
                     DeidentifyField.RESTRICT_REGEX: request.restrict_regex_list,
                     DeidentifyField.TRANSFORMATIONS: self.__get_transformations(request),
-                    DeidentifyField.REQUEST_OPTIONS: self.__get_headers()
+                    DeidentifyField.REQUEST_OPTIONS: {'additional_headers': self.__get_headers()}
                 }
 
             log_info(SkyflowMessages.Info.DETECT_FILE_REQUEST_RESOLVED.value, self.__vault_client.get_logger())
@@ -424,7 +440,7 @@ class Detect:
             run_id = getattr(api_response.data, DeidentifyField.RUN_ID, None)
 
             processed_response = self.__poll_for_processed_file(run_id, request.wait_time)
-            if request.output_directory and processed_response.status == DetectStatus.SUCCESS:
+            if request.output_directory and processed_response.status == DetectStatus.SUCCESS and file_name:
                 name_without_ext, _ = os.path.splitext(file_name)
                 self.__save_deidentify_file_response_output(processed_response, request.output_directory, file_name, name_without_ext)
 
@@ -449,10 +465,10 @@ class Detect:
             response = files_api.get_run(
                 run_id,
                 vault_id=self.__vault_client.get_vault_id(),
-                request_options=self.__get_headers()
+                request_options={'additional_headers': self.__get_headers()}
             )
             if response.data.status == DetectStatus.IN_PROGRESS:
-                parsed_response = self.__parse_deidentify_file_response(DeidentifyFileResponse(run_id=run_id, status=DetectStatus.IN_PROGRESS))
+                parsed_response = DeidentifyFileResponse(run_id=run_id, status=DetectStatus.IN_PROGRESS)
             else:
                 parsed_response = self.__parse_deidentify_file_response(response.data, run_id, response.data.status)
             log_info(SkyflowMessages.Info.GET_DETECT_RUN_SUCCESS.value,self.__vault_client.get_logger())
