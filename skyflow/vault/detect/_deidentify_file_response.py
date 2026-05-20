@@ -5,19 +5,19 @@ from skyflow.vault.detect._file import File
 class DeidentifyFileResponse:
     def __init__(
         self,
-        file_base64: str = None,
-        file: io.BytesIO = None,
-        type: str = None,
-        extension: str = None,
-        word_count: int = None,
-        char_count: int = None,
-        size_in_kb: float = None,
-        duration_in_seconds: float = None,
-        page_count: int = None,
-        slide_count: int = None,
-        entities: list = None,  # list of dicts with keys 'file' and 'extension'
-        run_id: str = None,
-        status: str = None,
+        file_base64: Optional[str] = None,
+        file: Optional[io.BytesIO] = None,
+        type: Optional[str] = None,
+        extension: Optional[str] = None,
+        word_count: Optional[int] = None,
+        char_count: Optional[int] = None,
+        size_in_kb: Optional[float] = None,
+        duration_in_seconds: Optional[float] = None,
+        page_count: Optional[int] = None,
+        slide_count: Optional[int] = None,
+        entities: Optional[list] = None,
+        run_id: Optional[str] = None,
+        status: Optional[str] = None,
         errors: Optional[list] = None,
     ):
         self.file_base64 = file_base64

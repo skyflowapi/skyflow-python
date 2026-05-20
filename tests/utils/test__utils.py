@@ -387,7 +387,7 @@ class TestUtils(unittest.TestCase):
         expected_data = [{"field1": "value1", "field2": "value2"}, {"field1": "value3", "field2": "value4"}]
         self.assertEqual(result.data, expected_data)
 
-        # self.assertEqual(result.errors, None)
+        self.assertIsNone(result.errors)
 
     def test_parse_detokenize_response_with_mixed_records(self):
         mock_api_response = Mock()

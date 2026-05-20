@@ -1,4 +1,5 @@
 import unittest
+import warnings
 from unittest.mock import patch, Mock
 
 from skyflow import LogLevel, Env
@@ -6,6 +7,7 @@ from skyflow.error import SkyflowError
 from skyflow.utils import SkyflowMessages
 from skyflow import Skyflow
 from skyflow.vault.client.client import VaultClient
+from skyflow.vault.data import FileUploadRequest
 
 VALID_VAULT_CONFIG = {
     "vault_id": "VAULT_ID",
@@ -252,7 +254,7 @@ class TestSkyflow(unittest.TestCase):
         new_config["vault_id"] = "VAULT_ID"
         skyflow_client.add_vault_config(new_config)
 
-        assert mock_validate_vault_config.call_count == 2
+        self.assertEqual(mock_validate_vault_config.call_count, 2)
 
         self.assertEqual("VAULT_ID", skyflow_client.get_vault_config(new_config["vault_id"]).get("vault_id"))
 
@@ -284,7 +286,7 @@ class TestSkyflow(unittest.TestCase):
         new_config["connection_id"] = "CONNECTION_ID"
         skyflow_client.add_connection_config(new_config)
 
-        assert mock_validate_connection_config.call_count == 2
+        self.assertEqual(mock_validate_connection_config.call_count, 2)
         self.assertEqual(
             "CONNECTION_ID", skyflow_client.get_connection_config(new_config["connection_id"]).get("connection_id")
         )
@@ -342,6 +344,51 @@ class TestSkyflow(unittest.TestCase):
         skyflow_client.connection()
         mock_get_vault_config.assert_called_once()
 
+    def test_detect_returns_detect_controller(self):
+        skyflow_client = self.builder.add_vault_config(VALID_VAULT_CONFIG).build()
+        from skyflow.vault.controller import Detect
+        result = skyflow_client.detect()
+        self.assertIsInstance(result, Detect)
+
+    def test_detect_with_explicit_vault_id(self):
+        skyflow_client = self.builder.add_vault_config(VALID_VAULT_CONFIG).build()
+        from skyflow.vault.controller import Detect
+        result = skyflow_client.detect(VALID_VAULT_CONFIG["vault_id"])
+        self.assertIsInstance(result, Detect)
+
+    def test_detect_with_invalid_vault_id_raises_error(self):
+        skyflow_client = self.builder.add_vault_config(VALID_VAULT_CONFIG).build()
+        with self.assertRaises(SkyflowError) as context:
+            skyflow_client.detect("invalid_vault_id")
+        self.assertEqual(
+            context.exception.message,
+            SkyflowMessages.Error.VAULT_ID_NOT_IN_CONFIG_LIST.value.format("invalid_vault_id"),
+        )
+
+    @patch("skyflow.vault.client.client.VaultClient.update_config")
+    def test_update_vault_config_with_invalid_vault_id_raises_error(self, _mock):
+        skyflow_client = self.builder.add_vault_config(VALID_VAULT_CONFIG).build()
+        invalid_config = VALID_VAULT_CONFIG.copy()
+        invalid_config["vault_id"] = "non_existent_vault_id"
+        with self.assertRaises(SkyflowError) as context:
+            skyflow_client.update_vault_config(invalid_config)
+        self.assertEqual(
+            context.exception.message,
+            SkyflowMessages.Error.VAULT_ID_NOT_IN_CONFIG_LIST.value.format("non_existent_vault_id"),
+        )
+
+    @patch("skyflow.vault.client.client.VaultClient.update_config")
+    def test_update_connection_config_with_invalid_connection_id_raises_error(self, _mock):
+        skyflow_client = self.builder.add_connection_config(VALID_CONNECTION_CONFIG).build()
+        invalid_config = VALID_CONNECTION_CONFIG.copy()
+        invalid_config["connection_id"] = "non_existent_connection_id"
+        with self.assertRaises(SkyflowError) as context:
+            skyflow_client.update_connection_config(invalid_config)
+        self.assertEqual(
+            context.exception.message,
+            SkyflowMessages.Error.CONNECTION_ID_NOT_IN_CONFIG_LIST.value.format("non_existent_connection_id"),
+        )
+
 
 class TestVaultClient(unittest.TestCase):
     def _make_client(self):
@@ -372,3 +419,76 @@ class TestVaultClient(unittest.TestCase):
         options_passed = mock_gen.call_args[0][1]
         self.assertIn("token_uri", options_passed)
         self.assertEqual(options_passed["token_uri"], "https://custom-token-uri.com/token")
+
+
+class TestUpdateLogLevelDeprecation(unittest.TestCase):
+    def _build_client(self):
+        return Skyflow.builder().add_vault_config(VALID_VAULT_CONFIG).build()
+
+    def test_update_log_level_emits_deprecation_warning(self):
+        client = self._build_client()
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            client.update_log_level(LogLevel.INFO)
+        deprecation_warnings = [w for w in caught if issubclass(w.category, DeprecationWarning)]
+        self.assertGreaterEqual(len(deprecation_warnings), 1)
+        self.assertTrue(any("set_log_level" in str(w.message) for w in deprecation_warnings))
+
+    def test_update_log_level_warning_points_at_caller(self):
+        client = self._build_client()
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            client.update_log_level(LogLevel.INFO)
+        self.assertEqual(caught[0].filename, __file__)
+
+    def test_update_log_level_delegates_to_set_log_level(self):
+        client = self._build_client()
+        with warnings.catch_warnings(record=True):
+            warnings.simplefilter("always")
+            client.update_log_level(LogLevel.INFO)
+        self.assertEqual(client.get_log_level(), LogLevel.INFO)
+
+
+class TestFileUploadRequestDeprecation(unittest.TestCase):
+    def test_keyword_args_no_warning(self):
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            req = FileUploadRequest(
+                table="table",
+                column_name="col",
+                skyflow_id="sky123",
+            )
+        self.assertEqual(len(caught), 0)
+        self.assertEqual(req.table, "table")
+        self.assertEqual(req.column_name, "col")
+        self.assertEqual(req.skyflow_id, "sky123")
+
+    def test_old_positional_order_emits_deprecation_warning(self):
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            req = FileUploadRequest("table", "sky123", "col")
+        self.assertEqual(len(caught), 1)
+        self.assertTrue(issubclass(caught[0].category, DeprecationWarning))
+        self.assertIn("FileUploadRequest", str(caught[0].message))
+
+    def test_old_positional_order_remaps_args_correctly(self):
+        with warnings.catch_warnings(record=True):
+            warnings.simplefilter("always")
+            req = FileUploadRequest("table", "sky123", "col")
+        self.assertEqual(req.skyflow_id, "sky123")
+        self.assertEqual(req.column_name, "col")
+
+    def test_old_positional_order_warning_points_at_caller(self):
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            FileUploadRequest("table", "sky123", "col")
+        self.assertEqual(caught[0].filename, __file__)
+
+    def test_single_positional_arg_emits_warning_and_sets_skyflow_id(self):
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            req = FileUploadRequest("table", "sky123")
+        self.assertEqual(len(caught), 1)
+        self.assertTrue(issubclass(caught[0].category, DeprecationWarning))
+        self.assertEqual(req.skyflow_id, "sky123")
+        self.assertIsNone(req.column_name)
