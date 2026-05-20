@@ -1,12 +1,10 @@
 import json
 from skyflow.service_account import (
-    is_expired,
     generate_signed_data_tokens,
     generate_signed_data_tokens_from_creds,
 )
 
-file_path = 'CREDENTIALS_FILE_PATH'
-bearer_token = ''
+file_path = '<CREDENTIALS_FILE_PATH>'
 
 skyflow_credentials = {
     'clientID': '<YOUR_CLIENT_ID>',
@@ -19,15 +17,18 @@ credentials_string = json.dumps(skyflow_credentials)
 
 
 # Approach 1: Signed data tokens with string context
+# Returns: [('<DATA_TOKEN>', '<SIGNED_TOKEN>'), ...]
 def get_signed_tokens_with_string_context():
     options = {
         'ctx': 'user_12345',
-        'data_tokens': ['DATA_TOKEN1', 'DATA_TOKEN2'],
+        'data_tokens': ['<DATA_TOKEN1>', '<DATA_TOKEN2>'],
         'time_to_live': 90,  # in seconds
     }
     try:
-        data_token, signed_data_token = generate_signed_data_tokens(file_path, options)
-        return data_token, signed_data_token
+        results = generate_signed_data_tokens(file_path, options)
+        for data_token, signed_data_token in results:
+            print(f'  Token: {data_token}, Signed Token: {signed_data_token}')
+        return results
     except Exception as e:
         print(f'Error: {str(e)}')
 
@@ -42,12 +43,14 @@ def get_signed_tokens_with_object_context():
             'department': 'research',
             'user_id': 'user_67890',
         },
-        'data_tokens': ['DATA_TOKEN1', 'DATA_TOKEN2'],
+        'data_tokens': ['<DATA_TOKEN1>', '<DATA_TOKEN2>'],
         'time_to_live': 90,
     }
     try:
-        data_token, signed_data_token = generate_signed_data_tokens(file_path, options)
-        return data_token, signed_data_token
+        results = generate_signed_data_tokens(file_path, options)
+        for data_token, signed_data_token in results:
+            print(f'  Token: {data_token}, Signed Token: {signed_data_token}')
+        return results
     except Exception as e:
         print(f'Error: {str(e)}')
 
@@ -56,16 +59,21 @@ def get_signed_tokens_with_object_context():
 def get_signed_tokens_from_credentials_string():
     options = {
         'ctx': 'user_12345',
-        'data_tokens': ['DATA_TOKEN1', 'DATA_TOKEN2'],
+        'data_tokens': ['<DATA_TOKEN1>', '<DATA_TOKEN2>'],
         'time_to_live': 90,
     }
     try:
-        data_token, signed_data_token = generate_signed_data_tokens_from_creds(credentials_string, options)
-        return data_token, signed_data_token
+        results = generate_signed_data_tokens_from_creds(credentials_string, options)
+        for data_token, signed_data_token in results:
+            print(f'  Token: {data_token}, Signed Token: {signed_data_token}')
+        return results
     except Exception as e:
         print(f'Error: {str(e)}')
 
 
-print("String context:", get_signed_tokens_with_string_context())
-print("Object context:", get_signed_tokens_with_object_context())
-print("Creds string:", get_signed_tokens_from_credentials_string())
+print('String context:')
+get_signed_tokens_with_string_context()
+print('Object context:')
+get_signed_tokens_with_object_context()
+print('Creds string:')
+get_signed_tokens_from_credentials_string()

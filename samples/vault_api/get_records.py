@@ -4,6 +4,7 @@ from skyflow import Env
 from skyflow import Skyflow, LogLevel
 from skyflow.vault.data import GetRequest
 
+
 def perform_secure_data_retrieval():
     try:
         # Step 1: Configure Credentials
@@ -28,7 +29,7 @@ def perform_secure_data_retrieval():
             'vault_id': '<YOUR_VAULT_ID1>',  # primary vault
             'cluster_id': '<YOUR_CLUSTER_ID1>',  # Cluster ID from your vault URL
             'env': Env.PROD,  # Deployment environment (PROD by default)
-            'credentials': credentials  # Authentication method
+            'credentials': credentials,  # Authentication method
         }
 
         # Step 3: Configure & Initialize Skyflow Client
@@ -42,10 +43,10 @@ def perform_secure_data_retrieval():
 
         # Step 4: Prepare Retrieval Data
 
-        get_ids = ['<SKYFLOW_ID1>', 'SKYFLOW_ID2']
+        get_ids = ['<SKYFLOW_ID1>', '<SKYFLOW_ID2>']
 
         get_request = GetRequest(
-            table='<SENSITIVE_DATA_TABLE>', # Replace with your actual table name
+            table='<SENSITIVE_DATA_TABLE>',  # Replace with your actual table name
             ids=get_ids,
         )
 
@@ -57,11 +58,7 @@ def perform_secure_data_retrieval():
 
     except SkyflowError as error:
         # Comprehensive Error Handling
-        print('Skyflow Specific Error: ', {
-            'code': error.http_code,
-            'message': error.message,
-            'details': error.details
-        })
+        print('Skyflow Specific Error: ', {'code': error.http_code, 'message': error.message, 'details': error.details})
     except Exception as error:
         print('Unexpected Error:', error)
 
