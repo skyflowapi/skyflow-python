@@ -4,6 +4,7 @@ from ._version import SDK_VERSION
 
 error_prefix = f"Skyflow Python SDK {SDK_VERSION}"
 INFO = "INFO"
+WARN = "WARN"
 ERROR = "ERROR"
 
 class SkyflowMessages:
@@ -417,11 +418,11 @@ class SkyflowMessages:
 
     class Warning(Enum):
         UPDATE_LOG_LEVEL_DEPRECATED = (
-            "[DEPRECATED] Skyflow.update_log_level() is deprecated. "
-            "Use Skyflow.set_log_level() instead — identical behavior."
+            f"{WARN}: [{error_prefix}] Skyflow.update_log_level() is deprecated. "
+            "Use Skyflow.set_log_level() instead."
         )
         FILE_UPLOAD_REQUEST_ARG_ORDER_DEPRECATED = (
-            "[DEPRECATED] FileUploadRequest: argument order changed. "
+            f"{WARN}: [{error_prefix}] FileUploadRequest: argument order changed. "
             "Old positional order: (table, skyflow_id, column_name). "
             "New order: FileUploadRequest(table, column_name=..., skyflow_id=...)."
         )

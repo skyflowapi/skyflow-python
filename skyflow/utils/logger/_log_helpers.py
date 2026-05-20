@@ -2,12 +2,24 @@ from ..enums import LogLevel
 from . import Logger
 from ..constants import ResponseField
 
+_active_log_level = LogLevel.ERROR
+
+
+def set_active_log_level(level):
+    global _active_log_level
+    _active_log_level = level
+
 
 def log_info(message, logger = None):
     if not logger:
         logger = Logger(LogLevel.INFO)
 
     logger.info(message)
+
+def log_warn(message, logger=None):
+    if not logger:
+        logger = Logger(_active_log_level)
+    logger.warn(message)
 
 def log_error_log(message, logger=None):
     if not logger:

@@ -1,7 +1,7 @@
-import warnings
 from typing import BinaryIO, Optional
 
 from skyflow.utils import SkyflowMessages
+from skyflow.utils.logger import log_warn
 
 
 class FileUploadRequest:
@@ -15,12 +15,7 @@ class FileUploadRequest:
                  file_object: Optional[BinaryIO] = None,
                  file_name: Optional[str] = None):
         if args:
-            warnings.warn(
-                SkyflowMessages.Warning.FILE_UPLOAD_REQUEST_ARG_ORDER_DEPRECATED.value,
-                DeprecationWarning,
-                stacklevel=2,
-            )
-            # Old positional order was: (table, skyflow_id, column_name, ...)
+            log_warn(SkyflowMessages.Warning.FILE_UPLOAD_REQUEST_ARG_ORDER_DEPRECATED.value)
             skyflow_id = args[0] if args else skyflow_id
             column_name = args[1] if len(args) > 1 else column_name
         self.table = table
