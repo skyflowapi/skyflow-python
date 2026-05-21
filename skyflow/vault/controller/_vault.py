@@ -223,7 +223,7 @@ class Vault:
         tokens_list = [
             V1DetokenizeRecordRequest(
                 token=item.get(ResponseField.TOKEN),
-                redaction=item.get(RequestParameter.REDACTION, RedactionType.DEFAULT)
+                redaction=item.get(RequestParameter.REDACTION_TYPE) or item.get(RequestParameter.REDACTION, RedactionType.DEFAULT)
             )
             for item in request.data
         ]

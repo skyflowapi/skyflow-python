@@ -55,11 +55,11 @@ def perform_detokenization():
         detokenize_data = [
             {
                 'token': '<TOKEN1>',                # Token to be detokenized
-                'redaction': RedactionType.REDACTED
+                'redaction_type': RedactionType.REDACTED
             },
             {
                 'token': '<TOKEN2>',                # Token to be detokenized
-                'redaction': RedactionType.MASKED
+                'redaction_type': RedactionType.MASKED
             }
         ]
 

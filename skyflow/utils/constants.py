@@ -174,6 +174,7 @@ class RequestParameter:
     VALUE = 'value'
     COLUMN_GROUP = 'column_group'
     REDACTION = 'redaction'
+    REDACTION_TYPE = 'redaction_type'
 
 
 class FileUploadField:
