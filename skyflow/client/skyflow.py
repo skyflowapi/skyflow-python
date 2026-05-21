@@ -1,10 +1,8 @@
-import warnings
 from collections import OrderedDict
-from typing_extensions import deprecated
 from skyflow import LogLevel
 from skyflow.error import SkyflowError
 from skyflow.utils import SkyflowMessages
-from skyflow.utils.logger import log_info, Logger
+from skyflow.utils.logger import log_info, log_warn, set_active_log_level, Logger
 from skyflow.utils.constants import OptionField
 from skyflow.utils.validations import validate_vault_config, validate_connection_config, validate_update_vault_config, \
     validate_update_connection_config, validate_credentials, validate_log_level
@@ -61,13 +59,9 @@ class Skyflow:
         self.__builder._Builder__set_log_level(log_level)
         return self
 
-    @deprecated("[DEPRECATED] Use set_log_level() instead.")
     def update_log_level(self, log_level):
-        warnings.warn(
-            SkyflowMessages.Warning.UPDATE_LOG_LEVEL_DEPRECATED.value,
-            DeprecationWarning,
-            stacklevel=2,
-        )
+        """.. deprecated:: Use set_log_level() instead. Will be removed in a future release."""
+        log_warn(SkyflowMessages.Warning.UPDATE_LOG_LEVEL_DEPRECATED.value)
         return self.set_log_level(log_level)
 
     def get_log_level(self):
@@ -227,6 +221,7 @@ class Skyflow:
             validate_log_level(self.__logger, log_level)
             self.__log_level = log_level
             self.__logger.set_log_level(log_level)
+            set_active_log_level(log_level)
             self.__update_vault_client_logger(log_level, self.__logger)
             log_info(SkyflowMessages.Info.LOGGER_SETUP_DONE.value, self.__logger)
             log_info(SkyflowMessages.Info.CURRENT_LOG_LEVEL.value.format(self.__log_level), self.__logger)
@@ -243,6 +238,7 @@ class Skyflow:
         def build(self):
             validate_log_level(self.__logger, self.__log_level)
             self.__logger.set_log_level(self.__log_level)
+            set_active_log_level(self.__log_level)
 
             for config in self.__vault_list:
                 self.__add_vault_config(config)

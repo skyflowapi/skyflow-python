@@ -410,7 +410,9 @@ Refer to [Query your data](https://docs.skyflow.com/query-data/) and [Execute Qu
 
 ### Upload File
 
-Upload files to a Skyflow vault using the `upload_file` method. Create a file upload request with the `FileUploadRequest` class, which accepts parameters such as the table name, column name, and Skyflow ID.
+Upload files to a Skyflow vault using the `upload_file` method. Create a file upload request with the `FileUploadRequest` class.
+
+**Upload a file to an existing record:**
 
 ```python
 from skyflow.vault.data import FileUploadRequest
@@ -418,13 +420,26 @@ from skyflow.vault.data import FileUploadRequest
 # Open the file in binary read mode
 with open('path/to/file.pdf', 'rb') as file_obj:
     upload_request = FileUploadRequest(
-        table='documents', # Table name
-        column_name='attachment', # Column name to store file
-        skyflow_id='<SKYFLOW_ID>', # Skyflow ID of the record
-        file_object=file_obj # Pass file object
+        table='<TABLE_NAME>',
+        column_name='<COLUMN_NAME>',
+        skyflow_id='<SKYFLOW_ID>',
+        file_object=file_obj
     )
-    
-    # Perform File Upload
+
+    response = skyflow_client.vault('<VAULT_ID>').upload_file(upload_request)
+    print('File upload:', response)
+```
+
+**Upload a file and create a new record (omit `skyflow_id`):**
+
+```python
+with open('path/to/file.pdf', 'rb') as file_obj:
+    upload_request = FileUploadRequest(
+        table='documents',
+        column_name='attachment',
+        file_object=file_obj
+    )
+
     response = skyflow_client.vault('<VAULT_ID>').upload_file(upload_request)
     print('File upload:', response)
 ```
