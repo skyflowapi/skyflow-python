@@ -1057,10 +1057,35 @@ class TestValidations(unittest.TestCase):
         self.assertEqual(context.exception.message, SkyflowMessages.Error.INVALID_CONTINUE_ON_ERROR_TYPE.value)
 
     def test_validate_detokenize_request_invalid_redaction_type(self):
-        request = DetokenizeRequest(data=[{"token": "token123", "redaction": "invalid"}], continue_on_error=False)
+        request = DetokenizeRequest(data=[{"token": "token123", "redaction_type": "invalid"}], continue_on_error=False)
         with self.assertRaises(SkyflowError) as context:
             validate_detokenize_request(self.logger, request)
         self.assertEqual(context.exception.message, SkyflowMessages.Error.INVALID_REDACTION_TYPE.value.format(str(type("invalid"))))
+
+    def test_validate_detokenize_request_deprecated_redaction_key_emits_warn(self):
+        from unittest.mock import patch
+        request = DetokenizeRequest(data=[{"token": "token123", "redaction": RedactionType.PLAIN_TEXT}], continue_on_error=False)
+        with patch('skyflow.utils.validations._validations.log_warn') as mock_warn:
+            validate_detokenize_request(self.logger, request)
+        mock_warn.assert_called_once()
+        self.assertIn("redaction_type", mock_warn.call_args[0][0])
+
+    def test_validate_detokenize_request_both_keys_prioritizes_redaction_type_and_warns(self):
+        from unittest.mock import patch
+        request = DetokenizeRequest(
+            data=[{"token": "token123", "redaction": RedactionType.PLAIN_TEXT, "redaction_type": RedactionType.MASKED}],
+            continue_on_error=False
+        )
+        with patch('skyflow.utils.validations._validations.log_warn') as mock_warn:
+            validate_detokenize_request(self.logger, request)
+        mock_warn.assert_called_once()
+
+    def test_validate_detokenize_request_redaction_type_only_no_warn(self):
+        from unittest.mock import patch
+        request = DetokenizeRequest(data=[{"token": "token123", "redaction_type": RedactionType.PLAIN_TEXT}], continue_on_error=False)
+        with patch('skyflow.utils.validations._validations.log_warn') as mock_warn:
+            validate_detokenize_request(self.logger, request)
+        mock_warn.assert_not_called()
 
 
     def test_validate_deidentify_file_request_wait_time_negative(self):

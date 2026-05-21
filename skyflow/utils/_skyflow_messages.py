@@ -122,7 +122,7 @@ class SkyflowMessages:
         INVOKE_CONNECTION_FAILED = f"{error_prefix} Invoke Connection operation failed."
 
         INVALID_IDS_TYPE = f"{error_prefix} Validation error. 'ids' has a value of type {{}}. Specify 'ids' as list."
-        INVALID_REDACTION_TYPE = f"{error_prefix} Validation error. 'redaction' has a value of type {{}}. Specify 'redaction' as type Skyflow.RedactionType."
+        INVALID_REDACTION_TYPE = f"{error_prefix} Validation error. 'redaction_type' has a value of type {{}}. Specify 'redaction_type' as type Skyflow.RedactionType."
         INVALID_COLUMN_NAME = f"{error_prefix} Validation error. column_name has a value of type {{}}. Specify 'column' as a string."
         INVALID_COLUMN_VALUE = f"{error_prefix} Validation error. column_values key has a value of type {{}}. Specify column_values key as list."
         INVALID_COLUMN_VALUES = f"{error_prefix} Validation error. column_values key is an empty list. Specify at least one column value when column_name is passed." 
@@ -131,7 +131,7 @@ class SkyflowMessages:
         INVALID_OFF_SET_VALUE = f"{error_prefix} Validation error. offset key has a value of type {{}}. Specify offset key as integer."
         INVALID_LIMIT_VALUE = f"{error_prefix} Validation error. limit key has a value of type {{}}. Specify limit key as integer."
         INVALID_DOWNLOAD_URL_VALUE = f"{error_prefix} Validation error. download_url key has a value of type {{}}. Specify download_url key as boolean."
-        REDACTION_WITH_TOKENS_NOT_SUPPORTED = f"{error_prefix} Validation error. 'redaction' can't be used when tokens are specified. Remove 'redaction' from payload if tokens are specified."
+        REDACTION_WITH_TOKENS_NOT_SUPPORTED = f"{error_prefix} Validation error. 'redaction_type' can't be used when tokens are specified. Remove 'redaction_type' from payload if tokens are specified."
         TOKENS_GET_COLUMN_NOT_SUPPORTED = f"{error_prefix} Validation error. Column name and/or column values can't be used when tokens are specified. Remove unique column values or tokens from the payload."
         BOTH_IDS_AND_COLUMN_DETAILS_SPECIFIED = f"{error_prefix} Validation error. Both Skyflow IDs and column details can't be specified. Either specify Skyflow IDs or unique column details."
         INVALID_ORDER_BY_VALUE = f"{error_prefix} Validation error. order_by key has a value of type {{}}. Specify order_by key as Skyflow.OrderBy"
@@ -139,7 +139,7 @@ class SkyflowMessages:
         UPDATE_FIELD_KEY_ERROR = f"{error_prefix} Validation error. Fields are empty in an update payload. Specify at least one field."
         INVALID_FIELDS_TYPE = f"{error_prefix} Validation error. The 'data' key has a value of type {{}}. Specify 'data' as a dictionary."
         IDS_KEY_ERROR = f"{error_prefix} Validation error. 'ids' key is missing from the payload. Specify an 'ids' key."
-        INVALID_TOKENS_LIST_VALUE = f"{error_prefix} Validation error. The 'data' field is invalid. Specify 'data' as a list of dictionaries containing 'token' and 'redaction'."
+        INVALID_TOKENS_LIST_VALUE = f"{error_prefix} Validation error. The 'data' field is invalid. Specify 'data' as a list of dictionaries containing 'token' and 'redaction_type'."
         INVALID_DATA_FOR_DETOKENIZE = f"{error_prefix}"
         EMPTY_TOKENS_LIST_VALUE = f"{error_prefix} Validation error. Tokens are empty in detokenize payload. Specify at lease one token"
         INVALID_TOKEN_TYPE = f"{ERROR}: [{error_prefix}] Invalid {{}} request. Tokens should be of type string."
@@ -417,6 +417,9 @@ class SkyflowMessages:
         BAD_REQUEST = "Bad Request"
 
     class Warning(Enum):
+        DETOKENIZE_REDACTION_KEY_DEPRECATED = (
+            f"{WARN}: [{error_prefix}] 'redaction' key in detokenize data is deprecated and will be removed in a future version. Use 'redaction_type' instead."
+        )
         UPDATE_LOG_LEVEL_DEPRECATED = (
             f"{WARN}: [{error_prefix}] Skyflow.update_log_level() is deprecated. "
             "Use Skyflow.set_log_level() instead."

@@ -11,7 +11,7 @@ from skyflow.utils.constants import (
     FileUploadField,
     DeidentifyFileRequestField, RequestOperation, ConfigType, SqlCommand, ConfigField, OptionField, CredentialField, Detect
 )
-from skyflow.utils.logger import log_info, log_error_log
+from skyflow.utils.logger import log_info, log_warn, log_error_log
 from skyflow.vault.detect import DeidentifyTextRequest, ReidentifyTextRequest, TokenFormat, Transformations, \
     GetDetectRunRequest, Bleep, DeidentifyFileRequest
 from skyflow.vault.detect._file_input import FileInput
@@ -713,7 +713,17 @@ def validate_detokenize_request(logger, request):
                                invalid_input_error_code)
 
         token = item.get(ResponseField.TOKEN)
-        redaction = item.get(RequestParameter.REDACTION, None)
+
+        has_redaction = RequestParameter.REDACTION in item
+        has_redaction_type = RequestParameter.REDACTION_TYPE in item
+
+        if has_redaction:
+            log_warn(SkyflowMessages.Warning.DETOKENIZE_REDACTION_KEY_DEPRECATED.value, logger)
+
+        if has_redaction_type:
+            redaction = item.get(RequestParameter.REDACTION_TYPE)
+        else:
+            redaction = item.get(RequestParameter.REDACTION, None)
 
         if not isinstance(token, str) or not token:
             raise SkyflowError(SkyflowMessages.Error.INVALID_TOKEN_TYPE.value.format(RequestOperation.DETOKENIZE),

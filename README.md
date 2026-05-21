@@ -239,8 +239,8 @@ from skyflow.utils.enums import RedactionType
 
 detokenize_request = DetokenizeRequest(
     data=[
-        {'token': 'token1', 'redaction': RedactionType.PLAIN_TEXT},
-        {'token': 'token2', 'redaction': RedactionType.PLAIN_TEXT}
+        {'token': 'token1', 'redaction_type': RedactionType.PLAIN_TEXT},
+        {'token': 'token2', 'redaction_type': RedactionType.PLAIN_TEXT}
     ],
     continue_on_error=True
 )
