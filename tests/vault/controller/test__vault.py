@@ -742,6 +742,56 @@ class TestVault(unittest.TestCase):
         self.assertEqual(result.skyflow_id, "generated-id-123")
         self.assertIsNone(result.errors)
 
+    @patch("skyflow.vault.controller._vault.validate_file_upload_request")
+    @patch("skyflow.vault.controller._vault.open", mock_open(read_data=b"file_content"), create=True)
+    def test_upload_file_file_path_with_existing_file_name(self, mock_validate):
+        """Branch 73->76: file_name already set when file_path is present — skips basename call."""
+        request = FileUploadRequest(
+            table=TABLE_NAME,
+            column_name="file_col",
+            file_path="/path/to/file.txt",
+            file_name="already_set.txt"
+        )
+        mock_api = self.vault_client.get_records_api.return_value.with_raw_response
+        mock_response = Mock()
+        mock_response.data.skyflow_id = "sky123"
+        mock_api.upload_file_v_2.return_value = mock_response
+
+        self.vault.upload_file(request)
+        mock_api.upload_file_v_2.assert_called_once()
+
+    @patch("skyflow.vault.controller._vault.validate_file_upload_request")
+    def test_upload_file_file_object_without_name_attr(self, mock_validate):
+        """Branch 84->89: file_object has no 'name' attr — __get_file_for_file_upload returns None."""
+        file_obj = Mock(spec=[])
+        request = FileUploadRequest(
+            table=TABLE_NAME,
+            column_name="file_col",
+            file_object=file_obj
+        )
+        mock_api = self.vault_client.get_records_api.return_value.with_raw_response
+        mock_response = Mock()
+        mock_response.data.skyflow_id = "sky123"
+        mock_api.upload_file_v_2.return_value = mock_response
+
+        self.vault.upload_file(request)
+        mock_api.upload_file_v_2.assert_called_once()
+
+    @patch("skyflow.vault.controller._vault.validate_file_upload_request")
+    def test_upload_file_no_file_source_returns_none_file(self, mock_validate):
+        """Branch 84->89 (elif False): all file sources None — __get_file_for_file_upload returns None."""
+        request = FileUploadRequest(
+            table=TABLE_NAME,
+            column_name="file_col"
+        )
+        mock_api = self.vault_client.get_records_api.return_value.with_raw_response
+        mock_response = Mock()
+        mock_response.data.skyflow_id = "sky123"
+        mock_api.upload_file_v_2.return_value = mock_response
+
+        self.vault.upload_file(request)
+        mock_api.upload_file_v_2.assert_called_once()
+
 class TestFileUploadValidation(unittest.TestCase):
     def setUp(self):
         self.logger = Mock()
