@@ -781,6 +781,48 @@ class TestDetect(unittest.TestCase):
                     response, tmp_dir, "file.txt", "file"
                 )
 
+    def test_save_output_no_file_extension_uses_original_name(self):
+        """Branches 113->117 and 119->124: processed_file_extension is falsy — safe_ext stays None."""
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            output = Mock()
+            output.processedFile = base64.b64encode(b"data").decode()
+            output.processedFileType = "redacted_file"
+            output.processedFileExtension = None
+            output.processed_file_extension = None
+            response = Mock()
+            response.output = [output]
+            self.detect._Detect__save_deidentify_file_response_output(
+                response, tmp_dir, "original.txt", "original"
+            )
+
+    @patch("skyflow.vault.controller._detect.time.sleep", return_value=None)
+    def test_poll_unknown_status_then_success(self, mock_sleep):
+        """Branch 80->65: status is unknown, loops back, then returns SUCCESS."""
+        files_api = Mock()
+        files_api.with_raw_response = files_api
+        self.vault_client.get_detect_file_api.return_value = files_api
+
+        call_count = {"n": 0}
+
+        def side_effect(*args, **kwargs):
+            call_count["n"] += 1
+            r = Mock()
+            if call_count["n"] == 1:
+                r.status = "UNKNOWN_STATUS"
+            else:
+                r.status = "SUCCESS"
+            return Mock(data=r)
+
+        files_api.get_run.side_effect = side_effect
+        result = self.detect._Detect__poll_for_processed_file("runid", max_wait_time=10)
+        self.assertEqual(result.status, "SUCCESS")
+
+    def test_get_file_from_request_no_file_no_path_returns_none(self):
+        """Branch 285->exit: file_input has neither file nor file_path set."""
+        req = DeidentifyFileRequest(file=FileInput(file=None, file_path=None))
+        result = self.detect._Detect__get_file_from_request(req)
+        self.assertIsNone(result)
+
     @patch("skyflow.vault.controller._detect.validate_deidentify_file_request")
     @patch("skyflow.vault.controller._detect.base64")
     def test_deidentify_file_api_error_inside_try(self, mock_base64, mock_validate):
