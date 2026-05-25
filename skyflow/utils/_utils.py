@@ -232,6 +232,8 @@ def dict_to_xml(data, root_tag='root'):
 
 _CACHED_METRICS: dict = {}
 
+_CACHED_METRICS: dict = {}
+
 def get_metrics():
     if _CACHED_METRICS:
         return _CACHED_METRICS

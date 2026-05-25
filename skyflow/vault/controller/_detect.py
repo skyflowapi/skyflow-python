@@ -477,4 +477,3 @@ class Detect:
             log_error_log(SkyflowMessages.ErrorLogs.DETECT_FILE_REQUEST_REJECTED.value,
                           self.__vault_client.get_logger())
             handle_exception(e, self.__vault_client.get_logger())
-

@@ -20,7 +20,6 @@ from concurrent.futures import ThreadPoolExecutor
  * spreadsheets, presentations, structured text.
 """
 
-
 def perform_file_deidentification_async():
     try:
         # Step 1: Configure Credentials
@@ -46,7 +45,6 @@ def perform_file_deidentification_async():
 
         # Step 4: Create File Object
         file_path = '<FILE_PATH>'  # Replace with your file path
-
         deidentify_request = DeidentifyFileRequest(
             file=FileInput(file_path=file_path),  # File to de-identify
             # entities=[DetectEntities.SSN, DetectEntities.CREDIT_CARD],  # Entities to detect
