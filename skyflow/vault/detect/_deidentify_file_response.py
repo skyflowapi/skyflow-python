@@ -1,22 +1,24 @@
 import io
+from typing import Optional
 from skyflow.vault.detect._file import File
 
 class DeidentifyFileResponse:
     def __init__(
         self,
-        file_base64: str = None,
-        file: io.BytesIO = None,
-        type: str = None,
-        extension: str = None,
-        word_count: int = None,
-        char_count: int = None,
-        size_in_kb: float = None,
-        duration_in_seconds: float = None,
-        page_count: int = None,
-        slide_count: int = None,
-        entities: list = None,  # list of dicts with keys 'file' and 'extension'
-        run_id: str = None,
-        status: str = None,
+        file_base64: Optional[str] = None,
+        file: Optional[io.BytesIO] = None,
+        type: Optional[str] = None,
+        extension: Optional[str] = None,
+        word_count: Optional[int] = None,
+        char_count: Optional[int] = None,
+        size_in_kb: Optional[float] = None,
+        duration_in_seconds: Optional[float] = None,
+        page_count: Optional[int] = None,
+        slide_count: Optional[int] = None,
+        entities: Optional[list] = None,
+        run_id: Optional[str] = None,
+        status: Optional[str] = None,
+        errors: Optional[list] = None,
     ):
         self.file_base64 = file_base64
         self.file = File(file) if file else None
@@ -31,6 +33,7 @@ class DeidentifyFileResponse:
         self.entities = entities if entities is not None else []
         self.run_id = run_id
         self.status = status
+        self.errors = errors
 
     def __repr__(self):
         return (
@@ -40,7 +43,7 @@ class DeidentifyFileResponse:
             f"char_count={self.char_count!r}, size_in_kb={self.size_in_kb!r}, "
             f"duration_in_seconds={self.duration_in_seconds!r}, page_count={self.page_count!r}, "
             f"slide_count={self.slide_count!r}, entities={self.entities!r}, "
-            f"run_id={self.run_id!r}, status={self.status!r})"
+            f"run_id={self.run_id!r}, status={self.status!r}, errors={self.errors!r})"
         )
 
     def __str__(self):

@@ -12,13 +12,15 @@ from skyflow.utils.validations._validations import (
     validate_insert_request, validate_delete_request, validate_query_request,
     validate_get_detect_run_request, validate_get_request, validate_update_request,
     validate_detokenize_request, validate_tokenize_request, validate_invoke_connection_params,
-    validate_deidentify_text_request, validate_reidentify_text_request, validate_deidentify_file_request
+    validate_deidentify_text_request, validate_reidentify_text_request, validate_deidentify_file_request,
+    validate_file_upload_request
 )
 from skyflow.utils import SkyflowMessages
 from skyflow.utils.enums import DetectEntities, RedactionType
 from skyflow.vault.data import GetRequest, UpdateRequest
 from skyflow.vault.detect import DeidentifyTextRequest, Transformations, DateTransformation, ReidentifyTextRequest, \
-    FileInput, DeidentifyFileRequest
+    FileInput, DeidentifyFileRequest, Bleep
+from skyflow.vault.data._file_upload_request import FileUploadRequest
 from skyflow.vault.tokens import DetokenizeRequest
 from skyflow.vault.connection._invoke_connection_request import InvokeConnectionRequest
 
@@ -116,7 +118,7 @@ class TestValidations(unittest.TestCase):
         with patch('skyflow.service_account.is_expired', return_value=True):
             with self.assertRaises(SkyflowError) as context:
                 validate_credentials(self.logger, credentials)
-            self.assertEqual(context.exception.message, SkyflowMessages.Error.EXPIRED_TOKEN.value)
+            self.assertEqual(context.exception.message, SkyflowMessages.Error.EXPIRED_BEARER_TOKEN.value)
 
     def test_validate_credentials_empty_credentials(self):
         credentials = {}
@@ -205,15 +207,6 @@ class TestValidations(unittest.TestCase):
         }
         self.assertTrue(validate_update_vault_config(self.logger, config))
 
-    def test_validate_update_vault_config_missing_credentials(self):
-        config = {
-            "vault_id": "vault123",
-            "cluster_id": "cluster123"
-        }
-        with self.assertRaises(SkyflowError) as context:
-            validate_update_vault_config(self.logger, config)
-        self.assertEqual(context.exception.message, SkyflowMessages.Error.EMPTY_CREDENTIALS.value.format("vault", "vault123"))
-
     def test_validate_update_vault_config_invalid_cluster_id(self):
         config = {
             "vault_id": "vault123",
@@ -225,6 +218,18 @@ class TestValidations(unittest.TestCase):
         with self.assertRaises(SkyflowError) as context:
             validate_update_vault_config(self.logger, config)
         self.assertEqual(context.exception.message, SkyflowMessages.Error.INVALID_CLUSTER_ID.value.format("vault123"))
+
+    def test_validate_update_vault_config_missing_credentials(self):
+        config = {
+            "vault_id": "vault123",
+            "cluster_id": "cluster123",
+        }
+        with self.assertRaises(SkyflowError) as context:
+            validate_update_vault_config(self.logger, config)
+        self.assertEqual(
+            context.exception.message,
+            SkyflowMessages.Error.EMPTY_CREDENTIALS.value.format("vault", "vault123")
+        )
 
     def test_validate_connection_config_valid(self):
         config = {
@@ -258,6 +263,18 @@ class TestValidations(unittest.TestCase):
         with self.assertRaises(SkyflowError) as context:
             validate_connection_config(self.logger, config)
         self.assertEqual(context.exception.message, SkyflowMessages.Error.EMPTY_CONNECTION_ID.value)
+
+    def test_validate_connection_config_missing_credentials(self):
+        config = {
+            "connection_id": "conn123",
+            "connection_url": "https://example.com",
+        }
+        with self.assertRaises(SkyflowError) as context:
+            validate_connection_config(self.logger, config)
+        self.assertEqual(
+            context.exception.message,
+            SkyflowMessages.Error.EMPTY_CREDENTIALS.value.format("connection", "conn123")
+        )
 
     def test_validate_update_connection_config_valid(self):
         config = {
@@ -1040,7 +1057,436 @@ class TestValidations(unittest.TestCase):
         self.assertEqual(context.exception.message, SkyflowMessages.Error.INVALID_CONTINUE_ON_ERROR_TYPE.value)
 
     def test_validate_detokenize_request_invalid_redaction_type(self):
-        request = DetokenizeRequest(data=[{"token": "token123", "redaction": "invalid"}], continue_on_error=False)
+        request = DetokenizeRequest(data=[{"token": "token123", "redaction_type": "invalid"}], continue_on_error=False)
         with self.assertRaises(SkyflowError) as context:
             validate_detokenize_request(self.logger, request)
         self.assertEqual(context.exception.message, SkyflowMessages.Error.INVALID_REDACTION_TYPE.value.format(str(type("invalid"))))
+
+    def test_validate_detokenize_request_deprecated_redaction_key_emits_warn(self):
+        from unittest.mock import patch
+        request = DetokenizeRequest(data=[{"token": "token123", "redaction": RedactionType.PLAIN_TEXT}], continue_on_error=False)
+        with patch('skyflow.utils.validations._validations.log_warn') as mock_warn:
+            validate_detokenize_request(self.logger, request)
+        mock_warn.assert_called_once()
+        self.assertIn("redaction_type", mock_warn.call_args[0][0])
+
+    def test_validate_detokenize_request_both_keys_prioritizes_redaction_type_and_warns(self):
+        from unittest.mock import patch
+        request = DetokenizeRequest(
+            data=[{"token": "token123", "redaction": RedactionType.PLAIN_TEXT, "redaction_type": RedactionType.MASKED}],
+            continue_on_error=False
+        )
+        with patch('skyflow.utils.validations._validations.log_warn') as mock_warn:
+            validate_detokenize_request(self.logger, request)
+        mock_warn.assert_called_once()
+
+    def test_validate_detokenize_request_redaction_type_only_no_warn(self):
+        from unittest.mock import patch
+        request = DetokenizeRequest(data=[{"token": "token123", "redaction_type": RedactionType.PLAIN_TEXT}], continue_on_error=False)
+        with patch('skyflow.utils.validations._validations.log_warn') as mock_warn:
+            validate_detokenize_request(self.logger, request)
+        mock_warn.assert_not_called()
+
+
+    def test_validate_deidentify_file_request_wait_time_negative(self):
+        file_input = FileInput(file_path=self.temp_file_path)
+        request = DeidentifyFileRequest(
+            file=file_input,
+            wait_time=-1,
+            entities=[DetectEntities.SSN]
+        )
+        with self.assertRaises(SkyflowError) as context:
+            validate_deidentify_file_request(self.logger, request)
+        self.assertEqual(context.exception.message, SkyflowMessages.Error.WAIT_TIME_GREATER_THEN_64.value)
+
+    def test_validate_deidentify_file_request_wait_time_greater_than_64(self):
+        file_input = FileInput(file_path=self.temp_file_path)
+        request = DeidentifyFileRequest(
+            file=file_input,
+            wait_time=65,
+            entities=[DetectEntities.SSN]
+        )
+        with self.assertRaises(SkyflowError) as context:
+            validate_deidentify_file_request(self.logger, request)
+        self.assertEqual(context.exception.message, SkyflowMessages.Error.WAIT_TIME_GREATER_THEN_64.value)
+
+    def test_validate_deidentify_file_request_wait_time_valid_boundary_lower(self):
+        file_input = FileInput(file_path=self.temp_file_path)
+        request = DeidentifyFileRequest(
+            file=file_input,
+            wait_time=0,
+            entities=[DetectEntities.SSN]
+        )
+        validate_deidentify_file_request(self.logger, request)
+
+    def test_validate_deidentify_file_request_wait_time_valid_boundary_upper(self):
+        file_input = FileInput(file_path=self.temp_file_path)
+        request = DeidentifyFileRequest(
+            file=file_input,
+            wait_time=64,
+            entities=[DetectEntities.SSN]
+        )
+        # Should not raise an error
+        validate_deidentify_file_request(self.logger, request)
+
+    def test_validate_deidentify_file_request_wait_time_valid_float(self):
+        file_input = FileInput(file_path=self.temp_file_path)
+        request = DeidentifyFileRequest(
+            file=file_input,
+            wait_time=32.5,
+            entities=[DetectEntities.SSN]
+        )
+        # Should not raise an error
+        validate_deidentify_file_request(self.logger, request)
+
+    def test_validate_deidentify_file_request_wait_time_float_out_of_range(self):
+        file_input = FileInput(file_path=self.temp_file_path)
+        request = DeidentifyFileRequest(
+            file=file_input,
+            wait_time=64.1,
+            entities=[DetectEntities.SSN]
+        )
+        with self.assertRaises(SkyflowError) as context:
+            validate_deidentify_file_request(self.logger, request)
+        self.assertEqual(context.exception.message, SkyflowMessages.Error.WAIT_TIME_GREATER_THEN_64.value)
+    def test_validate_credentials_with_valid_token_uri(self):
+        credentials = {
+            "api_key": "sky-abc12-1234567890abcdef1234567890abcdef",
+            "token_uri": "https://valid-url.com"
+        }
+        # Should not raise
+        validate_credentials(self.logger, credentials)
+
+    def test_validate_credentials_with_invalid_token_uri_type(self):
+        credentials = {
+            "api_key": "sky-abc12-1234567890abcdef1234567890abcdef",
+            "token_uri": 12345  # Not a string
+        }
+        with self.assertRaises(SkyflowError) as context:
+            validate_credentials(self.logger, credentials)
+        self.assertEqual(context.exception.message, SkyflowMessages.Error.INVALID_TOKEN_URI.value)
+
+    def test_validate_credentials_with_invalid_token_uri_url(self):
+        credentials = {
+            "api_key": "sky-abc12-1234567890abcdef1234567890abcdef",
+            "token_uri": "not_a_url"
+        }
+        with self.assertRaises(SkyflowError) as context:
+            validate_credentials(self.logger, credentials)
+        self.assertEqual(context.exception.message, SkyflowMessages.Error.INVALID_TOKEN_URI.value)
+
+    def test_validate_update_vault_config_with_valid_token_uri(self):
+        from skyflow.utils.enums import Env
+        config = {
+            "vault_id": "vault123",
+            "cluster_id": "cluster123",
+            "credentials": {
+                "api_key": "sky-abc12-1234567890abcdef1234567890abcdef",
+                "token_uri": "https://valid-url.com"
+            },
+            "env": Env.DEV
+        }
+        # Should not raise
+        self.assertTrue(validate_update_vault_config(self.logger, config))
+
+    def test_validate_update_vault_config_with_invalid_token_uri_type(self):
+        config = {
+            "vault_id": "vault123",
+            "cluster_id": "cluster123",
+            "credentials": {
+                "api_key": "sky-abc12-1234567890abcdef1234567890abcdef",
+                "token_uri": 12345
+            }
+        }
+        with self.assertRaises(SkyflowError) as context:
+            validate_update_vault_config(self.logger, config)
+        self.assertEqual(context.exception.message, SkyflowMessages.Error.INVALID_TOKEN_URI.value)
+
+    def test_validate_update_vault_config_with_invalid_token_uri_url(self):
+        config = {
+            "vault_id": "vault123",
+            "cluster_id": "cluster123",
+            "credentials": {
+                "api_key": "sky-abc12-1234567890abcdef1234567890abcdef",
+                "token_uri": "not_a_url"
+            }
+        }
+        with self.assertRaises(SkyflowError) as context:
+            validate_update_vault_config(self.logger, config)
+        self.assertEqual(context.exception.message, SkyflowMessages.Error.INVALID_TOKEN_URI.value)
+
+    # --- validate_file_from_request ---
+
+    def test_validate_file_from_request_none_input(self):
+        with self.assertRaises(SkyflowError) as context:
+            validate_file_from_request(None)
+        self.assertEqual(context.exception.message, SkyflowMessages.Error.INVALID_FILE_INPUT.value)
+
+    def test_validate_file_from_request_file_without_name_attr(self):
+        file_obj = MagicMock(spec=[])  # no attributes at all
+        file_input = MagicMock()
+        file_input.file = file_obj
+        file_input.file_path = None
+        with self.assertRaises(SkyflowError) as context:
+            validate_file_from_request(file_input)
+        self.assertEqual(context.exception.message, SkyflowMessages.Error.INVALID_FILE_TYPE.value)
+
+    def test_validate_file_from_request_file_with_empty_name(self):
+        file_obj = MagicMock()
+        file_obj.name = "   "  # whitespace-only name
+        file_input = MagicMock()
+        file_input.file = file_obj
+        file_input.file_path = None
+        with self.assertRaises(SkyflowError) as context:
+            validate_file_from_request(file_input)
+        self.assertEqual(context.exception.message, SkyflowMessages.Error.INVALID_FILE_TYPE.value)
+
+    def test_validate_file_from_request_extension_only_name(self):
+        file_obj = MagicMock()
+        # A trailing-slash path gives os.path.basename() == "", so splitext returns ("", "")
+        file_obj.name = "/some/directory/"
+        file_input = MagicMock()
+        file_input.file = file_obj
+        file_input.file_path = None
+        with self.assertRaises(SkyflowError) as context:
+            validate_file_from_request(file_input)
+        self.assertEqual(context.exception.message, SkyflowMessages.Error.INVALID_FILE_NAME.value)
+
+    def test_validate_file_from_request_empty_string_file_path(self):
+        file_input = MagicMock()
+        file_input.file = None
+        file_input.file_path = ""  # empty string — has_file_path=True, so goes to elif branch
+        with self.assertRaises(SkyflowError) as context:
+            validate_file_from_request(file_input)
+        self.assertEqual(context.exception.message, SkyflowMessages.Error.INVALID_DEIDENTIFY_FILE_PATH.value)
+
+    # --- validate_deidentify_file_request bleep sub-fields ---
+
+    def test_validate_deidentify_file_request_invalid_bleep_type(self):
+        file_input = FileInput(file_path=self.temp_file_path)
+        request = DeidentifyFileRequest(file=file_input, bleep="not_a_bleep")
+        with self.assertRaises(SkyflowError) as context:
+            validate_deidentify_file_request(self.logger, request)
+        self.assertEqual(context.exception.message, SkyflowMessages.Error.INVALID_BLEEP_TYPE.value)
+
+    def test_validate_deidentify_file_request_invalid_bleep_gain(self):
+        file_input = FileInput(file_path=self.temp_file_path)
+        bleep = Bleep(gain="loud")
+        request = DeidentifyFileRequest(file=file_input, bleep=bleep)
+        with self.assertRaises(SkyflowError) as context:
+            validate_deidentify_file_request(self.logger, request)
+        self.assertEqual(context.exception.message, SkyflowMessages.Error.INVALID_BLEEP_GAIN.value)
+
+    def test_validate_deidentify_file_request_invalid_bleep_frequency(self):
+        file_input = FileInput(file_path=self.temp_file_path)
+        bleep = Bleep(frequency="high")
+        request = DeidentifyFileRequest(file=file_input, bleep=bleep)
+        with self.assertRaises(SkyflowError) as context:
+            validate_deidentify_file_request(self.logger, request)
+        self.assertEqual(context.exception.message, SkyflowMessages.Error.INVALID_BLEEP_FREQUENCY.value)
+
+    def test_validate_deidentify_file_request_invalid_bleep_start_padding(self):
+        file_input = FileInput(file_path=self.temp_file_path)
+        bleep = Bleep(start_padding="early")
+        request = DeidentifyFileRequest(file=file_input, bleep=bleep)
+        with self.assertRaises(SkyflowError) as context:
+            validate_deidentify_file_request(self.logger, request)
+        self.assertEqual(context.exception.message, SkyflowMessages.Error.INVALID_BLEEP_START_PADDING.value)
+
+    def test_validate_deidentify_file_request_invalid_bleep_stop_padding(self):
+        file_input = FileInput(file_path=self.temp_file_path)
+        bleep = Bleep(stop_padding="late")
+        request = DeidentifyFileRequest(file=file_input, bleep=bleep)
+        with self.assertRaises(SkyflowError) as context:
+            validate_deidentify_file_request(self.logger, request)
+        self.assertEqual(context.exception.message, SkyflowMessages.Error.INVALID_BLEEP_STOP_PADDING.value)
+
+    # --- validate_deidentify_file_request output_directory ---
+
+    def test_validate_deidentify_file_request_invalid_output_directory_type(self):
+        file_input = FileInput(file_path=self.temp_file_path)
+        request = DeidentifyFileRequest(file=file_input, output_directory=123)
+        with self.assertRaises(SkyflowError) as context:
+            validate_deidentify_file_request(self.logger, request)
+        self.assertEqual(context.exception.message, SkyflowMessages.Error.INVALID_OUTPUT_DIRECTORY_VALUE.value)
+
+    def test_validate_deidentify_file_request_output_directory_not_found(self):
+        file_input = FileInput(file_path=self.temp_file_path)
+        nonexistent = "/tmp/skyflow_nonexistent_dir_12345"
+        request = DeidentifyFileRequest(file=file_input, output_directory=nonexistent)
+        with self.assertRaises(SkyflowError) as context:
+            validate_deidentify_file_request(self.logger, request)
+        self.assertEqual(
+            context.exception.message,
+            SkyflowMessages.Error.OUTPUT_DIRECTORY_NOT_FOUND.value.format(nonexistent)
+        )
+
+    def test_validate_deidentify_file_request_valid_output_directory(self):
+        file_input = FileInput(file_path=self.temp_file_path)
+        request = DeidentifyFileRequest(file=file_input, output_directory=self.temp_dir_path)
+        validate_deidentify_file_request(self.logger, request)
+
+    # --- validate_file_upload_request ---
+
+    def test_validate_file_upload_request_none(self):
+        with self.assertRaises(SkyflowError) as context:
+            validate_file_upload_request(self.logger, None)
+        self.assertEqual(context.exception.message, SkyflowMessages.Error.INVALID_TABLE_VALUE.value)
+
+    def test_validate_file_upload_request_none_table(self):
+        request = MagicMock()
+        request.table = None
+        with self.assertRaises(SkyflowError) as context:
+            validate_file_upload_request(self.logger, request)
+        self.assertEqual(context.exception.message, SkyflowMessages.Error.INVALID_TABLE_VALUE.value)
+
+    def test_validate_file_upload_request_empty_table(self):
+        request = MagicMock()
+        request.table = "   "
+        request.column_name = "file_col"
+        with self.assertRaises(SkyflowError) as context:
+            validate_file_upload_request(self.logger, request)
+        self.assertEqual(context.exception.message, SkyflowMessages.Error.EMPTY_TABLE_VALUE.value)
+
+    def test_validate_file_upload_request_none_column_name(self):
+        request = MagicMock()
+        request.table = "test_table"
+        request.skyflow_id = None
+        request.column_name = None
+        with self.assertRaises(SkyflowError) as context:
+            validate_file_upload_request(self.logger, request)
+        self.assertEqual(
+            context.exception.message,
+            SkyflowMessages.Error.INVALID_FILE_COLUMN_NAME.value.format(type(None))
+        )
+
+    def test_validate_file_upload_request_empty_column_name(self):
+        request = MagicMock()
+        request.table = "test_table"
+        request.skyflow_id = None
+        request.column_name = ""
+        with self.assertRaises(SkyflowError) as context:
+            validate_file_upload_request(self.logger, request)
+        self.assertEqual(
+            context.exception.message,
+            SkyflowMessages.Error.INVALID_FILE_COLUMN_NAME.value.format(type(""))
+        )
+
+    def test_validate_file_upload_request_empty_skyflow_id(self):
+        request = FileUploadRequest(
+            table="test_table",
+            column_name="file_col",
+            skyflow_id="   ",
+            file_path=self.temp_file_path
+        )
+        with self.assertRaises(SkyflowError) as context:
+            validate_file_upload_request(self.logger, request)
+        self.assertEqual(
+            context.exception.message,
+            SkyflowMessages.Error.EMPTY_SKYFLOW_ID.value.format("FILE_UPLOAD")
+        )
+
+    def test_validate_file_upload_request_invalid_file_object_seek(self):
+        file_obj = MagicMock()
+        file_obj.seek.side_effect = OSError("seek failed")
+        request = FileUploadRequest(
+            table="test_table",
+            column_name="file_col",
+            file_object=file_obj
+        )
+        with self.assertRaises(SkyflowError) as context:
+            validate_file_upload_request(self.logger, request)
+        self.assertEqual(context.exception.message, SkyflowMessages.Error.INVALID_FILE_OBJECT.value)
+
+    def test_validate_file_upload_request_valid_file_path(self):
+        request = FileUploadRequest(
+            table="test_table",
+            column_name="file_col",
+            file_path=self.temp_file_path
+        )
+        validate_file_upload_request(self.logger, request)
+
+    def test_validate_file_upload_request_invalid_file_path(self):
+        request = FileUploadRequest(
+            table="test_table",
+            column_name="file_col",
+            file_path="/nonexistent/path/file.txt"
+        )
+        with self.assertRaises(SkyflowError) as context:
+            validate_file_upload_request(self.logger, request)
+        self.assertEqual(context.exception.message, SkyflowMessages.Error.INVALID_FILE_PATH.value)
+
+    def test_validate_file_upload_request_valid_base64(self):
+        import base64
+        encoded = base64.b64encode(b"file content").decode("utf-8")
+        request = FileUploadRequest(
+            table="test_table",
+            column_name="file_col",
+            base64=encoded,
+            file_name="sample.txt"
+        )
+        validate_file_upload_request(self.logger, request)
+
+    def test_validate_file_upload_request_base64_without_file_name(self):
+        import base64
+        encoded = base64.b64encode(b"file content").decode("utf-8")
+        request = FileUploadRequest(
+            table="test_table",
+            column_name="file_col",
+            base64=encoded
+        )
+        with self.assertRaises(SkyflowError) as context:
+            validate_file_upload_request(self.logger, request)
+        self.assertEqual(context.exception.message, SkyflowMessages.Error.INVALID_FILE_NAME.value)
+
+    def test_validate_file_upload_request_invalid_base64_string(self):
+        request = FileUploadRequest(
+            table="test_table",
+            column_name="file_col",
+            base64="not-valid-base64!!!",
+            file_name="sample.txt"
+        )
+        with self.assertRaises(SkyflowError) as context:
+            validate_file_upload_request(self.logger, request)
+        self.assertEqual(context.exception.message, SkyflowMessages.Error.INVALID_BASE64_STRING.value)
+
+    def test_validate_file_upload_request_valid_file_object(self):
+        with open(self.temp_file_path, "rb") as f:
+            request = FileUploadRequest(
+                table="test_table",
+                column_name="file_col",
+                file_object=f
+            )
+            validate_file_upload_request(self.logger, request)
+
+    def test_validate_file_upload_request_missing_file_source(self):
+        request = FileUploadRequest(
+            table="test_table",
+            column_name="file_col"
+        )
+        with self.assertRaises(SkyflowError) as context:
+            validate_file_upload_request(self.logger, request)
+        self.assertEqual(context.exception.message, SkyflowMessages.Error.MISSING_FILE_SOURCE.value)
+
+    # --- validate_deidentify_text_request transformations ---
+
+    def test_validate_deidentify_text_request_invalid_transformations(self):
+        request = DeidentifyTextRequest(
+            text="test text",
+            transformations="invalid_type"
+        )
+        with self.assertRaises(SkyflowError) as context:
+            validate_deidentify_text_request(self.logger, request)
+        self.assertEqual(context.exception.message, SkyflowMessages.Error.INVALID_TRANSFORMATIONS.value)
+
+    # --- validate_reidentify_text_request masked_entities ---
+
+    def test_validate_reidentify_text_request_invalid_masked_entities(self):
+        request = ReidentifyTextRequest(
+            text="test text",
+            masked_entities="invalid_type"
+        )
+        with self.assertRaises(SkyflowError) as context:
+            validate_reidentify_text_request(self.logger, request)
+        self.assertEqual(context.exception.message,
+            SkyflowMessages.Error.INVALID_MASKED_ENTITIES_IN_REIDENTIFY.value)

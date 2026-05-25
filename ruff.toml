@@ -8,12 +8,13 @@ exclude = [
     "venv",
     "build",
     "dist",
-    "tests"
+    "tests",
+    "samples"
 ]
 
 line-length = 120
 
 [lint]
-select = ["N"]
+select = ["N", "PLR2004"]
 
 [lint.pep8-naming]

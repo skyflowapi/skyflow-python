@@ -4,6 +4,7 @@ from ._version import SDK_VERSION
 
 error_prefix = f"Skyflow Python SDK {SDK_VERSION}"
 INFO = "INFO"
+WARN = "WARN"
 ERROR = "ERROR"
 
 class SkyflowMessages:
@@ -16,7 +17,7 @@ class SkyflowMessages:
         REDACTION_WITH_TOKENS_NOT_SUPPORTED = 400
 
     class Error(Enum):
-        GENERIC_API_ERROR = f"{error_prefix} Validation error. Invalid configuration. Please add a valid vault configuration."
+        GENERIC_API_ERROR = f"{error_prefix} API error. Error occurred."
         
         EMPTY_VAULT_ID = f"{error_prefix} Initialization failed. Invalid vault Id. Specify a valid vault Id."
         INVALID_VAULT_ID = f"{error_prefix} Initialization failed. Invalid vault Id. Specify a valid vault Id as a string."
@@ -42,11 +43,12 @@ class SkyflowMessages:
         EMPTY_CREDENTIAL_FILE_PATH_IN_CONFIG = f"{error_prefix} Initialization failed. Invalid credentials for {{}} with id {{}}. Specify a valid file path."
         EMPTY_CREDENTIAL_FILE_PATH = f"{error_prefix} Initialization failed. Invalid credentials. Specify a valid file path."
         INVALID_CREDENTIAL_FILE_PATH_IN_CONFIG = f"{error_prefix} Initialization failed. Invalid credentials for {{}} with id {{}}. Expected file path to be a string."
-        INVALID_CREDENTIAL_FILE_PATH = f"{error_prefix} Initialization failed. Invalid credentials. Expected file path to be a string."
+        INVALID_CREDENTIAL_FILE_PATH = f"{error_prefix} Initialization failed. Invalid credentials. Expected file path to be a valid file path."
         EMPTY_CREDENTIALS_TOKEN_IN_CONFIG = f"{error_prefix} Initialization failed. Invalid token for {{}} with id {{}}.Specify a valid credentials token."
         EMPTY_CREDENTIALS_TOKEN = f"{error_prefix} Initialization failed. Invalid token.Specify a valid credentials token."
         INVALID_CREDENTIALS_TOKEN_IN_CONFIG = f"{error_prefix} Initialization failed. Invalid credentials token for {{}} with id {{}}. Expected token to be a string."
         INVALID_CREDENTIALS_TOKEN = f"{error_prefix} Initialization failed. Invalid credentials token. Expected token to be a string."
+        EXPIRED_BEARER_TOKEN = f"{error_prefix} Initialization failed. Bearer token is invalid or expired."
         EXPIRED_TOKEN = f"{error_prefix} Initialization failed. Given token is expired. Specify a valid credentials token."
         EMPTY_API_KEY_IN_CONFIG = f"{error_prefix} Initialization failed. Invalid api key for {{}} with id {{}}.Specify a valid api key."
         EMPTY_API_KEY= f"{error_prefix} Initialization failed. Invalid api key.Specify a valid api key."
@@ -73,6 +75,9 @@ class SkyflowMessages:
         RESPONSE_NOT_JSON = f"{error_prefix} Response {{}} is not valid JSON."
         API_ERROR = f"{error_prefix} Server returned status code {{}}"
 
+        INVALID_JSON_RESPONSE = f"{error_prefix} Invalid JSON response received."
+        UNKNOWN_ERROR_DEFAULT_MESSAGE = f"{error_prefix} An unknown error occurred."
+
         INVALID_FILE_INPUT = f"{error_prefix} Validation error. Invalid file input. Specify a valid file input."
         INVALID_DETECT_ENTITIES_TYPE = f"{error_prefix} Validation error. Invalid type of detect entities. Specify detect entities as list of DetectEntities enum."
         INVALID_TYPE_FOR_DEFAULT_TOKEN_TYPE = f"{error_prefix} Validation error. Invalid type of default token type. Specify default token type as TokenType enum."
@@ -86,14 +91,15 @@ class SkyflowMessages:
         INVALID_TABLE_NAME_IN_INSERT = f"{error_prefix} Validation error. Invalid table name in insert request. Specify a valid table name."
         INVALID_TYPE_OF_DATA_IN_INSERT = f"{error_prefix} Validation error. Invalid type of data in insert request. Specify data as a object array."
         EMPTY_DATA_IN_INSERT = f"{error_prefix} Validation error. Data array cannot be empty. Specify data in insert request."
-        INVALID_UPSERT_OPTIONS_TYPE = f"{error_prefix} Validation error. 'upsert' key cannot be empty in options. At least one object of table and column is required."
+        INVALID_UPSERT_OPTIONS_TYPE = f"{error_prefix} Validation error. Invalid 'upsert' value in options. Specify 'upsert' as a non-empty string containing the column name."
         INVALID_HOMOGENEOUS_TYPE = f"{error_prefix} Validation error. Invalid type of homogeneous. Specify homogeneous as a string."
         INVALID_TOKEN_MODE_TYPE = f"{error_prefix} Validation error. Invalid type of token mode. Specify token mode as a TokenMode enum."
         INVALID_RETURN_TOKENS_TYPE = f"{error_prefix} Validation error. Invalid type  of return tokens. Specify return tokens as a boolean."
         INVALID_CONTINUE_ON_ERROR_TYPE = f"{error_prefix} Validation error. Invalid type of continue on error. Specify continue on error as a boolean."
         TOKENS_PASSED_FOR_TOKEN_MODE_DISABLE = f"{error_prefix} Validation error. 'token_mode' wasn't specified. Set 'token_mode' to 'ENABLE' to insert tokens."
         INSUFFICIENT_TOKENS_PASSED_FOR_TOKEN_MODE_ENABLE_STRICT = f"{error_prefix} Validation error. 'token_mode' is set to 'ENABLE_STRICT', but some fields are missing tokens. Specify tokens for all fields."
-        NO_TOKENS_IN_INSERT = f"{error_prefix} Validation error. Tokens weren't specified for records while 'token_strict' was {{}}. Specify tokens."
+        MISMATCH_OF_FIELDS_AND_TOKENS = f"{error_prefix} Validation error. Keys for values and tokens are not matching. Ensure each values entry and its corresponding tokens entry have the same keys."
+        NO_TOKENS_IN_INSERT = f"{error_prefix} Validation error. Tokens weren't specified for records while 'token_mode' was {{}}. Specify tokens."
         BATCH_INSERT_FAILURE = f"{error_prefix} Insert operation failed."
         GET_FAILURE = f"{error_prefix} Get operation failed."
         HOMOGENOUS_NOT_SUPPORTED_WITH_UPSERT = f"{error_prefix} Validation error. Homogenous is not supported when upsert is passed."
@@ -116,15 +122,16 @@ class SkyflowMessages:
         INVOKE_CONNECTION_FAILED = f"{error_prefix} Invoke Connection operation failed."
 
         INVALID_IDS_TYPE = f"{error_prefix} Validation error. 'ids' has a value of type {{}}. Specify 'ids' as list."
-        INVALID_REDACTION_TYPE = f"{error_prefix} Validation error. 'redaction' has a value of type {{}}. Specify 'redaction' as type Skyflow.RedactionType."
-        INVALID_COLUMN_NAME = f"{error_prefix} Validation error. 'column' has a value of type {{}}. Specify 'column' as a string."
-        INVALID_COLUMN_VALUE = f"{error_prefix} Validation error. columnValues key has a value of type {{}}. Specify columnValues key as list."
+        INVALID_REDACTION_TYPE = f"{error_prefix} Validation error. 'redaction_type' has a value of type {{}}. Specify 'redaction_type' as type Skyflow.RedactionType."
+        INVALID_COLUMN_NAME = f"{error_prefix} Validation error. column_name has a value of type {{}}. Specify 'column' as a string."
+        INVALID_COLUMN_VALUE = f"{error_prefix} Validation error. column_values key has a value of type {{}}. Specify column_values key as list."
+        INVALID_COLUMN_VALUES = f"{error_prefix} Validation error. column_values key is an empty list. Specify at least one column value when column_name is passed." 
         INVALID_FIELDS_VALUE = f"{error_prefix} Validation error. fields key has a value of type{{}}. Specify fields key as list."
-        BOTH_OFFSET_AND_LIMIT_SPECIFIED = f"${error_prefix} Validation error. Both offset and limit cannot be present at the same time"
+        BOTH_OFFSET_AND_LIMIT_SPECIFIED = f"{error_prefix} Validation error. Both offset and limit cannot be present at the same time"
         INVALID_OFF_SET_VALUE = f"{error_prefix} Validation error. offset key has a value of type {{}}. Specify offset key as integer."
         INVALID_LIMIT_VALUE = f"{error_prefix} Validation error. limit key has a value of type {{}}. Specify limit key as integer."
         INVALID_DOWNLOAD_URL_VALUE = f"{error_prefix} Validation error. download_url key has a value of type {{}}. Specify download_url key as boolean."
-        REDACTION_WITH_TOKENS_NOT_SUPPORTED = f"{error_prefix} Validation error. 'redaction' can't be used when tokens are specified. Remove 'redaction' from payload if tokens are specified."
+        REDACTION_WITH_TOKENS_NOT_SUPPORTED = f"{error_prefix} Validation error. 'redaction_type' can't be used when tokens are specified. Remove 'redaction_type' from payload if tokens are specified."
         TOKENS_GET_COLUMN_NOT_SUPPORTED = f"{error_prefix} Validation error. Column name and/or column values can't be used when tokens are specified. Remove unique column values or tokens from the payload."
         BOTH_IDS_AND_COLUMN_DETAILS_SPECIFIED = f"{error_prefix} Validation error. Both Skyflow IDs and column details can't be specified. Either specify Skyflow IDs or unique column details."
         INVALID_ORDER_BY_VALUE = f"{error_prefix} Validation error. order_by key has a value of type {{}}. Specify order_by key as Skyflow.OrderBy"
@@ -132,7 +139,7 @@ class SkyflowMessages:
         UPDATE_FIELD_KEY_ERROR = f"{error_prefix} Validation error. Fields are empty in an update payload. Specify at least one field."
         INVALID_FIELDS_TYPE = f"{error_prefix} Validation error. The 'data' key has a value of type {{}}. Specify 'data' as a dictionary."
         IDS_KEY_ERROR = f"{error_prefix} Validation error. 'ids' key is missing from the payload. Specify an 'ids' key."
-        INVALID_TOKENS_LIST_VALUE = f"{error_prefix} Validation error. The 'data' field is invalid. Specify 'data' as a list of dictionaries containing 'token' and 'redaction'."
+        INVALID_TOKENS_LIST_VALUE = f"{error_prefix} Validation error. The 'data' field is invalid. Specify 'data' as a list of dictionaries containing 'token' and 'redaction_type'."
         INVALID_DATA_FOR_DETOKENIZE = f"{error_prefix}"
         EMPTY_TOKENS_LIST_VALUE = f"{error_prefix} Validation error. Tokens are empty in detokenize payload. Specify at lease one token"
         INVALID_TOKEN_TYPE = f"{ERROR}: [{error_prefix}] Invalid {{}} request. Tokens should be of type string."
@@ -155,10 +162,13 @@ class SkyflowMessages:
         MISSING_CLIENT_ID = f"{error_prefix} Initialization failed. Unable to read client ID in credentials. Verify your client ID."
         MISSING_KEY_ID = f"{error_prefix} Initialization failed. Unable to read key ID in credentials. Verify your key ID."
         MISSING_TOKEN_URI = f"{error_prefix} Initialization failed. Unable to read token URI in credentials. Verify your token URI."
+        INVALID_TOKEN_URI = f"{error_prefix} Initialization failed. Invalid Skyflow credentials. The token URI must be a string and a valid URL."
         JWT_INVALID_FORMAT = f"{error_prefix} Initialization failed. Invalid private key format. Verify your credentials."
         JWT_DECODE_ERROR = f"{error_prefix} Validation error. Invalid access token. Verify your credentials."
         FILE_INVALID_JSON = f"{error_prefix} Initialization failed. File at {{}} is not in valid JSON format. Verify the file contents."
         INVALID_JSON_FORMAT_IN_CREDENTIALS_ENV = f"{error_prefix} Validation error. Invalid JSON format in SKYFLOW_CREDENTIALS environment variable."
+        FAILED_TO_GET_BEARER_TOKEN = f"{ERROR}: [{error_prefix}] Failed to generate bearer token."
+        UNAUTHORIZED_ERROR_IN_GETTING_BEARER_TOKEN = f"{ERROR}: [{error_prefix}] Authorization failed while retrieving the bearer token."
 
         INVALID_TEXT_IN_DEIDENTIFY= f"{error_prefix} Validation error. The text field is required and must be a non-empty string. Specify a valid text."
         INVALID_ENTITIES_IN_DEIDENTIFY= f"{error_prefix} Validation error. The entities field must be an array of DetectEntities enums. Specify a valid entities."
@@ -280,7 +290,6 @@ class SkyflowMessages:
         VALIDATING_FILE_UPLOAD_REQUEST = f"{INFO}: [{error_prefix}] Validating file upload request."
         FILE_UPLOAD_REQUEST_RESOLVED = f"{INFO}: [{error_prefix}] File upload request resolved."
         FILE_UPLOAD_SUCCESS = f"{INFO}: [{error_prefix}] File uploaded successfully."
-        FILE_UPLOAD_REQUEST_REJECTED = f"{ERROR}: [{error_prefix}] File upload failed."
 
         INVOKE_CONNECTION_TRIGGERED = f"{INFO}: [{error_prefix}] Invoke connection method triggered."
         VALIDATING_INVOKE_CONNECTION_REQUEST = f"{INFO}: [{error_prefix}] Validating invoke connection request."
@@ -310,6 +319,8 @@ class SkyflowMessages:
         DETECT_REQUEST_RESOLVED = f"{INFO}: [{error_prefix}] Detect request is resolved."
 
     class ErrorLogs(Enum):
+        INVALID_LOG_LEVEL = f"{ERROR}: [{error_prefix}] Invalid log level. Specify a valid log level."
+        INVALID_KEY = f"{ERROR}: [{error_prefix}] Invalid key {{}} in config."
         VAULTID_IS_REQUIRED = f"{ERROR}: [{error_prefix}] Invalid vault config. Vault ID is required."
         EMPTY_VAULTID = f"{ERROR}: [{error_prefix}] Invalid vault config. Vault ID can not be empty."
         CLUSTER_ID_IS_REQUIRED = f"{ERROR}: [{error_prefix}] Invalid vault config. Cluster ID is required."
@@ -334,6 +345,8 @@ class SkyflowMessages:
         KEY_ID_IS_REQUIRED = f"{ERROR}: [{error_prefix}] Key ID is required."
         TOKEN_URI_IS_REQUIRED = f"{ERROR}: [{error_prefix}] Token URI is required."
         INVALID_TOKEN_URI = f"{ERROR}: [{error_prefix}] Invalid value for token URI in credentials."
+        FAILED_TO_GET_BEARER_TOKEN = f"{ERROR}: [{error_prefix}] Failed to generate bearer token."
+        UNAUTHORIZED_ERROR_IN_GETTING_BEARER_TOKEN = f"{ERROR}: [{error_prefix}] Authorization failed while retrieving the bearer token."
 
 
         TABLE_IS_REQUIRED = f"{ERROR}: [{error_prefix}] Invalid {{}} request. Table is required."
@@ -348,13 +361,14 @@ class SkyflowMessages:
         EMPTY_OR_NULL_VALUE_IN_TOKENS = f"{ERROR}: [{error_prefix}] Invalid {{}} request. Value can not be null or empty in tokens for key {{}}."
         EMPTY_OR_NULL_KEY_IN_TOKENS = f"{ERROR}: [{error_prefix}] Invalid {{}} request. Key can not be null or empty in tokens."
         MISMATCH_OF_FIELDS_AND_TOKENS = f"{ERROR}: [{error_prefix}] Invalid {{}} request. Keys for values and tokens are not matching."
+        FILE_UPLOAD_REQUEST_REJECTED = f"{ERROR}: [{error_prefix}] File upload failed."
 
         EMPTY_IDS = f"{ERROR}: [{error_prefix}] Invalid {{}} request. Ids can not be empty."
         EMPTY_OR_NULL_ID_IN_IDS = f"{ERROR}: [{error_prefix}] Invalid {{}} request. Id can not be null or empty in ids at index {{}}."
         TOKENIZATION_NOT_SUPPORTED_WITH_REDACTION= f"{ERROR}: [{error_prefix}] Invalid {{}} request. Tokenization is not supported when redaction is applied."
         TOKENIZATION_SUPPORTED_ONLY_WITH_IDS=f"{ERROR}: [{error_prefix}] Invalid {{}} request. Tokenization is not supported when column name and values are passed."
-        TOKENS_NOT_ALLOWED_WITH_BYOT_DISABLE = f"{ERROR}: [{error_prefix}] Invalid {{}} request. Tokens are not allowed when token_strict is DISABLE."
-        INSUFFICIENT_TOKENS_PASSED_FOR_BYOT_ENABLE_STRICT =f"{ERROR}: [{error_prefix}] Invalid {{}} request. For tokenStrict as ENABLE_STRICT, tokens should be passed for all fields."
+        TOKENS_NOT_ALLOWED_WITH_BYOT_DISABLE = f"{ERROR}: [{error_prefix}] Invalid {{}} request. Tokens are not allowed when token_mode is DISABLE."
+        INSUFFICIENT_TOKENS_PASSED_FOR_BYOT_ENABLE_STRICT =f"{ERROR}: [{error_prefix}] Invalid {{}} request. For token_mode as ENABLE_STRICT, tokens should be passed for all fields."
         TOKENS_REQUIRED = f"{ERROR}: [{error_prefix}] Invalid {{}} request. Tokens are required."
         EMPTY_FIELDS = f"{ERROR}: [{error_prefix}] Invalid {{}} request. Fields can not be empty."
         EMPTY_OFFSET = f"{ERROR}: [{error_prefix}] Invalid {{}} request. Offset ca not be empty."
@@ -365,7 +379,7 @@ class SkyflowMessages:
         SKYFLOW_ID_IS_REQUIRED = f"{ERROR}: [{error_prefix}] Invalid {{}} request. Skyflow Id is required."
         EMPTY_SKYFLOW_ID = f"{ERROR}: [{error_prefix}] Invalid {{}} request. Skyflow Id can not be empty."
 
-        COLUMN_VALUES_IS_REQUIRED_TOKENIZE = f"{ERROR}: [{error_prefix}] Invalid {{}} request. ColumnValues are required."
+        COLUMN_VALUES_IS_REQUIRED_TOKENIZE = f"{ERROR}: [{error_prefix}] Invalid {{}} request. column_values are required."
         EMPTY_COLUMN_GROUP_IN_COLUMN_VALUES = f"{ERROR}: [{error_prefix}] Invalid {{}} request. Column group can not be null or empty in column values at index %s2."
 
         EMPTY_QUERY= f"{ERROR}: [{error_prefix}] Invalid {{}} request. Query can not be empty."
@@ -388,6 +402,7 @@ class SkyflowMessages:
         SAVING_DEIDENTIFY_FILE_FAILED = f"{ERROR}: [{error_prefix}] Error while saving deidentified file to output directory."
         REIDENTIFY_TEXT_REQUEST_REJECTED = f"{ERROR}: [{error_prefix}] Reidentify text resulted in failure."
         DETECT_FILE_REQUEST_REJECTED = f"{ERROR}: [{error_prefix}] Deidentify file resulted in failure."
+        EMPTY_FILE_COLUMN_NAME = f"{ERROR}: [{error_prefix}] Empty column name in FILE_UPLOAD"
 
     class Interface(Enum):
         INSERT = "INSERT"
@@ -402,7 +417,18 @@ class SkyflowMessages:
         BAD_REQUEST = "Bad Request"
 
     class Warning(Enum):
-        WARNING_MESSAGE = "WARNING MESSAGE"
+        DETOKENIZE_REDACTION_KEY_DEPRECATED = (
+            f"{WARN}: [{error_prefix}] 'redaction' key in detokenize data is deprecated and will be removed in a future version. Use 'redaction_type' instead."
+        )
+        UPDATE_LOG_LEVEL_DEPRECATED = (
+            f"{WARN}: [{error_prefix}] Skyflow.update_log_level() is deprecated. "
+            "Use Skyflow.set_log_level() instead."
+        )
+        FILE_UPLOAD_REQUEST_ARG_ORDER_DEPRECATED = (
+            f"{WARN}: [{error_prefix}] FileUploadRequest: argument order changed. "
+            "Old positional order: (table, skyflow_id, column_name). "
+            "New order: FileUploadRequest(table, column_name=..., skyflow_id=...)."
+        )
 
 
 

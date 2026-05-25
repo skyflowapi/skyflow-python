@@ -1,5 +1,13 @@
 from ..enums import LogLevel
 from . import Logger
+from ..constants import ResponseField
+
+_active_log_level = LogLevel.ERROR
+
+
+def set_active_log_level(level):
+    global _active_log_level
+    _active_log_level = level
 
 
 def log_info(message, logger = None):
@@ -7,6 +15,11 @@ def log_info(message, logger = None):
         logger = Logger(LogLevel.INFO)
 
     logger.info(message)
+
+def log_warn(message, logger=None):
+    if not logger:
+        logger = Logger(_active_log_level)
+    logger.warn(message)
 
 def log_error_log(message, logger=None):
     if not logger:
@@ -18,17 +31,17 @@ def log_error(message, http_code, request_id=None, grpc_code=None, http_status=N
         logger = Logger(LogLevel.ERROR)
 
     log_data = {
-        'http_code': http_code,
-        'message': message
+        ResponseField.HTTP_CODE: http_code,
+        ResponseField.MESSAGE: message
     }
 
     if grpc_code is not None:
-        log_data['grpc_code'] = grpc_code
+        log_data[ResponseField.GRPC_CODE] = grpc_code
     if http_status is not None:
-        log_data['http_status'] = http_status
+        log_data[ResponseField.HTTP_STATUS] = http_status
     if request_id is not None:
-        log_data['request_id'] = request_id
+        log_data[ResponseField.REQUEST_ID] = request_id
     if details is not None:
-        log_data['details'] = details
+        log_data[ResponseField.DETAILS] = details
 
     logger.error(log_data)

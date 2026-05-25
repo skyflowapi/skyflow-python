@@ -6,12 +6,16 @@ from skyflow.vault.data import FileUploadRequest
 
 """
  * Skyflow File Upload Example
- * 
+ *
  * This example demonstrates how to:
  * 1. Configure Skyflow client credentials
  * 2. Set up vault configuration
- * 3. Create a file upload request
- * 4. Handle response and errors
+ * 3. Upload a file to an existing record (with skyflow_id)
+ * 4. Upload a file and create a new record (without skyflow_id)
+ * 5. Handle response and errors
+ *
+ * Note: All FileUploadRequest parameters must be
+ * passed as keyword arguments.
 """
 
 def perform_file_upload():
@@ -35,8 +39,8 @@ def perform_file_upload():
 
         # Step 2: Configure Vault
         primary_vault_config = {
-            'vault_id': '<YOUR_VAULT_ID1>',
-            'cluster_id': '<YOUR_CLUSTER_ID1>',
+            'vault_id': '<YOUR_VAULT_ID>',
+            'cluster_id': '<YOUR_CLUSTER_ID>',
             'env': Env.PROD,
             'credentials': credentials
         }
@@ -50,20 +54,28 @@ def perform_file_upload():
             .build()
         )
 
-        # Step 4: Prepare File Upload Data
+        # Step 4a: Upload a file to an existing record
         with open('<PATH_TO_FILE>', 'rb') as file_obj:
-            file_upload_request = FileUploadRequest(
-                table='<TABLE_NAME>',  # Table to upload file to
-                column_name='<COLUMN_NAME>',  # Column to upload file into
-                file_object=file_obj,  # Pass file object
-                skyflow_id='<SKYFLOW_ID>'  # Record ID to associate the file with
+            upload_request = FileUploadRequest(
+                table='<TABLE_NAME>',
+                column_name='<COLUMN_NAME>',
+                skyflow_id='<SKYFLOW_ID>',
+                file_object=file_obj
             )
 
-            # Step 5: Perform File Upload
-            response = skyflow_client.vault('<VAULT_ID>').upload_file(file_upload_request)
+            response = skyflow_client.vault('<YOUR_VAULT_ID>').upload_file(upload_request)
+            print('File upload to existing record:', response)
 
-            # Handle Successful Response
-            print('File upload successful: ', response)
+        # Step 4b: Upload a file and create a new record (omit skyflow_id)
+        with open('<PATH_TO_FILE>', 'rb') as file_obj:
+            upload_request = FileUploadRequest(
+                table='<TABLE_NAME>',
+                column_name='<COLUMN_NAME>',
+                file_object=file_obj
+            )
+
+            response = skyflow_client.vault('<YOUR_VAULT_ID>').upload_file(upload_request)
+            print('File upload with new record:', response)
 
     except SkyflowError as error:
         print('Skyflow Specific Error: ', {

@@ -5,7 +5,7 @@ from skyflow.service_account import (
     is_expired,
 )
 
-file_path = 'CREDENTIALS_FILE_PATH'
+file_path = '<CREDENTIALS_FILE_PATH>'
 bearer_token = ''
 
 # To generate Bearer Token from credentials string.
@@ -46,8 +46,7 @@ def get_bearer_token_from_credentials_string():
             bearer_token = token
             return bearer_token
     except Exception as e:
-        print(f"Error generating token from credentials string: {str(e)}")
-
+        print(f'Error generating token from credentials string: {str(e)}')
 
 
 print(get_bearer_token_from_file_path())

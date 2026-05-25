@@ -2,6 +2,7 @@ import unittest
 from unittest.mock import Mock, patch, MagicMock
 import base64
 import os
+import tempfile
 from skyflow.error import SkyflowError
 from skyflow.generated.rest import WordCharacterCount
 from skyflow.utils import SkyflowMessages
@@ -513,16 +514,12 @@ class TestDetect(unittest.TestCase):
 
         self.vault_client.get_detect_file_api.return_value = files_api
 
-        # Execute
-        with patch.object(self.detect, "_Detect__parse_deidentify_file_response") as mock_parse:
-            result = self.detect.get_detect_run(req)
+        # Execute — IN_PROGRESS is returned directly without going through the parser
+        result = self.detect.get_detect_run(req)
 
-            # Verify IN_PROGRESS handling
-            mock_parse.assert_called_once()
-            args = mock_parse.call_args[0][0]
-            self.assertIsInstance(args, DeidentifyFileResponse)
-            self.assertEqual(args.status, 'IN_PROGRESS')
-            self.assertEqual(args.run_id, run_id)
+        self.assertIsInstance(result, DeidentifyFileResponse)
+        self.assertEqual(result.status, 'IN_PROGRESS')
+        self.assertEqual(result.run_id, run_id)
 
     def test_get_transformations_with_shift_dates(self):
 
@@ -711,3 +708,140 @@ class TestDetect(unittest.TestCase):
             self.assertIsNone(result.page_count)
             self.assertIsNone(result.slide_count)
             self.assertEqual(result.entities, [])
+
+    def test_poll_for_processed_file_exception(self):
+        files_api = Mock()
+        files_api.with_raw_response = files_api
+        files_api.get_run.side_effect = Exception("poll error")
+        self.vault_client.get_detect_file_api.return_value = files_api
+        with self.assertRaises(Exception):
+            self.detect._Detect__poll_for_processed_file("runid", max_wait_time=5)
+
+    def test_save_output_directory_not_exists(self):
+        output = Mock()
+        output.processedFile = base64.b64encode(b"data").decode()
+        output.processedFileType = "redacted_file"
+        output.processedFileExtension = "txt"
+        response = Mock()
+        response.output = [output]
+        with patch("skyflow.vault.controller._detect.os.path.exists", return_value=False):
+            self.detect._Detect__save_deidentify_file_response_output(
+                response, "/nonexistent_dir", "file.txt", "file"
+            )
+
+    def test_save_output_second_non_redacted_item(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            output1 = Mock()
+            output1.processedFile = base64.b64encode(b"data1").decode()
+            output1.processedFileType = "redacted_file"
+            output1.processedFileExtension = "txt"
+            output2 = Mock()
+            output2.processedFile = base64.b64encode(b"data2").decode()
+            output2.processedFileType = "entities"
+            output2.processedFileExtension = "json"
+            response = Mock()
+            response.output = [output1, output2]
+            self.detect._Detect__save_deidentify_file_response_output(
+                response, tmp_dir, "original.txt", "original"
+            )
+
+    def test_save_output_path_traversal_blocked(self):
+        output = Mock()
+        output.processedFile = base64.b64encode(b"data").decode()
+        output.processedFileType = "redacted_file"
+        output.processedFileExtension = "txt"
+        response = Mock()
+        response.output = [output]
+        call_count = [0]
+
+        def fake_realpath(p):
+            call_count[0] += 1
+            if call_count[0] == 1:
+                return "/safe_dir"
+            return "/outside/path"
+
+        with patch("skyflow.vault.controller._detect.os.path.exists", return_value=True), \
+             patch("skyflow.vault.controller._detect.os.path.realpath", side_effect=fake_realpath):
+            self.detect._Detect__save_deidentify_file_response_output(
+                response, "/safe_dir", "file.txt", "file"
+            )
+
+    def test_save_output_write_exception(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            output = Mock()
+            output.processedFile = base64.b64encode(b"data").decode()
+            output.processedFileType = "redacted_file"
+            output.processedFileExtension = "txt"
+            response = Mock()
+            response.output = [output]
+            with patch("skyflow.vault.controller._detect.base64.b64decode",
+                       side_effect=Exception("decode error")), \
+                 self.assertRaises(Exception):
+                self.detect._Detect__save_deidentify_file_response_output(
+                    response, tmp_dir, "file.txt", "file"
+                )
+
+    def test_save_output_no_file_extension_uses_original_name(self):
+        """Branches 113->117 and 119->124: processed_file_extension is falsy — safe_ext stays None."""
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            output = Mock()
+            output.processedFile = base64.b64encode(b"data").decode()
+            output.processedFileType = "redacted_file"
+            output.processedFileExtension = None
+            output.processed_file_extension = None
+            response = Mock()
+            response.output = [output]
+            self.detect._Detect__save_deidentify_file_response_output(
+                response, tmp_dir, "original.txt", "original"
+            )
+
+    @patch("skyflow.vault.controller._detect.time.sleep", return_value=None)
+    def test_poll_unknown_status_then_success(self, mock_sleep):
+        """Branch 80->65: status is unknown, loops back, then returns SUCCESS."""
+        files_api = Mock()
+        files_api.with_raw_response = files_api
+        self.vault_client.get_detect_file_api.return_value = files_api
+
+        call_count = {"n": 0}
+
+        def side_effect(*args, **kwargs):
+            call_count["n"] += 1
+            r = Mock()
+            if call_count["n"] == 1:
+                r.status = "UNKNOWN_STATUS"
+            else:
+                r.status = "SUCCESS"
+            return Mock(data=r)
+
+        files_api.get_run.side_effect = side_effect
+        result = self.detect._Detect__poll_for_processed_file("runid", max_wait_time=10)
+        self.assertEqual(result.status, "SUCCESS")
+
+    def test_get_file_from_request_no_file_no_path_returns_none(self):
+        """Branch 285->exit: file_input has neither file nor file_path set."""
+        req = DeidentifyFileRequest(file=FileInput(file=None, file_path=None))
+        result = self.detect._Detect__get_file_from_request(req)
+        self.assertIsNone(result)
+
+    @patch("skyflow.vault.controller._detect.validate_deidentify_file_request")
+    @patch("skyflow.vault.controller._detect.base64")
+    def test_deidentify_file_api_error_inside_try(self, mock_base64, mock_validate):
+        file_content = b"test content"
+        file_obj = Mock()
+        file_obj.read.return_value = file_content
+        file_obj.name = "test.txt"
+        mock_base64.b64encode.return_value.decode.return_value = "encoded"
+        req = DeidentifyFileRequest(file=FileInput(file=file_obj))
+        req.entities = []
+        req.token_format = None
+        req.allow_regex_list = []
+        req.restrict_regex_list = []
+        req.transformations = None
+        req.output_directory = None
+        req.wait_time = None
+        files_api = Mock()
+        files_api.with_raw_response = files_api
+        files_api.deidentify_text.side_effect = Exception("API error inside try")
+        self.vault_client.get_detect_file_api.return_value = files_api
+        with self.assertRaises(Exception):
+            self.detect.deidentify_file(req)
