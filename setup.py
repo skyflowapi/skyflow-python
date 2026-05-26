@@ -26,15 +26,15 @@ setup(
     install_requires=[
         'python_dateutil >= 2.5.3',
     	'setuptools >= 75.3.3',
-        'urllib3 >= 1.25.3, <= 2.6.3',
+        'urllib3 >= 1.25.3, < 3',
         'pydantic >= 2',
         'typing-extensions >= 4.7.1',
         'DateTime~=5.5',
-        'PyJWT~=2.9.0',
+        'PyJWT >= 2.9, < 3',
         'requests~=2.32.3',
         'coverage',
         'cryptography',
-        'python-dotenv~=1.0.1',
+        'python-dotenv >= 1.0, < 2',
         'httpx'
     ],
     extras_require={
