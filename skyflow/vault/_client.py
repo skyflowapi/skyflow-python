@@ -3,7 +3,6 @@
 '''
 import json
 import types
-import warnings
 import requests
 import asyncio
 from requests.adapters import HTTPAdapter
@@ -17,16 +16,14 @@ from skyflow.vault._get import sendGetRequests
 from skyflow.vault._delete import deleteProcessResponse
 from skyflow.vault._query import getQueryRequestBody, getQueryResponse
 from skyflow.errors._skyflow_errors import SkyflowError, SkyflowErrorCodes, SkyflowErrorMessages
-from skyflow._utils import log_info, log_error, InfoMessages, InterfaceName, getMetrics
+from skyflow._utils import log_info, log_error, InfoMessages, InterfaceName, getMetrics, skyflowLog
 from skyflow.vault._token import tokenProviderWrapper
 
 class Client:
     def __init__(self, config: Configuration):
-        warnings.warn(
+        skyflowLog.warning(
             "skyflow-python v1.x is deprecated and will reach End of Life on October 31, 2026. "
-            "Please migrate to v2: https://github.com/skyflowapi/skyflow-python/blob/main/docs/migrate_to_v2.md",
-            UserWarning,
-            stacklevel=2
+            "Please migrate to v2: https://github.com/skyflowapi/skyflow-python/blob/main/docs/migrate_to_v2.md"
         )
 
         interface = InterfaceName.CLIENT.value
