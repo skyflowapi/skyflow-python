@@ -6,14 +6,12 @@ This guide outlines the steps required to migrate the Skyflow Python SDK from ve
 
 ## Breaking Changes from V1 to V2
 
-| Area | V1 | V2 |
-|------|----|----|
-| **Client initialization** | `Configuration(vaultID, vaultURL, tokenProvider)` passed to `Client()` | `Credentials` + `VaultConfig` passed to `Skyflow()` |
-| **Vault URL** | Single `vaultURL` string | Split into `vaultId` + `clusterId` |
-| **Request/response types** | Raw `dict` | Typed request/response objects (e.g. `InsertRequest` / `InsertResponse`) |
-| **Error handling** | `SkyflowError` with basic message | Restructured with `httpStatus`, `details`, and `requestId` |
-| **Logging** | Global `set_log_level(LogLevel.X)` | Per-instance `logLevel` set on the `Skyflow` client |
-| **Import paths** | `from skyflow.vault import Client` | New module structure across all packages |
+- **Client initialization**: `Configuration(vaultID, vaultURL, tokenProvider)` passed to `Client()` is replaced by `Credentials` + `VaultConfig` passed to `Skyflow()`.
+- **Vault URL**: `vaultURL` is now split into `vaultId` + `clusterId`.
+- **Request/response types**: Operations like insert, get, detokenize now use typed request/response objects (e.g. `InsertRequest` / `InsertResponse`) instead of raw `dict`.
+- **Error handling**: `SkyflowError` restructured to include `httpStatus`, `details`, and `requestId`.
+- **Logging**: Global `set_log_level(LogLevel.X)` replaced by per-instance `logLevel` set on the `Skyflow` client.
+- **Import paths**: New module structure across all packages.
 
 ---
 
