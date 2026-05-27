@@ -130,11 +130,25 @@ class TestServiceAccountUtils(unittest.TestCase):
             get_service_account_token(CREDENTIALS_WITHOUT_TOKEN_URI, {}, None)
         self.assertEqual(context.exception.message, SkyflowMessages.Error.MISSING_TOKEN_URI.value)
 
-    def test_get_service_account_token_with_valid_credentials(self):
+    @patch("skyflow.service_account._utils.AuthClient")
+    @patch("skyflow.service_account._utils.get_signed_jwt")
+    def test_get_service_account_token_with_valid_credentials(self, mock_get_signed_jwt, mock_auth_client):
+        mock_get_signed_jwt.return_value = "signed"
+        mock_auth_api = mock_auth_client.return_value.get_auth_api.return_value
+        mock_auth_api.authentication_service_get_auth_token.return_value = type(
+            "obj", (), {"access_token": "mock_token", "token_type": "bearer"}
+        )
         access_token, _ = get_service_account_token(VALID_SERVICE_ACCOUNT_CREDS, {}, None)
         self.assertTrue(access_token)
 
-    def test_get_service_account_token_with_snake_case_creds(self):
+    @patch("skyflow.service_account._utils.AuthClient")
+    @patch("skyflow.service_account._utils.get_signed_jwt")
+    def test_get_service_account_token_with_snake_case_creds(self, mock_get_signed_jwt, mock_auth_client):
+        mock_get_signed_jwt.return_value = "signed"
+        mock_auth_api = mock_auth_client.return_value.get_auth_api.return_value
+        mock_auth_api.authentication_service_get_auth_token.return_value = type(
+            "obj", (), {"access_token": "mock_token", "token_type": "bearer"}
+        )
         access_token, _ = get_service_account_token(SNAKE_CASE_CREDS, {}, None)
         self.assertTrue(access_token)
 
