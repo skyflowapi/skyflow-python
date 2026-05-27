@@ -5,8 +5,8 @@ from setuptools import setup, find_packages
 import sys
 
 
-if sys.version_info < (3, 8):
-    raise RuntimeError("skyflow requires Python 3.8+")
+if sys.version_info < (3, 9):
+    raise RuntimeError("skyflow requires Python 3.9+")
 current_version = '2.1.0'
 
 with open('README.md', 'r', encoding='utf-8') as f:
@@ -43,5 +43,5 @@ setup(
             'ruff'
         ]
     },
-    python_requires=">=3.8",
+    python_requires=">=3.9",
 )
