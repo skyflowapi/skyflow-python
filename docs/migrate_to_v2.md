@@ -2,6 +2,21 @@
 
 This guide outlines the steps required to migrate the Skyflow Python SDK from version 1 (v1) to version 2 (v2).
 
+---
+
+## Breaking Changes from V1 to V2
+
+| Area | V1 | V2 |
+|------|----|----|
+| **Client initialization** | `Configuration(vaultID, vaultURL, tokenProvider)` passed to `Client()` | `Credentials` + `VaultConfig` passed to `Skyflow()` |
+| **Vault URL** | Single `vaultURL` string | Split into `vaultId` + `clusterId` |
+| **Request/response types** | Raw `dict` | Typed request/response objects (e.g. `InsertRequest` / `InsertResponse`) |
+| **Error handling** | `SkyflowError` with basic message | Restructured with `httpStatus`, `details`, and `requestId` |
+| **Logging** | Global `set_log_level(LogLevel.X)` | Per-instance `logLevel` set on the `Skyflow` client |
+| **Import paths** | `from skyflow.vault import Client` | New module structure across all packages |
+
+---
+
 ## Authentication
 
 In v2, multiple authentication options have been introduced. You can now provide credentials in the following ways:
