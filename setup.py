@@ -16,7 +16,7 @@ setup(
     packages=find_packages(where='.', exclude=['test*']),
     url='https://github.com/skyflowapi/skyflow-python/',
     license='LICENSE',
-    description='Skyflow SDK for the Python programming language',
+    description='[DEPRECATED - EOL 2026-10-31] Skyflow Python SDK v1.x. Migrate to v2: https://github.com/skyflowapi/skyflow-python/blob/main/docs/migrate_to_v2.md',
     long_description=open('README.rst').read(),
     install_requires=[
         'PyJWT',
