@@ -1,0 +1,42 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 -c \"\nimport sys, json, subprocess\nd = json.load(sys.stdin)\nf = d.get('tool_input', {}).get('file_path', d.get('file_path', ''))\nif f and f.endswith('.py') and 'generated' not in f:\n    if 'samples' in f:\n        subprocess.run(['.venv/bin/python', '-m', 'ruff', 'check', '--fix', '--force-exclude', f], capture_output=True)\n    subprocess.run(['.venv/bin/python', '-m', 'ruff', 'format', '--force-exclude', f], capture_output=True)\n\""
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 -c \"import sys,json; d=json.load(sys.stdin); p=d.get('tool_input',{}).get('file_path',d.get('file_path','')); banned='skyflow/generated'; (sys.stderr.write('BLOCKED: Fern-generated code — do not edit manually\\n'), sys.exit(2)) if banned in p else sys.exit(0)\""
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "notify-send 'Claude Code' 'Claude finished' 2>/dev/null || true"
+          }
+        ]
+      }
+    ]
+  },
+  "permissions": {
+    "deny": [
+      "Edit(skyflow/generated/**)",
+      "Write(skyflow/generated/**)"
+    ]
+  }
+}
