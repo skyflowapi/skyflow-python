@@ -1,7 +1,6 @@
 name: Internal Release
 
 on:
-  workflow_dispatch:
   push:
     tags-ignore:
       - '*.*'
@@ -12,7 +11,7 @@ on:
       - "skyflow/version.py"
       - "samples/**"
     branches:
-      - release/v1/*
+      - release/*
 
 jobs:
   build-and-deploy:
