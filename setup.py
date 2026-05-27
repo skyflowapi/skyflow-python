@@ -30,7 +30,7 @@ setup(
         'pydantic >= 2',
         'typing-extensions >= 4.7.1',
         'DateTime~=5.5',
-        'PyJWT >= 2.9, < 3',
+        'PyJWT >= 2.12, < 3',
         'requests~=2.32.3',
         'coverage',
         'cryptography',
