@@ -148,30 +148,139 @@ Wrapper for a file passed to `DeidentifyFileRequest`. Provide one of:
 
 ## Response objects
 
-Every vault, token, connection, and Detect operation returns a typed response object. All carry an `errors` attribute that is populated on partial failure (`continue_on_error`).
+Every vault, token, connection, and Detect operation returns a typed response object. Each attribute below lists its type and meaning. Types use `| None` to mark attributes that may be absent.
 
-| Response class | Module | Attributes |
-|----------------|--------|------------|
-| <a id="insertresponse"></a>`InsertResponse` | `skyflow.vault.data` | `inserted_fields`, `errors` |
-| <a id="getresponse"></a>`GetResponse` | `skyflow.vault.data` | `data`, `errors` |
-| <a id="deleteresponse"></a>`DeleteResponse` | `skyflow.vault.data` | `deleted_ids`, `errors` |
-| <a id="updateresponse"></a>`UpdateResponse` | `skyflow.vault.data` | `updated_field`, `errors` |
-| <a id="queryresponse"></a>`QueryResponse` | `skyflow.vault.data` | `fields`, `errors` |
-| <a id="fileuploadresponse"></a>`FileUploadResponse` | `skyflow.vault.data` | `skyflow_id`, `errors` |
-| <a id="detokenizeresponse"></a>`DetokenizeResponse` | `skyflow.vault.tokens` | `detokenized_fields`, `errors` |
-| <a id="tokenizeresponse"></a>`TokenizeResponse` | `skyflow.vault.tokens` | `tokenized_fields`, `errors` |
-| <a id="invokeconnectionresponse"></a>`InvokeConnectionResponse` | `skyflow.vault.connection` | `data`, `metadata`, `errors` |
-| <a id="deidentifytextresponse"></a>`DeidentifyTextResponse` | `skyflow.vault.detect` | `processed_text`, `entities`, `word_count`, `char_count`, `errors` |
-| <a id="reidentifytextresponse"></a>`ReidentifyTextResponse` | `skyflow.vault.detect` | `processed_text`, `errors` |
-| <a id="deidentifyfileresponse"></a>`DeidentifyFileResponse` | `skyflow.vault.detect` | `file_base64`, `file`, `type`, `extension`, `word_count`, `char_count`, `size_in_kb`, `duration_in_seconds`, `page_count`, `slide_count`, `entities`, `run_id`, `status`, `errors` |
+> **The `errors` attribute** is common to most responses. It is `list[dict] | None` and is populated only on partial failure (for example when `continue_on_error=True`); it is `None` when there are no errors. Each error dict contains `request_index`, `request_id`, `error`, and `http_code`. The per-class tables below describe only the operation-specific attributes and refer back to this note for `errors`.
 
 ```python
 response = skyflow_client.vault('<VAULT_ID>').insert(insert_request)
 print(response.inserted_fields)  # list of inserted records (with tokens if return_tokens=True)
-print(response.errors)           # populated only on partial failure
+print(response.errors)           # None unless there was a partial failure
 ```
 
-> `DeidentifyTextResponse.entities` is a list of [`EntityInfo`](#entityinfo). `DeidentifyFileResponse.file` is a [`File`](#file) wrapper.
+### `InsertResponse`
+
+`skyflow.vault.data` — returned by `vault().insert()`.
+
+| Attribute | Type | Description |
+|-----------|------|-------------|
+| `inserted_fields` | `list[dict]` | One entry per inserted record. Each has `skyflow_id`; with `return_tokens=True`, also a token per column; with `continue_on_error=True`, also a `request_index`. |
+| `errors` | `list[dict] \| None` | See the note above. |
+
+### `GetResponse`
+
+`skyflow.vault.data` — returned by `vault().get()`.
+
+| Attribute | Type | Description |
+|-----------|------|-------------|
+| `data` | `list[dict]` | Retrieved records as `field → value` dicts (tokens instead of values when `return_tokens=True`). Defaults to `[]`. |
+| `errors` | `list[dict] \| None` | See the note above. |
+
+### `DeleteResponse`
+
+`skyflow.vault.data` — returned by `vault().delete()`.
+
+| Attribute | Type | Description |
+|-----------|------|-------------|
+| `deleted_ids` | `list[str] \| None` | Skyflow IDs of the deleted records. |
+| `errors` | `list[dict] \| None` | See the note above. |
+
+### `UpdateResponse`
+
+`skyflow.vault.data` — returned by `vault().update()`.
+
+| Attribute | Type | Description |
+|-----------|------|-------------|
+| `updated_field` | `dict` | The updated record: `skyflow_id`, plus a token per updated column when `return_tokens=True`. |
+| `errors` | `list[dict] \| None` | See the note above. |
+
+### `QueryResponse`
+
+`skyflow.vault.data` — returned by `vault().query()`.
+
+| Attribute | Type | Description |
+|-----------|------|-------------|
+| `fields` | `list[dict]` | Matching records. Each record dict also includes a `tokenized_data` map. |
+| `errors` | `list[dict] \| None` | See the note above. |
+
+### `FileUploadResponse`
+
+`skyflow.vault.data` — returned by `vault().upload_file()`.
+
+| Attribute | Type | Description |
+|-----------|------|-------------|
+| `skyflow_id` | `str` | ID of the record the file was attached to (or of the newly created record). |
+| `errors` | `list[dict] \| None` | See the note above. |
+
+### `DetokenizeResponse`
+
+`skyflow.vault.tokens` — returned by `vault().detokenize()`.
+
+| Attribute | Type | Description |
+|-----------|------|-------------|
+| `detokenized_fields` | `list[dict]` | One entry per token, each with `token`, `value` (plaintext or masked), and `type` (the value type). |
+| `errors` | `list[dict] \| None` | See the note above. |
+
+### `TokenizeResponse`
+
+`skyflow.vault.tokens` — returned by `vault().tokenize()`.
+
+| Attribute | Type | Description |
+|-----------|------|-------------|
+| `tokenized_fields` | `list[dict]` | One entry per value, each with its `token`. |
+| `errors` | `list[dict] \| None` | See the note above. |
+
+### `InvokeConnectionResponse`
+
+`skyflow.vault.connection` — returned by `connection().invoke()`.
+
+| Attribute | Type | Description |
+|-----------|------|-------------|
+| `data` | `dict` | The connection's response body. |
+| `metadata` | `dict` | Response metadata (for example `request_id`). Defaults to `{}`. |
+| `errors` | `list[dict] \| None` | See the note above. |
+
+### `DeidentifyTextResponse`
+
+`skyflow.vault.detect` — returned by `detect().deidentify_text()`.
+
+| Attribute | Type | Description |
+|-----------|------|-------------|
+| `processed_text` | `str` | The de-identified text. |
+| `entities` | `list[EntityInfo]` | Detected entities. See [`EntityInfo`](#entityinfo). |
+| `word_count` | `int` | Word count of the input text. |
+| `char_count` | `int` | Character count of the input text. |
+| `errors` | `list \| None` | See the note above. |
+
+### `ReidentifyTextResponse`
+
+`skyflow.vault.detect` — returned by `detect().reidentify_text()`.
+
+| Attribute | Type | Description |
+|-----------|------|-------------|
+| `processed_text` | `str` | The re-identified text. |
+| `errors` | `list \| None` | See the note above. |
+
+### `DeidentifyFileResponse`
+
+`skyflow.vault.detect` — returned by `detect().deidentify_file()` and `detect().get_detect_run()`. All non-error attributes are optional (default `None`) and are populated based on the file type and processing status. If processing exceeds `wait_time`, only `run_id` and `status` are set; poll with `get_detect_run`.
+
+| Attribute | Type | Description |
+|-----------|------|-------------|
+| `file_base64` | `str \| None` | The processed file as a base64 string. |
+| `file` | `File \| None` | The processed file wrapper. See [`File`](#file). |
+| `type` | `str \| None` | MIME type of the processed file. |
+| `extension` | `str \| None` | File extension of the processed file. |
+| `word_count` | `int \| None` | Word count (text-bearing files). |
+| `char_count` | `int \| None` | Character count (text-bearing files). |
+| `size_in_kb` | `float \| None` | Size of the processed file in KB. |
+| `duration_in_seconds` | `float \| None` | Duration in seconds (audio files). |
+| `page_count` | `int \| None` | Page count (PDF/document files). |
+| `slide_count` | `int \| None` | Slide count (presentation files). |
+| `entities` | `list[EntityInfo]` | Detected entities. Defaults to `[]`. See [`EntityInfo`](#entityinfo). |
+| `run_id` | `str \| None` | Run identifier; pass to `get_detect_run` to poll for results. |
+| `status` | `str \| None` | Processing status of the run. |
+| `errors` | `list \| None` | See the note above. |
 
 ---
 
