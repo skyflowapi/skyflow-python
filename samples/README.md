@@ -7,31 +7,13 @@ Runnable examples for the Skyflow Python SDK, grouped by area. Start with the [R
 - Python 3.9 or above
 - The SDK installed: `pip install skyflow`
 - A Skyflow account, a vault, and a service account (see [Before you begin](../README.md#before-you-begin))
-- The values listed in [`.env.example`](.env.example): `vault_id`, `cluster_id`, `env`, and one credential (API key, bearer token, or service-account credentials)
+- Your `vault_id`, `cluster_id`, `env`, and one credential (API key, bearer token, or service-account credentials)
 
 ## Configure
 
-Copy the env template and fill in your values:
+The samples ship with inline `<PLACEHOLDER>` strings (for example `<YOUR_VAULT_ID>`). Replace the placeholders in the sample you want to run with your own values before running it.
 
-```bash
-cp .env.example .env
-```
-
-The samples ship with inline `<PLACEHOLDER>` strings (for example `<YOUR_VAULT_ID>`). You can either:
-
-1. **Replace the placeholders** directly in the sample file you want to run, or
-2. **Load from `.env`** by adding the following near the top of the sample (`python-dotenv` is already a SDK dependency):
-
-   ```python
-   import os
-   from dotenv import load_dotenv
-
-   load_dotenv()
-   vault_id = os.getenv('SKYFLOW_VAULT_ID')
-   # ...use os.getenv(...) for the other values
-   ```
-
-> Never commit a filled-in `.env` or any real credentials.
+> Never commit real credentials.
 
 ## Run a sample
 

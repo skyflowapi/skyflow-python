@@ -39,7 +39,7 @@ Evidence tagging: claims verified against code carry a `file:line` reference. It
 | OB-8 | Document undocumented enums (TokenMode, etc.) | README-content | P1 | S | API-coverage |
 | OB-9 | Document Skyflow client-management methods | README-content | P1 | S | API-coverage |
 | OB-10 | Document `is_expired` & `generate_signed_data_tokens_from_creds` | README-content | P1 | S | API-coverage |
-| OB-11 | Add `samples/README.md` + `.env.example` | Samples | P1 | M | Onboarding |
+| OB-11 | Add `samples/README.md` | Samples | P1 | M | Onboarding |
 | OB-12 | Document client lifecycle / thread-safety / retries | README-content | P1 | M | Onboarding |
 | OB-13 | Document Detect helper classes (EntityInfo, TextIndex, Bleep, File) | README-content | P2 | M | API-coverage |
 | OB-14 | Add README badges (PyPI, Python versions, build, license) | Polish | P2 | S | Onboarding |
@@ -164,14 +164,14 @@ Evidence tagging: claims verified against code carry a `file:line` reference. It
 
 **Acceptance criteria:** Both functions documented with a usage snippet.
 
-### OB-11 · `samples/README.md` + `.env.example`
+### OB-11 · `samples/README.md`
 *Priority P1 · Effort M · Samples · Onboarding*
 
-**Problem:** 22 sample files across `samples/{vault_api,detect_api,service_account}` have no README and no env template; each hardcodes `<PLACEHOLDERS>`. There's no `cp .env.example .env` flow to make them runnable.
+**Problem:** 22 sample files across `samples/{vault_api,detect_api,service_account}` have no README explaining prerequisites or how to run them; each hardcodes `<PLACEHOLDERS>`.
 
-**Proposed fix:** Add `samples/README.md` (prerequisites, how to run, what each sample shows) and a `.env.example` with the variables the samples read. Optionally refactor samples to load from env.
+**Proposed fix:** Add `samples/README.md` (prerequisites, how to run, what each sample shows, per-sample index).
 
-**Acceptance criteria:** A user can run any sample by copying `.env.example`, filling values, and following `samples/README.md`.
+**Acceptance criteria:** A user can run any sample by following `samples/README.md` and replacing the inline placeholders with their own values.
 
 ### OB-12 · Client lifecycle / thread-safety / retries
 *Priority P1 · Effort M · README-content · Onboarding*
