@@ -51,7 +51,9 @@ current_level = skyflow_client.get_log_level()
 
 Parameters are listed with their defaults as defined in the constructors.
 
-### `InsertRequest` (`skyflow.vault.data`)
+### `InsertRequest`
+
+`skyflow.vault.data` — passed to `vault().insert()`.
 
 | Parameter | Default | Description |
 |-----------|---------|-------------|
@@ -64,7 +66,9 @@ Parameters are listed with their defaults as defined in the constructors.
 | `return_tokens` | `True` | Return tokens for inserted values. |
 | `continue_on_error` | `False` | Continue the batch despite partial errors. |
 
-### `UpdateRequest` (`skyflow.vault.data`)
+### `UpdateRequest`
+
+`skyflow.vault.data` — passed to `vault().update()`.
 
 | Parameter | Default | Description |
 |-----------|---------|-------------|
@@ -74,7 +78,9 @@ Parameters are listed with their defaults as defined in the constructors.
 | `return_tokens` | `False` | Return tokens (vs. IDs) for updated records. |
 | `token_mode` | `TokenMode.DISABLE` | BYOT mode. See [`TokenMode`](#tokenmode). |
 
-### `GetRequest` (`skyflow.vault.data`)
+### `GetRequest`
+
+`skyflow.vault.data` — passed to `vault().get()`.
 
 | Parameter | Default | Description |
 |-----------|---------|-------------|
@@ -89,9 +95,9 @@ Parameters are listed with their defaults as defined in the constructors.
 | `column_name` | `None` | Unique column to look up by. Mutually exclusive with `ids`. |
 | `column_values` | `None` | Values for `column_name`. |
 
-### `FileUploadRequest` (`skyflow.vault.data`)
+### `FileUploadRequest`
 
-Provide exactly one file source: `file_object`, `file_path`, or `base64`.
+`skyflow.vault.data` — passed to `vault().upload_file()`. Provide exactly one file source: `file_object`, `file_path`, or `base64`.
 
 | Parameter | Default | Description |
 |-----------|---------|-------------|
@@ -103,16 +109,18 @@ Provide exactly one file source: `file_object`, `file_path`, or `base64`.
 | `file_object` | `None` | An open binary file object. |
 | `file_name` | `None` | Override the file name. |
 
-### `FileInput` (`skyflow.vault.detect`)
+### `FileInput`
 
-Wrapper for a file passed to `DeidentifyFileRequest`. Provide one of:
+`skyflow.vault.detect` — wrapper for a file passed to `DeidentifyFileRequest`. Provide one of:
 
 | Parameter | Default | Description |
 |-----------|---------|-------------|
 | `file` | `None` | An open binary file (`BufferedReader`). |
 | `file_path` | `None` | Path to a file. |
 
-### `DeidentifyTextRequest` (`skyflow.vault.detect`)
+### `DeidentifyTextRequest`
+
+`skyflow.vault.detect` — passed to `detect().deidentify_text()`.
 
 | Parameter | Default | Description |
 |-----------|---------|-------------|
@@ -123,7 +131,9 @@ Wrapper for a file passed to `DeidentifyFileRequest`. Provide one of:
 | `token_format` | `None` | `TokenFormat` controlling token types per entity. |
 | `transformations` | `None` | `Transformations` (e.g. date shifting). |
 
-### `DeidentifyFileRequest` (`skyflow.vault.detect`)
+### `DeidentifyFileRequest`
+
+`skyflow.vault.detect` — passed to `detect().deidentify_file()`.
 
 | Parameter | Default | Description |
 |-----------|---------|-------------|
@@ -143,6 +153,71 @@ Wrapper for a file passed to `DeidentifyFileRequest`. Provide one of:
 | `bleep` | `None` | Audio bleep config. See [`Bleep`](#bleep). |
 | `output_directory` | `None` | Directory to write the processed file. |
 | `wait_time` | `None` | Max seconds to wait (≤ 64). |
+
+### `DetokenizeRequest`
+
+`skyflow.vault.tokens` — passed to `vault().detokenize()`.
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `data` | _(required)_ | List of `{token, redaction_type}` dicts to detokenize. See [`RedactionType`](#redactiontype). |
+| `continue_on_error` | `False` | Continue despite per-token errors. |
+
+### `TokenizeRequest`
+
+`skyflow.vault.tokens` — passed to `vault().tokenize()`.
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `values` | _(required)_ | List of `{value, column_group}` dicts to tokenize. |
+
+### `DeleteRequest`
+
+`skyflow.vault.data` — passed to `vault().delete()`.
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `table` | _(required)_ | Target table name. |
+| `ids` | _(required)_ | List of Skyflow IDs to delete. |
+
+### `QueryRequest`
+
+`skyflow.vault.data` — passed to `vault().query()`.
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `query` | _(required)_ | The SQL query string to execute. |
+
+### `ReidentifyTextRequest`
+
+`skyflow.vault.detect` — passed to `detect().reidentify_text()`.
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `text` | _(required)_ | The redacted/de-identified text to re-identify. |
+| `redacted_entities` | `None` | Entity types to keep redacted. See `DetectEntities`. |
+| `masked_entities` | `None` | Entity types to mask. |
+| `plain_text_entities` | `None` | Entity types to reveal as plain text. |
+
+### `GetDetectRunRequest`
+
+`skyflow.vault.detect` — passed to `detect().get_detect_run()`.
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `run_id` | _(required)_ | The `run_id` returned by a prior `deidentify_file` call. |
+
+### `InvokeConnectionRequest`
+
+`skyflow.vault.connection` — passed to `connection().invoke()`.
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `method` | _(required)_ | HTTP method. See [`RequestMethod`](#requestmethod). |
+| `body` | `None` | Request body (dict). |
+| `path_params` | `None` | Path parameters (dict). |
+| `query_params` | `None` | Query parameters (dict). |
+| `headers` | `None` | Request headers (dict). |
 
 ---
 

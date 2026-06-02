@@ -167,7 +167,7 @@ See [docs/advanced_initialization.md](docs/advanced_initialization.md) for advan
 
 Insert data into your vault using the `insert` method. Set `return_tokens=True` in the request to ensure values are tokenized in the response.
 
-Create an insert request with the `InsertRequest` class, which includes the values to be inserted as a list of records.
+Create an insert request with the [`InsertRequest`](docs/api_reference.md#insertrequest) class, which includes the values to be inserted as a list of records.
 
 Below is a simple example to get started. See the [Insert and tokenize data](#insert-and-tokenize-data-insertrequest) section for advanced options.
 
@@ -262,7 +262,7 @@ insert_request = InsertRequest(
 
 Convert tokens back into plaintext values (or masked values) using the `.detokenize()` method. Detokenization accepts tokens and returns values.
 
-Create a detokenization request with the `DetokenizeRequest` class, which requires a list of tokens and column groups as input.
+Create a detokenization request with the [`DetokenizeRequest`](docs/api_reference.md#detokenizerequest) class, which requires a list of tokens and column groups as input.
 
 Provide optional parameters such as the redaction type and the option to continue on error.
 
@@ -295,7 +295,7 @@ Detokenization response: DetokenizeResponse(detokenized_fields=[{'token': 'token
 
 ### Get Record(s): `.get(request)`
 
-Retrieve data using Skyflow IDs or unique column values with the `get` method. Create a get request with the `GetRequest` class, specifying parameters such as the table name, redaction type, Skyflow IDs, column names, and column values.
+Retrieve data using Skyflow IDs or unique column values with the `get` method. Create a get request with the [`GetRequest`](docs/api_reference.md#getrequest) class, specifying parameters such as the table name, redaction type, Skyflow IDs, column names, and column values.
 
 > [!NOTE]
 > You can't use both Skyflow IDs and column name/value pairs in the same request.
@@ -395,7 +395,7 @@ Use redaction types to control how sensitive data displays when retrieved from t
 
 ### Update Records
 
-Update data in your vault using the `update` method. Create an update request with the `UpdateRequest` class, specifying parameters such as the table name and data (as a dictionary).
+Update data in your vault using the `update` method. Create an update request with the [`UpdateRequest`](docs/api_reference.md#updaterequest) class, specifying parameters such as the table name and data (as a dictionary).
 
 You can pass options like `return_tokens` directly to the request. When `True`, Skyflow returns tokens for the updated records. When `False`, it returns IDs.
 
@@ -428,7 +428,7 @@ Update response: UpdateResponse(updated_field={'skyflow_id': '<SKYFLOW_ID>'}, er
 
 ### Delete Records
 
-Delete records using Skyflow IDs with the `delete` method. Create a delete request with the `DeleteRequest` class, which accepts a list of Skyflow IDs:
+Delete records using Skyflow IDs with the `delete` method. Create a delete request with the [`DeleteRequest`](docs/api_reference.md#deleterequest) class, which accepts a list of Skyflow IDs:
 
 ```python
 from skyflow.vault.data import DeleteRequest
@@ -453,7 +453,7 @@ Delete response: DeleteResponse(deleted_ids=['<SKYFLOW_ID1>', '<SKYFLOW_ID2>', '
 
 ### Query
 
-Retrieve data with SQL queries using the `query` method. Create a query request with the `QueryRequest` class, which takes the `query` parameter as follows:
+Retrieve data with SQL queries using the `query` method. Create a query request with the [`QueryRequest`](docs/api_reference.md#queryrequest) class, which takes the `query` parameter as follows:
 
 ```python
 from skyflow.vault.data import QueryRequest
@@ -479,7 +479,7 @@ Refer to [Query your data](https://docs.skyflow.com/query-data/) and [Execute Qu
 
 ### Upload File
 
-Upload files to a Skyflow vault using the `upload_file` method. Create a file upload request with the `FileUploadRequest` class.
+Upload files to a Skyflow vault using the `upload_file` method. Create a file upload request with the [`FileUploadRequest`](docs/api_reference.md#fileuploadrequest) class.
 
 **Upload a file to an existing record:**
 
@@ -524,7 +524,7 @@ File upload: FileUploadResponse(skyflow_id='a8f0c2e1-7b3d-4f9a-8c21-1d2e3f4a5b6c
 
 ### Retrieve Existing Tokens: `.tokenize(request)`
 
-Retrieve tokens for values that already exist in the vault using the `.tokenize()` method. This method returns existing tokens only and does not generate new tokens.
+Retrieve tokens for values that already exist in the vault using the `.tokenize()` method. This method returns existing tokens only and does not generate new tokens. Build the request with the [`TokenizeRequest`](docs/api_reference.md#tokenizerequest) class.
 
 #### Construct a `.tokenize()` request
 
@@ -559,7 +559,7 @@ De-identify and reidentify sensitive data in text and files using Skyflow Detect
 
 De-identify or anonymize text using the `deidentify_text` method.
 
-Create a de-identify text request with the `DeidentifyTextRequest` class.
+Create a de-identify text request with the [`DeidentifyTextRequest`](docs/api_reference.md#deidentifytextrequest) class.
 
 ```python
 from skyflow.vault.detect import DeidentifyTextRequest, TokenFormat, Transformations, DateTransformation
@@ -593,7 +593,7 @@ De-identify Text Response: DeidentifyTextResponse(processed_text='My SSN is [SSN
 
 ### Re-identify Text: `.reidentify_text(request)`
 
-Re-identify text using the `reidentify_text` method. Create a reidentify text request with the `ReidentifyTextRequest` class, which includes the redacted or de-identified text to be re-identified.
+Re-identify text using the `reidentify_text` method. Create a reidentify text request with the [`ReidentifyTextRequest`](docs/api_reference.md#reidentifytextrequest) class, which includes the redacted or de-identified text to be re-identified.
 
 ```python
 from skyflow.vault.detect import ReidentifyTextRequest
@@ -621,7 +621,7 @@ Re-identify Text Response: ReidentifyTextResponse(processed_text='John lives in 
 
 ### De-identify File: `.deidentify_file(request)`
 
-De-identify files using the `deidentify_file` method. Create a request with the `DeidentifyFileRequest` class, which includes the file to be deidentified. Provide optional parameters to control how entities are detected and deidentified.
+De-identify files using the `deidentify_file` method. Create a request with the [`DeidentifyFileRequest`](docs/api_reference.md#deidentifyfilerequest) class, which includes the file to be deidentified. Provide optional parameters to control how entities are detected and deidentified.
 
 ```python
 from skyflow.vault.detect import DeidentifyFileRequest, TokenFormat, FileInput
@@ -668,7 +668,7 @@ De-identify File Response: DeidentifyFileResponse(file_base64=None, file=<File .
 
 ### Get Run: `.get_detect_run(request)`
 
-Retrieve the results of a previously started file de-identification operation using the `get_detect_run` method. Initialize the request with the `run_id` returned from a prior .`deidentify_file` call.
+Retrieve the results of a previously started file de-identification operation using the `get_detect_run` method. Build the request with the [`GetDetectRunRequest`](docs/api_reference.md#getdetectrunrequest) class, initialized with the `run_id` returned from a prior `deidentify_file` call.
 
 ```python
 from skyflow.vault.detect import GetDetectRunRequest
@@ -699,7 +699,7 @@ Securely send and receive data between your systems and first- or third-party se
 
 ### Invoke a connection
 
-To invoke a connection, use the `invoke` method of the Skyflow client.
+To invoke a connection, use the `invoke` method of the Skyflow client. Build the request with the [`InvokeConnectionRequest`](docs/api_reference.md#invokeconnectionrequest) class.
 
 #### Construct an invoke connection request
 
