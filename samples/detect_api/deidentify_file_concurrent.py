@@ -12,15 +12,18 @@ from skyflow.vault.detect import (
 from concurrent.futures import ThreadPoolExecutor
 
 """
- * Skyflow Deidentify File Example
- * 
- * This sample demonstrates how to use all available options for deidentifying files
- * using an asynchronous approach.
- * Supported file types: images (jpg, png, etc.), pdf, audio (mp3, wav), documents, 
+ * Skyflow Deidentify File Example (concurrent)
+ *
+ * This sample demonstrates how to use all available options for deidentifying files.
+ * The SDK is synchronous; this example runs the (blocking) deidentify_file call on a
+ * background thread using concurrent.futures.ThreadPoolExecutor so the main thread can
+ * continue working. This is thread-based concurrency, not asyncio — the SDK does not
+ * expose async/await coroutines.
+ * Supported file types: images (jpg, png, etc.), pdf, audio (mp3, wav), documents,
  * spreadsheets, presentations, structured text.
 """
 
-def perform_file_deidentification_async():
+def perform_file_deidentification_concurrent():
     try:
         # Step 1: Configure Credentials
         credentials = {
