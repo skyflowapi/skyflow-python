@@ -152,18 +152,18 @@ Every vault, token, connection, and Detect operation returns a typed response ob
 
 | Response class | Module | Attributes |
 |----------------|--------|------------|
-| `InsertResponse` | `skyflow.vault.data` | `inserted_fields`, `errors` |
-| `GetResponse` | `skyflow.vault.data` | `data`, `errors` |
-| `DeleteResponse` | `skyflow.vault.data` | `deleted_ids`, `errors` |
-| `UpdateResponse` | `skyflow.vault.data` | `updated_field`, `errors` |
-| `QueryResponse` | `skyflow.vault.data` | `fields`, `errors` |
-| `FileUploadResponse` | `skyflow.vault.data` | `skyflow_id`, `errors` |
-| `DetokenizeResponse` | `skyflow.vault.tokens` | `detokenized_fields`, `errors` |
-| `TokenizeResponse` | `skyflow.vault.tokens` | `tokenized_fields`, `errors` |
-| `InvokeConnectionResponse` | `skyflow.vault.connection` | `data`, `metadata`, `errors` |
-| `DeidentifyTextResponse` | `skyflow.vault.detect` | `processed_text`, `entities`, `word_count`, `char_count`, `errors` |
-| `ReidentifyTextResponse` | `skyflow.vault.detect` | `processed_text`, `errors` |
-| `DeidentifyFileResponse` | `skyflow.vault.detect` | `file_base64`, `file`, `type`, `extension`, `word_count`, `char_count`, `size_in_kb`, `duration_in_seconds`, `page_count`, `slide_count`, `entities`, `run_id`, `status`, `errors` |
+| <a id="insertresponse"></a>`InsertResponse` | `skyflow.vault.data` | `inserted_fields`, `errors` |
+| <a id="getresponse"></a>`GetResponse` | `skyflow.vault.data` | `data`, `errors` |
+| <a id="deleteresponse"></a>`DeleteResponse` | `skyflow.vault.data` | `deleted_ids`, `errors` |
+| <a id="updateresponse"></a>`UpdateResponse` | `skyflow.vault.data` | `updated_field`, `errors` |
+| <a id="queryresponse"></a>`QueryResponse` | `skyflow.vault.data` | `fields`, `errors` |
+| <a id="fileuploadresponse"></a>`FileUploadResponse` | `skyflow.vault.data` | `skyflow_id`, `errors` |
+| <a id="detokenizeresponse"></a>`DetokenizeResponse` | `skyflow.vault.tokens` | `detokenized_fields`, `errors` |
+| <a id="tokenizeresponse"></a>`TokenizeResponse` | `skyflow.vault.tokens` | `tokenized_fields`, `errors` |
+| <a id="invokeconnectionresponse"></a>`InvokeConnectionResponse` | `skyflow.vault.connection` | `data`, `metadata`, `errors` |
+| <a id="deidentifytextresponse"></a>`DeidentifyTextResponse` | `skyflow.vault.detect` | `processed_text`, `entities`, `word_count`, `char_count`, `errors` |
+| <a id="reidentifytextresponse"></a>`ReidentifyTextResponse` | `skyflow.vault.detect` | `processed_text`, `errors` |
+| <a id="deidentifyfileresponse"></a>`DeidentifyFileResponse` | `skyflow.vault.detect` | `file_base64`, `file`, `type`, `extension`, `word_count`, `char_count`, `size_in_kb`, `duration_in_seconds`, `page_count`, `slide_count`, `entities`, `run_id`, `status`, `errors` |
 
 ```python
 response = skyflow_client.vault('<VAULT_ID>').insert(insert_request)
