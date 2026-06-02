@@ -189,6 +189,12 @@ insert_response = skyflow_client.vault('<VAULT_ID>').insert(insert_request)
 print('Insert response:', insert_response)
 ```
 
+Returns an `InsertResponse` (`inserted_fields`, `errors`). With `return_tokens=True`, each entry includes the `skyflow_id` and a token per column:
+
+```text
+Insert response: InsertResponse(inserted_fields=[{'skyflow_id': 'a8f0c2e1-7b3d-4f9a-8c21-1d2e3f4a5b6c', 'card_number': '5391-4629-3722-7102', 'cardholder_name': '0f6b8a2c-90ab-4cde-9def-567890abcdef'}], errors=None)
+```
+
 ## Upgrade from v1 to v2
 
 Upgrade from `skyflow-python` v1 using the dedicated guide in [docs/migrate_to_v2.md](docs/migrate_to_v2.md).
@@ -222,6 +228,14 @@ insert_request = InsertRequest(
 response = skyflow_client.vault('<VAULT_ID>').insert(insert_request)
 print('Insert response:', response)
 ```
+
+Returns an `InsertResponse`:
+
+```text
+Insert response: InsertResponse(inserted_fields=[{'skyflow_id': 'a8f0c2e1-7b3d-4f9a-8c21-1d2e3f4a5b6c', '<FIELD_NAME_1>': '<TOKEN_1>', '<FIELD_NAME_2>': '<TOKEN_2>'}], errors=None)
+```
+
+> With `continue_on_error=True`, each entry also carries a `request_index`, and `errors` is a list of `{request_index, request_id, error, http_code}` for the rows that failed.
 
 #### Insert example with `continue_on_error` option
 
@@ -270,6 +284,12 @@ response = skyflow_client.vault('<VAULT_ID>').detokenize(detokenize_request)
 print('Detokenization response:', response)
 ```
 
+Returns a `DetokenizeResponse` (`detokenized_fields`, `errors`); each field has `token`, `value`, and `type`:
+
+```text
+Detokenization response: DetokenizeResponse(detokenized_fields=[{'token': 'token1', 'value': '4111111111111111', 'type': 'STRING'}, {'token': 'token2', 'value': 'John Doe', 'type': 'STRING'}], errors=None)
+```
+
 > [!TIP]
 > See the full example in the samples directory: [detokenize_records.py](samples/vault_api/detokenize_records.py)
 
@@ -297,6 +317,12 @@ response = skyflow_client.vault('<VAULT_ID>').get(get_request)
 print('Get response:', response)
 ```
 
+Returns a `GetResponse` (`data`, `errors`), where `data` is a list of record dicts:
+
+```text
+Get response: GetResponse(data=[{'skyflow_id': 'a8f0c2e1-7b3d-4f9a-8c21-1d2e3f4a5b6c', 'card_number': '4111111111111111', 'cardholder_name': 'John Doe'}], errors=None)
+```
+
 #### Get by Skyflow IDs
 
 Retrieve specific records using Skyflow IDs. Use this method when you know the exact record IDs.
@@ -314,6 +340,10 @@ get_request = GetRequest(
 response = skyflow_client.vault('<VAULT_ID>').get(get_request)
 
 print('Data retrieval successful:', response)
+```
+
+```text
+Data retrieval successful: GetResponse(data=[{'skyflow_id': '<SKYFLOW_ID1>', 'card_number': '4111111111111111', 'cardholder_name': 'John Doe'}], errors=None)
 ```
 
 #### Get tokens for records
@@ -387,6 +417,12 @@ response = skyflow_client.vault('<VAULT_ID>').update(update_request)
 print('Update response:', response)
 ```
 
+Returns an `UpdateResponse` (`updated_field`, `errors`). With the default `return_tokens=False`, only the `skyflow_id` is returned; with `return_tokens=True`, tokens for the updated columns are included:
+
+```text
+Update response: UpdateResponse(updated_field={'skyflow_id': '<SKYFLOW_ID>'}, errors=None)
+```
+
 > [!TIP]
 > See the full example in the samples directory: [update_record.py](samples/vault_api/update_record.py)
 
@@ -406,6 +442,12 @@ response = skyflow_client.vault('<VAULT_ID>').delete(delete_request)
 print('Delete response:', response)
 ```
 
+Returns a `DeleteResponse` (`deleted_ids`, `errors`):
+
+```text
+Delete response: DeleteResponse(deleted_ids=['<SKYFLOW_ID1>', '<SKYFLOW_ID2>', '<SKYFLOW_ID3>'], errors=None)
+```
+
 > [!TIP]
 > See the full example in the samples directory: [delete_records.py](samples/vault_api/delete_records.py)
 
@@ -422,6 +464,12 @@ query_request = QueryRequest(
 
 response = skyflow_client.vault('<VAULT_ID>').query(query_request)
 print('Query response:', response)
+```
+
+Returns a `QueryResponse` (`fields`, `errors`), where `fields` is a list of matching record dicts (each also includes a `tokenized_data` map):
+
+```text
+Query response: QueryResponse(fields=[{'card_number': '4111111111111111', 'cardholder_name': 'John Doe', 'tokenized_data': {}}], errors=None)
 ```
 
 > [!TIP]
@@ -465,6 +513,12 @@ with open('path/to/file.pdf', 'rb') as file_obj:
     print('File upload:', response)
 ```
 
+Both forms return a `FileUploadResponse` (`skyflow_id`, `errors`) with the ID of the record the file was attached to (or the newly created record):
+
+```text
+File upload: FileUploadResponse(skyflow_id='a8f0c2e1-7b3d-4f9a-8c21-1d2e3f4a5b6c', errors=None)
+```
+
 > [!TIP]
 > See the full example in the samples directory: [upload_file.py](samples/vault_api/upload_file.py)
 
@@ -486,6 +540,12 @@ tokenize_request = TokenizeRequest(
 
 response = skyflow_client.vault('<VAULT_ID>').tokenize(tokenize_request)
 print('Tokenization result:', response)
+```
+
+Returns a `TokenizeResponse` (`tokenized_fields`, `errors`); each field carries its `token`:
+
+```text
+Tokenization result: TokenizeResponse(tokenized_fields=[{'token': 'a1b2c3d4-...'}, {'token': 'e5f6g7h8-...'}], errors=None)
 ```
 
 > [!TIP]
@@ -522,6 +582,12 @@ response = skyflow_client.detect('<VAULT_ID>').deidentify_text(request)
 print('De-identify Text Response:', response)
 ```
 
+Returns a `DeidentifyTextResponse` (`processed_text`, `entities`, `word_count`, `char_count`, `errors`). `entities` is a list of [`EntityInfo`](docs/api_reference.md#entityinfo) describing each detected entity:
+
+```text
+De-identify Text Response: DeidentifyTextResponse(processed_text='My SSN is [SSN_1].', entities=[...], word_count=4, char_count=18, errors=None)
+```
+
 > [!TIP]
 > See the full example in the samples directory: [deidentify_text.py](samples/detect_api/deidentify_text.py)
 
@@ -542,6 +608,12 @@ request = ReidentifyTextRequest(
 
 response = skyflow_client.detect().reidentify_text(request)
 print('Re-identify Text Response:', response)
+```
+
+Returns a `ReidentifyTextResponse` (`processed_text`, `errors`):
+
+```text
+Re-identify Text Response: ReidentifyTextResponse(processed_text='John lives in NYC', errors=None)
 ```
 
 > [!TIP]
@@ -567,6 +639,12 @@ with open('path/to/file.pdf', 'rb') as file_obj:
 
     response = skyflow_client.detect().deidentify_file(request)
     print('De-identify File Response:', response)
+```
+
+Returns a `DeidentifyFileResponse` with the processed file plus metadata (`file`, `type`, `extension`, `word_count`, `char_count`, `size_in_kb`, `entities`, `run_id`, `status`, `errors`, and more — see the [API Reference](docs/api_reference.md#response-objects)). If processing exceeds `wait_time`, only `run_id` and `status` are returned (poll with `get_detect_run`):
+
+```text
+De-identify File Response: DeidentifyFileResponse(file_base64=None, file=<File ...>, type='application/pdf', extension='pdf', ..., run_id='r-9c1f2a3b', status='SUCCESS', errors=None)
 ```
 
 **Supported file types:**
@@ -603,6 +681,12 @@ response = skyflow_client.detect().get_detect_run(request)
 print('Get Detect Run Response:', response)
 ```
 
+Returns a `DeidentifyFileResponse` with the current `status` for the run (and the processed file once `status` is complete):
+
+```text
+Get Detect Run Response: DeidentifyFileResponse(file_base64=None, file=None, ..., run_id='r-9c1f2a3b', status='IN_PROGRESS', errors=None)
+```
+
 > [!TIP]
 > See the full example in the samples directory: [get_detect_run.py](samples/detect_api/get_detect_run.py)
 
@@ -633,6 +717,12 @@ invoke_request = InvokeConnectionRequest(
 
 response = skyflow_client.connection().invoke(invoke_request)
 print('Connection response:', response)
+```
+
+Returns an `InvokeConnectionResponse` (`data`, `metadata`, `errors`), where `data` is the connection's response body:
+
+```text
+Connection response: InvokeConnectionResponse(data={'message': 'success'}, metadata={'request_id': 'b7d3...'}, errors=None)
 ```
 
 `method` supports the following methods (see [`RequestMethod`](docs/api_reference.md#requestmethod)):
