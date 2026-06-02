@@ -1,5 +1,10 @@
 # Skyflow Python SDK
 
+[![PyPI version](https://img.shields.io/pypi/v/skyflow.svg)](https://pypi.org/project/skyflow/)
+[![Python versions](https://img.shields.io/pypi/pyversions/skyflow.svg)](https://pypi.org/project/skyflow/)
+[![CI Checks](https://github.com/skyflowapi/skyflow-python/actions/workflows/ci.yml/badge.svg)](https://github.com/skyflowapi/skyflow-python/actions/workflows/ci.yml)
+[![License](https://img.shields.io/github/license/skyflowapi/skyflow-python.svg)](https://github.com/skyflowapi/skyflow-python/blob/main/LICENSE)
+
 > **This is the current, recommended version of the Skyflow SDK.** V2.1.0 brings flexible auth, multi-vault support, native data types, and rich error diagnostics.
 >
 > Migrating from v1? See the **[Migration Guide](https://github.com/skyflowapi/skyflow-python/blob/main/docs/migrate_to_v2.md)** for step-by-step instructions. V1 is in maintenance mode and will reach End of Life on October 31, 2026.
@@ -69,6 +74,9 @@ The Skyflow Python SDK is designed to help with integrating Skyflow into a Pytho
 
 The Skyflow SDK enables you to connect to your Skyflow Vault(s) to securely handle sensitive data at rest, in-transit, and in-use.
 
+> [!TIP]
+> Looking for the full list of request parameters, response object attributes, enums, client-management methods, and Detect helper classes? See the **[API Reference](docs/api_reference.md)**.
+
 > [!IMPORTANT]  
 > This readme documents SDK version 2.  
 > For version 1 see the [v1.16.0 README](https://github.com/skyflowapi/skyflow-python/tree/v1).  
@@ -78,7 +86,7 @@ The Skyflow SDK enables you to connect to your Skyflow Vault(s) to securely hand
 
 ### Require
 
-- Python 3.8.0 and above (tested with Python 3.8.0)
+- Python 3.9 and above (tested with Python 3.9)
 
 ### Configuration
 
@@ -91,6 +99,19 @@ pip install skyflow
 ## Quickstart
 
 Get started quickly with the essential steps: authenticate, initialize the client, and perform a basic vault operation. This section shows you a minimal working example.
+
+### Before you begin
+
+To run the examples below, you need a Skyflow account and a few values from the Skyflow Studio console. If you don't have an account yet, [request a demo](https://www.skyflow.com/get-demo).
+
+| Value | Where to find it |
+|-------|------------------|
+| `vault_id` | Your vault's details page in Skyflow Studio. |
+| `cluster_id` | The first segment of your vault URL: `https://{cluster_id}.vault.skyflowapis.com`. |
+| `env` | The environment your vault runs in — `Env.PROD`, `Env.SANDBOX`, `Env.DEV`, or `Env.STAGE` (defaults to `PROD`). |
+| Credentials | Create a **service account** in Studio. Choose **API key** during creation for the simplest setup, or download the service-account `credentials.json` for token-based auth. See [Authentication & authorization](#authentication--authorization). |
+
+The quickstart below assumes a table named `table1` with `card_number` and `cardholder_name` columns. Create a matching table (or adjust the table/column names to your schema) in your vault before running it. See the [Skyflow docs](https://docs.skyflow.com/) for creating vaults, tables, and service accounts.
 
 ### Authenticate
 
@@ -614,12 +635,11 @@ response = skyflow_client.connection().invoke(invoke_request)
 print('Connection response:', response)
 ```
 
-`method` supports the following methods:
+`method` supports the following methods (see [`RequestMethod`](docs/api_reference.md#requestmethod)):
 
 - `GET`
 - `POST`
 - `PUT`
-- `PATCH`
 - `DELETE`
 
 **path_params, query_params, header, body** are the JSON objects represented as dictionaries that will be sent through the connection integration url.
@@ -823,6 +843,28 @@ skyflow_client = (
 )
 ```
 
+## Using the client in production
+
+**Build the client once and reuse it.** `Skyflow.builder()...build()` returns a long-lived client that lazily creates and caches an HTTP client and bearer token per vault. Construct it once at startup (for example, as a module-level singleton or a dependency-injected instance) and reuse it across requests. Rebuilding the client on every request discards these caches and forces unnecessary token regeneration.
+
+```python
+# At application startup
+skyflow_client = (
+    Skyflow.builder()
+    .add_vault_config(vault_config)
+    .set_log_level(LogLevel.ERROR)
+    .build()
+)
+
+# Reuse `skyflow_client` for the lifetime of the process
+```
+
+**Bearer token refresh is automatic.** When you authenticate with a service-account credentials file/string (or API key), the SDK caches the generated bearer token and regenerates it automatically once it expires. You don't need to manage token lifecycle yourself for the common case. (For the rare expire-mid-request case, see [Bearer token expiration edge cases](#bearer-token-expiration-edge-cases).)
+
+**Configuration mutation is not concurrency-safe.** Methods that change client configuration at runtime — `add_vault_config`, `update_vault_config`, `remove_vault_config`, the `*_connection_config` methods, and `update_skyflow_credentials` — mutate shared client state without locking. Perform configuration changes during setup, not concurrently with in-flight requests from other threads. Once configured, reusing the built client to issue operations is the intended usage pattern.
+
+**Timeouts and retries.** The SDK does not currently expose request timeout or automatic-retry configuration. If you need strict timeout or retry guarantees, wrap your SDK calls with your own timeout/retry logic at the application layer.
+
 ## Error handling
 
 ### Catching `SkyflowError` instances
@@ -860,6 +902,25 @@ If you encounter this kind of error, retry the request. During the retry the SDK
 > [!TIP]
 > See the full example in the samples directory: [bearer_token_expiry_example.py](samples/service_account/bearer_token_expiry_example.py)  
 > See [docs.skyflow.com](https://docs.skyflow.com) for more details on authentication, access control, and governance for Skyflow.
+
+## Troubleshooting
+
+Most first-run problems come from configuration mismatches. Every error raised by the SDK is a `SkyflowError` exposing `http_code`, `message`, and `details` — inspect these first (see [Error handling](#error-handling)).
+
+| Symptom | Likely cause | Fix |
+|---------|--------------|-----|
+| `pip install skyflow` fails / `RuntimeError: skyflow requires Python 3.9+` | Python older than 3.9 | Use Python 3.9 or above. |
+| Connection/DNS failures, or 404 on every call | Wrong `cluster_id` | `cluster_id` is the first segment of your vault URL: `https://{cluster_id}.vault.skyflowapis.com`. |
+| Requests hit the wrong host / unexpected auth failures | Wrong `env` | Match `env` to where your vault runs (`Env.PROD`, `Env.SANDBOX`, `Env.DEV`, `Env.STAGE`). |
+| `401 Unauthorized` | Invalid or expired credentials | Verify your API key / service-account credentials. Regenerate if needed. |
+| `403 Forbidden` | Service account lacks permission for the operation | Grant the service account a role with the required permissions, or use a [scoped token](#generate-bearer-tokens-scoped-to-certain-roles) with the right role. |
+| `404` referencing a table or column | Table/column doesn't exist or name mismatch | Confirm the table and column names match your vault schema exactly (case-sensitive). |
+| Vault not found / 404 with a valid `cluster_id` | Wrong `vault_id` | Copy `vault_id` from the vault's details page in Skyflow Studio. |
+| `Authentication failed. Bearer token is expired.` | Token expired between verification and the API call | Retry the request; the SDK regenerates the token. See [Bearer token expiration edge cases](#bearer-token-expiration-edge-cases). |
+| Unexpected credential is used | Multiple credentials provided | Only one credential type is used at a time; the last one added takes precedence. Provide exactly one. |
+| `RequestMethod.PATCH` raises `AttributeError` | `PATCH` is not a supported connection method | Use `GET`, `POST`, `PUT`, or `DELETE` (see [`RequestMethod`](docs/api_reference.md#requestmethod)). |
+
+If you're stuck, set `set_log_level(LogLevel.DEBUG)` during development for detailed SDK logs (see [Logging](#logging)).
 
 ## Security
 
