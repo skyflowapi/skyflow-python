@@ -222,9 +222,7 @@ Content type for connection requests. Values: `JSON`, `PLAINTEXT`, `XML`, `URLEN
 
 ### `RequestMethod`
 
-HTTP method for connections. Values: `GET`, `POST`, `PUT`, `DELETE`, `NONE`.
-
-> Note: `PATCH` is **not** a member of this enum.
+HTTP method for connections. Values: `GET`, `POST`, `PUT`, `PATCH`, `DELETE`, `NONE`.
 
 ### `MaskingMethod`
 
