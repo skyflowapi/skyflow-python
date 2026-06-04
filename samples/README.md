@@ -50,7 +50,7 @@ Skyflow Detect (de-identification / re-identification).
 | `deidentify_text.py` | De-identifying text |
 | `reidentify_text.py` | Re-identifying text |
 | `deidentify_file.py` | De-identifying a file |
-| `deidentify_file_concurrent.py` | Running a file de-identification on a background thread (thread-based concurrency, not asyncio) |
+| `deidentify_file_async.py` | Running a file de-identification on a background thread (thread-based concurrency, not asyncio) |
 | `get_detect_run.py` | Polling a file de-identification run by `run_id` |
 
 ### `service_account/`
