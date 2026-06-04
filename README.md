@@ -730,7 +730,6 @@ Connection response: InvokeConnectionResponse(data={'message': 'success'}, metad
 - `GET`
 - `POST`
 - `PUT`
-- `PATCH`
 - `DELETE`
 
 **path_params, query_params, header, body** are the JSON objects represented as dictionaries that will be sent through the connection integration url.
@@ -1009,6 +1008,7 @@ Most first-run problems come from configuration mismatches. Every error raised b
 | Vault not found / 404 with a valid `cluster_id` | Wrong `vault_id` | Copy `vault_id` from the vault's details page in Skyflow Studio. |
 | `Authentication failed. Bearer token is expired.` | Token expired between verification and the API call | Retry the request; the SDK regenerates the token. See [Bearer token expiration edge cases](#bearer-token-expiration-edge-cases). |
 | Unexpected credential is used | Multiple credentials provided | Only one credential type is used at a time; the last one added takes precedence. Provide exactly one. |
+| `RequestMethod.PATCH` raises `AttributeError` | `PATCH` is not a supported connection method | Use `GET`, `POST`, `PUT`, or `DELETE` (see [`RequestMethod`](docs/api_reference.md#requestmethod)). |
 
 If you're stuck, set `set_log_level(LogLevel.DEBUG)` during development for detailed SDK logs (see [Logging](#logging)).
 
