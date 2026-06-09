@@ -18,6 +18,11 @@ setup(
     author='Skyflow',
     author_email='service-ops@skyflow.com',
     packages=find_packages(where='.', exclude=['test*']),
+    # Ship PEP 561 markers so type checkers (mypy/pyright) see the SDK's types.
+    package_data={
+        'skyflow': ['py.typed'],
+        'skyflow.generated.rest': ['py.typed'],
+    },
     url='https://github.com/skyflowapi/skyflow-python/',
     license='LICENSE',
     description='Skyflow SDK for the Python programming language',

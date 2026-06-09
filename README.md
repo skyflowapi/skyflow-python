@@ -1,5 +1,10 @@
 # Skyflow Python SDK
 
+[![PyPI version](https://img.shields.io/pypi/v/skyflow.svg)](https://pypi.org/project/skyflow/)
+[![Python versions](https://img.shields.io/pypi/pyversions/skyflow.svg)](https://pypi.org/project/skyflow/)
+[![CI Checks](https://github.com/skyflowapi/skyflow-python/actions/workflows/ci.yml/badge.svg)](https://github.com/skyflowapi/skyflow-python/actions/workflows/ci.yml)
+[![License](https://img.shields.io/github/license/skyflowapi/skyflow-python.svg)](https://github.com/skyflowapi/skyflow-python/blob/main/LICENSE)
+
 > **This is the current, recommended version of the Skyflow SDK.** V2.1.0 brings flexible auth, multi-vault support, native data types, and rich error diagnostics.
 >
 > Migrating from v1? See the **[Migration Guide](https://github.com/skyflowapi/skyflow-python/blob/main/docs/migrate_to_v2.md)** for step-by-step instructions. V1 is in maintenance mode and will reach End of Life on October 31, 2026.
@@ -69,6 +74,9 @@ The Skyflow Python SDK is designed to help with integrating Skyflow into a Pytho
 
 The Skyflow SDK enables you to connect to your Skyflow Vault(s) to securely handle sensitive data at rest, in-transit, and in-use.
 
+> [!TIP]
+> Looking for the full list of request parameters, response object attributes, enums, client-management methods, and Detect helper classes? See the **[API Reference](docs/api_reference.md)**.
+
 > [!IMPORTANT]  
 > This readme documents SDK version 2.  
 > For version 1 see the [v1.16.0 README](https://github.com/skyflowapi/skyflow-python/tree/v1).  
@@ -78,7 +86,7 @@ The Skyflow SDK enables you to connect to your Skyflow Vault(s) to securely hand
 
 ### Require
 
-- Python 3.8.0 and above (tested with Python 3.8.0)
+- Python 3.9 and above (tested with Python 3.9)
 
 ### Configuration
 
@@ -91,6 +99,19 @@ pip install skyflow
 ## Quickstart
 
 Get started quickly with the essential steps: authenticate, initialize the client, and perform a basic vault operation. This section shows you a minimal working example.
+
+### Before you begin
+
+To run the examples below, you need a Skyflow account and a few values from the Skyflow Studio console. If you don't have an account yet, [request a demo](https://www.skyflow.com/get-demo).
+
+| Value | Where to find it |
+|-------|------------------|
+| `vault_id` | Your vault's details page in Skyflow Studio. |
+| `cluster_id` | The first segment of your vault URL: `https://{cluster_id}.vault.skyflowapis.com`. |
+| `env` | The environment your vault runs in — `Env.PROD`, `Env.SANDBOX`, `Env.DEV`, or `Env.STAGE` (defaults to `PROD`). |
+| Credentials | Create a **service account** in Studio. Choose **API key** during creation for the simplest setup, or download the service-account `credentials.json` for token-based auth. See [Authentication & authorization](#authentication--authorization). |
+
+The quickstart below assumes a table named `table1` with `card_number` and `cardholder_name` columns. Create a matching table (or adjust the table/column names to your schema) in your vault before running it. See the [Skyflow docs](https://docs.skyflow.com/) for creating vaults, tables, and service accounts.
 
 ### Authenticate
 
@@ -146,7 +167,7 @@ See [docs/advanced_initialization.md](docs/advanced_initialization.md) for advan
 
 Insert data into your vault using the `insert` method. Set `return_tokens=True` in the request to ensure values are tokenized in the response.
 
-Create an insert request with the `InsertRequest` class, which includes the values to be inserted as a list of records.
+Create an insert request with the [`InsertRequest`](docs/api_reference.md#insertrequest) class, which includes the values to be inserted as a list of records.
 
 Below is a simple example to get started. See the [Insert and tokenize data](#insert-and-tokenize-data-insertrequest) section for advanced options.
 
@@ -166,6 +187,12 @@ insert_request = InsertRequest(
 
 insert_response = skyflow_client.vault('<VAULT_ID>').insert(insert_request)
 print('Insert response:', insert_response)
+```
+
+Returns an [`InsertResponse`](docs/api_reference.md#insertresponse) (`inserted_fields`, `errors`). With `return_tokens=True`, each entry includes the `skyflow_id` and a token per column:
+
+```text
+Insert response: InsertResponse(inserted_fields=[{'skyflow_id': 'a8f0c2e1-7b3d-4f9a-8c21-1d2e3f4a5b6c', 'card_number': '5391-4629-3722-7102', 'cardholder_name': '0f6b8a2c-90ab-4cde-9def-567890abcdef'}], errors=None)
 ```
 
 ## Upgrade from v1 to v2
@@ -202,6 +229,14 @@ response = skyflow_client.vault('<VAULT_ID>').insert(insert_request)
 print('Insert response:', response)
 ```
 
+Returns an [`InsertResponse`](docs/api_reference.md#insertresponse):
+
+```text
+Insert response: InsertResponse(inserted_fields=[{'skyflow_id': 'a8f0c2e1-7b3d-4f9a-8c21-1d2e3f4a5b6c', '<FIELD_NAME_1>': '<TOKEN_1>', '<FIELD_NAME_2>': '<TOKEN_2>'}], errors=None)
+```
+
+> With `continue_on_error=True`, each entry also carries a `request_index`, and `errors` is a list of `{request_index, request_id, error, http_code}` for the rows that failed.
+
 #### Insert example with `continue_on_error` option
 
 Set the `continue_on_error` flag to `True` to allow insert operations to proceed despite encountering partial errors.
@@ -227,7 +262,7 @@ insert_request = InsertRequest(
 
 Convert tokens back into plaintext values (or masked values) using the `.detokenize()` method. Detokenization accepts tokens and returns values.
 
-Create a detokenization request with the `DetokenizeRequest` class, which requires a list of tokens and column groups as input.
+Create a detokenization request with the [`DetokenizeRequest`](docs/api_reference.md#detokenizerequest) class, which requires a list of tokens and column groups as input.
 
 Provide optional parameters such as the redaction type and the option to continue on error.
 
@@ -249,12 +284,18 @@ response = skyflow_client.vault('<VAULT_ID>').detokenize(detokenize_request)
 print('Detokenization response:', response)
 ```
 
+Returns a [`DetokenizeResponse`](docs/api_reference.md#detokenizeresponse) (`detokenized_fields`, `errors`); each field has `token`, `value`, and `type`:
+
+```text
+Detokenization response: DetokenizeResponse(detokenized_fields=[{'token': 'token1', 'value': '4111111111111111', 'type': 'STRING'}, {'token': 'token2', 'value': 'John Doe', 'type': 'STRING'}], errors=None)
+```
+
 > [!TIP]
 > See the full example in the samples directory: [detokenize_records.py](samples/vault_api/detokenize_records.py)
 
 ### Get Record(s): `.get(request)`
 
-Retrieve data using Skyflow IDs or unique column values with the `get` method. Create a get request with the `GetRequest` class, specifying parameters such as the table name, redaction type, Skyflow IDs, column names, and column values.
+Retrieve data using Skyflow IDs or unique column values with the `get` method. Create a get request with the [`GetRequest`](docs/api_reference.md#getrequest) class, specifying parameters such as the table name, redaction type, Skyflow IDs, column names, and column values.
 
 > [!NOTE]
 > You can't use both Skyflow IDs and column name/value pairs in the same request.
@@ -276,6 +317,12 @@ response = skyflow_client.vault('<VAULT_ID>').get(get_request)
 print('Get response:', response)
 ```
 
+Returns a [`GetResponse`](docs/api_reference.md#getresponse) (`data`, `errors`), where `data` is a list of record dicts:
+
+```text
+Get response: GetResponse(data=[{'skyflow_id': 'a8f0c2e1-7b3d-4f9a-8c21-1d2e3f4a5b6c', 'card_number': '4111111111111111', 'cardholder_name': 'John Doe'}], errors=None)
+```
+
 #### Get by Skyflow IDs
 
 Retrieve specific records using Skyflow IDs. Use this method when you know the exact record IDs.
@@ -293,6 +340,10 @@ get_request = GetRequest(
 response = skyflow_client.vault('<VAULT_ID>').get(get_request)
 
 print('Data retrieval successful:', response)
+```
+
+```text
+Data retrieval successful: GetResponse(data=[{'skyflow_id': '<SKYFLOW_ID1>', 'card_number': '4111111111111111', 'cardholder_name': 'John Doe'}], errors=None)
 ```
 
 #### Get tokens for records
@@ -344,7 +395,7 @@ Use redaction types to control how sensitive data displays when retrieved from t
 
 ### Update Records
 
-Update data in your vault using the `update` method. Create an update request with the `UpdateRequest` class, specifying parameters such as the table name and data (as a dictionary).
+Update data in your vault using the `update` method. Create an update request with the [`UpdateRequest`](docs/api_reference.md#updaterequest) class, specifying parameters such as the table name and data (as a dictionary).
 
 You can pass options like `return_tokens` directly to the request. When `True`, Skyflow returns tokens for the updated records. When `False`, it returns IDs.
 
@@ -366,12 +417,18 @@ response = skyflow_client.vault('<VAULT_ID>').update(update_request)
 print('Update response:', response)
 ```
 
+Returns an [`UpdateResponse`](docs/api_reference.md#updateresponse) (`updated_field`, `errors`). With the default `return_tokens=False`, only the `skyflow_id` is returned; with `return_tokens=True`, tokens for the updated columns are included:
+
+```text
+Update response: UpdateResponse(updated_field={'skyflow_id': '<SKYFLOW_ID>'}, errors=None)
+```
+
 > [!TIP]
 > See the full example in the samples directory: [update_record.py](samples/vault_api/update_record.py)
 
 ### Delete Records
 
-Delete records using Skyflow IDs with the `delete` method. Create a delete request with the `DeleteRequest` class, which accepts a list of Skyflow IDs:
+Delete records using Skyflow IDs with the `delete` method. Create a delete request with the [`DeleteRequest`](docs/api_reference.md#deleterequest) class, which accepts a list of Skyflow IDs:
 
 ```python
 from skyflow.vault.data import DeleteRequest
@@ -385,12 +442,18 @@ response = skyflow_client.vault('<VAULT_ID>').delete(delete_request)
 print('Delete response:', response)
 ```
 
+Returns a [`DeleteResponse`](docs/api_reference.md#deleteresponse) (`deleted_ids`, `errors`):
+
+```text
+Delete response: DeleteResponse(deleted_ids=['<SKYFLOW_ID1>', '<SKYFLOW_ID2>', '<SKYFLOW_ID3>'], errors=None)
+```
+
 > [!TIP]
 > See the full example in the samples directory: [delete_records.py](samples/vault_api/delete_records.py)
 
 ### Query
 
-Retrieve data with SQL queries using the `query` method. Create a query request with the `QueryRequest` class, which takes the `query` parameter as follows:
+Retrieve data with SQL queries using the `query` method. Create a query request with the [`QueryRequest`](docs/api_reference.md#queryrequest) class, which takes the `query` parameter as follows:
 
 ```python
 from skyflow.vault.data import QueryRequest
@@ -403,6 +466,12 @@ response = skyflow_client.vault('<VAULT_ID>').query(query_request)
 print('Query response:', response)
 ```
 
+Returns a [`QueryResponse`](docs/api_reference.md#queryresponse) (`fields`, `errors`), where `fields` is a list of matching record dicts (each also includes a `tokenized_data` map):
+
+```text
+Query response: QueryResponse(fields=[{'card_number': '4111111111111111', 'cardholder_name': 'John Doe', 'tokenized_data': {}}], errors=None)
+```
+
 > [!TIP]
 > See the full example in the samples directory: [query_records.py](samples/vault_api/query_records.py)
 
@@ -410,7 +479,7 @@ Refer to [Query your data](https://docs.skyflow.com/query-data/) and [Execute Qu
 
 ### Upload File
 
-Upload files to a Skyflow vault using the `upload_file` method. Create a file upload request with the `FileUploadRequest` class.
+Upload files to a Skyflow vault using the `upload_file` method. Create a file upload request with the [`FileUploadRequest`](docs/api_reference.md#fileuploadrequest) class.
 
 **Upload a file to an existing record:**
 
@@ -444,12 +513,18 @@ with open('path/to/file.pdf', 'rb') as file_obj:
     print('File upload:', response)
 ```
 
+Both forms return a [`FileUploadResponse`](docs/api_reference.md#fileuploadresponse) (`skyflow_id`, `errors`) with the ID of the record the file was attached to (or the newly created record):
+
+```text
+File upload: FileUploadResponse(skyflow_id='a8f0c2e1-7b3d-4f9a-8c21-1d2e3f4a5b6c', errors=None)
+```
+
 > [!TIP]
 > See the full example in the samples directory: [upload_file.py](samples/vault_api/upload_file.py)
 
 ### Retrieve Existing Tokens: `.tokenize(request)`
 
-Retrieve tokens for values that already exist in the vault using the `.tokenize()` method. This method returns existing tokens only and does not generate new tokens.
+Retrieve tokens for values that already exist in the vault using the `.tokenize()` method. This method returns existing tokens only and does not generate new tokens. Build the request with the [`TokenizeRequest`](docs/api_reference.md#tokenizerequest) class.
 
 #### Construct a `.tokenize()` request
 
@@ -467,6 +542,12 @@ response = skyflow_client.vault('<VAULT_ID>').tokenize(tokenize_request)
 print('Tokenization result:', response)
 ```
 
+Returns a [`TokenizeResponse`](docs/api_reference.md#tokenizeresponse) (`tokenized_fields`, `errors`); each field carries its `token`:
+
+```text
+Tokenization result: TokenizeResponse(tokenized_fields=[{'token': 'a1b2c3d4-...'}, {'token': 'e5f6g7h8-...'}], errors=None)
+```
+
 > [!TIP]
 > See the full example in the samples directory: [tokenize_records.py](samples/vault_api/tokenize_records.py)
 
@@ -478,7 +559,7 @@ De-identify and reidentify sensitive data in text and files using Skyflow Detect
 
 De-identify or anonymize text using the `deidentify_text` method.
 
-Create a de-identify text request with the `DeidentifyTextRequest` class.
+Create a de-identify text request with the [`DeidentifyTextRequest`](docs/api_reference.md#deidentifytextrequest) class.
 
 ```python
 from skyflow.vault.detect import DeidentifyTextRequest, TokenFormat, Transformations, DateTransformation
@@ -501,12 +582,18 @@ response = skyflow_client.detect('<VAULT_ID>').deidentify_text(request)
 print('De-identify Text Response:', response)
 ```
 
+Returns a [`DeidentifyTextResponse`](docs/api_reference.md#deidentifytextresponse) (`processed_text`, `entities`, `word_count`, `char_count`, `errors`). `entities` is a list of [`EntityInfo`](docs/api_reference.md#entityinfo) describing each detected entity:
+
+```text
+De-identify Text Response: DeidentifyTextResponse(processed_text='My SSN is [SSN_1].', entities=[...], word_count=4, char_count=18, errors=None)
+```
+
 > [!TIP]
 > See the full example in the samples directory: [deidentify_text.py](samples/detect_api/deidentify_text.py)
 
 ### Re-identify Text: `.reidentify_text(request)`
 
-Re-identify text using the `reidentify_text` method. Create a reidentify text request with the `ReidentifyTextRequest` class, which includes the redacted or de-identified text to be re-identified.
+Re-identify text using the `reidentify_text` method. Create a reidentify text request with the [`ReidentifyTextRequest`](docs/api_reference.md#reidentifytextrequest) class, which includes the redacted or de-identified text to be re-identified.
 
 ```python
 from skyflow.vault.detect import ReidentifyTextRequest
@@ -523,12 +610,18 @@ response = skyflow_client.detect().reidentify_text(request)
 print('Re-identify Text Response:', response)
 ```
 
+Returns a [`ReidentifyTextResponse`](docs/api_reference.md#reidentifytextresponse) (`processed_text`, `errors`):
+
+```text
+Re-identify Text Response: ReidentifyTextResponse(processed_text='John lives in NYC', errors=None)
+```
+
 > [!TIP]
 > See the full example in the samples directory: [reidentify_text.py](samples/detect_api/reidentify_text.py)
 
 ### De-identify File: `.deidentify_file(request)`
 
-De-identify files using the `deidentify_file` method. Create a request with the `DeidentifyFileRequest` class, which includes the file to be deidentified. Provide optional parameters to control how entities are detected and deidentified.
+De-identify files using the `deidentify_file` method. Create a request with the [`DeidentifyFileRequest`](docs/api_reference.md#deidentifyfilerequest) class, which includes the file to be deidentified. Provide optional parameters to control how entities are detected and deidentified.
 
 ```python
 from skyflow.vault.detect import DeidentifyFileRequest, TokenFormat, FileInput
@@ -546,6 +639,12 @@ with open('path/to/file.pdf', 'rb') as file_obj:
 
     response = skyflow_client.detect().deidentify_file(request)
     print('De-identify File Response:', response)
+```
+
+Returns a [`DeidentifyFileResponse`](docs/api_reference.md#deidentifyfileresponse) with the processed file plus metadata (`file`, `type`, `extension`, `word_count`, `char_count`, `size_in_kb`, `entities`, `run_id`, `status`, `errors`, and more — see the [API Reference](docs/api_reference.md#response-objects)). If processing exceeds `wait_time`, only `run_id` and `status` are returned (poll with `get_detect_run`):
+
+```text
+De-identify File Response: DeidentifyFileResponse(file_base64=None, file=<File ...>, type='application/pdf', extension='pdf', ..., run_id='r-9c1f2a3b', status='SUCCESS', errors=None)
 ```
 
 **Supported file types:**
@@ -569,7 +668,7 @@ with open('path/to/file.pdf', 'rb') as file_obj:
 
 ### Get Run: `.get_detect_run(request)`
 
-Retrieve the results of a previously started file de-identification operation using the `get_detect_run` method. Initialize the request with the `run_id` returned from a prior .`deidentify_file` call.
+Retrieve the results of a previously started file de-identification operation using the `get_detect_run` method. Build the request with the [`GetDetectRunRequest`](docs/api_reference.md#getdetectrunrequest) class, initialized with the `run_id` returned from a prior `deidentify_file` call.
 
 ```python
 from skyflow.vault.detect import GetDetectRunRequest
@@ -580,6 +679,12 @@ request = GetDetectRunRequest(
 
 response = skyflow_client.detect().get_detect_run(request)
 print('Get Detect Run Response:', response)
+```
+
+Returns a [`DeidentifyFileResponse`](docs/api_reference.md#deidentifyfileresponse) with the current `status` for the run (and the processed file once `status` is complete):
+
+```text
+Get Detect Run Response: DeidentifyFileResponse(file_base64=None, file=None, ..., run_id='r-9c1f2a3b', status='IN_PROGRESS', errors=None)
 ```
 
 > [!TIP]
@@ -594,7 +699,7 @@ Securely send and receive data between your systems and first- or third-party se
 
 ### Invoke a connection
 
-To invoke a connection, use the `invoke` method of the Skyflow client.
+To invoke a connection, use the `invoke` method of the Skyflow client. Build the request with the [`InvokeConnectionRequest`](docs/api_reference.md#invokeconnectionrequest) class.
 
 #### Construct an invoke connection request
 
@@ -614,12 +719,17 @@ response = skyflow_client.connection().invoke(invoke_request)
 print('Connection response:', response)
 ```
 
-`method` supports the following methods:
+Returns an [`InvokeConnectionResponse`](docs/api_reference.md#invokeconnectionresponse) (`data`, `metadata`, `errors`), where `data` is the connection's response body:
+
+```text
+Connection response: InvokeConnectionResponse(data={'message': 'success'}, metadata={'request_id': 'b7d3...'}, errors=None)
+```
+
+`method` supports the following methods (see [`RequestMethod`](docs/api_reference.md#requestmethod)):
 
 - `GET`
 - `POST`
 - `PUT`
-- `PATCH`
 - `DELETE`
 
 **path_params, query_params, header, body** are the JSON objects represented as dictionaries that will be sent through the connection integration url.
@@ -823,6 +933,28 @@ skyflow_client = (
 )
 ```
 
+## Using the client in production
+
+**Build the client once and reuse it.** `Skyflow.builder()...build()` returns a long-lived client that lazily creates and caches an HTTP client and bearer token per vault. Construct it once at startup (for example, as a module-level singleton or a dependency-injected instance) and reuse it across requests. Rebuilding the client on every request discards these caches and forces unnecessary token regeneration.
+
+```python
+# At application startup
+skyflow_client = (
+    Skyflow.builder()
+    .add_vault_config(vault_config)
+    .set_log_level(LogLevel.ERROR)
+    .build()
+)
+
+# Reuse `skyflow_client` for the lifetime of the process
+```
+
+**Bearer token refresh is automatic.** When you authenticate with a service-account credentials file/string (or API key), the SDK caches the generated bearer token and regenerates it automatically once it expires. You don't need to manage token lifecycle yourself for the common case. (For the rare expire-mid-request case, see [Bearer token expiration edge cases](#bearer-token-expiration-edge-cases).)
+
+**Configuration mutation is not concurrency-safe.** Methods that change client configuration at runtime — `add_vault_config`, `update_vault_config`, `remove_vault_config`, the `*_connection_config` methods, and `update_skyflow_credentials` — mutate shared client state without locking. Perform configuration changes during setup, not concurrently with in-flight requests from other threads. Once configured, reusing the built client to issue operations is the intended usage pattern.
+
+**Timeouts and retries.** The SDK does not currently expose request timeout or automatic-retry configuration. If you need strict timeout or retry guarantees, wrap your SDK calls with your own timeout/retry logic at the application layer.
+
 ## Error handling
 
 ### Catching `SkyflowError` instances
@@ -860,6 +992,25 @@ If you encounter this kind of error, retry the request. During the retry the SDK
 > [!TIP]
 > See the full example in the samples directory: [bearer_token_expiry_example.py](samples/service_account/bearer_token_expiry_example.py)  
 > See [docs.skyflow.com](https://docs.skyflow.com) for more details on authentication, access control, and governance for Skyflow.
+
+## Troubleshooting
+
+Most first-run problems come from configuration mismatches. Every error raised by the SDK is a `SkyflowError` exposing `http_code`, `message`, and `details` — inspect these first (see [Error handling](#error-handling)).
+
+| Symptom | Likely cause | Fix |
+|---------|--------------|-----|
+| `pip install skyflow` fails / `RuntimeError: skyflow requires Python 3.9+` | Python older than 3.9 | Use Python 3.9 or above. |
+| Connection/DNS failures, or 404 on every call | Wrong `cluster_id` | `cluster_id` is the first segment of your vault URL: `https://{cluster_id}.vault.skyflowapis.com`. |
+| Requests hit the wrong host / unexpected auth failures | Wrong `env` | Match `env` to where your vault runs (`Env.PROD`, `Env.SANDBOX`, `Env.DEV`, `Env.STAGE`). |
+| `401 Unauthorized` | Invalid or expired credentials | Verify your API key / service-account credentials. Regenerate if needed. |
+| `403 Forbidden` | Service account lacks permission for the operation | Grant the service account a role with the required permissions, or use a [scoped token](#generate-bearer-tokens-scoped-to-certain-roles) with the right role. |
+| `404` referencing a table or column | Table/column doesn't exist or name mismatch | Confirm the table and column names match your vault schema exactly (case-sensitive). |
+| Vault not found / 404 with a valid `cluster_id` | Wrong `vault_id` | Copy `vault_id` from the vault's details page in Skyflow Studio. |
+| `Authentication failed. Bearer token is expired.` | Token expired between verification and the API call | Retry the request; the SDK regenerates the token. See [Bearer token expiration edge cases](#bearer-token-expiration-edge-cases). |
+| Unexpected credential is used | Multiple credentials provided | Only one credential type is used at a time; the last one added takes precedence. Provide exactly one. |
+| `RequestMethod.PATCH` raises `AttributeError` | `PATCH` is not a supported connection method | Use `GET`, `POST`, `PUT`, or `DELETE` (see [`RequestMethod`](docs/api_reference.md#requestmethod)). |
+
+If you're stuck, set `set_log_level(LogLevel.DEBUG)` during development for detailed SDK logs (see [Logging](#logging)).
 
 ## Security
 
