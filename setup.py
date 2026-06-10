@@ -31,8 +31,8 @@ setup(
     install_requires=[
         'pydantic >= 2.13.4',
         'typing-extensions >= 4.13.2',
-        'PyJWT >= 2.8, < 3',
-        'requests ~= 2.32.4',
+        'PyJWT >= 2.12, < 3',
+        'requests >= 2.32.4',
         'cryptography >= 44.0.2',
         'httpx >= 0.28.1',
         'python-dotenv >= 1.1.0, < 2',
