@@ -29,23 +29,18 @@ setup(
     long_description=long_description,
     long_description_content_type='text/markdown',
     install_requires=[
-        'python_dateutil >= 2.5.3',
-    	'setuptools >= 75.3.3',
-        'urllib3 >= 1.25.3, < 3',
-        'pydantic >= 2',
-        'typing-extensions >= 4.7.1',
-        'DateTime~=5.5',
-        'PyJWT >= 2.12, < 3',
-        'requests~=2.32.3',
-        'coverage',
-        'cryptography',
-        'python-dotenv >= 1.0, < 2',
-        'httpx'
+        'pydantic >= 2.13.4',
+        'typing-extensions >= 4.13.2',
+        'PyJWT >= 2.8, < 3',
+        'requests ~= 2.32.4',
+        'cryptography >= 44.0.2',
+        'httpx >= 0.28.1',
+        'python-dotenv >= 1.1.0, < 2',
     ],
     extras_require={
         'dev': [
-            'codespell',
-            'ruff'
+            'codespell >= 2.4.1',
+            'ruff >= 0.9.0',
         ]
     },
     python_requires=">=3.9",
