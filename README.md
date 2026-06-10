@@ -1,10 +1,5 @@
 # Skyflow Python SDK
 
-[![PyPI version](https://img.shields.io/pypi/v/skyflow.svg)](https://pypi.org/project/skyflow/)
-[![Python versions](https://img.shields.io/pypi/pyversions/skyflow.svg)](https://pypi.org/project/skyflow/)
-[![CI Checks](https://github.com/skyflowapi/skyflow-python/actions/workflows/ci.yml/badge.svg)](https://github.com/skyflowapi/skyflow-python/actions/workflows/ci.yml)
-[![License](https://img.shields.io/github/license/skyflowapi/skyflow-python.svg)](https://github.com/skyflowapi/skyflow-python/blob/main/LICENSE)
-
 > **This is the current, recommended version of the Skyflow SDK.** V2.1.0 brings flexible auth, multi-vault support, native data types, and rich error diagnostics.
 >
 > Migrating from v1? See the **[Migration Guide](https://github.com/skyflowapi/skyflow-python/blob/main/docs/migrate_to_v2.md)** for step-by-step instructions. V1 is in maintenance mode and will reach End of Life on October 31, 2026.
