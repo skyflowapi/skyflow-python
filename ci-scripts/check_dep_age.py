@@ -15,6 +15,7 @@ import urllib.request
 from datetime import datetime, timezone
 
 STABILITY_DAYS = 14
+HTTP_NOT_FOUND = 404
 PYPI_JSON_URL = "https://pypi.org/pypi/{package}/{version}/json"
 DEFAULT_FILES = ["requirements.txt", "setup.py"]
 
@@ -48,7 +49,7 @@ def get_release_age_days(package, version):
         age_days = (datetime.now(timezone.utc) - release_date).days
         return age_days, None
     except urllib.error.HTTPError as e:
-        if e.code == 404:
+        if e.code == HTTP_NOT_FOUND:
             return None, f"{package} {version} not found on PyPI (404) — version may not exist yet"
         return None, f"HTTP {e.code} fetching {package} {version}"
     except Exception as e:
