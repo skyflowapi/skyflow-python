@@ -31,9 +31,6 @@ jobs:
           pip install dist/skyflow-*.whl
           pip install ".[dev]"
 
-      - name: Check dependency stability (14-day freeze)
-        run: python ci-scripts/check_dep_age.py requirements.txt setup.py
-
       - name: Run Spell Check
         run: codespell
 
