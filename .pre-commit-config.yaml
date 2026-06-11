@@ -1,0 +1,9 @@
+repos:
+  - repo: local
+    hooks:
+      - id: check-dep-stability
+        name: "Dependency stability freeze (14-day rule)"
+        entry: python ci-scripts/check_dep_age.py requirements.txt setup.py
+        language: python
+        files: ^(requirements\.txt|setup\.py)$
+        pass_filenames: false
