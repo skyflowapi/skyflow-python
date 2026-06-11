@@ -41,7 +41,7 @@ setup(
         'dev': [
             'codespell >= 2.4.1',
             'ruff >= 0.9.0',
-            'pre-commit >= 4.6.0',
+            'pre-commit >= 4.3.0',
         ]
     },
     python_requires=">=3.9",
