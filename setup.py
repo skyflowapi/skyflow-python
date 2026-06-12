@@ -7,7 +7,7 @@ import sys
 
 if sys.version_info < (3, 9):
     raise RuntimeError("skyflow requires Python 3.9+")
-current_version = '2.1.1'
+current_version = '1.16.1.dev0+b51d539'
 
 with open('README.md', 'r', encoding='utf-8') as f:
     long_description = f.read()
