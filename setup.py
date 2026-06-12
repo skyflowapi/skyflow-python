@@ -32,7 +32,7 @@ setup(
         'pydantic >= 2.0.0',
         'typing-extensions >= 4.0.0',
         'PyJWT >= 2.12, < 3',
-        'requests >= 2.32.2',
+        'requests >= 2.28.0',
         'cryptography >= 44.0.2',
         'httpx >= 0.21.2',
         'python-dotenv >= 1.1.0, < 2',
