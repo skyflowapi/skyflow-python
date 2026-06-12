@@ -10,3 +10,4 @@ jobs:
     uses: ./.github/workflows/shared-tests.yml
     with:
       python-version: '3.9'
+    secrets: inherit
