@@ -35,7 +35,7 @@ setup(
         'requests >= 2.32.2',
         'cryptography >= 44.0.2',
         'httpx >= 0.21.2',
-        'python-dotenv >= 1.2.2, < 2',
+        'python-dotenv >= 1.1.0, < 2',
     ],
     extras_require={
         'dev': [
