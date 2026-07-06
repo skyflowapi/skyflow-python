@@ -11,3 +11,5 @@
 > [!NOTE]
 > **Separate package requires a separate GitHub repository for Go SDK.** A different SDK name (e.g. `skyflow-flowdb-go`) maps to a different source repository — it cannot be served from the existing `skyflow-go` repo without additional redirect infrastructure.
 
+We can still share common internal code across separate repositories by publishing a shared Go module — either within `skyflow-go` or in a dedicated common location — and importing it as a dependency in both `skyflow-go` (v2) and `skyflow-flowdb-go` (v3) SDK repos.
+
