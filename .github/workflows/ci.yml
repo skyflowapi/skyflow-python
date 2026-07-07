@@ -18,7 +18,27 @@ jobs:
           error: 'One of your your commit messages is not matching the format with JIRA ID Ex: ( SDK-123 commit message )'
 
   test:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - variant: v2
+            coverage-omit: "skyflow/generated/*,skyflow/utils/validations/*,skyflow/vault/data/*,skyflow/vault/detect/*,skyflow/vault/tokens/*,skyflow/vault/connection/*,skyflow/error/*,skyflow/utils/enums/*,skyflow/vault/controller/_audit.py,skyflow/vault/controller/_bin_look_up.py"
+          - variant: v3
+            coverage-omit: "skyflow/generated/*"
     uses: ./.github/workflows/shared-tests.yml
     with:
       python-version: '3.9'
+      variant: ${{ matrix.variant }}
+      coverage-omit: ${{ matrix.coverage-omit }}
     secrets: inherit
+
+  test-common:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+        with:
+          python-version: '3.9'
+      - run: pip install -e ./common
+      - run: python -m unittest discover -s common/tests -t .

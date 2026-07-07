@@ -7,11 +7,22 @@ on:
         description: 'Git reference to use (e.g., main or branch name)'
         required: true
         type: string
-      
+
       tag:
         description: 'Release Tag'
         required: true
         type: string
+
+      variant:
+        description: 'Build variant directory to release (v2 or v3)'
+        required: true
+        type: string
+
+      tag-prefix:
+        description: 'Prefix distinguishing this variant''s git tags from other variants'' (e.g. "flowvault-" for v3, empty for v2)'
+        required: false
+        type: string
+        default: ''
 
 jobs:
   build-and-deploy:
@@ -29,7 +40,7 @@ jobs:
 
       - name: Resolve Branch for the Tagged Commit
         id: resolve-branch
-        if: ${{ inputs.tag == 'beta' || inputs.tag == 'public' }} 
+        if: ${{ inputs.tag == 'beta' || inputs.tag == 'public' }}
         run: |
           TAG_COMMIT=$(git rev-list -n 1 ${{ github.ref_name }})
 
@@ -47,18 +58,28 @@ jobs:
         id: previoustag
         uses: WyriHaximus/github-action-get-previous-tag@v1
         with:
-          fallback: 1.0.0
+          fallback: ${{ inputs.tag-prefix }}1.0.0
+          pattern: ${{ inputs.tag-prefix }}[0-9]*.[0-9]*.[0-9]*
+
+      - name: Resolve version number
+        id: version
+        run: |
+          TAG="${{ steps.previoustag.outputs.tag }}"
+          VERSION="${TAG#${{ inputs.tag-prefix }}}"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Bump Version
+        working-directory: ${{ inputs.variant }}
         run: |
-          chmod +x ./ci-scripts/bump_version.sh
+          chmod +x ../ci-scripts/bump_version.sh
           if ${{ inputs.tag == 'internal' }}; then
-            ./ci-scripts/bump_version.sh "${{ steps.previoustag.outputs.tag }}" "$(git rev-parse --short "$GITHUB_SHA")"
+            ../ci-scripts/bump_version.sh "${{ steps.version.outputs.version }}" "$(git rev-parse --short "$GITHUB_SHA")"
           else
-            ./ci-scripts/bump_version.sh "${{ steps.previoustag.outputs.tag }}"
+            ../ci-scripts/bump_version.sh "${{ steps.version.outputs.version }}"
           fi
 
       - name: Commit changes
+        working-directory: ${{ inputs.variant }}
         run: |
           git config user.name "${{ github.actor }}"
           git config user.email "${{ github.actor }}@users.noreply.github.com"
@@ -71,24 +92,26 @@ jobs:
           git add skyflow/utils/_version.py
 
           if [[ "${{ inputs.tag }}" == "internal" ]]; then
-            VERSION="${{ steps.previoustag.outputs.tag }}.dev0+$(git rev-parse --short $GITHUB_SHA)"
-            COMMIT_MESSAGE="[AUTOMATED] Private Release $VERSION"
+            VERSION="${{ steps.version.outputs.version }}.dev0+$(git rev-parse --short $GITHUB_SHA)"
+            COMMIT_MESSAGE="[AUTOMATED] Private Release (${{ inputs.variant }}) $VERSION"
             git commit -m "$COMMIT_MESSAGE"
             git push origin ${{ github.ref_name }} -f
           fi
           if [[ "${{ inputs.tag }}" == "beta" || "${{ inputs.tag }}" == "public" ]]; then
-            COMMIT_MESSAGE="[AUTOMATED] Public Release - ${{ steps.previoustag.outputs.tag }}"
+            COMMIT_MESSAGE="[AUTOMATED] Public Release (${{ inputs.variant }}) - ${{ steps.previoustag.outputs.tag }}"
             git commit -m "$COMMIT_MESSAGE"
             git push origin ${{ env.branch_name }}
           fi
 
-      - name: Build and install skyflow package
+      - name: Build and install package
+        working-directory: ${{ inputs.variant }}
         run: |
           python setup.py sdist bdist_wheel
-          pip install dist/skyflow-*.whl
+          pip install dist/*.whl
 
       - name: Build and Publish Package
-        if: ${{ inputs.tag == 'beta' || inputs.tag == 'public' }} 
+        if: ${{ inputs.tag == 'beta' || inputs.tag == 'public' }}
+        working-directory: ${{ inputs.variant }}
         env:
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.PYPI_PUBLISH_TOKEN }}
@@ -98,6 +121,7 @@ jobs:
 
       - name: Build and Publish to JFrog Artifactory
         if: ${{ inputs.tag == 'internal' }}
+        working-directory: ${{ inputs.variant }}
         env:
           TWINE_USERNAME: ${{ secrets.JFROG_USERNAME }}
           TWINE_PASSWORD: ${{ secrets.JFROG_PASSWORD }}
