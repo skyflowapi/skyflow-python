@@ -3,7 +3,7 @@ from unittest.mock import patch, MagicMock
 
 from common.utils.enums import Env
 from common.vault.base_vault_client import BaseVaultClient
-from skyflow.vault.client.client import VaultClient
+from skyflow_flowvault.vault.client.client import VaultClient
 
 
 class TestVaultClient(unittest.TestCase):
@@ -35,7 +35,7 @@ class TestVaultClient(unittest.TestCase):
         url = self.vault_client.resolve_vault_url("qhdmceurtnlz", Env.STAGE, "myvault")
         self.assertEqual(url, "https://qhdmceurtnlz.skyvault.skyflowapis.tech")
 
-    @patch("skyflow.vault.client.client.SkyflowAuth")
+    @patch("skyflow_flowvault.vault.client.client.SkyflowAuth")
     def test_initialize_api_client_does_not_pass_token(self, mock_skyflow_auth):
         """v3's generated client has no `token` param at all -- unlike v2, nothing should be
         baked in at construction time; auth is injected per-call instead (see Vault._build_headers)."""

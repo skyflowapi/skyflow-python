@@ -54,8 +54,8 @@ setup(
     author_email='service-ops@skyflow.com',
     packages=find_packages(where='.', exclude=['test*', 'samples*']),
     package_data={
-        'skyflow': ['py.typed'],
-        'skyflow.generated.rest': ['py.typed'],
+        'skyflow_flowvault': ['py.typed'],
+        'skyflow_flowvault.generated.rest': ['py.typed'],
     },
     cmdclass={'build_py': CustomBuildPy},
     url='https://github.com/skyflowapi/skyflow-python/',

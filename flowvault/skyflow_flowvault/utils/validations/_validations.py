@@ -3,9 +3,9 @@ from common.utils import SkyflowMessages as CommonMessages
 from common.utils.constants import ConfigField
 from common.utils.enums import Env
 from common.utils.validations import validate_keys, validate_required_field, validate_credentials, validate_log_level
-from skyflow.utils import SkyflowMessages
-from skyflow.utils.enums import UpsertType
-from skyflow.vault.data import InsertRecord, Upsert
+from skyflow_flowvault.utils import SkyflowMessages
+from skyflow_flowvault.utils.enums import UpsertType
+from skyflow_flowvault.vault.data import InsertRecord, Upsert
 
 invalid_input_error_code = CommonMessages.ErrorCodes.INVALID_INPUT.value
 

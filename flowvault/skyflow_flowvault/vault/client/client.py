@@ -1,6 +1,6 @@
 from common.vault.base_vault_client import BaseVaultClient
-from skyflow.generated.rest.client import SkyflowAuth
-from skyflow.utils import get_vault_url
+from skyflow_flowvault.generated.rest.client import SkyflowAuth
+from skyflow_flowvault.utils import get_vault_url
 
 
 class VaultClient(BaseVaultClient):

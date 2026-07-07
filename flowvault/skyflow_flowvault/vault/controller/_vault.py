@@ -4,11 +4,11 @@ from common.utils import SkyflowMessages as CommonMessages
 from common.utils.constants import SKY_META_DATA_HEADER
 from common.utils.logger import log_info, log_error_log
 from common.vault.base_vault import VaultController
-from skyflow.generated.rest import V1InsertRecordData, V1Upsert
-from skyflow.generated.rest.core import ApiError
-from skyflow.utils import SkyflowMessages, get_metrics
-from skyflow.utils.validations import validate_insert_request
-from skyflow.vault.data import InsertResponse
+from skyflow_flowvault.generated.rest import V1InsertRecordData, V1Upsert
+from skyflow_flowvault.generated.rest.core import ApiError
+from skyflow_flowvault.utils import SkyflowMessages, get_metrics
+from skyflow_flowvault.utils.validations import validate_insert_request
+from skyflow_flowvault.vault.data import InsertResponse
 
 REQUEST_ID_HEADER = "x-request-id"
 
