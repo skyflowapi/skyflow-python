@@ -3,10 +3,10 @@ import unittest
 from unittest.mock import MagicMock, Mock, patch
 
 from common.errors import SkyflowError
-from skyflow.generated.rest.core import ApiError
-from skyflow.vault.controller import FlowVaultController
-from skyflow.vault.data import InsertRecord, InsertRequest, Upsert
-from skyflow.utils.enums import UpsertType
+from skyflow_flowvault.generated.rest.core import ApiError
+from skyflow_flowvault.vault.controller import FlowVaultController
+from skyflow_flowvault.vault.data import InsertRecord, InsertRequest, Upsert
+from skyflow_flowvault.utils.enums import UpsertType
 
 
 class FakeRecordResponseObject:
@@ -48,7 +48,7 @@ class TestVault(unittest.TestCase):
     # validation / initialization sequencing
     # ------------------------------------------------------------------ #
 
-    @patch("skyflow.vault.controller._vault.validate_insert_request")
+    @patch("skyflow_flowvault.vault.controller._vault.validate_insert_request")
     def test_insert_validates_before_initializing_client(self, mock_validate):
         self.insert_api.with_raw_response.insert.return_value = FakeRawResponse([])
         request = InsertRequest(records=[InsertRecord(data={"a": 1})], table="t1")

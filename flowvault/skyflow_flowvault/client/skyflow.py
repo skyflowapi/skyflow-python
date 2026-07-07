@@ -5,9 +5,9 @@ from common.utils import LogLevel, SkyflowMessages
 from common.utils.logger import log_info, Logger
 from common.utils.constants import OptionField
 from common.utils.validations import validate_log_level, validate_credentials
-from skyflow.utils.validations import validate_vault_config
-from skyflow.vault.client.client import VaultClient
-from skyflow.vault.controller import FlowVaultController
+from skyflow_flowvault.utils.validations import validate_vault_config
+from skyflow_flowvault.vault.client.client import VaultClient
+from skyflow_flowvault.vault.controller import FlowVaultController
 
 
 class Skyflow:

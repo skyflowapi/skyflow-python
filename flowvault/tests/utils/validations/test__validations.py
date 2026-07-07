@@ -2,9 +2,9 @@ import unittest
 
 from common.errors import SkyflowError
 from common.utils.enums import Env
-from skyflow.utils.enums import UpsertType
-from skyflow.utils.validations import validate_insert_request, validate_vault_config
-from skyflow.vault.data import InsertRecord, InsertRequest, Upsert
+from skyflow_flowvault.utils.enums import UpsertType
+from skyflow_flowvault.utils.validations import validate_insert_request, validate_vault_config
+from skyflow_flowvault.vault.data import InsertRecord, InsertRequest, Upsert
 
 
 class TestValidateInsertRequest(unittest.TestCase):

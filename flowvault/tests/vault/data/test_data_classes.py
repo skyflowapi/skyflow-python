@@ -1,8 +1,8 @@
 import unittest
 
 from common.vault.data import BaseInsertRequest
-from skyflow.utils.enums import UpsertType
-from skyflow.vault.data import InsertRecord, InsertRequest, InsertResponse, Upsert
+from skyflow_flowvault.utils.enums import UpsertType
+from skyflow_flowvault.vault.data import InsertRecord, InsertRequest, InsertResponse, Upsert
 
 
 class TestInsertRecord(unittest.TestCase):
