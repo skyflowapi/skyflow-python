@@ -1,8 +1,14 @@
 import base64
 import json
 import os
+from common.utils.validations import (
+    validate_credentials as _common_validate_credentials,
+    validate_log_level as _common_validate_log_level,
+    validate_vault_config as _common_validate_vault_config,
+    validate_update_vault_config as _common_validate_update_vault_config,
+)
 from skyflow.service_account import is_expired
-from skyflow.utils.enums import LogLevel, Env, RedactionType, TokenMode, DetectEntities, DetectOutputTranscriptions, \
+from skyflow.utils.enums import RedactionType, TokenMode, DetectEntities, DetectOutputTranscriptions, \
     MaskingMethod
 from skyflow.error import SkyflowError
 from skyflow.utils import SkyflowMessages
@@ -17,12 +23,6 @@ from skyflow.vault.detect import DeidentifyTextRequest, ReidentifyTextRequest, T
 from skyflow.vault.detect._file_input import FileInput
 from skyflow.utils._helpers import is_valid_url
 
-valid_vault_config_keys = [
-    ConfigField.VAULT_ID, 
-    ConfigField.CLUSTER_ID, 
-    ConfigField.CREDENTIALS, 
-    ConfigField.ENV
-]
 valid_connection_config_keys = [
     OptionField.CONNECTION_ID, 
     OptionField.CONNECTION_URL, 
@@ -82,101 +82,14 @@ def validate_api_key(api_key: str, logger = None) -> bool:
     return True
 
 def validate_credentials(logger, credentials, config_id_type=None, config_id=None):
-    key_present = [k for k in [CredentialField.PATH, CredentialField.TOKEN, CredentialField.CREDENTIALS_STRING, CredentialField.API_KEY] if credentials.get(k)]
-
-    if len(key_present) == 0:
-        error_message = (
-            SkyflowMessages.Error.INVALID_CREDENTIALS_IN_CONFIG.value.format(config_id_type, config_id)
-            if config_id_type and config_id else
-            SkyflowMessages.Error.INVALID_CREDENTIALS.value
-        )
-        log_error_log(error_message, logger)
-        raise SkyflowError(error_message, invalid_input_error_code)
-    elif len(key_present) > 1:
-        error_message = (
-            SkyflowMessages.Error.MULTIPLE_CREDENTIALS_PASSED_IN_CONFIG.value.format(config_id_type, config_id)
-            if config_id_type and config_id else
-            SkyflowMessages.Error.MULTIPLE_CREDENTIALS_PASSED.value
-        )
-        log_error_log(error_message, logger)
-        raise SkyflowError(error_message, invalid_input_error_code)
-
-    if CredentialField.ROLES in credentials:
-        validate_required_field(
-            logger, credentials, CredentialField.ROLES, list,
-            SkyflowMessages.Error.INVALID_ROLES_KEY_TYPE_IN_CONFIG.value.format(config_id_type, config_id)
-            if config_id_type and config_id else SkyflowMessages.Error.INVALID_ROLES_KEY_TYPE.value,
-            SkyflowMessages.Error.EMPTY_ROLES_IN_CONFIG.value.format(config_id_type, config_id)
-            if config_id_type and config_id else SkyflowMessages.Error.EMPTY_ROLES.value
-        )
-
-    if CredentialField.CONTEXT in credentials:
-        validate_required_field(
-            logger, credentials, CredentialField.CONTEXT, str,
-            SkyflowMessages.Error.EMPTY_CONTEXT_IN_CONFIG.value.format(config_id_type, config_id)
-            if config_id_type and config_id else SkyflowMessages.Error.EMPTY_CONTEXT.value,
-            SkyflowMessages.Error.INVALID_CONTEXT_IN_CONFIG.value.format(config_id_type, config_id)
-            if config_id_type and config_id else SkyflowMessages.Error.INVALID_CONTEXT.value
-        )
-
-    if CredentialField.CREDENTIALS_STRING in credentials:
-        validate_required_field(
-            logger, credentials, CredentialField.CREDENTIALS_STRING, str,
-            SkyflowMessages.Error.EMPTY_CREDENTIALS_STRING_IN_CONFIG.value.format(config_id_type, config_id)
-            if config_id_type and config_id else SkyflowMessages.Error.EMPTY_CREDENTIALS_STRING.value,
-            SkyflowMessages.Error.INVALID_CREDENTIALS_STRING_IN_CONFIG.value.format(config_id_type, config_id)
-            if config_id_type and config_id else SkyflowMessages.Error.INVALID_CREDENTIALS_STRING.value
-        )
-    elif CredentialField.PATH in credentials:
-        validate_required_field(
-            logger, credentials, CredentialField.PATH, str,
-            SkyflowMessages.Error.EMPTY_CREDENTIAL_FILE_PATH_IN_CONFIG.value.format(config_id_type, config_id)
-            if config_id_type and config_id else SkyflowMessages.Error.EMPTY_CREDENTIAL_FILE_PATH.value,
-            SkyflowMessages.Error.INVALID_CREDENTIAL_FILE_PATH_IN_CONFIG.value.format(config_id_type, config_id)
-            if config_id_type and config_id else SkyflowMessages.Error.INVALID_CREDENTIAL_FILE_PATH.value
-        )
-    elif CredentialField.TOKEN in credentials:
-        validate_required_field(
-            logger, credentials, CredentialField.TOKEN, str,
-            SkyflowMessages.Error.EMPTY_CREDENTIALS_TOKEN.value.format(config_id_type, config_id)
-            if config_id_type and config_id else SkyflowMessages.Error.EMPTY_CREDENTIALS_TOKEN.value,
-            SkyflowMessages.Error.INVALID_CREDENTIALS_TOKEN.value.format(config_id_type, config_id)
-            if config_id_type and config_id else SkyflowMessages.Error.INVALID_CREDENTIALS_TOKEN.value
-        )
-        if is_expired(credentials.get(CredentialField.TOKEN), logger):
-            log_error_log(SkyflowMessages.ErrorLogs.INVALID_BEARER_TOKEN.value, logger)
-            raise SkyflowError(
-                SkyflowMessages.Error.EXPIRED_BEARER_TOKEN.value
-                if config_id_type and config_id else SkyflowMessages.Error.EXPIRED_BEARER_TOKEN.value,
-                invalid_input_error_code
-            )
-    elif CredentialField.API_KEY in credentials:
-        validate_required_field(
-            logger, credentials, CredentialField.API_KEY, str,
-            SkyflowMessages.Error.EMPTY_API_KEY.value.format(config_id_type, config_id)
-            if config_id_type and config_id else SkyflowMessages.Error.EMPTY_API_KEY.value,
-            SkyflowMessages.Error.INVALID_API_KEY.value.format(config_id_type, config_id)
-            if config_id_type and config_id else SkyflowMessages.Error.INVALID_API_KEY.value
-        )
-        if not validate_api_key(credentials.get(CredentialField.API_KEY), logger):
-            raise SkyflowError(SkyflowMessages.Error.INVALID_API_KEY.value.format(config_id_type, config_id)
-                               if config_id_type and config_id else SkyflowMessages.Error.INVALID_API_KEY.value,
-                               invalid_input_error_code)
-        
-    if CredentialField.TOKEN_URI_OPTION in credentials:
-        token_uri = credentials.get(CredentialField.TOKEN_URI_OPTION)
-        if (
-            token_uri is None
-            or not isinstance(token_uri, str)
-            or not is_valid_url(token_uri)
-        ):
-            log_error_log(SkyflowMessages.ErrorLogs.INVALID_TOKEN_URI.value, logger)
-            raise SkyflowError(SkyflowMessages.Error.INVALID_TOKEN_URI.value, invalid_input_error_code)
+    """Delegates to common.utils.validations.validate_credentials -- identical logic, v2's own
+    SkyflowMessages passed through so raised error text keeps showing v2's SDK version. Kept
+    under this name/signature since validate_connection_config/validate_update_connection_config
+    (v2-only, not shared) still call it directly."""
+    return _common_validate_credentials(logger, credentials, config_id_type, config_id, messages=SkyflowMessages)
 
 def validate_log_level(logger, log_level):
-    if not isinstance(log_level, LogLevel):
-        log_error_log(SkyflowMessages.ErrorLogs.INVALID_LOG_LEVEL.value, logger)
-        raise SkyflowError(SkyflowMessages.Error.INVALID_LOG_LEVEL.value, invalid_input_error_code)
+    return _common_validate_log_level(logger, log_level, messages=SkyflowMessages)
 
 def validate_keys(logger, config, config_keys):
     for key in config.keys():
@@ -185,62 +98,12 @@ def validate_keys(logger, config, config_keys):
             raise SkyflowError(SkyflowMessages.Error.INVALID_KEY.value.format(key), invalid_input_error_code)
 
 def validate_vault_config(logger, config):
-    log_info(SkyflowMessages.Info.VALIDATING_VAULT_CONFIG.value, logger)
-    validate_keys(logger, config, valid_vault_config_keys)
-
-    # Validate vault_id (string, not empty)
-    validate_required_field(
-        logger, config, ConfigField.VAULT_ID, str,
-        SkyflowMessages.Error.EMPTY_VAULT_ID.value,
-        SkyflowMessages.Error.INVALID_VAULT_ID.value
-    )
-    vault_id = config.get(ConfigField.VAULT_ID)
-    # Validate cluster_id (string, not empty)
-    validate_required_field(
-        logger, config, ConfigField.CLUSTER_ID, str,
-        SkyflowMessages.Error.EMPTY_CLUSTER_ID.value.format(vault_id),
-        SkyflowMessages.Error.INVALID_CLUSTER_ID.value.format(vault_id)
-    )
-
-    # Validate credentials (dict, not empty)
-    if ConfigField.CREDENTIALS in config and not config.get(ConfigField.CREDENTIALS):
-        raise SkyflowError(SkyflowMessages.Error.EMPTY_CREDENTIALS.value.format(ConfigType.VAULT, vault_id), invalid_input_error_code)
-
-    if ConfigField.CREDENTIALS in config and config.get(ConfigField.CREDENTIALS):
-        validate_credentials(logger, config.get(ConfigField.CREDENTIALS), ConfigType.VAULT, vault_id)
-
-    # Validate env (optional, should be one of LogLevel values)
-    if ConfigField.ENV in config and config.get(ConfigField.ENV) not in Env:
-        log_error_log(SkyflowMessages.ErrorLogs.ENV_IS_REQUIRED.value, logger)
-        raise SkyflowError(SkyflowMessages.Error.INVALID_ENV.value.format(vault_id), invalid_input_error_code)
-
-    return True
+    """Delegates to common.utils.validations.validate_vault_config -- identical logic to
+    flowvault's own validate_vault_config, confirmed field-for-field."""
+    return _common_validate_vault_config(logger, config, messages=SkyflowMessages)
 
 def validate_update_vault_config(logger, config):
-
-    validate_keys(logger, config, valid_vault_config_keys)
-
-    # Validate vault_id (string, not empty)
-    validate_required_field(
-        logger, config, ConfigField.VAULT_ID, str,
-        SkyflowMessages.Error.EMPTY_VAULT_ID.value,
-        SkyflowMessages.Error.INVALID_VAULT_ID.value
-    )
-
-    vault_id = config.get(ConfigField.VAULT_ID)
-
-    if ConfigField.CLUSTER_ID in config and not config.get(ConfigField.CLUSTER_ID):
-        raise SkyflowError(SkyflowMessages.Error.INVALID_CLUSTER_ID.value.format(vault_id), invalid_input_error_code)
-
-    if ConfigField.ENV in config and config.get(ConfigField.ENV) not in Env:
-        raise SkyflowError(SkyflowMessages.Error.INVALID_ENV.value.format(vault_id), invalid_input_error_code)
-
-    if ConfigField.CREDENTIALS not in config:
-        raise SkyflowError(SkyflowMessages.Error.EMPTY_CREDENTIALS.value.format(ConfigType.VAULT, vault_id), invalid_input_error_code)
-
-    validate_credentials(logger, config.get(ConfigField.CREDENTIALS), ConfigType.VAULT, vault_id)
-
-    return True
+    return _common_validate_update_vault_config(logger, config, messages=SkyflowMessages)
 
 def validate_connection_config(logger, config):
     log_info(SkyflowMessages.Info.VALIDATING_CONNECTION_CONFIG.value, logger)
@@ -469,10 +332,8 @@ def validate_insert_request(logger, request):
         log_error_log(SkyflowMessages.ErrorLogs.EMPTY_VALUES.value.format(RequestOperation.INSERT), logger=logger)
         raise SkyflowError(SkyflowMessages.Error.EMPTY_DATA_IN_INSERT.value, invalid_input_error_code)
 
-    for i, item in enumerate(request.values, start=1):
-        for key, value in item.items():
-            if key is None or key == "":
-                log_error_log(SkyflowMessages.ErrorLogs.EMPTY_OR_NULL_KEY_IN_VALUES.value.format(RequestOperation.INSERT), logger = logger)
+    # Per-record key/value emptiness is validated by the controller via the shared
+    # BaseVaultController._validate_field_values() -- not here, to avoid duplicating that logic.
 
     if request.upsert is not None and (not isinstance(request.upsert, str) or not request.upsert.strip()):
         log_error_log(SkyflowMessages.ErrorLogs.EMPTY_UPSERT.value.format(RequestOperation.INSERT), logger=logger)

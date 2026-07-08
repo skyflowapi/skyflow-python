@@ -141,6 +141,26 @@ class TestVault(unittest.TestCase):
         records_api.with_raw_response.record_service_insert_record.assert_called_once()
 
     @patch("skyflow.vault.controller._vault.validate_insert_request")
+    def test_insert_raises_on_empty_key(self, mock_validate):
+        """Shared BaseVaultController._validate_field_values() -- an empty/null key in insert
+        data now raises for v2 too (previously only logged a warning and let the insert through)."""
+        request = InsertRequest(table="test_table", values=[{"": "value"}])
+
+        with self.assertRaises(SkyflowError):
+            self.vault.insert(request)
+
+        self.vault_client.get_records_api.return_value.with_raw_response.record_service_insert_record.assert_not_called()
+
+    @patch("skyflow.vault.controller._vault.validate_insert_request")
+    def test_insert_raises_on_empty_value(self, mock_validate):
+        request = InsertRequest(table="test_table", values=[{"column_name": ""}])
+
+        with self.assertRaises(SkyflowError):
+            self.vault.insert(request)
+
+        self.vault_client.get_records_api.return_value.with_raw_response.record_service_insert_record.assert_not_called()
+
+    @patch("skyflow.vault.controller._vault.validate_insert_request")
     @patch("skyflow.vault.controller._vault.parse_insert_response")
     def test_insert_with_continue_on_error_false_when_tokens_are_not_none(self, mock_parse_response, mock_validate):
         """Test insert functionality when continue_on_error is False, ensuring a single bulk insert."""

@@ -1,15 +1,11 @@
-"""Contract adapter for v3. See v2_adapter.py for the shared design note -- import this module
-only from a v3-installed environment (`SKYFLOW_TEST_VARIANT=v3`)."""
+"""Contract adapter for v3 (flowvault). See v2_adapter.py for the shared design note -- import
+this module only from a flowvault-installed environment (`SKYFLOW_TEST_VARIANT=v3`)."""
 from types import SimpleNamespace
 from unittest.mock import MagicMock
 
-from skyflow.vault.client.client import VaultClient
-from skyflow.vault.controller import FlowVaultController
-from skyflow.vault.data import InsertRecord, InsertRequest
-
-# v3 uses VaultController's shared batching loop -- this is the operation this whole trial is
-# meant to prove out.
-SUPPORTS_BATCHING = True
+from skyflow_flowvault.vault.client.client import VaultClient
+from skyflow_flowvault.vault.controller import VaultController
+from skyflow_flowvault.vault.data import InsertRequest
 
 
 def build_vault():
@@ -23,12 +19,12 @@ def build_vault():
     vault_client.initialize_client_configuration = MagicMock()  # skip real credential/URL resolution
     insert_api = MagicMock()
     vault_client.get_insert_api = MagicMock(return_value=insert_api)
-    vault = FlowVaultController(vault_client)
+    vault = VaultController(vault_client)
     return vault, insert_api
 
 
 def build_insert_request(n):
-    return InsertRequest(table="contract_table", records=[InsertRecord(data={"field": f"value{i}"}) for i in range(n)])
+    return InsertRequest(table="contract_table", records=[dict(values={"field": f"value{i}"}) for i in range(n)])
 
 
 def call_insert(vault, insert_api, request):
@@ -45,13 +41,12 @@ def call_insert(vault, insert_api, request):
     return response, call_count
 
 
-# v3's InsertResponse (summary/success/errors -- ported from Java's v3 reference for
-# response-shape parity) is no longer the same vocabulary as v2's (inserted_fields/errors) by
-# design; the contract only asserts that BOTH correctly report counts, via these two accessors,
-# rather than pretending the underlying shapes still match.
+# v3's InsertResponse now shares the exact same shape as v2's (inserted_fields/errors, each
+# entry tagged request_index) -- kept as separate accessor functions per adapter anyway, since
+# the contract module intentionally treats each variant's response as opaque.
 def count_successes(response):
-    return len(response.success)
+    return len(response.inserted_fields)
 
 
 def count_errors(response):
-    return len(response.errors)
+    return len(response.errors) if response.errors else 0

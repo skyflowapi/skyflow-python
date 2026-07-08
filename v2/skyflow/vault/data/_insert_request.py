@@ -1,6 +1,7 @@
+from common.vault.data import BaseInsertRequest
 from skyflow.utils.enums import TokenMode
 
-class InsertRequest:
+class InsertRequest(BaseInsertRequest):
     def __init__(self,
                  table,
                  values,
@@ -10,10 +11,9 @@ class InsertRequest:
                  token_mode = TokenMode.DISABLE,
                  return_tokens = True,
                  continue_on_error = False):
-        self.table = table
+        super().__init__(table, upsert=upsert)
         self.values = values
         self.tokens = tokens
-        self.upsert = upsert
         self.homogeneous = homogeneous
         self.token_mode = token_mode
         self.return_tokens = return_tokens

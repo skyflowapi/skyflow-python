@@ -96,6 +96,9 @@ class SkyflowMessages:
         INVALID_TABLE_NAME_IN_INSERT = f"{error_prefix} Validation error. Invalid table name in insert request. Specify a valid table name."
         INVALID_TYPE_OF_DATA_IN_INSERT = f"{error_prefix} Validation error. Invalid type of data in insert request. Specify data as a object array."
         EMPTY_DATA_IN_INSERT = f"{error_prefix} Validation error. Data array cannot be empty. Specify data in insert request."
+        INVALID_RECORD_DATA_IN_INSERT = f"{error_prefix} Validation error. Each record's field values must be a non-empty dict."
+        EMPTY_KEY_IN_INSERT_DATA = f"{error_prefix} Validation error. A record must not contain a null or empty key."
+        EMPTY_VALUE_IN_INSERT_DATA = f"{error_prefix} Validation error. A record must not contain a null or empty value."
         INVALID_UPSERT_OPTIONS_TYPE = f"{error_prefix} Validation error. Invalid 'upsert' value in options. Specify 'upsert' as a non-empty string containing the column name."
         INVALID_HOMOGENEOUS_TYPE = f"{error_prefix} Validation error. Invalid type of homogeneous. Specify homogeneous as a string."
         INVALID_TOKEN_MODE_TYPE = f"{error_prefix} Validation error. Invalid type of token mode. Specify token mode as a TokenMode enum."
@@ -433,12 +436,6 @@ class SkyflowMessages:
             f"{WARN}: [{error_prefix}] FileUploadRequest: argument order changed. "
             "Old positional order: (table, skyflow_id, column_name). "
             "New order: FileUploadRequest(table, column_name=..., skyflow_id=...)."
-        )
-        INVALID_BATCH_SIZE_PROVIDED = (
-            f"{WARN}: [{error_prefix}] Invalid value for INSERT_BATCH_SIZE provided, switching to default value."
-        )
-        BATCH_SIZE_EXCEEDS_MAX_LIMIT = (
-            f"{WARN}: [{error_prefix}] Provided INSERT_BATCH_SIZE exceeds the maximum limit, switching to max limit."
         )
 
 

@@ -1,10 +1,13 @@
 import unittest
-from unittest.mock import patch
 
-from common.vault.base_vault import VaultController, DEFAULT_INSERT_BATCH_SIZE, MAX_INSERT_BATCH_SIZE
+from common.errors import SkyflowError
+from common.utils import SkyflowMessages
+from common.vault.base_vault import BaseVaultController
 
 
-class DummyVaultController(VaultController):
+class DummyVaultController(BaseVaultController):
+    _skyflow_messages = SkyflowMessages
+
     def insert(self, request):
         raise NotImplementedError
 
@@ -24,9 +27,9 @@ class DummyVaultController(VaultController):
         raise NotImplementedError
 
 
-class TestVaultControllerAbstractContract(unittest.TestCase):
+class TestBaseVaultControllerAbstractContract(unittest.TestCase):
     def test_cannot_instantiate_without_insert(self):
-        class Incomplete(VaultController):
+        class Incomplete(BaseVaultController):
             pass
 
         with self.assertRaises(TypeError):
@@ -38,136 +41,84 @@ class TestVaultControllerAbstractContract(unittest.TestCase):
         for missing in ("insert", "get", "update", "delete", "query", "detokenize"):
             methods = {name: (lambda self, request: None) for name in
                        ("insert", "get", "update", "delete", "query", "detokenize") if name != missing}
-            Incomplete = type("Incomplete", (VaultController,), methods)
+            Incomplete = type("Incomplete", (BaseVaultController,), methods)
             with self.assertRaises(TypeError, msg=f"missing only '{missing}' should still fail to instantiate"):
                 Incomplete(vault_client=None)
 
     def test_concrete_subclass_instantiates(self):
         vault = DummyVaultController(vault_client=None)
-        self.assertIsInstance(vault, VaultController)
+        self.assertIsInstance(vault, BaseVaultController)
 
 
-class TestGetInsertBatchSize(unittest.TestCase):
-    @patch("common.vault.base_vault.dotenv.find_dotenv", return_value=None)
-    @patch.dict("os.environ", {}, clear=True)
-    def test_defaults_when_unset(self, _mock_find_dotenv):
-        self.assertEqual(VaultController._get_insert_batch_size(), DEFAULT_INSERT_BATCH_SIZE)
+class TestValidateTableNameIfPresent(unittest.TestCase):
+    """Shared rule used identically by both variants (see PdbVaultController/flowvault's
+    VaultController.insert()): a table value, IF given, must be a non-empty string. Whether
+    table is required at all is variant-specific and stays out of this helper."""
 
-    @patch("common.vault.base_vault.dotenv.find_dotenv", return_value=None)
-    @patch.dict("os.environ", {"INSERT_BATCH_SIZE": "25"}, clear=True)
-    def test_valid_value_used(self, _mock_find_dotenv):
-        self.assertEqual(VaultController._get_insert_batch_size(), 25)
+    def setUp(self):
+        self.vault = DummyVaultController(vault_client=None)
 
-    @patch("common.vault.base_vault.log_warn")
-    @patch("common.vault.base_vault.dotenv.find_dotenv", return_value=None)
-    @patch.dict("os.environ", {"INSERT_BATCH_SIZE": "not-a-number"}, clear=True)
-    def test_non_numeric_falls_back_to_default(self, _mock_find_dotenv, mock_log_warn):
-        self.assertEqual(VaultController._get_insert_batch_size(), DEFAULT_INSERT_BATCH_SIZE)
-        mock_log_warn.assert_called_once()
+    def test_none_is_allowed(self):
+        self.vault._validate_table_name_if_present(None)  # should not raise
 
-    @patch("common.vault.base_vault.log_warn")
-    @patch("common.vault.base_vault.dotenv.find_dotenv", return_value=None)
-    @patch.dict("os.environ", {"INSERT_BATCH_SIZE": "0"}, clear=True)
-    def test_zero_falls_back_to_default(self, _mock_find_dotenv, mock_log_warn):
-        self.assertEqual(VaultController._get_insert_batch_size(), DEFAULT_INSERT_BATCH_SIZE)
-        mock_log_warn.assert_called_once()
+    def test_valid_string_is_allowed(self):
+        self.vault._validate_table_name_if_present("table1")  # should not raise
 
-    @patch("common.vault.base_vault.log_warn")
-    @patch("common.vault.base_vault.dotenv.find_dotenv", return_value=None)
-    @patch.dict("os.environ", {"INSERT_BATCH_SIZE": "-5"}, clear=True)
-    def test_negative_falls_back_to_default(self, _mock_find_dotenv, mock_log_warn):
-        self.assertEqual(VaultController._get_insert_batch_size(), DEFAULT_INSERT_BATCH_SIZE)
-        mock_log_warn.assert_called_once()
+    def test_empty_string_raises(self):
+        with self.assertRaises(SkyflowError):
+            self.vault._validate_table_name_if_present("")
 
-    @patch("common.vault.base_vault.log_warn")
-    @patch("common.vault.base_vault.dotenv.find_dotenv", return_value=None)
-    @patch.dict("os.environ", {"INSERT_BATCH_SIZE": "5000"}, clear=True)
-    def test_over_max_clamps_to_max(self, _mock_find_dotenv, mock_log_warn):
-        self.assertEqual(VaultController._get_insert_batch_size(), MAX_INSERT_BATCH_SIZE)
-        mock_log_warn.assert_called_once()
+    def test_whitespace_only_string_raises(self):
+        with self.assertRaises(SkyflowError):
+            self.vault._validate_table_name_if_present("   ")
 
-    @patch("common.vault.base_vault.dotenv.find_dotenv", return_value=None)
-    @patch.dict("os.environ", {"INSERT_BATCH_SIZE": str(MAX_INSERT_BATCH_SIZE)}, clear=True)
-    def test_exactly_max_is_not_clamped_with_warning(self, _mock_find_dotenv):
-        # boundary: exactly the max is valid, shouldn't warn
-        self.assertEqual(VaultController._get_insert_batch_size(), MAX_INSERT_BATCH_SIZE)
+    def test_non_string_raises(self):
+        with self.assertRaises(SkyflowError):
+            self.vault._validate_table_name_if_present(123)
 
 
-class TestRunBatches(unittest.TestCase):
-    def test_exact_division(self):
-        items = list(range(10))
-        seen_batches = []
+class TestValidateFieldValues(unittest.TestCase):
+    """Shared rule: a record's field-value map must be a non-empty dict of non-empty string
+    keys and non-null/non-empty-string values -- the exact check your lead called out as
+    belonging in a protected base-controller helper."""
 
-        def send(batch, start):
-            seen_batches.append((list(batch), start))
-            return list(batch), []
+    def setUp(self):
+        self.vault = DummyVaultController(vault_client=None)
 
-        successes, errors = VaultController._run_batches(items, 5, send)
-        self.assertEqual(seen_batches, [([0, 1, 2, 3, 4], 0), ([5, 6, 7, 8, 9], 5)])
-        self.assertEqual(successes, items)
-        self.assertEqual(errors, [])
+    def test_valid_values_pass(self):
+        self.vault._validate_field_values({"name": "John", "age": 30})  # should not raise
 
-    def test_remainder_batch(self):
-        items = list(range(7))
-        seen_batches = []
+    def test_none_raises(self):
+        with self.assertRaises(SkyflowError):
+            self.vault._validate_field_values(None)
 
-        def send(batch, start):
-            seen_batches.append((list(batch), start))
-            return [], []
+    def test_non_dict_raises(self):
+        with self.assertRaises(SkyflowError):
+            self.vault._validate_field_values(["not", "a", "dict"])
 
-        VaultController._run_batches(items, 3, send)
-        self.assertEqual(seen_batches, [([0, 1, 2], 0), ([3, 4, 5], 3), ([6], 6)])
+    def test_empty_dict_raises(self):
+        with self.assertRaises(SkyflowError):
+            self.vault._validate_field_values({})
 
-    def test_batch_size_larger_than_items_is_a_single_batch(self):
-        items = [1, 2, 3]
-        calls = []
+    def test_empty_key_raises(self):
+        with self.assertRaises(SkyflowError):
+            self.vault._validate_field_values({"": "value"})
 
-        def send(batch, start):
-            calls.append((list(batch), start))
-            return list(batch), []
+    def test_whitespace_only_key_raises(self):
+        with self.assertRaises(SkyflowError):
+            self.vault._validate_field_values({"   ": "value"})
 
-        VaultController._run_batches(items, 100, send)
-        self.assertEqual(calls, [([1, 2, 3], 0)])
+    def test_none_value_raises(self):
+        with self.assertRaises(SkyflowError):
+            self.vault._validate_field_values({"a": None})
 
-    def test_empty_items_makes_no_calls(self):
-        calls = []
+    def test_empty_string_value_raises(self):
+        with self.assertRaises(SkyflowError):
+            self.vault._validate_field_values({"a": ""})
 
-        def send(batch, start):
-            calls.append(batch)
-            return [], []
-
-        successes, errors = VaultController._run_batches([], 5, send)
-        self.assertEqual(calls, [])
-        self.assertEqual(successes, [])
-        self.assertEqual(errors, [])
-
-    def test_results_aggregate_in_order_across_batches(self):
-        items = list(range(6))
-
-        def send(batch, start):
-            # every batch reports its first item as a success, second as an error
-            successes = [batch[0]]
-            errors = [f"err-{batch[1]}"] if len(batch) > 1 else []
-            return successes, errors
-
-        successes, errors = VaultController._run_batches(items, 2, send)
-        self.assertEqual(successes, [0, 2, 4])
-        self.assertEqual(errors, ["err-1", "err-3", "err-5"])
-
-    def test_a_failing_batch_does_not_abort_remaining_batches(self):
-        items = list(range(4))
-        calls = []
-
-        def send(batch, start):
-            calls.append(list(batch))
-            if batch == [0, 1]:
-                return [], ["batch-1-failed"]
-            return list(batch), []
-
-        successes, errors = VaultController._run_batches(items, 2, send)
-        self.assertEqual(calls, [[0, 1], [2, 3]])  # second batch still ran
-        self.assertEqual(successes, [2, 3])
-        self.assertEqual(errors, ["batch-1-failed"])
+    def test_falsy_non_string_values_are_valid(self):
+        """0, False, [], {} are all legitimate values -- only None/empty-string should raise."""
+        self.vault._validate_field_values({"a": 0, "b": False, "c": [], "d": {}})  # should not raise
 
 
 if __name__ == "__main__":

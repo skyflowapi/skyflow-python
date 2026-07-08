@@ -1,14 +1,6 @@
-class InsertResponse:
-    """summary/success/errors are all plain dicts (or lists of dicts) -- no custom classes.
-    Each success/error entry is tagged with its index in the original records list."""
+from common.vault.data import BaseInsertResponse
 
-    def __init__(self, summary, success, errors):
-        self.summary = summary
-        self.success = success
-        self.errors = errors
 
-    def __repr__(self):
-        return f"InsertResponse(summary={self.summary!r}, success={self.success!r}, errors={self.errors!r})"
-
-    def __str__(self):
-        return self.__repr__()
+class InsertResponse(BaseInsertResponse):
+    """flowvault's own insert() response class -- currently identical to the shared base, kept as
+    its own subclass so flowvault-specific fields can be added later without touching PDB."""

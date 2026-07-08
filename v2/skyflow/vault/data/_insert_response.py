@@ -1,10 +1,6 @@
-class InsertResponse:
-    def __init__(self, inserted_fields = None, errors=None):
-        self.inserted_fields = inserted_fields
-        self.errors = errors
+from common.vault.data import BaseInsertResponse
 
-    def __repr__(self):
-        return f"InsertResponse(inserted_fields={self.inserted_fields}, errors={self.errors})"
 
-    def __str__(self):
-        return self.__repr__()
+class InsertResponse(BaseInsertResponse):
+    """PDB's own insert() response class -- currently identical to the shared base, kept as its
+    own subclass so PDB-specific fields can be added later without touching flowvault."""

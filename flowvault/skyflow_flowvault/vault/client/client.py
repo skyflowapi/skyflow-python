@@ -9,7 +9,7 @@ class VaultClient(BaseVaultClient):
 
     def initialize_api_client(self, vault_url, bearer_token):
         # SkyflowAuth has no `token` param -- auth is injected per-call instead (see
-        # FlowVaultController._build_headers).
+        # VaultController.__build_headers).
         self._api_client = SkyflowAuth(base_url=vault_url)
 
     def get_insert_api(self):

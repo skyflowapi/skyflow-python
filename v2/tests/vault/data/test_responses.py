@@ -1,4 +1,5 @@
 import unittest
+from common.vault.data import BaseInsertResponse
 from skyflow.vault.data._delete_response import DeleteResponse
 from skyflow.vault.data._file_upload_response import FileUploadResponse
 from skyflow.vault.data._get_response import GetResponse
@@ -54,6 +55,10 @@ class TestGetResponse(unittest.TestCase):
 
 
 class TestInsertResponse(unittest.TestCase):
+    def test_is_a_base_insert_response(self):
+        r = InsertResponse(inserted_fields=[{"skyflow_id": "id1"}], errors=None)
+        self.assertIsInstance(r, BaseInsertResponse)
+
     def test_repr(self):
         r = InsertResponse(inserted_fields=[{"skyflow_id": "id1"}], errors=None)
         self.assertIn("InsertResponse", repr(r))

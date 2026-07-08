@@ -10,12 +10,8 @@ from skyflow.vault.client.client import VaultClient
 from skyflow.vault.controller import Vault
 from skyflow.vault.data import InsertRequest
 
-# v2 never batches this round -- it's excluded from VaultController's shared batching loop
-# entirely (see the plan's Decisions section: v2 must remain byte-for-byte behaviorally
-# identical, and today it always sends every record in a single HTTP call). Uses the public
-# `Vault` alias deliberately (not PdbVaultController) -- this adapter simulates an external
-# consumer, and Vault is the name they'd actually import.
-SUPPORTS_BATCHING = False
+# Uses the public `Vault` alias deliberately (not VaultController) -- this adapter simulates
+# an external consumer, and Vault is the name they'd actually import.
 
 
 def build_vault():
@@ -47,10 +43,7 @@ def call_insert(vault, records_api, request):
     return response, call_count
 
 
-# v2's InsertResponse (inserted_fields/errors) and v3's (summary/success/errors -- ported from
-# Java's v3 reference for response-shape parity) are no longer the same vocabulary by design; the
-# contract only asserts that BOTH correctly report counts, via these two accessors, rather than
-# pretending the underlying shapes still match.
+# v2's InsertResponse is the shared shape (inserted_fields/errors) both variants now use.
 def count_successes(response):
     return len(response.inserted_fields)
 

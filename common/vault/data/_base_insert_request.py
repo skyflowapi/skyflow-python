@@ -1,5 +1,6 @@
 class BaseInsertRequest:
-    """Thin shared base for variant InsertRequest classes, mirrors skyflow-java's."""
 
-    def __init__(self, table=None):
+    def __init__(self, table=None, records=None, upsert=None):
         self.table = table
+        self.records = records
+        self.upsert = upsert

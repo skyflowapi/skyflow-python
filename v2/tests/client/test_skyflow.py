@@ -124,7 +124,7 @@ class TestSkyflow(unittest.TestCase):
             SkyflowMessages.Error.VAULT_ID_NOT_IN_CONFIG_LIST.value.format("invalid_vault_id"),
         )
 
-    @patch("skyflow.client.skyflow.validate_vault_config")
+    @patch("skyflow.client.skyflow.Skyflow.Builder._validate_vault_config")
     def test_build_calls_validate_vault_config(self, mock_validate_vault_config):
         self.builder.add_vault_config(VALID_VAULT_CONFIG)
         self.builder.build()
@@ -223,7 +223,7 @@ class TestSkyflow(unittest.TestCase):
 
         self.assertEqual(context.exception.message, SkyflowMessages.Error.EMPTY_CONNECTION_CONFIGS.value)
 
-    @patch("skyflow.client.skyflow.validate_connection_config")
+    @patch("skyflow.client.skyflow.Skyflow.Builder._validate_connection_config")
     def test_build_calls_validate_connection_config(self, mock_validate):
         self.builder.add_connection_config(VALID_CONNECTION_CONFIG)
         self.builder.build()
@@ -246,7 +246,7 @@ class TestSkyflow(unittest.TestCase):
         self.assertEqual(VALID_CREDENTIALS, self.builder._Builder__skyflow_credentials)
         self.assertEqual(builder, self.builder)
 
-    @patch("skyflow.client.skyflow.validate_vault_config")
+    @patch("skyflow.client.skyflow.Skyflow.Builder._validate_vault_config")
     def test_skyflow_client_add_remove_vault_config(self, mock_validate_vault_config):
         skyflow_client = self.builder.add_vault_config(VALID_VAULT_CONFIG).build()
         new_config = VALID_VAULT_CONFIG.copy()
@@ -278,7 +278,7 @@ class TestSkyflow(unittest.TestCase):
 
         self.assertEqual(VALID_VAULT_CONFIG.get("vault_id"), vault.get("vault_id"))
 
-    @patch("skyflow.client.skyflow.validate_connection_config")
+    @patch("skyflow.client.skyflow.Skyflow.Builder._validate_connection_config")
     def test_skyflow_client_add_remove_connection_config(self, mock_validate_connection_config):
         skyflow_client = self.builder.add_connection_config(VALID_CONNECTION_CONFIG).build()
         new_config = VALID_CONNECTION_CONFIG.copy()
@@ -426,7 +426,7 @@ class TestUpdateLogLevelDeprecation(unittest.TestCase):
 
     def test_update_log_level_emits_deprecation_warning(self):
         client = self._build_client()
-        with patch('skyflow.client.skyflow.log_warn') as mock_warn:
+        with patch('common.client.base_skyflow.log_warn') as mock_warn:
             client.update_log_level(LogLevel.INFO)
         mock_warn.assert_called_once()
         self.assertIn("set_log_level", mock_warn.call_args[0][0])
