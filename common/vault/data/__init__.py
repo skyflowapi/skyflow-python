@@ -1,1 +1,2 @@
 from ._base_insert_request import BaseInsertRequest
+from ._base_insert_response import BaseInsertResponse

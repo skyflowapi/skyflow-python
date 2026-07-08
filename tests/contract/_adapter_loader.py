@@ -1,12 +1,13 @@
-"""Selects the v2 or v3 contract adapter based on SKYFLOW_TEST_VARIANT. Plain-Python equivalent
-of a pytest conftest.py fixture -- this repo's test runner is plain unittest (see each variant's
-tests/), so variant selection happens via import rather than a fixture.
+"""Selects the v2 or v3 (flowvault) contract adapter based on SKYFLOW_TEST_VARIANT.
+Plain-Python equivalent of a pytest conftest.py fixture -- this repo's test runner is plain
+unittest (see each variant's tests/), so variant selection happens via import rather than a
+fixture.
 
-Usage (run once per variant, in that variant's own installed/PYTHONPATH environment -- v2.skyflow
-and v3.skyflow can never coexist in one process):
+Usage (run once per variant, in that variant's own installed/PYTHONPATH environment -- v2's
+skyflow and flowvault's skyflow_flowvault can never coexist in one process):
 
     SKYFLOW_TEST_VARIANT=v2 PYTHONPATH=.:v2 python -m unittest discover -s tests/contract -t .
-    SKYFLOW_TEST_VARIANT=v3 PYTHONPATH=.:v3 python -m unittest discover -s tests/contract -t .
+    SKYFLOW_TEST_VARIANT=v3 PYTHONPATH=.:flowvault python -m unittest discover -s tests/contract -t .
 """
 import os
 

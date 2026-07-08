@@ -7,7 +7,7 @@ from skyflow.utils.logger import log_info, log_error
 
 class TestLoggingFunctions(unittest.TestCase):
 
-    @patch('skyflow.utils.logger._log_helpers.Logger')
+    @patch('common.utils.logger._log_helpers.Logger')
     def test_log_info_with_logger(self, MockLogger):
         mock_logger = MockLogger()
         message = "Info message"
@@ -17,14 +17,14 @@ class TestLoggingFunctions(unittest.TestCase):
 
         mock_logger.info.assert_called_once_with(f"{message}")
 
-    @patch('skyflow.utils.logger._log_helpers.Logger')
+    @patch('common.utils.logger._log_helpers.Logger')
     def test_log_info_without_logger(self, MockLogger):
         try:
             log_info("Message", None)
         except AttributeError:
             self.fail("log_info raised AttributeError unexpectedly!")
 
-    @patch('skyflow.utils.logger._log_helpers.Logger')
+    @patch('common.utils.logger._log_helpers.Logger')
     def test_log_error_with_all_fields(self, MockLogger):
         mock_logger = MockLogger()
         message = "Error message"
@@ -47,7 +47,7 @@ class TestLoggingFunctions(unittest.TestCase):
 
         mock_logger.error.assert_called_once_with(expected_log_data)
 
-    @patch('skyflow.utils.logger._log_helpers.Logger')
+    @patch('common.utils.logger._log_helpers.Logger')
     def test_log_error_with_minimal_fields(self, MockLogger):
         mock_logger = MockLogger()
         message = "Minimal error"
@@ -62,7 +62,7 @@ class TestLoggingFunctions(unittest.TestCase):
 
         mock_logger.error.assert_called_once_with(expected_log_data)
 
-    @patch('skyflow.utils.logger._log_helpers.Logger')
+    @patch('common.utils.logger._log_helpers.Logger')
     def test_log_error_creates_logger_if_none(self, MockLogger):
         message = "Auto-created logger error"
         http_code = 500
@@ -71,7 +71,7 @@ class TestLoggingFunctions(unittest.TestCase):
 
         MockLogger.assert_called_once_with(LogLevel.ERROR)
 
-    @patch('skyflow.utils.logger._log_helpers.Logger')
+    @patch('common.utils.logger._log_helpers.Logger')
     def test_log_error_handles_missing_optional_fields(self, MockLogger):
         mock_logger = MockLogger()
         message = "Test missing optional fields"

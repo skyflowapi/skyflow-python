@@ -2,7 +2,7 @@ import base64
 import json
 import os
 from typing import Optional
-from common.vault.base_vault import VaultController
+from common.vault.base_vault import BaseVaultController
 from skyflow.generated.rest import V1FieldRecords, V1BatchRecord, V1TokenizeRecordRequest, \
     V1DetokenizeRecordRequest
 from skyflow.generated.rest.core.file import File
@@ -18,14 +18,10 @@ from skyflow.utils.validations import validate_insert_request, validate_delete_r
 from skyflow.vault.data import InsertRequest, UpdateRequest, DeleteRequest, GetRequest, QueryRequest, FileUploadRequest, FileUploadResponse
 from skyflow.vault.tokens import DetokenizeRequest, TokenizeRequest
 
-class PdbVaultController(VaultController):
+class VaultController(BaseVaultController):
+    _skyflow_messages = SkyflowMessages
+
     def __init__(self, vault_client):
-        # Deliberately does not call super().__init__() -- VaultController's __init__ sets
-        # self._vault_client (single underscore), while every method below (including ones
-        # untouched this round: update/delete/get/query/detokenize/tokenize/upload_file)
-        # references self.__vault_client (mangles to _PdbVaultController__vault_client). Setting
-        # both would be redundant; only setting the base's would silently break every one of
-        # those methods.
         self.__vault_client = vault_client
 
     def __initialize(self):
@@ -101,6 +97,8 @@ class PdbVaultController(VaultController):
     def insert(self, request: InsertRequest):
         log_info(SkyflowMessages.Info.VALIDATE_INSERT_REQUEST.value, self.__vault_client.get_logger())
         validate_insert_request(self.__vault_client.get_logger(), request)
+        for item in request.values:
+            self._validate_field_values(item)
         log_info(SkyflowMessages.Info.INSERT_REQUEST_RESOLVED.value, self.__vault_client.get_logger())
         self.__initialize()
         records_api = self.__vault_client.get_records_api().with_raw_response

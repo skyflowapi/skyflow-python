@@ -1,7 +1,7 @@
 from enum import Enum
 
 try:
-    from .._version import SDK_VERSION
+    from ._version import SDK_VERSION
 except ImportError:  # pragma: no cover
     SDK_VERSION = "0.0.0"
 
@@ -17,8 +17,8 @@ class SkyflowMessages:
 
     class Error(Enum):
         EMPTY_RECORDS_IN_INSERT = f"{error_prefix} Insert failed. Specify at least one record to insert."
-        INVALID_RECORDS_TYPE_IN_INSERT = f"{error_prefix} Insert failed. 'records' must be a list of InsertRecord."
-        INVALID_RECORD_DATA_IN_INSERT = f"{error_prefix} Insert failed. Each record's 'data' must be a non-empty dict."
+        INVALID_RECORDS_TYPE_IN_INSERT = f"{error_prefix} Insert failed. 'records' must be a list of dicts."
+        INVALID_RECORD_DATA_IN_INSERT = f"{error_prefix} Insert failed. Each record's 'values' must be a non-empty dict."
         INVALID_TABLE_NAME_IN_INSERT = f"{error_prefix} Insert failed. 'table' must be a non-empty string."
         INVALID_UPSERT_TYPE_IN_INSERT = f"{error_prefix} Insert failed. 'upsert' must be an Upsert instance."
         INVALID_UPSERT_UNIQUE_COLUMNS_IN_INSERT = f"{error_prefix} Insert failed. Upsert.unique_columns must be a non-empty list of strings."
@@ -44,8 +44,8 @@ class SkyflowMessages:
             "provided per-record -- InsertRequest's request-level 'upsert' cannot be used while "
             "'table' is set on individual records."
         )
-        EMPTY_KEY_IN_INSERT_DATA = f"{error_prefix} Insert failed. Each record's 'data' must not contain a null or empty key."
-        EMPTY_VALUE_IN_INSERT_DATA = f"{error_prefix} Insert failed. Each record's 'data' must not contain a null or empty value."
+        EMPTY_KEY_IN_INSERT_DATA = f"{error_prefix} Insert failed. Each record's 'values' must not contain a null or empty key."
+        EMPTY_VALUE_IN_INSERT_DATA = f"{error_prefix} Insert failed. Each record's 'values' must not contain a null or empty value."
 
     class Info(Enum):
         VALIDATE_INSERT_REQUEST = f"{INFO}: [{error_prefix}] Validating insert request."

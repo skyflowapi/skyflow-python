@@ -1,1 +1,1 @@
-from ._vault import FlowVaultController
+from ._vault import VaultController
