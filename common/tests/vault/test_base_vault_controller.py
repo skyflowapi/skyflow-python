@@ -2,7 +2,7 @@ import unittest
 
 from common.errors import SkyflowError
 from common.utils import SkyflowMessages
-from common.vault.base_vault import BaseVaultController
+from common.vault.base_vault_controller import BaseVaultController
 
 
 class DummyVaultController(BaseVaultController):

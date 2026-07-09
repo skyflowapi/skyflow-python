@@ -6,11 +6,17 @@ from common.utils.logger import log_info
 from common.utils.constants import OptionField, CredentialField, ConfigField
 
 
-class BaseVaultClient(ABC):
-    """Shared credential resolution, vault-URL resolution, and bearer-token fetch/cache/expiry
-    logic. Uses single-underscore attributes deliberately -- double-underscore would name-mangle
-    per-subclass and break cross-class state sharing."""
+class IVaultClient(ABC):
+    @abstractmethod
+    def resolve_vault_url(self, cluster_id, env, vault_id, logger=None):
+        raise NotImplementedError
 
+    @abstractmethod
+    def initialize_api_client(self, vault_url, bearer_token):
+        raise NotImplementedError
+
+
+class BaseVaultClient(IVaultClient):
     def __init__(self, config):
         self._config = config
         self._common_skyflow_credentials = None
@@ -51,19 +57,6 @@ class BaseVaultClient(ABC):
         self._bearer_token = bearer_token
         if needs_reinit:
             self.initialize_api_client(self._vault_url, bearer_token)
-
-    @abstractmethod
-    def resolve_vault_url(self, cluster_id, env, vault_id, logger=None):
-        """Per-variant hook: different vault types are hosted on different subdomains for the
-        same cluster_id/env (v2: vault.skyflowapis.<tld>; v3: skyvault.skyflowapis.<tld>)."""
-        raise NotImplementedError
-
-    @abstractmethod
-    def initialize_api_client(self, vault_url, bearer_token):
-        """Construct the variant's generated API client into self._api_client. v2 bakes
-        bearer_token into a refreshable callable; v3's client has no token param at all, so auth
-        is injected per-call instead (see get_current_bearer_token)."""
-        raise NotImplementedError
 
     def get_current_bearer_token(self):
         return self._bearer_token
