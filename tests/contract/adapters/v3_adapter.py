@@ -24,7 +24,7 @@ def build_vault():
 
 
 def build_insert_request(n):
-    return InsertRequest(table="contract_table", records=[dict(values={"field": f"value{i}"}) for i in range(n)])
+    return InsertRequest(table="contract_table", values=[dict(values={"field": f"value{i}"}) for i in range(n)])
 
 
 def call_insert(vault, insert_api, request):

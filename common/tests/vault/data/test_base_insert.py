@@ -4,16 +4,18 @@ from common.vault.data import BaseInsertRequest, BaseInsertResponse
 
 
 class TestBaseInsertRequest(unittest.TestCase):
-    def test_defaults(self):
-        request = BaseInsertRequest()
-        self.assertIsNone(request.table)
-        self.assertIsNone(request.records)
+    def test_table_and_values_are_required(self):
+        with self.assertRaises(TypeError):
+            BaseInsertRequest()
+
+    def test_upsert_defaults_to_none(self):
+        request = BaseInsertRequest(table="t1", values=[{"values": {"a": 1}}])
         self.assertIsNone(request.upsert)
 
     def test_construction(self):
-        request = BaseInsertRequest(table="t1", records=[{"values": {"a": 1}}], upsert="upsert_val")
+        request = BaseInsertRequest(table="t1", values=[{"values": {"a": 1}}], upsert="upsert_val")
         self.assertEqual(request.table, "t1")
-        self.assertEqual(request.records, [{"values": {"a": 1}}])
+        self.assertEqual(request.values, [{"values": {"a": 1}}])
         self.assertEqual(request.upsert, "upsert_val")
 
 

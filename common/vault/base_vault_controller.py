@@ -60,8 +60,3 @@ class BaseVaultController(IVaultController):
                     self._skyflow_messages.Error.EMPTY_KEY_IN_INSERT_DATA.value,
                     _INVALID_INPUT_ERROR_CODE,
                 )
-            # if value is None or (isinstance(value, str) and not value.strip()):
-            #     raise SkyflowError(
-            #         self._skyflow_messages.Error.EMPTY_VALUE_IN_INSERT_DATA.value,
-            #         _INVALID_INPUT_ERROR_CODE,
-            #     )

@@ -23,7 +23,7 @@ class VaultController(BaseVaultController):
         log_info(SkyflowMessages.Info.VALIDATE_INSERT_REQUEST.value, self._vault_client.get_logger())
         validate_insert_request(self._vault_client.get_logger(), request)
         self._validate_table_name_if_present(request.table)
-        for record in request.records:
+        for record in request.values:
             self._validate_table_name_if_present(record.get("table"))
             self._validate_field_values(record.get("values"))
         log_info(SkyflowMessages.Info.INSERT_REQUEST_RESOLVED.value, self._vault_client.get_logger())
@@ -31,12 +31,12 @@ class VaultController(BaseVaultController):
 
         insert_api = self._vault_client.get_insert_api()
 
-        needs_per_record_table = any(r.get("table") is not None for r in request.records)
-        needs_per_record_upsert = any(r.get("upsert") is not None for r in request.records)
+        needs_per_record_table = any(r.get("table") is not None for r in request.values)
+        needs_per_record_upsert = any(r.get("upsert") is not None for r in request.values)
 
         wire_records = [
             self.__build_wire_record(record, request, needs_per_record_table, needs_per_record_upsert)
-            for record in request.records
+            for record in request.values
         ]
 
         try:
@@ -57,13 +57,11 @@ class VaultController(BaseVaultController):
             inserted_fields, errors = self.__split_success_and_errors(raw_response.data.records or [], 0, request_id)
         except Exception as e:
             log_error_log(SkyflowMessages.ErrorLogs.INSERT_RECORDS_REJECTED.value, self._vault_client.get_logger())
-            inserted_fields, errors = [], self.__errors_from_exception(e, request.records, 0)
+            inserted_fields, errors = [], self.__errors_from_exception(e, request.values, 0)
 
         log_info(SkyflowMessages.Info.INSERT_SUCCESS.value, self._vault_client.get_logger())
         return InsertResponse(inserted_fields=inserted_fields, errors=errors if errors else None)
 
-    # Not built out this round (insert-only) -- stubs exist so this class stays instantiable
-    # under BaseVaultController's abstract contract.
     def get(self, request):
         raise NotImplementedError("VaultController.get is not implemented yet")
 
@@ -100,9 +98,10 @@ class VaultController(BaseVaultController):
     def __to_v1_upsert(self, upsert):
         if upsert is None:
             return None
+        update_type = upsert.get("update_type")
         return V1Upsert(
-            update_type=upsert.update_type.value if upsert.update_type else None,
-            unique_columns=upsert.unique_columns,
+            update_type=update_type.value if update_type else None,
+            unique_columns=upsert.get("unique_columns"),
         )
 
     def __extract_request_id(self, headers):

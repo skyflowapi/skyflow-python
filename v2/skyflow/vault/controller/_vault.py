@@ -15,8 +15,8 @@ from skyflow.utils.enums.redaction_type import RedactionType
 from skyflow.utils.logger import log_info, log_error_log
 from skyflow.utils.validations import validate_insert_request, validate_delete_request, validate_query_request, \
     validate_get_request, validate_update_request, validate_detokenize_request, validate_tokenize_request, validate_file_upload_request
-from skyflow.vault.data import InsertRequest, InsertResponse, UpdateRequest, DeleteRequest, GetRequest, QueryRequest, FileUploadRequest, FileUploadResponse
-from skyflow.vault.tokens import DetokenizeRequest, TokenizeRequest
+from skyflow.vault.data import InsertRequest, InsertResponse, UpdateRequest, UpdateResponse, DeleteRequest, DeleteResponse, GetRequest, GetResponse, QueryRequest, QueryResponse, FileUploadRequest, FileUploadResponse
+from skyflow.vault.tokens import DetokenizeRequest, DetokenizeResponse, TokenizeRequest, TokenizeResponse
 
 class VaultController(BaseVaultController):
     _skyflow_messages = SkyflowMessages
@@ -122,7 +122,7 @@ class VaultController(BaseVaultController):
             log_error_log(SkyflowMessages.ErrorLogs.INSERT_RECORDS_REJECTED.value, self.__vault_client.get_logger())
             handle_exception(e, self.__vault_client.get_logger())
 
-    def update(self, request: UpdateRequest):
+    def update(self, request: UpdateRequest) -> UpdateResponse:
         log_info(SkyflowMessages.Info.VALIDATE_UPDATE_REQUEST.value, self.__vault_client.get_logger())
         validate_update_request(self.__vault_client.get_logger(), request)
         log_info(SkyflowMessages.Info.UPDATE_REQUEST_RESOLVED.value, self.__vault_client.get_logger())
@@ -149,7 +149,7 @@ class VaultController(BaseVaultController):
             log_error_log(SkyflowMessages.ErrorLogs.UPDATE_REQUEST_REJECTED.value, logger = self.__vault_client.get_logger())
             handle_exception(e, self.__vault_client.get_logger())
 
-    def delete(self, request: DeleteRequest):
+    def delete(self, request: DeleteRequest) -> DeleteResponse:
         log_info(SkyflowMessages.Info.VALIDATING_DELETE_REQUEST.value, self.__vault_client.get_logger())
         validate_delete_request(self.__vault_client.get_logger(), request)
         log_info(SkyflowMessages.Info.DELETE_REQUEST_RESOLVED.value,  self.__vault_client.get_logger())
@@ -170,7 +170,7 @@ class VaultController(BaseVaultController):
             log_error_log(SkyflowMessages.ErrorLogs.DELETE_REQUEST_REJECTED.value, logger = self.__vault_client.get_logger())
             handle_exception(e, self.__vault_client.get_logger())
 
-    def get(self, request: GetRequest):
+    def get(self, request: GetRequest) -> GetResponse:
         log_info(SkyflowMessages.Info.VALIDATE_GET_REQUEST.value, self.__vault_client.get_logger())
         validate_get_request(self.__vault_client.get_logger(), request)
         log_info(SkyflowMessages.Info.GET_REQUEST_RESOLVED.value, self.__vault_client.get_logger())
@@ -200,7 +200,7 @@ class VaultController(BaseVaultController):
             log_error_log(SkyflowMessages.ErrorLogs.GET_REQUEST_REJECTED.value, self.__vault_client.get_logger())
             handle_exception(e, self.__vault_client.get_logger())
 
-    def query(self, request: QueryRequest):
+    def query(self, request: QueryRequest) -> QueryResponse:
         log_info(SkyflowMessages.Info.VALIDATING_QUERY_REQUEST.value, self.__vault_client.get_logger())
         validate_query_request(self.__vault_client.get_logger(), request)
         log_info(SkyflowMessages.Info.QUERY_REQUEST_RESOLVED.value, self.__vault_client.get_logger())
@@ -220,7 +220,7 @@ class VaultController(BaseVaultController):
             log_error_log(SkyflowMessages.ErrorLogs.QUERY_REQUEST_REJECTED.value, self.__vault_client.get_logger())
             handle_exception(e, self.__vault_client.get_logger())
 
-    def detokenize(self, request: DetokenizeRequest):
+    def detokenize(self, request: DetokenizeRequest) -> DetokenizeResponse:
         log_info(SkyflowMessages.Info.VALIDATE_DETOKENIZE_REQUEST.value, self.__vault_client.get_logger())
         validate_detokenize_request(self.__vault_client.get_logger(), request)
         log_info(SkyflowMessages.Info.DETOKENIZE_REQUEST_RESOLVED.value, self.__vault_client.get_logger())
@@ -248,7 +248,7 @@ class VaultController(BaseVaultController):
             log_error_log(SkyflowMessages.ErrorLogs.DETOKENIZE_REQUEST_REJECTED.value, logger = self.__vault_client.get_logger())
             handle_exception(e, self.__vault_client.get_logger())
 
-    def tokenize(self, request: TokenizeRequest):
+    def tokenize(self, request: TokenizeRequest) -> TokenizeResponse:
         log_info(SkyflowMessages.Info.VALIDATING_TOKENIZE_REQUEST.value, self.__vault_client.get_logger())
         validate_tokenize_request(self.__vault_client.get_logger(), request)
         log_info(SkyflowMessages.Info.TOKENIZE_REQUEST_RESOLVED.value, self.__vault_client.get_logger())
@@ -273,7 +273,7 @@ class VaultController(BaseVaultController):
             log_error_log(SkyflowMessages.ErrorLogs.TOKENIZE_REQUEST_REJECTED.value, logger = self.__vault_client.get_logger())
             handle_exception(e, self.__vault_client.get_logger())
 
-    def upload_file(self, request: FileUploadRequest):
+    def upload_file(self, request: FileUploadRequest) -> FileUploadResponse:
         log_info(SkyflowMessages.Info.FILE_UPLOAD_TRIGGERED.value, self.__vault_client.get_logger())
         log_info(SkyflowMessages.Info.VALIDATING_FILE_UPLOAD_REQUEST.value, self.__vault_client.get_logger())
         validate_file_upload_request(self.__vault_client.get_logger(), request)

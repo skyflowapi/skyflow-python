@@ -8,9 +8,9 @@ from common.utils.validations import (
 )
 from skyflow_flowvault.utils import SkyflowMessages
 from skyflow_flowvault.utils.enums import UpsertType
-from skyflow_flowvault.vault.data import Upsert
 
 VALID_INSERT_RECORD_KEYS = ["values", "table", "upsert"]
+VALID_UPSERT_KEYS = ["update_type", "unique_columns"]
 
 invalid_input_error_code = CommonMessages.ErrorCodes.INVALID_INPUT.value
 
@@ -19,15 +19,18 @@ invalid_input_error_code = CommonMessages.ErrorCodes.INVALID_INPUT.value
 # identical to v2's, confirmed, so both variants now share one implementation.
 
 
-def _validate_upsert(upsert):
+def _validate_upsert(logger, upsert):
     if upsert is None:
         return
-    if not isinstance(upsert, Upsert):
+    if not isinstance(upsert, dict):
         raise SkyflowError(SkyflowMessages.Error.INVALID_UPSERT_TYPE_IN_INSERT.value, invalid_input_error_code)
-    if (not isinstance(upsert.unique_columns, list) or not upsert.unique_columns
-            or not all(isinstance(c, str) for c in upsert.unique_columns)):
+    validate_keys(logger, upsert, VALID_UPSERT_KEYS)
+    unique_columns = upsert.get("unique_columns")
+    if (not isinstance(unique_columns, list) or not unique_columns
+            or not all(isinstance(c, str) for c in unique_columns)):
         raise SkyflowError(SkyflowMessages.Error.INVALID_UPSERT_UNIQUE_COLUMNS_IN_INSERT.value, invalid_input_error_code)
-    if upsert.update_type is not None and not isinstance(upsert.update_type, UpsertType):
+    update_type = upsert.get("update_type")
+    if update_type is not None and not isinstance(update_type, UpsertType):
         raise SkyflowError(SkyflowMessages.Error.INVALID_UPSERT_UPDATE_TYPE_IN_INSERT.value, invalid_input_error_code)
 
 
@@ -35,40 +38,40 @@ MAX_INSERT_RECORDS = 10000  # matches Java's v3 Validations.validateInsertReques
 
 
 def validate_insert_request(logger, request):
-    if not isinstance(request.records, list) or not all(isinstance(r, dict) for r in request.records):
+    if not isinstance(request.values, list) or not all(isinstance(r, dict) for r in request.values):
         raise SkyflowError(SkyflowMessages.Error.INVALID_RECORDS_TYPE_IN_INSERT.value, invalid_input_error_code)
 
-    if not request.records:
+    if not request.values:
         raise SkyflowError(SkyflowMessages.Error.EMPTY_RECORDS_IN_INSERT.value, invalid_input_error_code)
 
-    if len(request.records) > MAX_INSERT_RECORDS:
+    if len(request.values) > MAX_INSERT_RECORDS:
         raise SkyflowError(SkyflowMessages.Error.TOO_MANY_RECORDS_IN_INSERT.value, invalid_input_error_code)
 
     # request.table/record["table"] format and record["values"] emptiness/key/value validity are
     # checked by the controller via the shared BaseVaultController._validate_table_name_if_present()
     # / _validate_field_values() -- not here, to avoid duplicating that logic.
 
-    _validate_upsert(request.upsert)
+    _validate_upsert(logger, request.upsert)
 
-    for record in request.records:
+    for record in request.values:
         validate_keys(logger, record, VALID_INSERT_RECORD_KEYS)
-        _validate_upsert(record.get("upsert"))
+        _validate_upsert(logger, record.get("upsert"))
 
     # table must be set in exactly one place -- request-level (every record) or per-record (no
     # partial mix) -- and upsert must live at that same place (mirrors Java's v3 Validations).
     table_at_request_level = request.table is not None
 
     if table_at_request_level:
-        for record in request.records:
+        for record in request.values:
             if record.get("table") is not None:
                 raise SkyflowError(SkyflowMessages.Error.TABLE_NAME_IN_BOTH_PLACES_IN_INSERT.value, invalid_input_error_code)
     else:
-        for record in request.records:
+        for record in request.values:
             if record.get("table") is None:
                 raise SkyflowError(SkyflowMessages.Error.TABLE_NAME_MISSING_IN_INSERT.value, invalid_input_error_code)
 
     if table_at_request_level:
-        for record in request.records:
+        for record in request.values:
             if record.get("upsert") is not None:
                 raise SkyflowError(SkyflowMessages.Error.RECORD_LEVEL_UPSERT_NOT_ALLOWED_IN_INSERT.value, invalid_input_error_code)
     else:
