@@ -4,7 +4,7 @@ from unittest.mock import MagicMock, Mock, patch
 from common.errors import SkyflowError
 from skyflow_flowvault.generated.rest.core import ApiError
 from skyflow_flowvault.vault.controller import VaultController
-from skyflow_flowvault.vault.data import InsertRequest, Upsert
+from skyflow_flowvault.vault.data import InsertRequest
 from skyflow_flowvault.utils.enums import UpsertType
 
 
@@ -50,7 +50,7 @@ class TestVault(unittest.TestCase):
     @patch("skyflow_flowvault.vault.controller._vault.validate_insert_request")
     def test_insert_validates_before_initializing_client(self, mock_validate):
         self.insert_api.with_raw_response.insert.return_value = FakeRawResponse([])
-        request = InsertRequest(records=[dict(values={"a": 1})], table="t1")
+        request = InsertRequest(values=[dict(values={"a": 1})], table="t1")
 
         self.vault.insert(request)
 
@@ -59,7 +59,7 @@ class TestVault(unittest.TestCase):
 
     def test_insert_raises_for_invalid_request(self):
         with self.assertRaises(SkyflowError):
-            self.vault.insert(InsertRequest(records=[], table="t1"))
+            self.vault.insert(InsertRequest(values=[], table="t1"))
         self.vault_client.initialize_client_configuration.assert_not_called()
 
     # ------------------------------------------------------------------ #
@@ -69,29 +69,29 @@ class TestVault(unittest.TestCase):
 
     def test_insert_raises_on_empty_key(self):
         with self.assertRaises(SkyflowError):
-            self.vault.insert(InsertRequest(records=[dict(values={"": "value"})], table="t1"))
+            self.vault.insert(InsertRequest(values=[dict(values={"": "value"})], table="t1"))
         self.insert_api.with_raw_response.insert.assert_not_called()
 
     def test_insert_raises_on_empty_value(self):
         with self.assertRaises(SkyflowError):
-            self.vault.insert(InsertRequest(records=[dict(values={"a": ""})], table="t1"))
+            self.vault.insert(InsertRequest(values=[dict(values={"a": ""})], table="t1"))
         self.insert_api.with_raw_response.insert.assert_not_called()
 
     def test_insert_raises_on_non_dict_values(self):
         with self.assertRaises(SkyflowError):
-            self.vault.insert(InsertRequest(records=[dict(values=["not", "a", "dict"])], table="t1"))
+            self.vault.insert(InsertRequest(values=[dict(values=["not", "a", "dict"])], table="t1"))
 
     def test_insert_raises_on_empty_values_dict(self):
         with self.assertRaises(SkyflowError):
-            self.vault.insert(InsertRequest(records=[dict(values={})], table="t1"))
+            self.vault.insert(InsertRequest(values=[dict(values={})], table="t1"))
 
     def test_insert_raises_on_invalid_request_level_table_name(self):
         with self.assertRaises(SkyflowError):
-            self.vault.insert(InsertRequest(records=[dict(values={"a": 1})], table="   "))
+            self.vault.insert(InsertRequest(values=[dict(values={"a": 1})], table="   "))
 
     def test_insert_raises_on_invalid_per_record_table_name(self):
         with self.assertRaises(SkyflowError):
-            self.vault.insert(InsertRequest(records=[dict(values={"a": 1}, table="   ")]))
+            self.vault.insert(InsertRequest(values=[dict(values={"a": 1}, table="   ")]))
 
     # ------------------------------------------------------------------ #
     # request -> wire field mapping
@@ -103,9 +103,9 @@ class TestVault(unittest.TestCase):
         the wire records must NOT also carry a resolved copy."""
         self.insert_api.with_raw_response.insert.return_value = FakeRawResponse([])
         request = InsertRequest(
-            records=[dict(values={"a": 1})],
+            values=[dict(values={"a": 1})],
             table="t1",
-            upsert=Upsert(update_type=UpsertType.REPLACE, unique_columns=["a"]),
+            upsert={"update_type": UpsertType.REPLACE, "unique_columns": ["a"]},
         )
 
         self.vault.insert(request)
@@ -124,7 +124,7 @@ class TestVault(unittest.TestCase):
         real vault. validate_insert_request (tested separately) is what actually raises this;
         this test just confirms insert() surfaces it rather than silently choosing one."""
         request = InsertRequest(
-            records=[dict(values={"a": 1}, table="t2")],
+            values=[dict(values={"a": 1}, table="t2")],
             table="t1",
         )
 
@@ -137,8 +137,8 @@ class TestVault(unittest.TestCase):
         requires EVERY record to set its own table in this mode (see validation tests), so both
         records do; only the second also sets its own upsert."""
         self.insert_api.with_raw_response.insert.return_value = FakeRawResponse([])
-        request = InsertRequest(records=[
-            dict(values={"a": 1}, table="t2", upsert=Upsert(unique_columns=["b"])),
+        request = InsertRequest(values=[
+            dict(values={"a": 1}, table="t2", upsert={"unique_columns": ["b"]}),
             dict(values={"a": 2}, table="t2"),
         ])
 
@@ -154,7 +154,7 @@ class TestVault(unittest.TestCase):
 
     def test_no_request_level_table_is_omitted_not_sent_as_none(self):
         self.insert_api.with_raw_response.insert.return_value = FakeRawResponse([])
-        request = InsertRequest(records=[dict(values={"a": 1}, table="t2")])  # no request-level table
+        request = InsertRequest(values=[dict(values={"a": 1}, table="t2")])  # no request-level table
 
         self.vault.insert(request)
 
@@ -167,11 +167,11 @@ class TestVault(unittest.TestCase):
         `"upsert": null` at the top level, which diverged from a hand-verified working request
         against a real vault (confirmed to have neither key present when unset)."""
         self.insert_api.with_raw_response.insert.return_value = FakeRawResponse([])
-        request = InsertRequest(records=[
+        request = InsertRequest(values=[
             dict(
                 values={"name": "saileshwar", "email": "nanana@gmail.com"},
                 table="table1",
-                upsert=Upsert(update_type=UpsertType.UPDATE, unique_columns=["email"]),
+                upsert={"update_type": UpsertType.UPDATE, "unique_columns": ["email"]},
             ),
         ])
 
@@ -188,7 +188,7 @@ class TestVault(unittest.TestCase):
         """upsert must be OMITTED from the wire call entirely when unset, not passed as None --
         a real vault confirmed a working request never includes a null upsert/tableName key."""
         self.insert_api.with_raw_response.insert.return_value = FakeRawResponse([])
-        request = InsertRequest(records=[dict(values={"a": 1})], table="t1")
+        request = InsertRequest(values=[dict(values={"a": 1})], table="t1")
 
         self.vault.insert(request)
 
@@ -209,7 +209,7 @@ class TestVault(unittest.TestCase):
                 table_name="table1",
             ),
         ], headers={"x-request-id": "req-1"})
-        response = self.vault.insert(InsertRequest(records=[dict(values={"name": "john doe"})], table="table1"))
+        response = self.vault.insert(InsertRequest(values=[dict(values={"name": "john doe"})], table="table1"))
 
         self.assertEqual(len(response.inserted_fields), 1)
         inserted = response.inserted_fields[0]
@@ -231,7 +231,7 @@ class TestVault(unittest.TestCase):
                 ]},
             ),
         ])
-        response = self.vault.insert(InsertRequest(records=[dict(values={"email": "a@b.com"})], table="t1"))
+        response = self.vault.insert(InsertRequest(values=[dict(values={"email": "a@b.com"})], table="t1"))
 
         self.assertEqual(response.inserted_fields[0]["email"], ["tok-det", "tok-nondet"])
 
@@ -241,7 +241,7 @@ class TestVault(unittest.TestCase):
             FakeRecordResponseObject(error="bad row", http_code=400, table_name="t1"),
         ], headers={"x-request-id": "req-2"})
         response = self.vault.insert(InsertRequest(
-            records=[dict(values={"a": 1}), dict(values={"a": 2})], table="t1",
+            values=[dict(values={"a": 1}), dict(values={"a": 2})], table="t1",
         ))
 
         self.assertEqual(len(response.inserted_fields), 1)
@@ -260,7 +260,7 @@ class TestVault(unittest.TestCase):
         self.insert_api.with_raw_response.insert.return_value = FakeRawResponse([
             FakeRecordResponseObject(skyflow_id="id1", http_code=200),
         ])
-        response = self.vault.insert(InsertRequest(records=[dict(values={"a": 1})], table="t1"))
+        response = self.vault.insert(InsertRequest(values=[dict(values={"a": 1})], table="t1"))
 
         self.assertEqual(len(response.inserted_fields), 1)
         self.assertIsNone(response.errors)
@@ -275,7 +275,7 @@ class TestVault(unittest.TestCase):
         )
         records = [dict(values={"a": i}) for i in range(4)]
 
-        response = self.vault.insert(InsertRequest(records=records, table="t1"))
+        response = self.vault.insert(InsertRequest(values=records, table="t1"))
 
         self.insert_api.with_raw_response.insert.assert_called_once()
         call_size = len(self.insert_api.with_raw_response.insert.call_args.kwargs["records"])
@@ -288,7 +288,7 @@ class TestVault(unittest.TestCase):
         )
         records = [dict(values={"a": i}) for i in range(4)]
 
-        response = self.vault.insert(InsertRequest(records=records, table="t1"))
+        response = self.vault.insert(InsertRequest(values=records, table="t1"))
 
         self.assertEqual(sorted(s["request_index"] for s in response.inserted_fields), [0, 1, 2, 3])
 
@@ -302,7 +302,7 @@ class TestVault(unittest.TestCase):
         self.insert_api.with_raw_response.insert.side_effect = Exception("network blip")
         records = [dict(values={"a": 1}), dict(values={"a": 2})]
 
-        response = self.vault.insert(InsertRequest(records=records, table="t1"))
+        response = self.vault.insert(InsertRequest(values=records, table="t1"))
 
         self.insert_api.with_raw_response.insert.assert_called_once()
         self.assertEqual(len(response.inserted_fields), 0)
@@ -325,7 +325,7 @@ class TestVault(unittest.TestCase):
         )
         self.insert_api.with_raw_response.insert.side_effect = api_error
 
-        response = self.vault.insert(InsertRequest(records=[dict(values={"name": "a"})], table="t1"))
+        response = self.vault.insert(InsertRequest(values=[dict(values={"name": "a"})], table="t1"))
 
         self.assertEqual(len(response.errors), 1)
         self.assertIn("notNull", response.errors[0]["error"])
@@ -338,7 +338,7 @@ class TestVault(unittest.TestCase):
         self.insert_api.with_raw_response.insert.side_effect = api_error
 
         response = self.vault.insert(InsertRequest(
-            records=[dict(values={"a": 1}), dict(values={"a": 2})], table="t1",
+            values=[dict(values={"a": 1}), dict(values={"a": 2})], table="t1",
         ))
 
         self.assertEqual(len(response.errors), 2)
@@ -354,7 +354,7 @@ class TestVault(unittest.TestCase):
         self.vault_client.get_current_bearer_token.return_value = "the-current-token"
         self.insert_api.with_raw_response.insert.return_value = FakeRawResponse([])
 
-        self.vault.insert(InsertRequest(records=[dict(values={"a": 1})], table="t1"))
+        self.vault.insert(InsertRequest(values=[dict(values={"a": 1})], table="t1"))
 
         _, kwargs = self.insert_api.with_raw_response.insert.call_args
         headers = kwargs["request_options"]["additional_headers"]
@@ -364,7 +364,7 @@ class TestVault(unittest.TestCase):
         self.vault_client.get_current_bearer_token.return_value = None
         self.insert_api.with_raw_response.insert.return_value = FakeRawResponse([])
 
-        self.vault.insert(InsertRequest(records=[dict(values={"a": 1})], table="t1"))
+        self.vault.insert(InsertRequest(values=[dict(values={"a": 1})], table="t1"))
 
         _, kwargs = self.insert_api.with_raw_response.insert.call_args
         headers = kwargs["request_options"]["additional_headers"]

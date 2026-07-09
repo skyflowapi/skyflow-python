@@ -1,6 +1,6 @@
-class Upsert:
-    """Mirrors the wire type V1Upsert. update_type is a skyflow_flowvault.utils.enums.UpsertType value."""
+from typing import Optional, TypedDict
+from skyflow_flowvault.utils.enums import UpsertType
 
-    def __init__(self, update_type=None, unique_columns=None):
-        self.update_type = update_type
-        self.unique_columns = unique_columns
+class Upsert(TypedDict, total=False):
+    update_type: Optional[UpsertType]
+    unique_columns: list

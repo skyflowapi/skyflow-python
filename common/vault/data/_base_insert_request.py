@@ -1,6 +1,7 @@
-class BaseInsertRequest:
+from typing import Union
 
-    def __init__(self, table=None, records=None, upsert=None):
+class BaseInsertRequest:
+    def __init__(self, table: str, values: list, upsert: Union[str, dict] = None):
         self.table = table
-        self.records = records
+        self.values = values
         self.upsert = upsert

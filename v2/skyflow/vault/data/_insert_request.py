@@ -3,16 +3,15 @@ from skyflow.utils.enums import TokenMode
 
 class InsertRequest(BaseInsertRequest):
     def __init__(self,
-                 table,
-                 values,
-                 tokens = None,
-                 upsert = None,
-                 homogeneous = False,
-                 token_mode = TokenMode.DISABLE,
-                 return_tokens = True,
-                 continue_on_error = False):
-        super().__init__(table, upsert=upsert)
-        self.values = values
+                 table: str,
+                 values: list,
+                 tokens: list = None,
+                 upsert: str = None,
+                 homogeneous: bool = False,
+                 token_mode: TokenMode = TokenMode.DISABLE,
+                 return_tokens: bool = True,
+                 continue_on_error: bool = False):
+        super().__init__(table, values, upsert=upsert)
         self.tokens = tokens
         self.homogeneous = homogeneous
         self.token_mode = token_mode

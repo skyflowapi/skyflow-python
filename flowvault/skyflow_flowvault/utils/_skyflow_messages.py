@@ -20,9 +20,9 @@ class SkyflowMessages:
         INVALID_RECORDS_TYPE_IN_INSERT = f"{error_prefix} Insert failed. 'records' must be a list of dicts."
         INVALID_RECORD_DATA_IN_INSERT = f"{error_prefix} Insert failed. Each record's 'values' must be a non-empty dict."
         INVALID_TABLE_NAME_IN_INSERT = f"{error_prefix} Insert failed. 'table' must be a non-empty string."
-        INVALID_UPSERT_TYPE_IN_INSERT = f"{error_prefix} Insert failed. 'upsert' must be an Upsert instance."
-        INVALID_UPSERT_UNIQUE_COLUMNS_IN_INSERT = f"{error_prefix} Insert failed. Upsert.unique_columns must be a non-empty list of strings."
-        INVALID_UPSERT_UPDATE_TYPE_IN_INSERT = f"{error_prefix} Insert failed. Upsert.update_type must be an UpsertType value."
+        INVALID_UPSERT_TYPE_IN_INSERT = f"{error_prefix} Insert failed. 'upsert' must be a dict."
+        INVALID_UPSERT_UNIQUE_COLUMNS_IN_INSERT = f"{error_prefix} Insert failed. Upsert's 'unique_columns' must be a non-empty list of strings."
+        INVALID_UPSERT_UPDATE_TYPE_IN_INSERT = f"{error_prefix} Insert failed. Upsert's 'update_type' must be an UpsertType value."
         TOO_MANY_RECORDS_IN_INSERT = f"{error_prefix} Insert failed. A single insert request cannot contain more than 10000 records."
         TABLE_NAME_IN_BOTH_PLACES_IN_INSERT = (
             f"{error_prefix} Insert failed. 'table' cannot be set on InsertRequest at the same "

@@ -13,7 +13,7 @@ diagnostics.
 """
 from skyflow_flowvault.vault.data import InsertRequest
 
-InsertRequest(records=[], table="t1", homogeneous=True)
-InsertRequest(records=[], table="t1", continue_on_error=True)
-InsertRequest(records=[], table="t1", token_mode="ENABLE")
-InsertRequest(records=[], table="t1", return_tokens=False)
+InsertRequest(values=[], table="t1", homogeneous=True)
+InsertRequest(values=[], table="t1", continue_on_error=True)
+InsertRequest(values=[], table="t1", token_mode="ENABLE")
+InsertRequest(values=[], table="t1", return_tokens=False)
