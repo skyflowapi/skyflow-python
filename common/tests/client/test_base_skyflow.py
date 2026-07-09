@@ -3,7 +3,7 @@ import unittest
 from common.errors import SkyflowError
 from common.utils import LogLevel, SkyflowMessages
 from common.utils.logger import Logger
-from common.client.base_skyflow import make_skyflow_class
+from common.client.base_skyflow import BaseSkyflow, make_skyflow_class
 
 
 class FakeVaultClient:
@@ -183,6 +183,18 @@ class TestConnectionAndDetectGating(unittest.TestCase):
                 connection_cls=FakeConnection,
                 # validate_connection_config/validate_update_connection_config omitted on purpose
             )
+
+
+class TestBaseSkyflowInterface(unittest.TestCase):
+    def test_using_the_template_builder_directly_raises_with_a_clear_message(self):
+        with self.assertRaises(NotImplementedError) as ctx:
+            BaseSkyflow.Builder()
+        self.assertIn("make_skyflow_class()", str(ctx.exception))
+        self.assertIn("_vault_client_cls", str(ctx.exception))
+
+    def test_make_skyflow_class_produced_builder_constructs_fine(self):
+        Skyflow = make_fake_skyflow()
+        self.assertIsInstance(Skyflow.builder(), BaseSkyflow.Builder)
 
 
 if __name__ == "__main__":

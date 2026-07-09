@@ -64,7 +64,7 @@ class TestVault(unittest.TestCase):
 
     # ------------------------------------------------------------------ #
     # shared BaseVaultController validation helpers, exercised end-to-end via insert()
-    # (unit-tested in isolation in common/tests/vault/test_base_vault.py)
+    # (unit-tested in isolation in common/tests/vault/test_base_vault_controller.py)
     # ------------------------------------------------------------------ #
 
     def test_insert_raises_on_empty_key(self):

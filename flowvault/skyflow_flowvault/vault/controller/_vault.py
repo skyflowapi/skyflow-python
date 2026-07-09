@@ -3,12 +3,12 @@ import json
 from common.utils import SkyflowMessages as CommonMessages
 from common.utils.constants import SKY_META_DATA_HEADER
 from common.utils.logger import log_info, log_error_log
-from common.vault.base_vault import BaseVaultController
+from common.vault.base_vault_controller import BaseVaultController
 from skyflow_flowvault.generated.rest import V1InsertRecordData, V1Upsert
 from skyflow_flowvault.generated.rest.core import ApiError
 from skyflow_flowvault.utils import SkyflowMessages, get_metrics
 from skyflow_flowvault.utils.validations import validate_insert_request
-from skyflow_flowvault.vault.data import InsertResponse
+from skyflow_flowvault.vault.data import InsertRequest, InsertResponse
 
 REQUEST_ID_HEADER = "x-request-id"
 
@@ -19,7 +19,7 @@ class VaultController(BaseVaultController):
     def __init__(self, vault_client):
         super().__init__(vault_client)
 
-    def insert(self, request):
+    def insert(self, request: InsertRequest) -> InsertResponse:
         log_info(SkyflowMessages.Info.VALIDATE_INSERT_REQUEST.value, self._vault_client.get_logger())
         validate_insert_request(self._vault_client.get_logger(), request)
         self._validate_table_name_if_present(request.table)

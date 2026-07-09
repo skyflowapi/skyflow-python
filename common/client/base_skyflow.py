@@ -1,3 +1,4 @@
+from abc import ABC, abstractmethod
 from collections import OrderedDict
 from functools import partial
 
@@ -13,7 +14,79 @@ from common.utils.validations import (
 )
 
 
-class Skyflow:
+class ISkyflow(ABC):
+    @classmethod
+    @abstractmethod
+    def builder(cls):
+        raise NotImplementedError
+
+    @abstractmethod
+    def add_vault_config(self, config):
+        raise NotImplementedError
+
+    @abstractmethod
+    def remove_vault_config(self, vault_id):
+        raise NotImplementedError
+
+    @abstractmethod
+    def update_vault_config(self, config):
+        raise NotImplementedError
+
+    @abstractmethod
+    def get_vault_config(self, vault_id):
+        raise NotImplementedError
+
+    @abstractmethod
+    def add_connection_config(self, config):
+        raise NotImplementedError
+
+    @abstractmethod
+    def remove_connection_config(self, connection_id):
+        raise NotImplementedError
+
+    @abstractmethod
+    def update_connection_config(self, config):
+        raise NotImplementedError
+
+    @abstractmethod
+    def get_connection_config(self, connection_id):
+        raise NotImplementedError
+
+    @abstractmethod
+    def add_skyflow_credentials(self, credentials):
+        raise NotImplementedError
+
+    @abstractmethod
+    def update_skyflow_credentials(self, credentials):
+        raise NotImplementedError
+
+    @abstractmethod
+    def set_log_level(self, log_level):
+        raise NotImplementedError
+
+    @abstractmethod
+    def update_log_level(self, log_level):
+        raise NotImplementedError
+
+    @abstractmethod
+    def get_log_level(self):
+        raise NotImplementedError
+
+    @abstractmethod
+    def vault(self, vault_id=None):
+        raise NotImplementedError
+
+    @abstractmethod
+    def connection(self, connection_id=None):
+        raise NotImplementedError
+
+    @abstractmethod
+    def detect(self, vault_id=None):
+        raise NotImplementedError
+
+
+class BaseSkyflow(ISkyflow):
+
     def __init__(self, builder):
         self.__builder = builder
         log_info(self.__builder._skyflow_messages.Info.CLIENT_INITIALIZED.value, self.__builder.get_logger())
@@ -87,9 +160,10 @@ class Skyflow:
         vault_config = self.__builder.get_vault_config(vault_id)
         return vault_config.get(OptionField.DETECT_CONTROLLER)
 
-    class Builder:
+    class Builder(ABC):
         # -- hooks, filled in per-variant by make_skyflow_class() -- left None here so using
-        # this template directly (rather than through make_skyflow_class()) fails fast.
+        # this template directly (rather than through make_skyflow_class()) fails fast, with a
+        # clear message (see _REQUIRED_HOOKS check in __init__ below).
         _vault_client_cls = None
         _vault_controller_cls = None
         _connection_cls = None
@@ -106,7 +180,21 @@ class Skyflow:
         _validate_credentials = None
         _set_active_log_level = None
 
+        # Connection/Detect support and their validators are legitimately optional per variant --
+        # everything else must be supplied by make_skyflow_class() before this Builder is usable.
+        _REQUIRED_HOOKS = (
+            '_vault_client_cls', '_vault_controller_cls', '_logger_cls', '_default_log_level',
+            '_skyflow_messages', '_skyflow_cls', '_validate_vault_config',
+            '_validate_update_vault_config', '_validate_log_level', '_validate_credentials',
+        )
+
         def __init__(self):
+            missing = [hook for hook in self._REQUIRED_HOOKS if getattr(self, hook) is None]
+            if missing:
+                raise NotImplementedError(
+                    "BaseSkyflow.Builder is an interface template -- build a concrete Skyflow "
+                    f"class via make_skyflow_class() instead of using it directly. Missing: {', '.join(missing)}"
+                )
             self.__vault_configs = OrderedDict()
             self.__vault_list = list()
             self.__connection_configs = OrderedDict()
@@ -326,7 +414,7 @@ def make_skyflow_class(*, vault_client_cls, vault_controller_cls, skyflow_messag
         '_validate_credentials': staticmethod(validate_credentials),
         '_set_active_log_level': staticmethod(set_active_log_level) if set_active_log_level else None,
     }
-    variant_builder = type('Builder', (Skyflow.Builder,), builder_attrs)
-    variant_skyflow = type('Skyflow', (Skyflow,), {'Builder': variant_builder})
+    variant_builder = type('Builder', (BaseSkyflow.Builder,), builder_attrs)
+    variant_skyflow = type('Skyflow', (BaseSkyflow,), {'Builder': variant_builder})
     variant_builder._skyflow_cls = variant_skyflow
     return variant_skyflow

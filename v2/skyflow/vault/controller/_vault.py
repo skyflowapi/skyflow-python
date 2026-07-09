@@ -2,7 +2,7 @@ import base64
 import json
 import os
 from typing import Optional
-from common.vault.base_vault import BaseVaultController
+from common.vault.base_vault_controller import BaseVaultController
 from skyflow.generated.rest import V1FieldRecords, V1BatchRecord, V1TokenizeRecordRequest, \
     V1DetokenizeRecordRequest
 from skyflow.generated.rest.core.file import File
@@ -15,7 +15,7 @@ from skyflow.utils.enums.redaction_type import RedactionType
 from skyflow.utils.logger import log_info, log_error_log
 from skyflow.utils.validations import validate_insert_request, validate_delete_request, validate_query_request, \
     validate_get_request, validate_update_request, validate_detokenize_request, validate_tokenize_request, validate_file_upload_request
-from skyflow.vault.data import InsertRequest, UpdateRequest, DeleteRequest, GetRequest, QueryRequest, FileUploadRequest, FileUploadResponse
+from skyflow.vault.data import InsertRequest, InsertResponse, UpdateRequest, DeleteRequest, GetRequest, QueryRequest, FileUploadRequest, FileUploadResponse
 from skyflow.vault.tokens import DetokenizeRequest, TokenizeRequest
 
 class VaultController(BaseVaultController):
@@ -94,7 +94,7 @@ class VaultController(BaseVaultController):
     def __get_headers(self):
         return {SKY_META_DATA_HEADER: json.dumps(get_metrics())}
 
-    def insert(self, request: InsertRequest):
+    def insert(self, request: InsertRequest) -> InsertResponse:
         log_info(SkyflowMessages.Info.VALIDATE_INSERT_REQUEST.value, self.__vault_client.get_logger())
         validate_insert_request(self.__vault_client.get_logger(), request)
         for item in request.values:

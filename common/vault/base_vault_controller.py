@@ -2,11 +2,39 @@ from abc import ABC, abstractmethod
 
 from common.errors import SkyflowError
 from common.utils import SkyflowMessages as _CommonSkyflowMessages
+from common.vault.data import BaseInsertRequest, BaseInsertResponse
 
 _INVALID_INPUT_ERROR_CODE = _CommonSkyflowMessages.ErrorCodes.INVALID_INPUT.value
 
 
-class BaseVaultController(ABC):
+class IVaultController(ABC):
+
+    @abstractmethod
+    def insert(self, request: BaseInsertRequest) -> BaseInsertResponse:
+        raise NotImplementedError
+
+    @abstractmethod
+    def get(self, request):
+        raise NotImplementedError
+
+    @abstractmethod
+    def update(self, request):
+        raise NotImplementedError
+
+    @abstractmethod
+    def delete(self, request):
+        raise NotImplementedError
+
+    @abstractmethod
+    def query(self, request):
+        raise NotImplementedError
+
+    @abstractmethod
+    def detokenize(self, request):
+        raise NotImplementedError
+
+
+class BaseVaultController(IVaultController):
 
     _skyflow_messages = None
 
@@ -37,27 +65,3 @@ class BaseVaultController(ABC):
             #         self._skyflow_messages.Error.EMPTY_VALUE_IN_INSERT_DATA.value,
             #         _INVALID_INPUT_ERROR_CODE,
             #     )
-
-    @abstractmethod
-    def insert(self, request):
-        raise NotImplementedError
-
-    @abstractmethod
-    def get(self, request):
-        raise NotImplementedError
-
-    @abstractmethod
-    def update(self, request):
-        raise NotImplementedError
-
-    @abstractmethod
-    def delete(self, request):
-        raise NotImplementedError
-
-    @abstractmethod
-    def query(self, request):
-        raise NotImplementedError
-
-    @abstractmethod
-    def detokenize(self, request):
-        raise NotImplementedError

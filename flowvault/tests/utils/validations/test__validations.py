@@ -84,7 +84,7 @@ class TestValidateInsertRequest(unittest.TestCase):
     # dict, are now validated by the controller via the shared
     # BaseVaultController._validate_field_values() -- see test__vault.py's
     # test_insert_raises_on_empty_key/_on_empty_value/_on_non_dict_values/_on_empty_values, and
-    # common/tests/vault/test_base_vault.py for the shared helper's own unit tests.
+    # common/tests/vault/test_base_vault_controller.py for the shared helper's own unit tests.
 
     def test_falsy_non_string_values_are_valid(self):
         """0, False, [], {} are all legitimate values -- only None/empty-string should raise
@@ -123,7 +123,7 @@ class TestValidateInsertRequest(unittest.TestCase):
     # Table name format (non-empty string if provided) is now validated by the controller via
     # the shared BaseVaultController._validate_table_name_if_present() -- see
     # test__vault.py's test_insert_raises_on_invalid_table_name and
-    # common/tests/vault/test_base_vault.py for the shared helper's own unit tests.
+    # common/tests/vault/test_base_vault_controller.py for the shared helper's own unit tests.
 
     def test_table_is_optional_when_every_record_has_its_own(self):
         request = InsertRequest(records=[dict(values={"a": 1}, table="t2")])
