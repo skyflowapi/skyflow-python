@@ -3,6 +3,7 @@ from collections import OrderedDict
 from functools import partial
 
 from common.errors import SkyflowError
+from common.utils import SkyflowMessages
 from common.utils.enums import LogLevel as _CommonLogLevel
 from common.utils.logger import Logger as _CommonLogger, log_info, log_warn
 from common.utils.constants import OptionField
@@ -88,6 +89,11 @@ class ISkyflow(ABC):
 class BaseSkyflow(ISkyflow):
 
     def __init__(self, builder):
+        if type(self) is BaseSkyflow:
+            raise SkyflowError(
+                SkyflowMessages.Error.BASE_SKYFLOW_INSTANTIATION_NOT_ALLOWED.value,
+                SkyflowMessages.ErrorCodes.INVALID_INPUT.value,
+            )
         self.__builder = builder
         log_info(self.__builder._skyflow_messages.Info.CLIENT_INITIALIZED.value, self.__builder.get_logger())
 

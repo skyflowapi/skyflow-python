@@ -230,6 +230,7 @@ class SkyflowMessages:
         INVALID_RUN_ID= f"{error_prefix} Validation error. Invalid run id. Specify a valid run id as string."
         INTERNAL_SERVER_ERROR= f"{error_prefix}. Internal server error. {{}}."
         GET_DETECT_RUN_FAILED = f"{error_prefix} Get detect run operation failed."
+        BASE_SKYFLOW_INSTANTIATION_NOT_ALLOWED = f"{error_prefix} BaseSkyflow cannot be instantiated directly. Build a concrete Skyflow class via make_skyflow_class() instead."
 
     class Info(Enum):
         CLIENT_INITIALIZED = f"{INFO}: [{error_prefix}] Initialized skyflow client."
