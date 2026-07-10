@@ -196,6 +196,10 @@ class TestBaseSkyflowInterface(unittest.TestCase):
         Skyflow = make_fake_skyflow()
         self.assertIsInstance(Skyflow.builder(), BaseSkyflow.Builder)
 
+    def test_instantiating_base_skyflow_directly_raises(self):
+        with self.assertRaises(SkyflowError):
+            BaseSkyflow(None)
+
 
 if __name__ == "__main__":
     unittest.main()
