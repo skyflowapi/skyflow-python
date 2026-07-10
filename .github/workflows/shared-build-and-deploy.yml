@@ -14,12 +14,18 @@ on:
         type: string
 
       variant:
-        description: 'Build variant directory to release (v2 or v3)'
+        description: 'Build variant directory to release (v2 or flowvault)'
         required: true
         type: string
 
+      package-name:
+        description: 'Importable package name for this variant (e.g. skyflow or skyflow_flowvault)'
+        required: false
+        type: string
+        default: 'skyflow'
+
       tag-prefix:
-        description: 'Prefix distinguishing this variant''s git tags from other variants'' (e.g. "flowvault-" for v3, empty for v2)'
+        description: 'Prefix distinguishing this variant''s git tags from other variants'' (e.g. "flowvault-" for flowvault, empty for v2)'
         required: false
         type: string
         default: ''
@@ -73,9 +79,9 @@ jobs:
         run: |
           chmod +x ../ci-scripts/bump_version.sh
           if ${{ inputs.tag == 'internal' }}; then
-            ../ci-scripts/bump_version.sh "${{ steps.version.outputs.version }}" "$(git rev-parse --short "$GITHUB_SHA")"
+            ../ci-scripts/bump_version.sh "${{ steps.version.outputs.version }}" "$(git rev-parse --short "$GITHUB_SHA")" "${{ inputs.package-name }}"
           else
-            ../ci-scripts/bump_version.sh "${{ steps.version.outputs.version }}"
+            ../ci-scripts/bump_version.sh "${{ steps.version.outputs.version }}" "" "${{ inputs.package-name }}"
           fi
 
       - name: Commit changes
@@ -89,7 +95,7 @@ jobs:
           fi
 
           git add setup.py
-          git add skyflow/utils/_version.py
+          git add ${{ inputs.package-name }}/utils/_version.py
 
           if [[ "${{ inputs.tag }}" == "internal" ]]; then
             VERSION="${{ steps.version.outputs.version }}.dev0+$(git rev-parse --short $GITHUB_SHA)"

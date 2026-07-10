@@ -8,9 +8,14 @@ on:
         required: true
         type: string
       variant:
-        description: 'Build variant directory to test (v2 or v3)'
+        description: 'Build variant directory to test (v2 or flowvault)'
         required: true
         type: string
+      package-name:
+        description: 'Importable package name for this variant (e.g. skyflow or skyflow_flowvault)'
+        required: false
+        type: string
+        default: 'skyflow'
       coverage-omit:
         description: 'Comma-separated coverage --omit patterns, relative to the variant directory'
         required: false
@@ -52,7 +57,7 @@ jobs:
         working-directory: ${{ inputs.variant }}
         run: |
           pip install -r requirements.txt
-          python -m coverage run --source=skyflow --omit=${{ inputs.coverage-omit }} -m unittest discover
+          python -m coverage run --source=${{ inputs.package-name }} --omit=${{ inputs.coverage-omit }} -m unittest discover
 
       - name: coverage
         working-directory: ${{ inputs.variant }}

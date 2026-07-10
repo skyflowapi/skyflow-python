@@ -15,14 +15,17 @@ jobs:
       matrix:
         include:
           - variant: v2
+            package-name: skyflow
             tag-prefix: ''
-          - variant: v3
+          - variant: flowvault
+            package-name: skyflow_flowvault
             tag-prefix: 'flowvault-'
-    if: (matrix.variant == 'v3' && startsWith(github.ref_name, 'flowvault-')) || (matrix.variant == 'v2' && !startsWith(github.ref_name, 'flowvault-'))
+    if: (matrix.variant == 'flowvault' && startsWith(github.ref_name, 'flowvault-')) || (matrix.variant == 'v2' && !startsWith(github.ref_name, 'flowvault-'))
     uses: ./.github/workflows/shared-build-and-deploy.yml
     with:
       ref: ${{ github.ref_name }}
       tag: 'beta'
       variant: ${{ matrix.variant }}
+      package-name: ${{ matrix.package-name }}
       tag-prefix: ${{ matrix.tag-prefix }}
     secrets: inherit
