@@ -69,9 +69,12 @@ jobs:
 
       - name: Resolve version number
         id: version
+        env:
+          PREVIOUS_TAG: ${{ steps.previoustag.outputs.tag }}
+          TAG_PREFIX: ${{ inputs.tag-prefix }}
         run: |
-          TAG="${{ steps.previoustag.outputs.tag }}"
-          VERSION="${TAG#${{ inputs.tag-prefix }}}"
+          TAG="$PREVIOUS_TAG"
+          VERSION="${TAG#$TAG_PREFIX}"
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Bump Version
