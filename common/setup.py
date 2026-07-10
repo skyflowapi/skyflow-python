@@ -21,6 +21,7 @@ setup(
         'PyJWT >= 2.12, < 3',
         'cryptography >= 44.0.2',
         'httpx >= 0.21.2',
+        'python-dotenv >= 1.1.0, < 2',
     ],
     python_requires=">=3.9",
 )

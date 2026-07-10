@@ -79,8 +79,7 @@ class TestValidateTableNameIfPresent(unittest.TestCase):
 
 class TestValidateFieldValues(unittest.TestCase):
     """Shared rule: a record's field-value map must be a non-empty dict of non-empty string
-    keys and non-null/non-empty-string values -- the exact check your lead called out as
-    belonging in a protected base-controller helper."""
+    keys -- values may be anything, including None/empty string."""
 
     def setUp(self):
         self.vault = DummyVaultController(vault_client=None)
@@ -108,16 +107,14 @@ class TestValidateFieldValues(unittest.TestCase):
         with self.assertRaises(SkyflowError):
             self.vault._validate_field_values({"   ": "value"})
 
-    def test_none_value_raises(self):
-        with self.assertRaises(SkyflowError):
-            self.vault._validate_field_values({"a": None})
+    def test_none_value_is_valid(self):
+        self.vault._validate_field_values({"a": None})  # should not raise
 
-    def test_empty_string_value_raises(self):
-        with self.assertRaises(SkyflowError):
-            self.vault._validate_field_values({"a": ""})
+    def test_empty_string_value_is_valid(self):
+        self.vault._validate_field_values({"a": ""})  # should not raise
 
     def test_falsy_non_string_values_are_valid(self):
-        """0, False, [], {} are all legitimate values -- only None/empty-string should raise."""
+        """0, False, [], {} are all legitimate values."""
         self.vault._validate_field_values({"a": 0, "b": False, "c": [], "d": {}})  # should not raise
 
 

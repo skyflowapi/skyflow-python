@@ -23,13 +23,16 @@ jobs:
       matrix:
         include:
           - variant: v2
+            package-name: skyflow
             coverage-omit: "skyflow/generated/*,skyflow/utils/validations/*,skyflow/vault/data/*,skyflow/vault/detect/*,skyflow/vault/tokens/*,skyflow/vault/connection/*,skyflow/error/*,skyflow/utils/enums/*,skyflow/vault/controller/_audit.py,skyflow/vault/controller/_bin_look_up.py"
-          - variant: v3
-            coverage-omit: "skyflow/generated/*"
+          - variant: flowvault
+            package-name: skyflow_flowvault
+            coverage-omit: "skyflow_flowvault/generated/*"
     uses: ./.github/workflows/shared-tests.yml
     with:
       python-version: '3.9'
       variant: ${{ matrix.variant }}
+      package-name: ${{ matrix.package-name }}
       coverage-omit: ${{ matrix.coverage-omit }}
     secrets: inherit
 

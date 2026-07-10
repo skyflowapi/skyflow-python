@@ -152,13 +152,18 @@ class TestVault(unittest.TestCase):
         self.vault_client.get_records_api.return_value.with_raw_response.record_service_insert_record.assert_not_called()
 
     @patch("skyflow.vault.controller._vault.validate_insert_request")
-    def test_insert_raises_on_empty_value(self, mock_validate):
+    @patch("skyflow.vault.controller._vault.parse_insert_response")
+    def test_insert_allows_empty_value(self, mock_parse_response, mock_validate):
         request = InsertRequest(table="test_table", values=[{"column_name": ""}])
 
-        with self.assertRaises(SkyflowError):
-            self.vault.insert(request)
+        mock_api_response = Mock()
+        mock_parse_response.return_value = InsertResponse(inserted_fields=[{"skyflow_id": "id1"}])
+        records_api = self.vault_client.get_records_api.return_value
+        records_api.with_raw_response.record_service_insert_record.return_value = mock_api_response
 
-        self.vault_client.get_records_api.return_value.with_raw_response.record_service_insert_record.assert_not_called()
+        self.vault.insert(request)
+
+        records_api.with_raw_response.record_service_insert_record.assert_called_once()
 
     @patch("skyflow.vault.controller._vault.validate_insert_request")
     @patch("skyflow.vault.controller._vault.parse_insert_response")

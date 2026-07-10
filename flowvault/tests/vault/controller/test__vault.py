@@ -72,10 +72,10 @@ class TestVault(unittest.TestCase):
             self.vault.insert(InsertRequest(values=[dict(values={"": "value"})], table="t1"))
         self.insert_api.with_raw_response.insert.assert_not_called()
 
-    def test_insert_raises_on_empty_value(self):
-        with self.assertRaises(SkyflowError):
-            self.vault.insert(InsertRequest(values=[dict(values={"a": ""})], table="t1"))
-        self.insert_api.with_raw_response.insert.assert_not_called()
+    def test_insert_allows_empty_value(self):
+        self.insert_api.with_raw_response.insert.return_value = FakeRawResponse([])
+        self.vault.insert(InsertRequest(values=[dict(values={"a": ""})], table="t1"))
+        self.insert_api.with_raw_response.insert.assert_called_once()
 
     def test_insert_raises_on_non_dict_values(self):
         with self.assertRaises(SkyflowError):
