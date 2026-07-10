@@ -44,4 +44,13 @@ jobs:
         with:
           python-version: '3.9'
       - run: pip install -e ./common
-      - run: python -m unittest discover -s common/tests -t .
+      - run: pip install coverage
+      - run: python -m coverage run --source=common --omit="common/generated/*,common/tests/*" -m unittest discover -s common/tests -t .
+      - run: coverage xml -o test-coverage.xml
+      - name: Codecov
+        uses: codecov/codecov-action@v2.1.0
+        with:
+          token: ${{ secrets.CODECOV_REPO_UPLOAD_TOKEN }}
+          files: test-coverage.xml
+          name: codecov-skyflow-python-common
+          verbose: true
