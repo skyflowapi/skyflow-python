@@ -1,4 +1,4 @@
-from common.client.base_skyflow import make_skyflow_class
+from common.client.utils import make_skyflow_class
 from skyflow.utils import SkyflowMessages
 from skyflow.utils.logger import set_active_log_level
 from skyflow.utils.validations import validate_connection_config, validate_update_connection_config
