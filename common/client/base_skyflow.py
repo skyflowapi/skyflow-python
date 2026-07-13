@@ -167,9 +167,6 @@ class BaseSkyflow(ISkyflow):
         return vault_config.get(OptionField.DETECT_CONTROLLER)
 
     class Builder(ABC):
-        # -- hooks, filled in per-variant by make_skyflow_class() -- left None here so using
-        # this template directly (rather than through make_skyflow_class()) fails fast, with a
-        # clear message (see _REQUIRED_HOOKS check in __init__ below).
         _vault_client_cls = None
         _vault_controller_cls = None
         _connection_cls = None
@@ -186,8 +183,6 @@ class BaseSkyflow(ISkyflow):
         _validate_credentials = None
         _set_active_log_level = None
 
-        # Connection/Detect support and their validators are legitimately optional per variant --
-        # everything else must be supplied by make_skyflow_class() before this Builder is usable.
         _REQUIRED_HOOKS = (
             '_vault_client_cls', '_vault_controller_cls', '_logger_cls', '_default_log_level',
             '_skyflow_messages', '_skyflow_cls', '_validate_vault_config',

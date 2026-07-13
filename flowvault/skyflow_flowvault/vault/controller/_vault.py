@@ -46,7 +46,6 @@ class VaultController(BaseVaultController):
                 table_name=None if needs_per_record_table else request.table,
                 upsert=None if needs_per_record_upsert else self.__to_v1_upsert(request.upsert),
             )
-            # with_raw_response so x-request-id is available to tag onto each result.
             raw_response = insert_api.with_raw_response.insert(
                 vault_id=self._vault_client.get_vault_id(),
                 records=wire_records,
@@ -84,8 +83,6 @@ class VaultController(BaseVaultController):
         ))
 
     def __omit_none(self, **kwargs):
-        # A field explicitly passed as None still serializes as null; omitting the kwarg
-        # entirely is what actually excludes it from the outgoing JSON.
         return {k: v for k, v in kwargs.items() if v is not None}
 
     def __build_headers(self):
@@ -136,7 +133,6 @@ class VaultController(BaseVaultController):
         return flat
 
     def __errors_from_exception(self, e, records, start_index):
-        # Prefers a structured per-record error body over one flat message per batch.
         if isinstance(e, ApiError):
             request_id = self.__extract_request_id(e.headers)
             body = e.body if isinstance(e.body, dict) else None

@@ -52,8 +52,6 @@ class BaseVaultClient(IVaultClient):
                                                        logger=self._logger)
             self._is_static_token = CredentialField.TOKEN in self._credentials or CredentialField.API_KEY in self._credentials
         bearer_token = self.get_bearer_token(self._credentials)
-        # Cache unconditionally (not just on the generated-token branch) so
-        # get_current_bearer_token() reflects static tokens/API keys too.
         self._bearer_token = bearer_token
         if needs_reinit:
             self.initialize_api_client(self._vault_url, bearer_token)
