@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(gh pr *)",
+      "Bash(gh api *)",
+      "Bash(git diff:*)",
+      "Bash(git ls-files:*)",
+      "Bash(ruff check:*)",
+      "Bash(codespell:*)",
+      "Bash(python -m compileall:*)",
+      "Bash(python -m coverage:*)",
+      "Bash(coverage:*)",
+      "Bash(python -m unittest:*)",
+      "Bash(pip-audit:*)",
+      "Bash(semgrep:*)"
+    ]
+  }
+}
