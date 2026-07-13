@@ -3,7 +3,8 @@ import unittest
 from common.errors import SkyflowError
 from common.utils import LogLevel, SkyflowMessages
 from common.utils.logger import Logger
-from common.client.base_skyflow import BaseSkyflow, make_skyflow_class
+from common.client.base_skyflow import BaseSkyflow, BaseSkyflowImpl
+from common.client.utils import make_skyflow_class
 
 
 class FakeVaultClient:
@@ -127,24 +128,29 @@ class TestMakeSkyflowClassBasics(unittest.TestCase):
 
 
 class TestConnectionAndDetectGating(unittest.TestCase):
-    def test_connection_methods_raise_when_connection_cls_not_supplied(self):
+    def test_connection_methods_do_not_exist_when_connection_cls_not_supplied(self):
+        """connection()/add_connection_config()/etc. come from ConnectionMixin, which
+        make_skyflow_class() only adds to the produced class's bases when connection_cls is
+        given -- when it's not, the methods are genuinely absent, not just guarded."""
         Skyflow = make_fake_skyflow()
         client = Skyflow.builder().add_vault_config(VAULT_CONFIG).build()
-        with self.assertRaises(NotImplementedError):
+        self.assertFalse(hasattr(client, "connection"))
+        with self.assertRaises(AttributeError):
             client.connection()
-        with self.assertRaises(NotImplementedError):
+        with self.assertRaises(AttributeError):
             client.add_connection_config({})
-        with self.assertRaises(NotImplementedError):
+        with self.assertRaises(AttributeError):
             client.remove_connection_config("x")
-        with self.assertRaises(NotImplementedError):
+        with self.assertRaises(AttributeError):
             client.update_connection_config({})
-        with self.assertRaises(NotImplementedError):
+        with self.assertRaises(AttributeError):
             client.get_connection_config("x")
 
-    def test_detect_raises_when_detect_cls_not_supplied(self):
+    def test_detect_does_not_exist_when_detect_cls_not_supplied(self):
         Skyflow = make_fake_skyflow()
         client = Skyflow.builder().add_vault_config(VAULT_CONFIG).build()
-        with self.assertRaises(NotImplementedError):
+        self.assertFalse(hasattr(client, "detect"))
+        with self.assertRaises(AttributeError):
             client.detect()
 
     def test_connection_config_crud_when_supplied(self):
@@ -188,17 +194,21 @@ class TestConnectionAndDetectGating(unittest.TestCase):
 class TestBaseSkyflowInterface(unittest.TestCase):
     def test_using_the_template_builder_directly_raises_with_a_clear_message(self):
         with self.assertRaises(NotImplementedError) as ctx:
-            BaseSkyflow.Builder()
+            BaseSkyflowImpl.Builder()
         self.assertIn("make_skyflow_class()", str(ctx.exception))
         self.assertIn("_vault_client_cls", str(ctx.exception))
 
     def test_make_skyflow_class_produced_builder_constructs_fine(self):
         Skyflow = make_fake_skyflow()
-        self.assertIsInstance(Skyflow.builder(), BaseSkyflow.Builder)
+        self.assertIsInstance(Skyflow.builder(), BaseSkyflowImpl.Builder)
 
-    def test_instantiating_base_skyflow_directly_raises(self):
+    def test_instantiating_base_skyflow_impl_directly_raises(self):
         with self.assertRaises(SkyflowError):
-            BaseSkyflow(None)
+            BaseSkyflowImpl(None)
+
+    def test_instantiating_the_pure_interface_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            BaseSkyflow()
 
 
 if __name__ == "__main__":

@@ -94,34 +94,35 @@ class TestSkyflowVaultConfig(unittest.TestCase):
 
 
 class TestConnectionAndDetectNotSupported(unittest.TestCase):
-    """flowvault has no Connection/Detect concept this round -- confirms it fails loudly
-    (NotImplementedError) rather than silently misbehaving, unlike v2 where these work."""
+    """flowvault has no Connection/Detect concept this round -- ConnectionMixin/DetectMixin are
+    only added to a variant's produced Skyflow class when connection_cls/detect_cls are supplied,
+    so these methods are genuinely absent here (AttributeError), unlike v2 where they work."""
 
     def setUp(self):
         self.client = Skyflow.builder().add_vault_config(VALID_VAULT_CONFIG).build()
 
     def test_connection_raises(self):
-        with self.assertRaises(NotImplementedError):
+        with self.assertRaises(AttributeError):
             self.client.connection()
 
     def test_detect_raises(self):
-        with self.assertRaises(NotImplementedError):
+        with self.assertRaises(AttributeError):
             self.client.detect()
 
     def test_add_connection_config_raises(self):
-        with self.assertRaises(NotImplementedError):
+        with self.assertRaises(AttributeError):
             self.client.add_connection_config({})
 
     def test_remove_connection_config_raises(self):
-        with self.assertRaises(NotImplementedError):
+        with self.assertRaises(AttributeError):
             self.client.remove_connection_config("x")
 
     def test_update_connection_config_raises(self):
-        with self.assertRaises(NotImplementedError):
+        with self.assertRaises(AttributeError):
             self.client.update_connection_config({})
 
     def test_get_connection_config_raises(self):
-        with self.assertRaises(NotImplementedError):
+        with self.assertRaises(AttributeError):
             self.client.get_connection_config("x")
 
 

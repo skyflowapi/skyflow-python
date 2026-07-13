@@ -250,12 +250,12 @@ class TestSkyflow(unittest.TestCase):
     def test_skyflow_client_add_remove_vault_config(self, mock_validate_vault_config):
         skyflow_client = self.builder.add_vault_config(VALID_VAULT_CONFIG).build()
         new_config = VALID_VAULT_CONFIG.copy()
-        new_config["vault_id"] = "VAULT_ID"
+        new_config["vault_id"] = "VAULT_ID_2"
         skyflow_client.add_vault_config(new_config)
 
         self.assertEqual(mock_validate_vault_config.call_count, 2)
 
-        self.assertEqual("VAULT_ID", skyflow_client.get_vault_config(new_config["vault_id"]).get("vault_id"))
+        self.assertEqual("VAULT_ID_2", skyflow_client.get_vault_config(new_config["vault_id"]).get("vault_id"))
 
         skyflow_client.remove_vault_config(new_config["vault_id"])
         with self.assertRaises(SkyflowError) as context:
@@ -264,6 +264,16 @@ class TestSkyflow(unittest.TestCase):
         self.assertEqual(
             context.exception.message,
             SkyflowMessages.Error.VAULT_ID_NOT_IN_CONFIG_LIST.value.format(new_config["vault_id"]),
+        )
+
+    def test_skyflow_client_add_vault_config_duplicate_id_raises(self):
+        skyflow_client = self.builder.add_vault_config(VALID_VAULT_CONFIG).build()
+        with self.assertRaises(SkyflowError) as context:
+            skyflow_client.add_vault_config(VALID_VAULT_CONFIG)
+
+        self.assertEqual(
+            context.exception.message,
+            SkyflowMessages.Error.VAULT_ID_ALREADY_EXISTS.value.format(VALID_VAULT_CONFIG["vault_id"]),
         )
 
     @patch("skyflow.vault.client.client.VaultClient.update_config")
@@ -282,21 +292,31 @@ class TestSkyflow(unittest.TestCase):
     def test_skyflow_client_add_remove_connection_config(self, mock_validate_connection_config):
         skyflow_client = self.builder.add_connection_config(VALID_CONNECTION_CONFIG).build()
         new_config = VALID_CONNECTION_CONFIG.copy()
-        new_config["connection_id"] = "CONNECTION_ID"
+        new_config["connection_id"] = "CONNECTION_ID_2"
         skyflow_client.add_connection_config(new_config)
 
         self.assertEqual(mock_validate_connection_config.call_count, 2)
         self.assertEqual(
-            "CONNECTION_ID", skyflow_client.get_connection_config(new_config["connection_id"]).get("connection_id")
+            "CONNECTION_ID_2", skyflow_client.get_connection_config(new_config["connection_id"]).get("connection_id")
         )
 
-        skyflow_client.remove_connection_config("CONNECTION_ID")
+        skyflow_client.remove_connection_config("CONNECTION_ID_2")
         with self.assertRaises(SkyflowError) as context:
             skyflow_client.get_connection_config(new_config["connection_id"]).get("connection_id")
 
         self.assertEqual(
             context.exception.message,
             SkyflowMessages.Error.CONNECTION_ID_NOT_IN_CONFIG_LIST.value.format(new_config["connection_id"]),
+        )
+
+    def test_skyflow_client_add_connection_config_duplicate_id_raises(self):
+        skyflow_client = self.builder.add_connection_config(VALID_CONNECTION_CONFIG).build()
+        with self.assertRaises(SkyflowError) as context:
+            skyflow_client.add_connection_config(VALID_CONNECTION_CONFIG)
+
+        self.assertEqual(
+            context.exception.message,
+            SkyflowMessages.Error.CONNECTION_ID_ALREADY_EXISTS.value.format(VALID_CONNECTION_CONFIG["connection_id"]),
         )
 
     @patch("skyflow.vault.client.client.VaultClient.update_config")
