@@ -10,5 +10,5 @@ class VaultClient(BaseVaultClient):
     def initialize_api_client(self, vault_url, bearer_token):
         self._api_client = SkyflowAuth(base_url=vault_url)
 
-    def get_insert_api(self):
+    def get_flowservice_api(self):
         return self._api_client.flowservice

@@ -45,9 +45,9 @@ class TestVaultClient(unittest.TestCase):
         self.assertEqual(kwargs.get("base_url"), "https://test-vault-url.com")
         self.assertNotIn("token", kwargs)
 
-    def test_get_insert_api_returns_flowservice(self):
+    def test_get_flowservice_api_returns_flowservice(self):
         self.vault_client._api_client = MagicMock()
-        result = self.vault_client.get_insert_api()
+        result = self.vault_client.get_flowservice_api()
         self.assertEqual(result, self.vault_client._api_client.flowservice)
 
 

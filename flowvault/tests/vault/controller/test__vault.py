@@ -1,21 +1,61 @@
 import unittest
+from types import SimpleNamespace
 from unittest.mock import MagicMock, Mock, patch
 
 from common.errors import SkyflowError
 from skyflow_flowvault.generated.rest.core import ApiError
 from skyflow_flowvault.vault.controller import VaultController
-from skyflow_flowvault.vault.data import InsertRequest
+from skyflow_flowvault.vault.data import (
+    InsertRequest,
+    GetRequest,
+    UpdateRequest,
+    DeleteRequest,
+    DetokenizeRequest,
+    TokenizeRequest,
+)
 from skyflow_flowvault.utils.enums import UpsertType
 
 
 class FakeRecordResponseObject:
-    def __init__(self, skyflow_id=None, tokens=None, data=None, error=None, http_code=None, table_name=None):
+    def __init__(self, skyflow_id=None, tokens=None, data=None, hashed_data=None, error=None, http_code=None, table_name=None):
         self.skyflow_id = skyflow_id
         self.tokens = tokens
         self.data = data
+        self.hashed_data = hashed_data
         self.error = error
         self.http_code = http_code
         self.table_name = table_name
+
+
+class FakeDeleteResponseObject:
+    def __init__(self, skyflow_id=None, error=None, http_code=None):
+        self.skyflow_id = skyflow_id
+        self.error = error
+        self.http_code = http_code
+
+
+class FakeDetokenizeResponseObject:
+    def __init__(self, token=None, value=None, token_group_name=None, error=None, http_code=None, metadata=None):
+        self.token = token
+        self.value = value
+        self.token_group_name = token_group_name
+        self.error = error
+        self.http_code = http_code
+        self.metadata = metadata
+
+
+class FakeTokenizeResponseObjectToken:
+    def __init__(self, token_group_name=None, token=None, error=None, http_code=None):
+        self.token_group_name = token_group_name
+        self.token = token
+        self.error = error
+        self.http_code = http_code
+
+
+class FakeTokenizeResponseObject:
+    def __init__(self, value=None, tokens=None):
+        self.value = value
+        self.tokens = tokens
 
 
 class FakeV1InsertResponse:
@@ -40,7 +80,7 @@ class TestVault(unittest.TestCase):
         self.vault_client.get_logger.return_value = Mock()
         self.vault_client.get_current_bearer_token.return_value = None
         self.insert_api = MagicMock()
-        self.vault_client.get_insert_api.return_value = self.insert_api
+        self.vault_client.get_flowservice_api.return_value = self.insert_api
         self.vault = VaultController(self.vault_client)
 
     # ------------------------------------------------------------------ #
@@ -369,6 +409,781 @@ class TestVault(unittest.TestCase):
         _, kwargs = self.insert_api.with_raw_response.insert.call_args
         headers = kwargs["request_options"]["additional_headers"]
         self.assertNotIn("Authorization", headers)
+
+
+def fake_get_raw_response(records, headers=None):
+    return SimpleNamespace(data=SimpleNamespace(records=records), headers=headers or {})
+
+
+class TestVaultGet(unittest.TestCase):
+    def setUp(self):
+        self.vault_client = Mock()
+        self.vault_client.get_vault_id.return_value = "vault123"
+        self.vault_client.get_logger.return_value = Mock()
+        self.vault_client.get_current_bearer_token.return_value = None
+        self.get_api = MagicMock()
+        self.vault_client.get_flowservice_api.return_value = self.get_api
+        self.vault = VaultController(self.vault_client)
+
+    # ------------------------------------------------------------------ #
+    # validation / initialization sequencing
+    # ------------------------------------------------------------------ #
+
+    @patch("skyflow_flowvault.vault.controller._vault.validate_get_request")
+    def test_get_validates_before_initializing_client(self, mock_validate):
+        self.get_api.with_raw_response.get.return_value = fake_get_raw_response([])
+        request = GetRequest(table="t1", ids=["id1"])
+
+        self.vault.get(request)
+
+        mock_validate.assert_called_once_with(self.vault_client.get_logger(), request)
+        self.vault_client.initialize_client_configuration.assert_called_once()
+
+    def test_get_raises_for_invalid_request(self):
+        with self.assertRaises(SkyflowError):
+            self.vault.get(GetRequest(table="t1"))
+        self.vault_client.initialize_client_configuration.assert_not_called()
+
+    def test_get_raises_on_invalid_table_name(self):
+        with self.assertRaises(SkyflowError):
+            self.vault.get(GetRequest(table="   ", ids=["id1"]))
+        self.get_api.with_raw_response.get.assert_not_called()
+
+    # ------------------------------------------------------------------ #
+    # request -> wire field mapping
+    # ------------------------------------------------------------------ #
+
+    def test_maps_table_and_ids(self):
+        self.get_api.with_raw_response.get.return_value = fake_get_raw_response([])
+
+        self.vault.get(GetRequest(table="t1", ids=["id1", "id2"]))
+
+        _, kwargs = self.get_api.with_raw_response.get.call_args
+        self.assertEqual(kwargs["vault_id"], "vault123")
+        self.assertEqual(kwargs["table_name"], "t1")
+        self.assertEqual(kwargs["skyflow_i_ds"], ["id1", "id2"])
+
+    def test_maps_unique_values(self):
+        self.get_api.with_raw_response.get.return_value = fake_get_raw_response([])
+
+        self.vault.get(GetRequest(table="t1", unique_values=[{"email": "a@b.com"}]))
+
+        _, kwargs = self.get_api.with_raw_response.get.call_args
+        self.assertEqual(len(kwargs["unique_values"]), 1)
+        self.assertEqual(kwargs["unique_values"][0].data, {"email": "a@b.com"})
+
+    def test_maps_column_redactions(self):
+        self.get_api.with_raw_response.get.return_value = fake_get_raw_response([])
+
+        self.vault.get(GetRequest(
+            table="t1", ids=["id1"], column_redactions=[{"column_name": "ssn", "redaction": "mask1"}],
+        ))
+
+        _, kwargs = self.get_api.with_raw_response.get.call_args
+        self.assertEqual(len(kwargs["column_redactions"]), 1)
+        self.assertEqual(kwargs["column_redactions"][0].column_name, "ssn")
+        self.assertEqual(kwargs["column_redactions"][0].redaction, "mask1")
+
+    def test_maps_limit_offset_columns(self):
+        self.get_api.with_raw_response.get.return_value = fake_get_raw_response([])
+
+        self.vault.get(GetRequest(table="t1", ids=["id1"], columns=["a", "b"], limit=10, offset=5))
+
+        _, kwargs = self.get_api.with_raw_response.get.call_args
+        self.assertEqual(kwargs["columns"], ["a", "b"])
+        self.assertEqual(kwargs["limit"], 10)
+        self.assertEqual(kwargs["offset"], 5)
+
+    # ------------------------------------------------------------------ #
+    # response shape -- includes data, unlike insert
+    # ------------------------------------------------------------------ #
+
+    def test_successful_records_include_data_and_tokens(self):
+        self.get_api.with_raw_response.get.return_value = fake_get_raw_response([
+            FakeRecordResponseObject(
+                skyflow_id="id1",
+                tokens={"name": [{"token": "tok1", "tokenGroupName": "deterministic_string"}]},
+                data={"name": "john doe"},
+                hashed_data={"name": "a1b2c3"},
+                table_name="t1",
+            ),
+        ], headers={"x-request-id": "req-1"})
+
+        response = self.vault.get(GetRequest(table="t1", ids=["id1"]))
+
+        self.assertEqual(len(response.records), 1)
+        record = response.records[0]
+        self.assertEqual(record["hashed_data"], {"name": "a1b2c3"})
+        self.assertEqual(record["request_index"], 0)
+        self.assertEqual(record["skyflow_id"], "id1")
+        self.assertEqual(record["name"], "tok1")
+        self.assertEqual(record["data"], {"name": "john doe"})
+        self.assertIsNone(response.errors)
+
+    def test_mixed_success_and_error_records_are_split(self):
+        self.get_api.with_raw_response.get.return_value = fake_get_raw_response([
+            FakeRecordResponseObject(skyflow_id="id1", data={"a": 1}),
+            FakeRecordResponseObject(error="not found", http_code=404),
+        ], headers={"x-request-id": "req-2"})
+
+        response = self.vault.get(GetRequest(table="t1", ids=["id1", "id2"]))
+
+        self.assertEqual(len(response.records), 1)
+        self.assertEqual(response.records[0]["data"], {"a": 1})
+        self.assertEqual(len(response.errors), 1)
+        self.assertEqual(response.errors[0]["error"], "not found")
+        self.assertEqual(response.errors[0]["code"], 404)
+        self.assertEqual(response.errors[0]["request_id"], "req-2")
+
+    # ------------------------------------------------------------------ #
+    # transport failure
+    # ------------------------------------------------------------------ #
+
+    def test_transport_exception_marks_every_id_as_an_error(self):
+        self.get_api.with_raw_response.get.side_effect = Exception("network blip")
+
+        response = self.vault.get(GetRequest(table="t1", ids=["id1", "id2"]))
+
+        self.assertEqual(len(response.records), 0)
+        self.assertEqual(len(response.errors), 2)
+        self.assertTrue(all("network blip" in e["error"] for e in response.errors))
+
+    def test_api_error_with_structured_body_splits_into_one_error_per_row(self):
+        api_error = ApiError(
+            status_code=404,
+            headers={"x-request-id": "req-3"},
+            body={"records": [{"error": "not found", "httpCode": 404}]},
+        )
+        self.get_api.with_raw_response.get.side_effect = api_error
+
+        response = self.vault.get(GetRequest(table="t1", ids=["id1"]))
+
+        self.assertEqual(len(response.errors), 1)
+        self.assertEqual(response.errors[0]["error"], "not found")
+        self.assertEqual(response.errors[0]["code"], 404)
+        self.assertEqual(response.errors[0]["request_id"], "req-3")
+
+    # ------------------------------------------------------------------ #
+    # per-call Authorization header injection
+    # ------------------------------------------------------------------ #
+
+    def test_injects_authorization_header_from_current_bearer_token(self):
+        self.vault_client.get_current_bearer_token.return_value = "the-current-token"
+        self.get_api.with_raw_response.get.return_value = fake_get_raw_response([])
+
+        self.vault.get(GetRequest(table="t1", ids=["id1"]))
+
+        _, kwargs = self.get_api.with_raw_response.get.call_args
+        headers = kwargs["request_options"]["additional_headers"]
+        self.assertEqual(headers.get("Authorization"), "Bearer the-current-token")
+
+
+def fake_update_raw_response(records, headers=None):
+    return SimpleNamespace(data=SimpleNamespace(records=records), headers=headers or {})
+
+
+class TestVaultUpdate(unittest.TestCase):
+    def setUp(self):
+        self.vault_client = Mock()
+        self.vault_client.get_vault_id.return_value = "vault123"
+        self.vault_client.get_logger.return_value = Mock()
+        self.vault_client.get_current_bearer_token.return_value = None
+        self.update_api = MagicMock()
+        self.vault_client.get_flowservice_api.return_value = self.update_api
+        self.vault = VaultController(self.vault_client)
+
+    # ------------------------------------------------------------------ #
+    # validation / initialization sequencing
+    # ------------------------------------------------------------------ #
+
+    @patch("skyflow_flowvault.vault.controller._vault.validate_update_request")
+    def test_update_validates_before_initializing_client(self, mock_validate):
+        self.update_api.with_raw_response.update.return_value = fake_update_raw_response([])
+        request = UpdateRequest(records=[{"skyflow_id": "id1", "values": {"a": 1}}], table="t1")
+
+        self.vault.update(request)
+
+        mock_validate.assert_called_once_with(self.vault_client.get_logger(), request)
+        self.vault_client.initialize_client_configuration.assert_called_once()
+
+    def test_update_raises_for_invalid_request(self):
+        with self.assertRaises(SkyflowError):
+            self.vault.update(UpdateRequest(records=[], table="t1"))
+        self.vault_client.initialize_client_configuration.assert_not_called()
+
+    def test_update_raises_on_empty_key(self):
+        with self.assertRaises(SkyflowError):
+            self.vault.update(UpdateRequest(
+                records=[{"skyflow_id": "id1", "values": {"": "value"}}], table="t1",
+            ))
+        self.update_api.with_raw_response.update.assert_not_called()
+
+    def test_update_raises_on_invalid_table_name(self):
+        with self.assertRaises(SkyflowError):
+            self.vault.update(UpdateRequest(
+                records=[{"skyflow_id": "id1", "values": {"a": 1}}], table="   ",
+            ))
+
+    # ------------------------------------------------------------------ #
+    # request -> wire field mapping
+    # ------------------------------------------------------------------ #
+
+    def test_maps_request_level_table_and_update_type(self):
+        self.update_api.with_raw_response.update.return_value = fake_update_raw_response([])
+        request = UpdateRequest(
+            records=[{"skyflow_id": "id1", "values": {"a": 1}}], table="t1", update_type=UpsertType.REPLACE,
+        )
+
+        self.vault.update(request)
+
+        _, kwargs = self.update_api.with_raw_response.update.call_args
+        self.assertEqual(kwargs["vault_id"], "vault123")
+        self.assertEqual(kwargs["table_name"], "t1")
+        self.assertEqual(kwargs["update_type"], "REPLACE")
+        self.assertEqual(len(kwargs["records"]), 1)
+        self.assertEqual(kwargs["records"][0].skyflow_id, "id1")
+        self.assertEqual(kwargs["records"][0].data, {"a": 1})
+        self.assertIsNone(kwargs["records"][0].table_name)
+
+    def test_maps_per_record_table_when_request_level_unset(self):
+        self.update_api.with_raw_response.update.return_value = fake_update_raw_response([])
+        request = UpdateRequest(records=[
+            {"skyflow_id": "id1", "values": {"a": 1}, "table": "t2"},
+        ])
+
+        self.vault.update(request)
+
+        _, kwargs = self.update_api.with_raw_response.update.call_args
+        self.assertNotIn("table_name", kwargs)
+        self.assertEqual(kwargs["records"][0].table_name, "t2")
+
+    def test_maps_per_record_tokens(self):
+        self.update_api.with_raw_response.update.return_value = fake_update_raw_response([])
+        request = UpdateRequest(records=[
+            {"skyflow_id": "id1", "values": {"a": 1}, "tokens": {"a": "tok1"}, "table": "t1"},
+        ])
+
+        self.vault.update(request)
+
+        _, kwargs = self.update_api.with_raw_response.update.call_args
+        self.assertEqual(kwargs["records"][0].tokens, {"a": "tok1"})
+
+    def test_no_update_type_is_omitted_not_sent_as_none(self):
+        self.update_api.with_raw_response.update.return_value = fake_update_raw_response([])
+        request = UpdateRequest(records=[{"skyflow_id": "id1", "values": {"a": 1}}], table="t1")
+
+        self.vault.update(request)
+
+        _, kwargs = self.update_api.with_raw_response.update.call_args
+        self.assertNotIn("update_type", kwargs)
+
+    # ------------------------------------------------------------------ #
+    # response shape -- includes data, like get
+    # ------------------------------------------------------------------ #
+
+    def test_successful_records_include_data_and_tokens(self):
+        self.update_api.with_raw_response.update.return_value = fake_update_raw_response([
+            FakeRecordResponseObject(
+                skyflow_id="id1",
+                tokens={"name": [{"token": "tok1", "tokenGroupName": "deterministic_string"}]},
+                data={"name": "john doe"},
+            ),
+        ], headers={"x-request-id": "req-1"})
+
+        response = self.vault.update(UpdateRequest(
+            records=[{"skyflow_id": "id1", "values": {"name": "john doe"}}], table="t1",
+        ))
+
+        self.assertEqual(len(response.records), 1)
+        record = response.records[0]
+        self.assertEqual(record["skyflow_id"], "id1")
+        self.assertEqual(record["name"], "tok1")
+        self.assertEqual(record["data"], {"name": "john doe"})
+        self.assertIsNone(response.errors)
+
+    def test_mixed_success_and_error_records_are_split(self):
+        self.update_api.with_raw_response.update.return_value = fake_update_raw_response([
+            FakeRecordResponseObject(skyflow_id="id1", data={"a": 1}),
+            FakeRecordResponseObject(error="not found", http_code=404),
+        ], headers={"x-request-id": "req-2"})
+
+        response = self.vault.update(UpdateRequest(records=[
+            {"skyflow_id": "id1", "values": {"a": 1}},
+            {"skyflow_id": "id2", "values": {"a": 2}},
+        ], table="t1"))
+
+        self.assertEqual(len(response.records), 1)
+        self.assertEqual(len(response.errors), 1)
+        self.assertEqual(response.errors[0]["error"], "not found")
+        self.assertEqual(response.errors[0]["code"], 404)
+
+    # ------------------------------------------------------------------ #
+    # transport failure
+    # ------------------------------------------------------------------ #
+
+    def test_transport_exception_marks_every_record_as_an_error(self):
+        self.update_api.with_raw_response.update.side_effect = Exception("network blip")
+        records = [{"skyflow_id": "id1", "values": {"a": 1}}, {"skyflow_id": "id2", "values": {"a": 2}}]
+
+        response = self.vault.update(UpdateRequest(records=records, table="t1"))
+
+        self.assertEqual(len(response.records), 0)
+        self.assertEqual(len(response.errors), 2)
+        self.assertTrue(all("network blip" in e["error"] for e in response.errors))
+
+    def test_api_error_with_structured_body_splits_into_one_error_per_row(self):
+        api_error = ApiError(
+            status_code=404,
+            headers={"x-request-id": "req-3"},
+            body={"records": [{"error": "not found", "httpCode": 404}]},
+        )
+        self.update_api.with_raw_response.update.side_effect = api_error
+
+        response = self.vault.update(UpdateRequest(
+            records=[{"skyflow_id": "id1", "values": {"a": 1}}], table="t1",
+        ))
+
+        self.assertEqual(len(response.errors), 1)
+        self.assertEqual(response.errors[0]["error"], "not found")
+        self.assertEqual(response.errors[0]["code"], 404)
+        self.assertEqual(response.errors[0]["request_id"], "req-3")
+
+    # ------------------------------------------------------------------ #
+    # per-call Authorization header injection
+    # ------------------------------------------------------------------ #
+
+    def test_injects_authorization_header_from_current_bearer_token(self):
+        self.vault_client.get_current_bearer_token.return_value = "the-current-token"
+        self.update_api.with_raw_response.update.return_value = fake_update_raw_response([])
+
+        self.vault.update(UpdateRequest(records=[{"skyflow_id": "id1", "values": {"a": 1}}], table="t1"))
+
+        _, kwargs = self.update_api.with_raw_response.update.call_args
+        headers = kwargs["request_options"]["additional_headers"]
+        self.assertEqual(headers.get("Authorization"), "Bearer the-current-token")
+
+
+def fake_delete_raw_response(records, headers=None):
+    return SimpleNamespace(data=SimpleNamespace(records=records), headers=headers or {})
+
+
+class TestVaultDelete(unittest.TestCase):
+    def setUp(self):
+        self.vault_client = Mock()
+        self.vault_client.get_vault_id.return_value = "vault123"
+        self.vault_client.get_logger.return_value = Mock()
+        self.vault_client.get_current_bearer_token.return_value = None
+        self.delete_api = MagicMock()
+        self.vault_client.get_flowservice_api.return_value = self.delete_api
+        self.vault = VaultController(self.vault_client)
+
+    # ------------------------------------------------------------------ #
+    # validation / initialization sequencing
+    # ------------------------------------------------------------------ #
+
+    @patch("skyflow_flowvault.vault.controller._vault.validate_delete_request")
+    def test_delete_validates_before_initializing_client(self, mock_validate):
+        self.delete_api.with_raw_response.delete.return_value = fake_delete_raw_response([])
+        request = DeleteRequest(table="t1", ids=["id1"])
+
+        self.vault.delete(request)
+
+        mock_validate.assert_called_once_with(self.vault_client.get_logger(), request)
+        self.vault_client.initialize_client_configuration.assert_called_once()
+
+    def test_delete_raises_for_invalid_request(self):
+        with self.assertRaises(SkyflowError):
+            self.vault.delete(DeleteRequest(table="t1"))
+        self.vault_client.initialize_client_configuration.assert_not_called()
+
+    def test_delete_raises_on_invalid_table_name(self):
+        with self.assertRaises(SkyflowError):
+            self.vault.delete(DeleteRequest(table="   ", ids=["id1"]))
+        self.delete_api.with_raw_response.delete.assert_not_called()
+
+    # ------------------------------------------------------------------ #
+    # request -> wire field mapping
+    # ------------------------------------------------------------------ #
+
+    def test_maps_table_and_ids(self):
+        self.delete_api.with_raw_response.delete.return_value = fake_delete_raw_response([])
+
+        self.vault.delete(DeleteRequest(table="t1", ids=["id1", "id2"]))
+
+        _, kwargs = self.delete_api.with_raw_response.delete.call_args
+        self.assertEqual(kwargs["vault_id"], "vault123")
+        self.assertEqual(kwargs["table_name"], "t1")
+        self.assertEqual(kwargs["skyflow_i_ds"], ["id1", "id2"])
+
+    def test_maps_unique_values(self):
+        self.delete_api.with_raw_response.delete.return_value = fake_delete_raw_response([])
+
+        self.vault.delete(DeleteRequest(table="t1", unique_values=[{"email": "a@b.com"}]))
+
+        _, kwargs = self.delete_api.with_raw_response.delete.call_args
+        self.assertEqual(len(kwargs["unique_values"]), 1)
+        self.assertEqual(kwargs["unique_values"][0].data, {"email": "a@b.com"})
+
+    # ------------------------------------------------------------------ #
+    # response shape -- no tokens/data field at all on V1DeleteResponseObject;
+    # this is the regression test pinning the getattr(..., 'tokens', None) fix
+    # ------------------------------------------------------------------ #
+
+    def test_successful_records_have_no_data_or_tokens_keys(self):
+        self.delete_api.with_raw_response.delete.return_value = fake_delete_raw_response([
+            FakeDeleteResponseObject(skyflow_id="id1"),
+        ], headers={"x-request-id": "req-1"})
+
+        response = self.vault.delete(DeleteRequest(table="t1", ids=["id1"]))
+
+        self.assertEqual(len(response.records), 1)
+        record = response.records[0]
+        self.assertEqual(record["request_index"], 0)
+        self.assertEqual(record["skyflow_id"], "id1")
+        self.assertNotIn("data", record)
+        self.assertNotIn("hashed_data", record)
+        self.assertNotIn("tokens", record)
+        self.assertIsNone(response.errors)
+
+    def test_mixed_success_and_error_records_are_split(self):
+        self.delete_api.with_raw_response.delete.return_value = fake_delete_raw_response([
+            FakeDeleteResponseObject(skyflow_id="id1"),
+            FakeDeleteResponseObject(error="not found", http_code=404),
+        ], headers={"x-request-id": "req-2"})
+
+        response = self.vault.delete(DeleteRequest(table="t1", ids=["id1", "id2"]))
+
+        self.assertEqual(len(response.records), 1)
+        self.assertEqual(len(response.errors), 1)
+        self.assertEqual(response.errors[0]["error"], "not found")
+        self.assertEqual(response.errors[0]["code"], 404)
+
+    # ------------------------------------------------------------------ #
+    # transport failure
+    # ------------------------------------------------------------------ #
+
+    def test_transport_exception_marks_every_id_as_an_error(self):
+        self.delete_api.with_raw_response.delete.side_effect = Exception("network blip")
+
+        response = self.vault.delete(DeleteRequest(table="t1", ids=["id1", "id2"]))
+
+        self.assertEqual(len(response.records), 0)
+        self.assertEqual(len(response.errors), 2)
+        self.assertTrue(all("network blip" in e["error"] for e in response.errors))
+
+    def test_api_error_with_structured_body_splits_into_one_error_per_row(self):
+        api_error = ApiError(
+            status_code=404,
+            headers={"x-request-id": "req-3"},
+            body={"records": [{"error": "not found", "httpCode": 404}]},
+        )
+        self.delete_api.with_raw_response.delete.side_effect = api_error
+
+        response = self.vault.delete(DeleteRequest(table="t1", ids=["id1"]))
+
+        self.assertEqual(len(response.errors), 1)
+        self.assertEqual(response.errors[0]["error"], "not found")
+        self.assertEqual(response.errors[0]["code"], 404)
+        self.assertEqual(response.errors[0]["request_id"], "req-3")
+
+    # ------------------------------------------------------------------ #
+    # per-call Authorization header injection
+    # ------------------------------------------------------------------ #
+
+    def test_injects_authorization_header_from_current_bearer_token(self):
+        self.vault_client.get_current_bearer_token.return_value = "the-current-token"
+        self.delete_api.with_raw_response.delete.return_value = fake_delete_raw_response([])
+
+        self.vault.delete(DeleteRequest(table="t1", ids=["id1"]))
+
+        _, kwargs = self.delete_api.with_raw_response.delete.call_args
+        headers = kwargs["request_options"]["additional_headers"]
+        self.assertEqual(headers.get("Authorization"), "Bearer the-current-token")
+
+
+def fake_detokenize_raw_response(response, headers=None):
+    return SimpleNamespace(data=SimpleNamespace(response=response), headers=headers or {})
+
+
+class TestVaultDetokenize(unittest.TestCase):
+    def setUp(self):
+        self.vault_client = Mock()
+        self.vault_client.get_vault_id.return_value = "vault123"
+        self.vault_client.get_logger.return_value = Mock()
+        self.vault_client.get_current_bearer_token.return_value = None
+        self.detokenize_api = MagicMock()
+        self.vault_client.get_flowservice_api.return_value = self.detokenize_api
+        self.vault = VaultController(self.vault_client)
+
+    # ------------------------------------------------------------------ #
+    # validation / initialization sequencing
+    # ------------------------------------------------------------------ #
+
+    @patch("skyflow_flowvault.vault.controller._vault.validate_detokenize_request")
+    def test_detokenize_validates_before_initializing_client(self, mock_validate):
+        self.detokenize_api.with_raw_response.detokenize.return_value = fake_detokenize_raw_response([])
+        request = DetokenizeRequest(tokens=["tok1"])
+
+        self.vault.detokenize(request)
+
+        mock_validate.assert_called_once_with(self.vault_client.get_logger(), request)
+        self.vault_client.initialize_client_configuration.assert_called_once()
+
+    def test_detokenize_raises_for_invalid_request(self):
+        with self.assertRaises(SkyflowError):
+            self.vault.detokenize(DetokenizeRequest(tokens=[]))
+        self.vault_client.initialize_client_configuration.assert_not_called()
+
+    # ------------------------------------------------------------------ #
+    # request -> wire field mapping
+    # ------------------------------------------------------------------ #
+
+    def test_maps_tokens(self):
+        self.detokenize_api.with_raw_response.detokenize.return_value = fake_detokenize_raw_response([])
+
+        self.vault.detokenize(DetokenizeRequest(tokens=["tok1", "tok2"]))
+
+        _, kwargs = self.detokenize_api.with_raw_response.detokenize.call_args
+        self.assertEqual(kwargs["vault_id"], "vault123")
+        self.assertEqual(kwargs["tokens"], ["tok1", "tok2"])
+
+    def test_maps_token_group_redactions(self):
+        self.detokenize_api.with_raw_response.detokenize.return_value = fake_detokenize_raw_response([])
+
+        self.vault.detokenize(DetokenizeRequest(
+            tokens=["tok1"], token_group_redactions=[{"token_group_name": "g1", "redaction": "mask1"}],
+        ))
+
+        _, kwargs = self.detokenize_api.with_raw_response.detokenize.call_args
+        self.assertEqual(len(kwargs["token_group_redactions"]), 1)
+        self.assertEqual(kwargs["token_group_redactions"][0].token_group_name, "g1")
+        self.assertEqual(kwargs["token_group_redactions"][0].redaction, "mask1")
+
+    # ------------------------------------------------------------------ #
+    # response shape -- keyed by token, not skyflow_id
+    # ------------------------------------------------------------------ #
+
+    def test_successful_records_include_value_and_token_group_name(self):
+        self.detokenize_api.with_raw_response.detokenize.return_value = fake_detokenize_raw_response([
+            FakeDetokenizeResponseObject(token="tok1", value="john doe", token_group_name="deterministic_string"),
+        ], headers={"x-request-id": "req-1"})
+
+        response = self.vault.detokenize(DetokenizeRequest(tokens=["tok1"]))
+
+        self.assertEqual(len(response.records), 1)
+        record = response.records[0]
+        self.assertEqual(record["request_index"], 0)
+        self.assertEqual(record["token"], "tok1")
+        self.assertEqual(record["value"], "john doe")
+        self.assertEqual(record["token_group_name"], "deterministic_string")
+        self.assertIsNone(response.errors)
+
+    def test_mixed_success_and_error_records_are_split(self):
+        self.detokenize_api.with_raw_response.detokenize.return_value = fake_detokenize_raw_response([
+            FakeDetokenizeResponseObject(token="tok1", value="john doe"),
+            FakeDetokenizeResponseObject(token="tok2", error="invalid token", http_code=404),
+        ], headers={"x-request-id": "req-2"})
+
+        response = self.vault.detokenize(DetokenizeRequest(tokens=["tok1", "tok2"]))
+
+        self.assertEqual(len(response.records), 1)
+        self.assertEqual(len(response.errors), 1)
+        self.assertEqual(response.errors[0]["token"], "tok2")
+        self.assertEqual(response.errors[0]["error"], "invalid token")
+        self.assertEqual(response.errors[0]["code"], 404)
+
+    # ------------------------------------------------------------------ #
+    # transport failure
+    # ------------------------------------------------------------------ #
+
+    def test_transport_exception_marks_every_token_as_an_error(self):
+        self.detokenize_api.with_raw_response.detokenize.side_effect = Exception("network blip")
+
+        response = self.vault.detokenize(DetokenizeRequest(tokens=["tok1", "tok2"]))
+
+        self.assertEqual(len(response.records), 0)
+        self.assertEqual(len(response.errors), 2)
+        self.assertTrue(all("network blip" in e["error"] for e in response.errors))
+
+    def test_api_error_with_structured_body_splits_into_one_error_per_row(self):
+        api_error = ApiError(
+            status_code=404,
+            headers={"x-request-id": "req-3"},
+            body={"records": [{"error": "invalid token", "httpCode": 404}]},
+        )
+        self.detokenize_api.with_raw_response.detokenize.side_effect = api_error
+
+        response = self.vault.detokenize(DetokenizeRequest(tokens=["tok1"]))
+
+        self.assertEqual(len(response.errors), 1)
+        self.assertEqual(response.errors[0]["error"], "invalid token")
+        self.assertEqual(response.errors[0]["code"], 404)
+        self.assertEqual(response.errors[0]["request_id"], "req-3")
+
+    # ------------------------------------------------------------------ #
+    # per-call Authorization header injection
+    # ------------------------------------------------------------------ #
+
+    def test_injects_authorization_header_from_current_bearer_token(self):
+        self.vault_client.get_current_bearer_token.return_value = "the-current-token"
+        self.detokenize_api.with_raw_response.detokenize.return_value = fake_detokenize_raw_response([])
+
+        self.vault.detokenize(DetokenizeRequest(tokens=["tok1"]))
+
+        _, kwargs = self.detokenize_api.with_raw_response.detokenize.call_args
+        headers = kwargs["request_options"]["additional_headers"]
+        self.assertEqual(headers.get("Authorization"), "Bearer the-current-token")
+
+
+def fake_tokenize_raw_response(response, headers=None):
+    return SimpleNamespace(data=SimpleNamespace(response=response), headers=headers or {})
+
+
+class TestVaultTokenize(unittest.TestCase):
+    def setUp(self):
+        self.vault_client = Mock()
+        self.vault_client.get_vault_id.return_value = "vault123"
+        self.vault_client.get_logger.return_value = Mock()
+        self.vault_client.get_current_bearer_token.return_value = None
+        self.tokenize_api = MagicMock()
+        self.vault_client.get_flowservice_api.return_value = self.tokenize_api
+        self.vault = VaultController(self.vault_client)
+
+    # ------------------------------------------------------------------ #
+    # validation / initialization sequencing
+    # ------------------------------------------------------------------ #
+
+    @patch("skyflow_flowvault.vault.controller._vault.validate_tokenize_request")
+    def test_tokenize_validates_before_initializing_client(self, mock_validate):
+        self.tokenize_api.with_raw_response.tokenize.return_value = fake_tokenize_raw_response([])
+        request = TokenizeRequest(values=[{"value": "a@b.com", "token_group_names": ["g1"]}])
+
+        self.vault.tokenize(request)
+
+        mock_validate.assert_called_once_with(self.vault_client.get_logger(), request)
+        self.vault_client.initialize_client_configuration.assert_called_once()
+
+    def test_tokenize_raises_for_invalid_request(self):
+        with self.assertRaises(SkyflowError):
+            self.vault.tokenize(TokenizeRequest(values=[]))
+        self.vault_client.initialize_client_configuration.assert_not_called()
+
+    # ------------------------------------------------------------------ #
+    # request -> wire field mapping
+    # ------------------------------------------------------------------ #
+
+    def test_maps_values_and_token_group_names(self):
+        self.tokenize_api.with_raw_response.tokenize.return_value = fake_tokenize_raw_response([])
+
+        self.vault.tokenize(TokenizeRequest(values=[{"value": "a@b.com", "token_group_names": ["g1", "g2"]}]))
+
+        _, kwargs = self.tokenize_api.with_raw_response.tokenize.call_args
+        self.assertEqual(kwargs["vault_id"], "vault123")
+        self.assertEqual(len(kwargs["data"]), 1)
+        self.assertEqual(kwargs["data"][0].value, "a@b.com")
+        self.assertEqual(kwargs["data"][0].token_group_names, ["g1", "g2"])
+
+    def test_no_byot_token_is_omitted_not_sent_as_none(self):
+        self.tokenize_api.with_raw_response.tokenize.return_value = fake_tokenize_raw_response([])
+
+        self.vault.tokenize(TokenizeRequest(values=[{"value": "a@b.com", "token_group_names": ["g1"]}]))
+
+        _, kwargs = self.tokenize_api.with_raw_response.tokenize.call_args
+        self.assertIsNone(kwargs["data"][0].token)
+
+    def test_maps_byot_token_when_present(self):
+        self.tokenize_api.with_raw_response.tokenize.return_value = fake_tokenize_raw_response([])
+
+        self.vault.tokenize(TokenizeRequest(
+            values=[{"value": "a@b.com", "token_group_names": ["g1"], "token": "custom-tok"}],
+        ))
+
+        _, kwargs = self.tokenize_api.with_raw_response.tokenize.call_args
+        self.assertEqual(kwargs["data"][0].token, "custom-tok")
+
+    # ------------------------------------------------------------------ #
+    # response shape -- one value fans out to a list of per-token-group results
+    # ------------------------------------------------------------------ #
+
+    def test_successful_value_fans_out_to_one_record_per_token_group(self):
+        self.tokenize_api.with_raw_response.tokenize.return_value = fake_tokenize_raw_response([
+            FakeTokenizeResponseObject(value="a@b.com", tokens=[
+                FakeTokenizeResponseObjectToken(token_group_name="g1", token="tok-g1"),
+                FakeTokenizeResponseObjectToken(token_group_name="g2", token="tok-g2"),
+            ]),
+        ], headers={"x-request-id": "req-1"})
+
+        response = self.vault.tokenize(TokenizeRequest(values=[{"value": "a@b.com", "token_group_names": ["g1", "g2"]}]))
+
+        self.assertEqual(len(response.records), 2)
+        self.assertEqual(response.records[0]["value"], "a@b.com")
+        self.assertEqual(response.records[0]["token_group_name"], "g1")
+        self.assertEqual(response.records[0]["token"], "tok-g1")
+        self.assertEqual(response.records[1]["token_group_name"], "g2")
+        self.assertEqual(response.records[1]["token"], "tok-g2")
+        self.assertIsNone(response.errors)
+
+    def test_mixed_success_and_error_token_groups_are_split(self):
+        self.tokenize_api.with_raw_response.tokenize.return_value = fake_tokenize_raw_response([
+            FakeTokenizeResponseObject(value="a@b.com", tokens=[
+                FakeTokenizeResponseObjectToken(token_group_name="g1", token="tok-g1"),
+                FakeTokenizeResponseObjectToken(token_group_name="g2", error="group not found", http_code=404),
+            ]),
+        ], headers={"x-request-id": "req-2"})
+
+        response = self.vault.tokenize(TokenizeRequest(values=[{"value": "a@b.com", "token_group_names": ["g1", "g2"]}]))
+
+        self.assertEqual(len(response.records), 1)
+        self.assertEqual(len(response.errors), 1)
+        self.assertEqual(response.errors[0]["token_group_name"], "g2")
+        self.assertEqual(response.errors[0]["error"], "group not found")
+        self.assertEqual(response.errors[0]["code"], 404)
+
+    # ------------------------------------------------------------------ #
+    # transport failure
+    # ------------------------------------------------------------------ #
+
+    def test_transport_exception_marks_every_value_as_an_error(self):
+        self.tokenize_api.with_raw_response.tokenize.side_effect = Exception("network blip")
+        values = [
+            {"value": "a@b.com", "token_group_names": ["g1"]},
+            {"value": "b@c.com", "token_group_names": ["g1"]},
+        ]
+
+        response = self.vault.tokenize(TokenizeRequest(values=values))
+
+        self.assertEqual(len(response.records), 0)
+        self.assertEqual(len(response.errors), 2)
+        self.assertTrue(all("network blip" in e["error"] for e in response.errors))
+
+    def test_api_error_with_structured_body_splits_into_one_error_per_row(self):
+        api_error = ApiError(
+            status_code=404,
+            headers={"x-request-id": "req-3"},
+            body={"records": [{"error": "group not found", "httpCode": 404}]},
+        )
+        self.tokenize_api.with_raw_response.tokenize.side_effect = api_error
+
+        response = self.vault.tokenize(TokenizeRequest(values=[{"value": "a@b.com", "token_group_names": ["g1"]}]))
+
+        self.assertEqual(len(response.errors), 1)
+        self.assertEqual(response.errors[0]["error"], "group not found")
+        self.assertEqual(response.errors[0]["code"], 404)
+        self.assertEqual(response.errors[0]["request_id"], "req-3")
+
+    # ------------------------------------------------------------------ #
+    # per-call Authorization header injection
+    # ------------------------------------------------------------------ #
+
+    def test_injects_authorization_header_from_current_bearer_token(self):
+        self.vault_client.get_current_bearer_token.return_value = "the-current-token"
+        self.tokenize_api.with_raw_response.tokenize.return_value = fake_tokenize_raw_response([])
+
+        self.vault.tokenize(TokenizeRequest(values=[{"value": "a@b.com", "token_group_names": ["g1"]}]))
+
+        _, kwargs = self.tokenize_api.with_raw_response.tokenize.call_args
+        headers = kwargs["request_options"]["additional_headers"]
+        self.assertEqual(headers.get("Authorization"), "Bearer the-current-token")
 
 
 if __name__ == "__main__":

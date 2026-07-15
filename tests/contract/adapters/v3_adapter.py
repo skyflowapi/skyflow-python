@@ -18,7 +18,7 @@ def build_vault():
     vault_client = VaultClient(config)
     vault_client.initialize_client_configuration = MagicMock()  # skip real credential/URL resolution
     insert_api = MagicMock()
-    vault_client.get_insert_api = MagicMock(return_value=insert_api)
+    vault_client.get_flowservice_api = MagicMock(return_value=insert_api)
     vault = VaultController(vault_client)
     return vault, insert_api
 

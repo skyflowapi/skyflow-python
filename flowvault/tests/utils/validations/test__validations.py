@@ -3,8 +3,23 @@ import unittest
 from common.errors import SkyflowError
 from common.utils.enums import Env
 from skyflow_flowvault.utils.enums import UpsertType
-from skyflow_flowvault.utils.validations import validate_insert_request, validate_vault_config
-from skyflow_flowvault.vault.data import InsertRequest
+from skyflow_flowvault.utils.validations import (
+    validate_insert_request,
+    validate_get_request,
+    validate_update_request,
+    validate_delete_request,
+    validate_detokenize_request,
+    validate_tokenize_request,
+    validate_vault_config,
+)
+from skyflow_flowvault.vault.data import (
+    InsertRequest,
+    GetRequest,
+    UpdateRequest,
+    DeleteRequest,
+    DetokenizeRequest,
+    TokenizeRequest,
+)
 
 
 class TestValidateInsertRequest(unittest.TestCase):
@@ -154,6 +169,215 @@ class TestValidateInsertRequest(unittest.TestCase):
         )
         with self.assertRaises(SkyflowError):
             validate_insert_request(None, request)
+
+
+class TestValidateGetRequest(unittest.TestCase):
+    def test_valid_request_with_ids(self):
+        request = GetRequest(table="t1", ids=["id1"])
+        validate_get_request(None, request)  # should not raise
+
+    def test_valid_request_with_unique_values(self):
+        request = GetRequest(table="t1", unique_values=[{"email": "a@b.com"}])
+        validate_get_request(None, request)  # should not raise
+
+    def test_missing_table_raises(self):
+        request = GetRequest(table=None, ids=["id1"])
+        with self.assertRaises(SkyflowError):
+            validate_get_request(None, request)
+
+    def test_empty_table_raises(self):
+        request = GetRequest(table="", ids=["id1"])
+        with self.assertRaises(SkyflowError):
+            validate_get_request(None, request)
+
+    def test_missing_ids_and_unique_values_raises(self):
+        request = GetRequest(table="t1")
+        with self.assertRaises(SkyflowError):
+            validate_get_request(None, request)
+
+    def test_ids_must_be_a_list(self):
+        request = GetRequest(table="t1", ids="not-a-list")
+        with self.assertRaises(SkyflowError):
+            validate_get_request(None, request)
+
+    def test_ids_must_be_non_empty(self):
+        request = GetRequest(table="t1", ids=[])
+        with self.assertRaises(SkyflowError):
+            validate_get_request(None, request)
+
+    def test_ids_must_be_strings(self):
+        request = GetRequest(table="t1", ids=[123])
+        with self.assertRaises(SkyflowError):
+            validate_get_request(None, request)
+
+
+class TestValidateUpdateRequest(unittest.TestCase):
+    def test_valid_request_with_request_level_table(self):
+        request = UpdateRequest(records=[{"skyflow_id": "id1", "values": {"a": 1}}], table="t1")
+        validate_update_request(None, request)  # should not raise
+
+    def test_valid_request_with_per_record_table(self):
+        request = UpdateRequest(records=[{"skyflow_id": "id1", "values": {"a": 1}, "table": "t1"}])
+        validate_update_request(None, request)  # should not raise
+
+    def test_records_must_be_a_list(self):
+        request = UpdateRequest(records="not-a-list", table="t1")
+        with self.assertRaises(SkyflowError):
+            validate_update_request(None, request)
+
+    def test_records_must_not_be_empty(self):
+        request = UpdateRequest(records=[], table="t1")
+        with self.assertRaises(SkyflowError):
+            validate_update_request(None, request)
+
+    def test_missing_skyflow_id_raises(self):
+        request = UpdateRequest(records=[{"values": {"a": 1}}], table="t1")
+        with self.assertRaises(SkyflowError):
+            validate_update_request(None, request)
+
+    def test_empty_skyflow_id_raises(self):
+        request = UpdateRequest(records=[{"skyflow_id": "  ", "values": {"a": 1}}], table="t1")
+        with self.assertRaises(SkyflowError):
+            validate_update_request(None, request)
+
+    def test_record_with_unknown_key_raises(self):
+        request = UpdateRequest(records=[{"skyflow_id": "id1", "unexpected": 1}], table="t1")
+        with self.assertRaises(SkyflowError):
+            validate_update_request(None, request)
+
+    def test_table_in_both_places_raises(self):
+        request = UpdateRequest(records=[{"skyflow_id": "id1", "values": {"a": 1}, "table": "t2"}], table="t1")
+        with self.assertRaises(SkyflowError):
+            validate_update_request(None, request)
+
+    def test_table_missing_from_one_record_raises(self):
+        request = UpdateRequest(records=[
+            {"skyflow_id": "id1", "values": {"a": 1}, "table": "t1"},
+            {"skyflow_id": "id2", "values": {"a": 2}},
+        ])
+        with self.assertRaises(SkyflowError):
+            validate_update_request(None, request)
+
+    def test_invalid_update_type_raises(self):
+        request = UpdateRequest(
+            records=[{"skyflow_id": "id1", "values": {"a": 1}}], table="t1", update_type="REPLACE",
+        )
+        with self.assertRaises(SkyflowError):
+            validate_update_request(None, request)
+
+    def test_valid_update_type_enum_is_valid(self):
+        request = UpdateRequest(
+            records=[{"skyflow_id": "id1", "values": {"a": 1}}], table="t1", update_type=UpsertType.REPLACE,
+        )
+        validate_update_request(None, request)  # should not raise
+
+
+class TestValidateDeleteRequest(unittest.TestCase):
+    def test_valid_request_with_ids(self):
+        request = DeleteRequest(table="t1", ids=["id1"])
+        validate_delete_request(None, request)  # should not raise
+
+    def test_valid_request_with_unique_values(self):
+        request = DeleteRequest(table="t1", unique_values=[{"email": "a@b.com"}])
+        validate_delete_request(None, request)  # should not raise
+
+    def test_missing_table_raises(self):
+        request = DeleteRequest(table=None, ids=["id1"])
+        with self.assertRaises(SkyflowError):
+            validate_delete_request(None, request)
+
+    def test_missing_ids_and_unique_values_raises(self):
+        request = DeleteRequest(table="t1")
+        with self.assertRaises(SkyflowError):
+            validate_delete_request(None, request)
+
+    def test_ids_must_be_non_empty(self):
+        request = DeleteRequest(table="t1", ids=[])
+        with self.assertRaises(SkyflowError):
+            validate_delete_request(None, request)
+
+    def test_ids_must_be_strings(self):
+        request = DeleteRequest(table="t1", ids=[123])
+        with self.assertRaises(SkyflowError):
+            validate_delete_request(None, request)
+
+
+class TestValidateDetokenizeRequest(unittest.TestCase):
+    def test_valid_request(self):
+        request = DetokenizeRequest(tokens=["tok1", "tok2"])
+        validate_detokenize_request(None, request)  # should not raise
+
+    def test_valid_request_with_token_group_redactions(self):
+        request = DetokenizeRequest(
+            tokens=["tok1"], token_group_redactions=[{"token_group_name": "g1", "redaction": "mask1"}],
+        )
+        validate_detokenize_request(None, request)  # should not raise
+
+    def test_tokens_must_be_a_list(self):
+        request = DetokenizeRequest(tokens="not-a-list")
+        with self.assertRaises(SkyflowError):
+            validate_detokenize_request(None, request)
+
+    def test_tokens_must_not_be_empty(self):
+        request = DetokenizeRequest(tokens=[])
+        with self.assertRaises(SkyflowError):
+            validate_detokenize_request(None, request)
+
+    def test_tokens_must_be_strings(self):
+        request = DetokenizeRequest(tokens=[123])
+        with self.assertRaises(SkyflowError):
+            validate_detokenize_request(None, request)
+
+    def test_empty_string_token_raises(self):
+        request = DetokenizeRequest(tokens=["  "])
+        with self.assertRaises(SkyflowError):
+            validate_detokenize_request(None, request)
+
+    def test_invalid_token_group_redactions_raises(self):
+        request = DetokenizeRequest(tokens=["tok1"], token_group_redactions=["not-a-dict"])
+        with self.assertRaises(SkyflowError):
+            validate_detokenize_request(None, request)
+
+    def test_token_group_redactions_missing_name_raises(self):
+        request = DetokenizeRequest(tokens=["tok1"], token_group_redactions=[{"redaction": "mask1"}])
+        with self.assertRaises(SkyflowError):
+            validate_detokenize_request(None, request)
+
+
+class TestValidateTokenizeRequest(unittest.TestCase):
+    def test_valid_request(self):
+        request = TokenizeRequest(values=[{"value": "a@b.com", "token_group_names": ["g1"]}])
+        validate_tokenize_request(None, request)  # should not raise
+
+    def test_values_must_be_a_list(self):
+        request = TokenizeRequest(values="not-a-list")
+        with self.assertRaises(SkyflowError):
+            validate_tokenize_request(None, request)
+
+    def test_values_must_not_be_empty(self):
+        request = TokenizeRequest(values=[])
+        with self.assertRaises(SkyflowError):
+            validate_tokenize_request(None, request)
+
+    def test_values_must_be_dicts(self):
+        request = TokenizeRequest(values=["not-a-dict"])
+        with self.assertRaises(SkyflowError):
+            validate_tokenize_request(None, request)
+
+    def test_missing_token_group_names_raises(self):
+        request = TokenizeRequest(values=[{"value": "a@b.com"}])
+        with self.assertRaises(SkyflowError):
+            validate_tokenize_request(None, request)
+
+    def test_empty_token_group_names_raises(self):
+        request = TokenizeRequest(values=[{"value": "a@b.com", "token_group_names": []}])
+        with self.assertRaises(SkyflowError):
+            validate_tokenize_request(None, request)
+
+    def test_non_string_token_group_names_raises(self):
+        request = TokenizeRequest(values=[{"value": "a@b.com", "token_group_names": [123]}])
+        with self.assertRaises(SkyflowError):
+            validate_tokenize_request(None, request)
 
 
 class TestValidateVaultConfig(unittest.TestCase):

@@ -7,6 +7,7 @@ from common.utils.validations import (
     validate_update_vault_config,
     validate_credentials,
     validate_log_level,
+    validate_non_empty_string_list,
 )
 
 VALID_VAULT_CONFIG = {
@@ -163,6 +164,32 @@ class TestValidateLogLevelMessageInjection(unittest.TestCase):
         with self.assertRaises(SkyflowError) as ctx:
             validate_log_level(None, "not-a-log-level", messages=FakeMessages)
         self.assertIn("FAKE", ctx.exception.message)
+
+
+class TestValidateNonEmptyStringList(unittest.TestCase):
+    def test_valid_list_passes(self):
+        validate_non_empty_string_list(None, ["a", "b"], "boom")  # should not raise
+
+    def test_non_list_raises_with_given_error(self):
+        with self.assertRaises(SkyflowError) as ctx:
+            validate_non_empty_string_list(None, "not-a-list", "boom")
+        self.assertEqual(ctx.exception.message, "boom")
+
+    def test_empty_list_raises(self):
+        with self.assertRaises(SkyflowError):
+            validate_non_empty_string_list(None, [], "boom")
+
+    def test_none_raises(self):
+        with self.assertRaises(SkyflowError):
+            validate_non_empty_string_list(None, None, "boom")
+
+    def test_non_string_entry_raises(self):
+        with self.assertRaises(SkyflowError):
+            validate_non_empty_string_list(None, ["a", 1], "boom")
+
+    def test_blank_string_entry_raises(self):
+        with self.assertRaises(SkyflowError):
+            validate_non_empty_string_list(None, ["a", "  "], "boom")
 
 
 if __name__ == "__main__":
