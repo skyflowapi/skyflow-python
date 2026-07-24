@@ -18,7 +18,39 @@ jobs:
           error: 'One of your your commit messages is not matching the format with JIRA ID Ex: ( SDK-123 commit message )'
 
   test:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - variant: v2
+            package-name: skyflow
+            coverage-omit: "skyflow/generated/*,skyflow/utils/validations/*,skyflow/vault/data/*,skyflow/vault/detect/*,skyflow/vault/tokens/*,skyflow/vault/connection/*,skyflow/error/*,skyflow/utils/enums/*,skyflow/vault/controller/_audit.py,skyflow/vault/controller/_bin_look_up.py"
+          - variant: flowvault
+            package-name: skyflow_flowvault
+            coverage-omit: "skyflow_flowvault/generated/*"
     uses: ./.github/workflows/shared-tests.yml
     with:
       python-version: '3.9'
+      variant: ${{ matrix.variant }}
+      package-name: ${{ matrix.package-name }}
+      coverage-omit: ${{ matrix.coverage-omit }}
     secrets: inherit
+
+  test-common:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+        with:
+          python-version: '3.9'
+      - run: pip install -e ./common
+      - run: pip install coverage
+      - run: python -m coverage run --source=common --omit="common/generated/*,common/tests/*" -m unittest discover -s common/tests -t .
+      - run: coverage xml -o test-coverage.xml
+      - name: Codecov
+        uses: codecov/codecov-action@v2.1.0
+        with:
+          token: ${{ secrets.CODECOV_REPO_UPLOAD_TOKEN }}
+          files: test-coverage.xml
+          name: codecov-skyflow-python-common
+          verbose: true

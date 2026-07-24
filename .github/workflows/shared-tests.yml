@@ -7,6 +7,20 @@ on:
         description: 'Python version to use'
         required: true
         type: string
+      variant:
+        description: 'Build variant directory to test (v2 or flowvault)'
+        required: true
+        type: string
+      package-name:
+        description: 'Importable package name for this variant (e.g. skyflow or skyflow_flowvault)'
+        required: false
+        type: string
+        default: 'skyflow'
+      coverage-omit:
+        description: 'Comma-separated coverage --omit patterns, relative to the variant directory'
+        required: false
+        type: string
+        default: 'skyflow/generated/*'
 
 jobs:
   run-tests:
@@ -23,12 +37,14 @@ jobs:
         with:
           name: "credentials.json"
           json: ${{ secrets.VALID_SKYFLOW_CREDS_TEST }}
+          dir: ${{ inputs.variant }}
 
-      - name: Build and install skyflow package
+      - name: Build and install package
+        working-directory: ${{ inputs.variant }}
         run: |
           pip install --upgrade pip setuptools wheel
           python setup.py sdist bdist_wheel
-          pip install dist/skyflow-*.whl
+          pip install dist/*.whl
           pip install ".[dev]"
 
       - name: Run Spell Check
@@ -36,19 +52,21 @@ jobs:
 
       - name: Run Linter Ruff
         run: ruff check . --output-format=github
-      
+
       - name: 'Run Tests'
+        working-directory: ${{ inputs.variant }}
         run: |
           pip install -r requirements.txt
-          python -m coverage run --source=skyflow --omit=skyflow/generated/*,skyflow/utils/validations/*,skyflow/vault/data/*,skyflow/vault/detect/*,skyflow/vault/tokens/*,skyflow/vault/connection/*,skyflow/error/*,skyflow/utils/enums/*,skyflow/vault/controller/_audit.py,skyflow/vault/controller/_bin_look_up.py -m unittest discover
+          python -m coverage run --source=${{ inputs.package-name }} --omit=${{ inputs.coverage-omit }} -m unittest discover
 
       - name: coverage
+        working-directory: ${{ inputs.variant }}
         run: coverage xml -o test-coverage.xml
 
       - name: Codecov
         uses: codecov/codecov-action@v2.1.0
         with:
           token: ${{ secrets.CODECOV_REPO_UPLOAD_TOKEN }}
-          files: test-coverage.xml
-          name: codecov-skyflow-python
+          files: ${{ inputs.variant }}/test-coverage.xml
+          name: codecov-skyflow-python-${{ inputs.variant }}
           verbose: true

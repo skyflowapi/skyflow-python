@@ -4,15 +4,28 @@ on:
   push:
     tags: "*.*.*"
     paths-ignore:
-      - "setup.py"
+      - "*/setup.py"
       - "*.yml"
       - "*.md"
-      - "skyflow/utils/_version.py"
+      - "*/skyflow/utils/_version.py"
 
 jobs:
   build-and-deploy:
+    strategy:
+      matrix:
+        include:
+          - variant: v2
+            package-name: skyflow
+            tag-prefix: ''
+          - variant: flowvault
+            package-name: skyflow_flowvault
+            tag-prefix: 'flowvault-'
+    if: (matrix.variant == 'flowvault' && startsWith(github.ref_name, 'flowvault-')) || (matrix.variant == 'v2' && !startsWith(github.ref_name, 'flowvault-'))
     uses: ./.github/workflows/shared-build-and-deploy.yml
     with:
       ref: main
       tag: 'public'
+      variant: ${{ matrix.variant }}
+      package-name: ${{ matrix.package-name }}
+      tag-prefix: ${{ matrix.tag-prefix }}
     secrets: inherit

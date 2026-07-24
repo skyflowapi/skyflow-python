@@ -1,13 +1,14 @@
 Version=$1
 SEMVER=$Version
+PackageName=${3:-skyflow}
 
 if [ -z "$2" ]
 then
     echo "Bumping package version to $1"
 
     sed -E "s/current_version = .+/current_version = '$SEMVER'/g" setup.py > tempfile && cat tempfile > setup.py && rm -f tempfile
-    sed -E "s/SDK_VERSION = .+/SDK_VERSION = '$SEMVER'/g" skyflow/utils/_version.py > tempfile && cat tempfile > skyflow/utils/_version.py && rm -f tempfile
-    sed -E "s/__version__ = .+/__version__ = '$SEMVER'/g" skyflow/generated/rest/version.py > tempfile && cat tempfile > skyflow/generated/rest/version.py && rm -f tempfile
+    sed -E "s/SDK_VERSION = .+/SDK_VERSION = '$SEMVER'/g" $PackageName/utils/_version.py > tempfile && cat tempfile > $PackageName/utils/_version.py && rm -f tempfile
+    sed -E "s/__version__ = .+/__version__ = '$SEMVER'/g" $PackageName/generated/rest/version.py > tempfile && cat tempfile > $PackageName/generated/rest/version.py && rm -f tempfile
 
     echo --------------------------
     echo "Done, Package now at $1"
@@ -18,8 +19,8 @@ else
     echo "Bumping package version to $DEV_VERSION"
 
     sed -E "s/current_version = .+/current_version = '$DEV_VERSION'/g" setup.py > tempfile && cat tempfile > setup.py && rm -f tempfile
-    sed -E "s/SDK_VERSION = .+/SDK_VERSION = '$DEV_VERSION'/g" skyflow/utils/_version.py > tempfile && cat tempfile > skyflow/utils/_version.py && rm -f tempfile
-    sed -E "s/__version__ = .+/__version__ = '$DEV_VERSION'/g" skyflow/generated/rest/version.py > tempfile && cat tempfile > skyflow/generated/rest/version.py && rm -f tempfile
+    sed -E "s/SDK_VERSION = .+/SDK_VERSION = '$DEV_VERSION'/g" $PackageName/utils/_version.py > tempfile && cat tempfile > $PackageName/utils/_version.py && rm -f tempfile
+    sed -E "s/__version__ = .+/__version__ = '$DEV_VERSION'/g" $PackageName/generated/rest/version.py > tempfile && cat tempfile > $PackageName/generated/rest/version.py && rm -f tempfile
 
     echo --------------------------
     echo "Done, Package now at $DEV_VERSION"
