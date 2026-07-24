@@ -20,6 +20,11 @@ jobs:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 0
+          # Persist an admin credential so the automated version-bump push
+          # below satisfies the branch-protection ruleset's repo-admin bypass;
+          # the default GITHUB_TOKEN (github-actions[bot]) is not a bypass
+          # actor and would be rejected once PR enforcement is active. SK-2986.
+          token: ${{ secrets.PAT_ACTIONS }}
 
       - uses: actions/setup-python@v2
       - name: Install dependencies
