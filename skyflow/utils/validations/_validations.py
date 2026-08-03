@@ -561,6 +561,10 @@ def validate_delete_request(logger, request):
         log_error_log(SkyflowMessages.ErrorLogs.EMPTY_IDS.value.format(RequestOperation.DELETE), logger=logger)
         raise SkyflowError(SkyflowMessages.Error.EMPTY_RECORD_IDS_IN_DELETE.value, invalid_input_error_code)
 
+    if not isinstance(request.ids, list):
+        log_error_log(SkyflowMessages.ErrorLogs.EMPTY_IDS.value.format(RequestOperation.DELETE), logger=logger)
+        raise SkyflowError(SkyflowMessages.Error.INVALID_IDS_TYPE.value.format(type(request.ids)), invalid_input_error_code)
+
 def validate_query_request(logger, request):
     if not isinstance(request.query, str):
         query_type = str(type(request.query))

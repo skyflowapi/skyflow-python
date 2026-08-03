@@ -506,6 +506,19 @@ class TestValidations(unittest.TestCase):
             validate_delete_request(self.logger, request)
         self.assertEqual(context.exception.message, SkyflowMessages.Error.EMPTY_RECORD_IDS_IN_DELETE.value)
 
+    def test_validate_delete_request_non_list_ids(self):
+        for ids in ["id1", 123, {"id": "id1"}, ("id1", "id2")]:
+            with self.subTest(ids=ids):
+                request = MagicMock()
+                request.table = "test_table"
+                request.ids = ids
+                with self.assertRaises(SkyflowError) as context:
+                    validate_delete_request(self.logger, request)
+                self.assertEqual(
+                    context.exception.message,
+                    SkyflowMessages.Error.INVALID_IDS_TYPE.value.format(type(ids))
+                )
+
     def test_validate_query_request_valid(self):
         request = MagicMock()
         request.query = "SELECT * FROM test_table"
