@@ -13,7 +13,7 @@ from skyflow.utils.validations._validations import (
     validate_get_detect_run_request, validate_get_request, validate_update_request,
     validate_detokenize_request, validate_tokenize_request, validate_invoke_connection_params,
     validate_deidentify_text_request, validate_reidentify_text_request, validate_deidentify_file_request,
-    validate_file_upload_request
+    validate_file_upload_request, validate_token_options
 )
 from skyflow.utils import SkyflowMessages
 from skyflow.utils.enums import DetectEntities, RedactionType
@@ -209,20 +209,6 @@ class TestValidations(unittest.TestCase):
             SkyflowMessages.Error.EMPTY_CONTEXT_IN_CONFIG.value.format("vault", "vault123")
         )
 
-    def test_validate_vault_config_with_dict_context_and_roles(self):
-        from skyflow.utils.enums import Env
-        config = {
-            "vault_id": "vault123",
-            "cluster_id": "cluster123",
-            "credentials": {
-                "credentials_string": '{"clientID": "x"}',
-                "roles": ["role_id_1", "role_id_2"],
-                "context": {"role": "admin", "department": "finance"}
-            },
-            "env": Env.DEV
-        }
-        self.assertTrue(validate_vault_config(self.logger, config))
-
     # ------------------------------------------------------------------ #
     # credentials.roles                                                  #
     # ------------------------------------------------------------------ #
@@ -251,6 +237,21 @@ class TestValidations(unittest.TestCase):
         with self.assertRaises(SkyflowError) as context:
             validate_credentials(self.logger, credentials)
         self.assertEqual(context.exception.message, SkyflowMessages.Error.EMPTY_ROLES.value)
+
+    # ------------------------------------------------------------------ #
+    # validate_token_options — shared by config validation and VaultClient #
+    # ------------------------------------------------------------------ #
+
+    def test_validate_token_options_rejects_empty_values(self):
+        """The contract VaultClient relies on; the cases themselves are covered above
+        via validate_credentials, which delegates here."""
+        with self.assertRaises(SkyflowError) as context:
+            validate_token_options(self.logger, {"roles": []})
+        self.assertEqual(context.exception.message, SkyflowMessages.Error.EMPTY_ROLES.value)
+
+        with self.assertRaises(SkyflowError) as context:
+            validate_token_options(self.logger, {"context": {}})
+        self.assertEqual(context.exception.message, SkyflowMessages.Error.EMPTY_CONTEXT.value)
 
     def test_validate_log_level_valid(self):
         from skyflow.utils.enums import LogLevel

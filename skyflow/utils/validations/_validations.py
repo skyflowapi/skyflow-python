@@ -82,6 +82,44 @@ def validate_api_key(api_key: str, logger = None) -> bool:
 
     return True
 
+def validate_token_options(logger, credentials, config_id_type=None, config_id=None):
+    """Validate the roles/context token options nested under credentials.
+
+    Shared by config validation and VaultClient, so a directly constructed client
+    cannot silently generate an unscoped or context-less token.
+    """
+    if CredentialField.ROLES in credentials:
+        empty_roles_error = (
+            SkyflowMessages.Error.EMPTY_ROLES_IN_CONFIG.value.format(config_id_type, config_id)
+            if config_id_type and config_id else SkyflowMessages.Error.EMPTY_ROLES.value
+        )
+        validate_required_field(
+            logger, credentials, CredentialField.ROLES, list,
+            empty_roles_error,
+            SkyflowMessages.Error.INVALID_ROLES_KEY_TYPE_IN_CONFIG.value.format(config_id_type, config_id)
+            if config_id_type and config_id else SkyflowMessages.Error.INVALID_ROLES_KEY_TYPE.value
+        )
+        if not credentials.get(CredentialField.ROLES):
+            raise SkyflowError(empty_roles_error, invalid_input_error_code)
+
+    if CredentialField.CONTEXT in credentials:
+        empty_context_error = (
+            SkyflowMessages.Error.EMPTY_CONTEXT_IN_CONFIG.value.format(config_id_type, config_id)
+            if config_id_type and config_id else SkyflowMessages.Error.EMPTY_CONTEXT.value
+        )
+        validate_required_field(
+            logger, credentials, CredentialField.CONTEXT, (str, dict),
+            empty_context_error,
+            SkyflowMessages.Error.INVALID_CONTEXT_IN_CONFIG.value.format(config_id_type, config_id)
+            if config_id_type and config_id else SkyflowMessages.Error.INVALID_CONTEXT.value
+        )
+        context = credentials.get(CredentialField.CONTEXT)
+        if isinstance(context, dict):
+            if not context:
+                raise SkyflowError(empty_context_error, invalid_input_error_code)
+            # Surface invalid ctx keys at config time instead of on the first API call.
+            _validate_and_resolve_ctx(context)
+
 def validate_credentials(logger, credentials, config_id_type=None, config_id=None):
     key_present = [k for k in [CredentialField.PATH, CredentialField.TOKEN, CredentialField.CREDENTIALS_STRING, CredentialField.API_KEY] if credentials.get(k)]
 
@@ -102,38 +140,7 @@ def validate_credentials(logger, credentials, config_id_type=None, config_id=Non
         log_error_log(error_message, logger)
         raise SkyflowError(error_message, invalid_input_error_code)
 
-    if CredentialField.ROLES in credentials:
-        validate_required_field(
-            logger, credentials, CredentialField.ROLES, list,
-            SkyflowMessages.Error.EMPTY_ROLES_IN_CONFIG.value.format(config_id_type, config_id)
-            if config_id_type and config_id else SkyflowMessages.Error.EMPTY_ROLES.value,
-            SkyflowMessages.Error.INVALID_ROLES_KEY_TYPE_IN_CONFIG.value.format(config_id_type, config_id)
-            if config_id_type and config_id else SkyflowMessages.Error.INVALID_ROLES_KEY_TYPE.value
-        )
-        if not credentials.get(CredentialField.ROLES):
-            raise SkyflowError(
-                SkyflowMessages.Error.EMPTY_ROLES_IN_CONFIG.value.format(config_id_type, config_id)
-                if config_id_type and config_id else SkyflowMessages.Error.EMPTY_ROLES.value,
-                invalid_input_error_code
-            )
-
-    if CredentialField.CONTEXT in credentials:
-        empty_context_error = (
-            SkyflowMessages.Error.EMPTY_CONTEXT_IN_CONFIG.value.format(config_id_type, config_id)
-            if config_id_type and config_id else SkyflowMessages.Error.EMPTY_CONTEXT.value
-        )
-        validate_required_field(
-            logger, credentials, CredentialField.CONTEXT, (str, dict),
-            empty_context_error,
-            SkyflowMessages.Error.INVALID_CONTEXT_IN_CONFIG.value.format(config_id_type, config_id)
-            if config_id_type and config_id else SkyflowMessages.Error.INVALID_CONTEXT.value
-        )
-        context = credentials.get(CredentialField.CONTEXT)
-        if isinstance(context, dict):
-            if not context:
-                raise SkyflowError(empty_context_error, invalid_input_error_code)
-            # Surface invalid ctx keys at config time instead of on the first API call.
-            _validate_and_resolve_ctx(context)
+    validate_token_options(logger, credentials, config_id_type, config_id)
 
     if CredentialField.CREDENTIALS_STRING in credentials:
         validate_required_field(

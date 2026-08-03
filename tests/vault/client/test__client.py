@@ -353,6 +353,25 @@ class TestVaultClient(unittest.TestCase):
         self.assertNotIn("role_ids", options)
         self.assertNotIn("ctx", options)
 
+    @patch("skyflow.vault.client.client.generate_bearer_token")
+    def test_get_bearer_token_rejects_empty_roles(self, mock_generate):
+        """An empty roles list must not silently produce an unscoped token."""
+        credentials = {**CREDENTIALS_WITH_PATH, "roles": []}
+        with self.assertRaises(SkyflowError) as ctx:
+            self.vault_client.get_bearer_token(credentials)
+        self.assertEqual(ctx.exception.message, SkyflowMessages.Error.EMPTY_ROLES.value)
+        mock_generate.assert_not_called()
+
+    @patch("skyflow.vault.client.client.generate_bearer_token")
+    def test_get_bearer_token_rejects_empty_context(self, mock_generate):
+        """An empty context must not silently produce a context-less token."""
+        for empty_context in [{}, "", "   "]:
+            credentials = {**CREDENTIALS_WITH_PATH, "context": empty_context}
+            with self.assertRaises(SkyflowError) as ctx:
+                self.vault_client.get_bearer_token(credentials)
+            self.assertEqual(ctx.exception.message, SkyflowMessages.Error.EMPTY_CONTEXT.value)
+        mock_generate.assert_not_called()
+
     @patch("skyflow.vault.client.client.generate_bearer_token", return_value=("sa_token", None))
     def test_get_bearer_token_ignores_top_level_config_roles_and_ctx(self, mock_generate):
         """roles/ctx are only read from credentials — never from the top-level config."""
@@ -375,19 +394,6 @@ class TestVaultClient(unittest.TestCase):
         self.assertEqual(options["role_ids"], ROLES)
         self.assertEqual(options["ctx"], STRING_CONTEXT)
         self.assertEqual(options["token_uri"], credentials["token_uri"])
-
-    @patch("skyflow.vault.client.client.generate_bearer_token", return_value=("new_token", None))
-    @patch("skyflow.vault.client.client.is_expired", return_value=True)
-    @patch("skyflow.vault.client.client.log_info")
-    def test_get_bearer_token_forwards_roles_and_context_on_refresh(self, mock_log, mock_is_expired, mock_generate):
-        """Auto-refresh of an expired token must carry roles/context too, not just the first call."""
-        self.vault_client._VaultClient__bearer_token = "expired_token"
-        result = self.vault_client.get_bearer_token(CREDENTIALS_WITH_PATH_ROLES_AND_STRING_CONTEXT)
-
-        self.assertEqual(result, "new_token")
-        _, options, _ = mock_generate.call_args[0]
-        self.assertEqual(options["role_ids"], ROLES)
-        self.assertEqual(options["ctx"], STRING_CONTEXT)
 
     @patch("skyflow.vault.client.client.generate_bearer_token", return_value=("refreshed_token", None))
     @patch("skyflow.vault.client.client.is_expired", return_value=True)

@@ -4,6 +4,7 @@ from skyflow.service_account import generate_bearer_token, generate_bearer_token
 from skyflow.utils import get_vault_url, get_credentials, SkyflowMessages
 from skyflow.utils.logger import log_info
 from skyflow.utils.constants import OptionField, CredentialField, ConfigField
+from skyflow.utils.validations import validate_token_options
 
 
 class VaultClient:
@@ -74,14 +75,14 @@ class VaultClient:
         elif CredentialField.TOKEN in credentials:
             return credentials.get(CredentialField.TOKEN)
 
-        options = {}
-        roles = credentials.get(CredentialField.ROLES)
-        if roles:
-            options[OptionField.ROLE_IDS] = roles
+        validate_token_options(self.__logger, credentials)
 
-        context = credentials.get(CredentialField.CONTEXT)
-        if context is not None:
-            options[OptionField.CTX] = context
+        options = {}
+        if CredentialField.ROLES in credentials:
+            options[OptionField.ROLE_IDS] = credentials.get(CredentialField.ROLES)
+
+        if CredentialField.CONTEXT in credentials:
+            options[OptionField.CTX] = credentials.get(CredentialField.CONTEXT)
 
         if CredentialField.TOKEN_URI_OPTION in credentials and credentials.get(CredentialField.TOKEN_URI_OPTION):
             options[CredentialField.TOKEN_URI_OPTION] = credentials.get(CredentialField.TOKEN_URI_OPTION)
