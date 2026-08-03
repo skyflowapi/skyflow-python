@@ -684,6 +684,20 @@ class TestValidations(unittest.TestCase):
             validate_update_request(self.logger, request)
         self.assertEqual(context.exception.message, SkyflowMessages.Error.INVALID_TABLE_VALUE.value)
 
+    def test_validate_update_request_non_string_skyflow_id(self):
+        for skyflow_id in [123, ["id123"], {"id": "id123"}]:
+            with self.subTest(skyflow_id=skyflow_id):
+                request = UpdateRequest(
+                    table="test_table",
+                    data={"skyflow_id": skyflow_id, "field1": "value1"}
+                )
+                with self.assertRaises(SkyflowError) as context:
+                    validate_update_request(self.logger, request)
+                self.assertEqual(
+                    context.exception.message,
+                    SkyflowMessages.Error.INVALID_SKYFLOW_ID_TYPE.value.format(type(skyflow_id))
+                )
+
     def test_validate_update_request_invalid_token_mode(self):
         request = UpdateRequest(
             table="test_table",
@@ -1587,6 +1601,29 @@ class TestValidations(unittest.TestCase):
         with self.assertRaises(SkyflowError) as context:
             validate_file_upload_request(self.logger, request)
         self.assertEqual(context.exception.message, SkyflowMessages.Error.MISSING_FILE_SOURCE.value)
+
+    def test_validate_file_upload_request_non_string_fields(self):
+        cases = [
+            ("table", 123, SkyflowMessages.Error.INVALID_TABLE_VALUE.value),
+            ("table", ["test_table"], SkyflowMessages.Error.INVALID_TABLE_VALUE.value),
+            ("column_name", 123, SkyflowMessages.Error.INVALID_COLUMN_NAME.value.format(type(123))),
+            ("column_name", ["file_col"], SkyflowMessages.Error.INVALID_COLUMN_NAME.value.format(type([]))),
+            ("skyflow_id", 123, SkyflowMessages.Error.INVALID_SKYFLOW_ID_TYPE.value.format(type(123))),
+            ("file_name", 123, SkyflowMessages.Error.INVALID_FILE_NAME.value),
+        ]
+        for field, value, expected_message in cases:
+            with self.subTest(field=field, value=value):
+                kwargs = {
+                    "table": "test_table",
+                    "column_name": "file_col",
+                    "base64": "ZmlsZSBjb250ZW50",
+                    "file_name": "sample.txt",
+                    field: value,
+                }
+                request = FileUploadRequest(**kwargs)
+                with self.assertRaises(SkyflowError) as context:
+                    validate_file_upload_request(self.logger, request)
+                self.assertEqual(context.exception.message, expected_message)
 
     # --- validate_deidentify_text_request transformations ---
 

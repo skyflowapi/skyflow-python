@@ -677,6 +677,8 @@ def validate_update_request(logger, request):
     skyflow_id = request.data.get(ResponseField.SKYFLOW_ID)
     if skyflow_id is None:
         log_error_log(SkyflowMessages.ErrorLogs.SKYFLOW_ID_IS_REQUIRED.value.format(RequestOperation.UPDATE), logger=logger)
+    elif not isinstance(skyflow_id, str):
+        raise SkyflowError(SkyflowMessages.Error.INVALID_SKYFLOW_ID_TYPE.value.format(type(skyflow_id)), invalid_input_error_code)
     elif not skyflow_id.strip():
         log_error_log(SkyflowMessages.ErrorLogs.EMPTY_SKYFLOW_ID.value.format(RequestOperation.UPDATE), logger=logger)
 
@@ -793,11 +795,16 @@ def validate_file_upload_request(logger, request):
     table = getattr(request, FileUploadField.TABLE, None)
     if table is None:
         raise SkyflowError(SkyflowMessages.Error.INVALID_TABLE_VALUE.value, invalid_input_error_code)
+    elif not isinstance(table, str):
+        log_error_log(SkyflowMessages.ErrorLogs.TABLE_IS_REQUIRED.value.format(RequestOperation.FILE_UPLOAD), logger=logger)
+        raise SkyflowError(SkyflowMessages.Error.INVALID_TABLE_VALUE.value, invalid_input_error_code)
     elif table.strip() == "":
         raise SkyflowError(SkyflowMessages.Error.EMPTY_TABLE_VALUE.value, invalid_input_error_code)
 
     # Skyflow ID
     skyflow_id = getattr(request, FileUploadField.SKYFLOW_ID, None)
+    if skyflow_id is not None and not isinstance(skyflow_id, str):
+        raise SkyflowError(SkyflowMessages.Error.INVALID_SKYFLOW_ID_TYPE.value.format(type(skyflow_id)), invalid_input_error_code)
     if skyflow_id is not None and skyflow_id.strip() == "":
         raise SkyflowError(SkyflowMessages.Error.EMPTY_SKYFLOW_ID.value.format(RequestOperation.FILE_UPLOAD), invalid_input_error_code)
 
@@ -805,6 +812,9 @@ def validate_file_upload_request(logger, request):
     column_name = getattr(request, FileUploadField.COLUMN_NAME, None)
     if column_name is None:
         raise SkyflowError(SkyflowMessages.Error.INVALID_FILE_COLUMN_NAME.value.format(type(column_name)), invalid_input_error_code)
+    elif not isinstance(column_name, str):
+        log_error_log(SkyflowMessages.ErrorLogs.EMPTY_FILE_COLUMN_NAME.value, logger)
+        raise SkyflowError(SkyflowMessages.Error.INVALID_COLUMN_NAME.value.format(type(column_name)), invalid_input_error_code)
     elif column_name.strip() == "":
         log_error_log(SkyflowMessages.ErrorLogs.EMPTY_FILE_COLUMN_NAME.value, logger)
         raise SkyflowError(SkyflowMessages.Error.INVALID_FILE_COLUMN_NAME.value.format(type(column_name)), invalid_input_error_code)
@@ -823,7 +833,7 @@ def validate_file_upload_request(logger, request):
 
     # Check base64 if present
     if not is_none_or_empty(base64_str):
-        if is_none_or_empty(file_name):
+        if not isinstance(file_name, str) or is_none_or_empty(file_name):
             raise SkyflowError(SkyflowMessages.Error.INVALID_FILE_NAME.value, invalid_input_error_code)
         try:
             base64.b64decode(base64_str)
