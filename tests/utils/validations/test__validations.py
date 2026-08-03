@@ -145,7 +145,113 @@ class TestValidations(unittest.TestCase):
             with self.assertRaises(SkyflowError) as context:
                 validate_credentials(self.logger, credentials)
             self.assertEqual(context.exception.message, SkyflowMessages.Error.EMPTY_CONTEXT.value)
-            
+
+    # ------------------------------------------------------------------ #
+    # credentials.context — string and dict/JSON object                  #
+    # ------------------------------------------------------------------ #
+
+    def test_validate_credentials_with_string_context(self):
+        credentials = {
+            "api_key": "sky-abc12-1234567890abcdef1234567890abcdef",
+            "context": "user_12345"
+        }
+        validate_credentials(self.logger, credentials)
+
+    def test_validate_credentials_with_dict_context(self):
+        """A dict/JSON object context is accepted — the token engine supports it."""
+        credentials = {
+            "api_key": "sky-abc12-1234567890abcdef1234567890abcdef",
+            "context": {"role": "admin", "department": "finance"}
+        }
+        validate_credentials(self.logger, credentials)
+
+    def test_validate_credentials_with_empty_dict_context(self):
+        credentials = {
+            "api_key": "sky-abc12-1234567890abcdef1234567890abcdef",
+            "context": {}
+        }
+        with self.assertRaises(SkyflowError) as context:
+            validate_credentials(self.logger, credentials)
+        self.assertEqual(context.exception.message, SkyflowMessages.Error.EMPTY_CONTEXT.value)
+
+    def test_validate_credentials_with_invalid_dict_context_key(self):
+        credentials = {
+            "api_key": "sky-abc12-1234567890abcdef1234567890abcdef",
+            "context": {"invalid key": "value"}
+        }
+        with self.assertRaises(SkyflowError) as context:
+            validate_credentials(self.logger, credentials)
+        self.assertEqual(
+            context.exception.message,
+            SkyflowMessages.Error.INVALID_CTX_MAP_KEY.value.format("invalid key")
+        )
+
+    def test_validate_credentials_with_invalid_context_type(self):
+        for invalid_context in [123, ["user_12345"], True]:
+            credentials = {
+                "api_key": "sky-abc12-1234567890abcdef1234567890abcdef",
+                "context": invalid_context
+            }
+            with self.assertRaises(SkyflowError) as context:
+                validate_credentials(self.logger, credentials)
+            self.assertEqual(context.exception.message, SkyflowMessages.Error.INVALID_CONTEXT.value)
+
+    def test_validate_credentials_with_dict_context_in_config(self):
+        """Config-scoped messages are used when a config id is available."""
+        credentials = {
+            "api_key": "sky-abc12-1234567890abcdef1234567890abcdef",
+            "context": {}
+        }
+        with self.assertRaises(SkyflowError) as context:
+            validate_credentials(self.logger, credentials, "vault", "vault123")
+        self.assertEqual(
+            context.exception.message,
+            SkyflowMessages.Error.EMPTY_CONTEXT_IN_CONFIG.value.format("vault", "vault123")
+        )
+
+    def test_validate_vault_config_with_dict_context_and_roles(self):
+        from skyflow.utils.enums import Env
+        config = {
+            "vault_id": "vault123",
+            "cluster_id": "cluster123",
+            "credentials": {
+                "credentials_string": '{"clientID": "x"}',
+                "roles": ["role_id_1", "role_id_2"],
+                "context": {"role": "admin", "department": "finance"}
+            },
+            "env": Env.DEV
+        }
+        self.assertTrue(validate_vault_config(self.logger, config))
+
+    # ------------------------------------------------------------------ #
+    # credentials.roles                                                  #
+    # ------------------------------------------------------------------ #
+
+    def test_validate_credentials_with_roles(self):
+        credentials = {
+            "api_key": "sky-abc12-1234567890abcdef1234567890abcdef",
+            "roles": ["role_id_1", "role_id_2"]
+        }
+        validate_credentials(self.logger, credentials)
+
+    def test_validate_credentials_with_invalid_roles_type(self):
+        credentials = {
+            "api_key": "sky-abc12-1234567890abcdef1234567890abcdef",
+            "roles": "role_id_1"
+        }
+        with self.assertRaises(SkyflowError) as context:
+            validate_credentials(self.logger, credentials)
+        self.assertEqual(context.exception.message, SkyflowMessages.Error.INVALID_ROLES_KEY_TYPE.value)
+
+    def test_validate_credentials_with_empty_roles(self):
+        credentials = {
+            "api_key": "sky-abc12-1234567890abcdef1234567890abcdef",
+            "roles": []
+        }
+        with self.assertRaises(SkyflowError) as context:
+            validate_credentials(self.logger, credentials)
+        self.assertEqual(context.exception.message, SkyflowMessages.Error.EMPTY_ROLES.value)
+
     def test_validate_log_level_valid(self):
         from skyflow.utils.enums import LogLevel
         log_level = LogLevel.ERROR

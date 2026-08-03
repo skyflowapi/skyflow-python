@@ -2,6 +2,7 @@ import base64
 import json
 import os
 from skyflow.service_account import is_expired
+from skyflow.service_account._utils import _validate_and_resolve_ctx
 from skyflow.utils.enums import LogLevel, Env, RedactionType, TokenMode, DetectEntities, DetectOutputTranscriptions, \
     MaskingMethod
 from skyflow.error import SkyflowError
@@ -104,20 +105,35 @@ def validate_credentials(logger, credentials, config_id_type=None, config_id=Non
     if CredentialField.ROLES in credentials:
         validate_required_field(
             logger, credentials, CredentialField.ROLES, list,
-            SkyflowMessages.Error.INVALID_ROLES_KEY_TYPE_IN_CONFIG.value.format(config_id_type, config_id)
-            if config_id_type and config_id else SkyflowMessages.Error.INVALID_ROLES_KEY_TYPE.value,
             SkyflowMessages.Error.EMPTY_ROLES_IN_CONFIG.value.format(config_id_type, config_id)
-            if config_id_type and config_id else SkyflowMessages.Error.EMPTY_ROLES.value
+            if config_id_type and config_id else SkyflowMessages.Error.EMPTY_ROLES.value,
+            SkyflowMessages.Error.INVALID_ROLES_KEY_TYPE_IN_CONFIG.value.format(config_id_type, config_id)
+            if config_id_type and config_id else SkyflowMessages.Error.INVALID_ROLES_KEY_TYPE.value
         )
+        if not credentials.get(CredentialField.ROLES):
+            raise SkyflowError(
+                SkyflowMessages.Error.EMPTY_ROLES_IN_CONFIG.value.format(config_id_type, config_id)
+                if config_id_type and config_id else SkyflowMessages.Error.EMPTY_ROLES.value,
+                invalid_input_error_code
+            )
 
     if CredentialField.CONTEXT in credentials:
-        validate_required_field(
-            logger, credentials, CredentialField.CONTEXT, str,
+        empty_context_error = (
             SkyflowMessages.Error.EMPTY_CONTEXT_IN_CONFIG.value.format(config_id_type, config_id)
-            if config_id_type and config_id else SkyflowMessages.Error.EMPTY_CONTEXT.value,
+            if config_id_type and config_id else SkyflowMessages.Error.EMPTY_CONTEXT.value
+        )
+        validate_required_field(
+            logger, credentials, CredentialField.CONTEXT, (str, dict),
+            empty_context_error,
             SkyflowMessages.Error.INVALID_CONTEXT_IN_CONFIG.value.format(config_id_type, config_id)
             if config_id_type and config_id else SkyflowMessages.Error.INVALID_CONTEXT.value
         )
+        context = credentials.get(CredentialField.CONTEXT)
+        if isinstance(context, dict):
+            if not context:
+                raise SkyflowError(empty_context_error, invalid_input_error_code)
+            # Surface invalid ctx keys at config time instead of on the first API call.
+            _validate_and_resolve_ctx(context)
 
     if CredentialField.CREDENTIALS_STRING in credentials:
         validate_required_field(

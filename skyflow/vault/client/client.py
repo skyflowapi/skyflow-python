@@ -74,10 +74,15 @@ class VaultClient:
         elif CredentialField.TOKEN in credentials:
             return credentials.get(CredentialField.TOKEN)
 
-        options = {
-            OptionField.ROLE_IDS: self.__config.get(OptionField.ROLES),
-            OptionField.CTX: self.__config.get(OptionField.CTX)
-        }
+        options = {}
+        roles = credentials.get(CredentialField.ROLES)
+        if roles:
+            options[OptionField.ROLE_IDS] = roles
+
+        context = credentials.get(CredentialField.CONTEXT)
+        if context is not None:
+            options[OptionField.CTX] = context
+
         if CredentialField.TOKEN_URI_OPTION in credentials and credentials.get(CredentialField.TOKEN_URI_OPTION):
             options[CredentialField.TOKEN_URI_OPTION] = credentials.get(CredentialField.TOKEN_URI_OPTION)
 

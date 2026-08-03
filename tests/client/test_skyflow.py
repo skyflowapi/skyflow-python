@@ -420,6 +420,55 @@ class TestVaultClient(unittest.TestCase):
         self.assertEqual(options_passed["token_uri"], "https://custom-token-uri.com/token")
 
 
+class TestBearerTokenContextAndRolesEndToEnd(unittest.TestCase):
+    """roles/context configured via add_vault_config() must reach the token engine."""
+
+    CREDENTIALS_STRING = '{"clientID":"id","privateKey":"pk","keyID":"kid","tokenURI":"https://token.uri"}'
+
+    def _build_and_generate(self, credentials, mock_gen):
+        config = {
+            "vault_id": "VAULT_ID",
+            "cluster_id": "CLUSTER_ID",
+            "env": Env.DEV,
+            "credentials": credentials,
+        }
+        client = (
+            Skyflow.builder()
+            .add_vault_config(config)
+            .set_log_level(LogLevel.OFF)
+            .build()
+        )
+        vault_client = client._Skyflow__builder.get_vault_config("VAULT_ID").get("vault_client")
+        vault_client.initialize_client_configuration()
+        return mock_gen.call_args[0][1]
+
+    @patch("skyflow.vault.client.client.Skyflow")
+    @patch("skyflow.vault.client.client.generate_bearer_token_from_creds", return_value=("token", "bearer"))
+    def test_string_context_and_roles_reach_token_engine(self, mock_gen, _mock_api):
+        options = self._build_and_generate(
+            {
+                "credentials_string": self.CREDENTIALS_STRING,
+                "roles": ["role_id_1", "role_id_2"],
+                "context": "user_12345",
+            },
+            mock_gen,
+        )
+        self.assertEqual(options["role_ids"], ["role_id_1", "role_id_2"])
+        self.assertEqual(options["ctx"], "user_12345")
+
+    @patch("skyflow.vault.client.client.Skyflow")
+    @patch("skyflow.vault.client.client.generate_bearer_token_from_creds", return_value=("token", "bearer"))
+    def test_dict_context_reaches_token_engine(self, mock_gen, _mock_api):
+        options = self._build_and_generate(
+            {
+                "credentials_string": self.CREDENTIALS_STRING,
+                "context": {"role": "admin", "department": "finance"},
+            },
+            mock_gen,
+        )
+        self.assertEqual(options["ctx"], {"role": "admin", "department": "finance"})
+
+
 class TestUpdateLogLevelDeprecation(unittest.TestCase):
     def _build_client(self):
         return Skyflow.builder().add_vault_config(VALID_VAULT_CONFIG).build()
