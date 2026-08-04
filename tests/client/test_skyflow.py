@@ -442,9 +442,8 @@ class TestBearerTokenContextAndRolesEndToEnd(unittest.TestCase):
         vault_client.initialize_client_configuration()
         return mock_gen.call_args[0][1]
 
-    @patch("skyflow.vault.client.client.Skyflow")
     @patch("skyflow.vault.client.client.generate_bearer_token_from_creds", return_value=("token", "bearer"))
-    def test_string_context_and_roles_reach_token_engine(self, mock_gen, _mock_api):
+    def test_string_context_and_roles_reach_token_engine(self, mock_gen):
         options = self._build_and_generate(
             {
                 "credentials_string": self.CREDENTIALS_STRING,
@@ -456,9 +455,8 @@ class TestBearerTokenContextAndRolesEndToEnd(unittest.TestCase):
         self.assertEqual(options["role_ids"], ["role_id_1", "role_id_2"])
         self.assertEqual(options["ctx"], "user_12345")
 
-    @patch("skyflow.vault.client.client.Skyflow")
     @patch("skyflow.vault.client.client.generate_bearer_token_from_creds", return_value=("token", "bearer"))
-    def test_dict_context_reaches_token_engine(self, mock_gen, _mock_api):
+    def test_dict_context_reaches_token_engine(self, mock_gen):
         options = self._build_and_generate(
             {
                 "credentials_string": self.CREDENTIALS_STRING,
