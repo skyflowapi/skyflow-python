@@ -346,6 +346,27 @@ class TestVaultClient(unittest.TestCase):
         self.assertNotIn("role_ids", options)
 
     @patch("skyflow.vault.client.client.generate_bearer_token", return_value=("sa_token", None))
+    def test_get_bearer_token_forwards_scalar_context_unmodified(self, mock_generate):
+        """Numbers and booleans reach the token engine as-is, with their type preserved.
+
+        A ctx of 123 and a ctx of "123" are different JWT claims, so a coercion here would
+        silently change which policies match. Falsy scalars are covered too - they must not
+        be dropped by a truthiness check.
+        """
+        for scalar_context in [123, 0, 1.5, 0.0, True, False]:
+            with self.subTest(context=scalar_context):
+                mock_generate.reset_mock()
+                self.vault_client._VaultClient__bearer_token = None
+                credentials = {**CREDENTIALS_WITH_PATH, "context": scalar_context}
+
+                self.vault_client.get_bearer_token(credentials)
+
+                _, options, _ = mock_generate.call_args[0]
+                self.assertEqual(options["ctx"], scalar_context)
+                # assertEqual alone would pass on True vs 1, so pin the exact type.
+                self.assertIs(type(options["ctx"]), type(scalar_context))
+
+    @patch("skyflow.vault.client.client.generate_bearer_token", return_value=("sa_token", None))
     def test_get_bearer_token_omits_options_when_roles_and_context_absent(self, mock_generate):
         self.vault_client.get_bearer_token(CREDENTIALS_WITH_PATH)
 

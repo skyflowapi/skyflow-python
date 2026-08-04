@@ -186,15 +186,31 @@ class TestValidations(unittest.TestCase):
             SkyflowMessages.Error.INVALID_CTX_MAP_KEY.value.format("invalid key")
         )
 
-    def test_validate_credentials_with_invalid_context_type(self):
-        for invalid_context in [123, ["user_12345"], True]:
-            credentials = {
-                "api_key": "sky-abc12-1234567890abcdef1234567890abcdef",
-                "context": invalid_context
-            }
-            with self.assertRaises(SkyflowError) as context:
+    def test_validate_credentials_with_scalar_context(self):
+        """Numbers and booleans are valid ctx claims, so they must not be rejected here.
+
+        The token engine and the auth service both accept them; rejecting them would make the
+        client stricter than generate_bearer_token for no reason. Falsy scalars are included
+        because nothing on this path may test truthiness.
+        """
+        for scalar_context in [123, 0, 1.5, 0.0, True, False]:
+            with self.subTest(context=scalar_context):
+                credentials = {
+                    "api_key": "sky-abc12-1234567890abcdef1234567890abcdef",
+                    "context": scalar_context
+                }
                 validate_credentials(self.logger, credentials)
-            self.assertEqual(context.exception.message, SkyflowMessages.Error.INVALID_CONTEXT.value)
+
+    def test_validate_credentials_with_invalid_context_type(self):
+        for invalid_context in [["user_12345"], ("user_12345",), None, object()]:
+            with self.subTest(context=invalid_context):
+                credentials = {
+                    "api_key": "sky-abc12-1234567890abcdef1234567890abcdef",
+                    "context": invalid_context
+                }
+                with self.assertRaises(SkyflowError) as context:
+                    validate_credentials(self.logger, credentials)
+                self.assertEqual(context.exception.message, SkyflowMessages.Error.INVALID_CONTEXT.value)
 
     def test_validate_credentials_with_dict_context_in_config(self):
         """Config-scoped messages are used when a config id is available."""

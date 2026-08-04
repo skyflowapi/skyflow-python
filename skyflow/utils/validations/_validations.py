@@ -115,8 +115,10 @@ def validate_token_options(logger, credentials, config_id_type=None, config_id=N
             SkyflowMessages.Error.EMPTY_CONTEXT_IN_CONFIG.value.format(config_id_type, config_id)
             if config_id_type and config_id else SkyflowMessages.Error.EMPTY_CONTEXT.value
         )
+        # Scalars are accepted because the token engine and the auth service both support
+        # them as ctx claims - bool is listed explicitly even though it is an int subclass.
         validate_required_field(
-            logger, credentials, CredentialField.CONTEXT, (str, dict),
+            logger, credentials, CredentialField.CONTEXT, (str, dict, bool, int, float),
             empty_context_error,
             SkyflowMessages.Error.INVALID_CONTEXT_IN_CONFIG.value.format(config_id_type, config_id)
             if config_id_type and config_id else SkyflowMessages.Error.INVALID_CONTEXT.value
