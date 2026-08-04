@@ -5,6 +5,7 @@ from ._validations import (
     validate_update_vault_config,
     validate_update_connection_config,
     validate_credentials,
+    validate_token_options,
     validate_log_level,
     validate_delete_request,
     validate_query_request,
