@@ -58,6 +58,8 @@ class SkyflowMessages:
         INVALID_ROLES_KEY_TYPE = f"{error_prefix} Validation error. Invalid roles. Specify roles as an array."
         EMPTY_ROLES_IN_CONFIG = f"{error_prefix} Validation error. Invalid roles for {{}} with id {{}}. Specify at least one role."
         EMPTY_ROLES = f"{error_prefix} Validation error. Invalid roles. Specify at least one role."
+        INVALID_ROLE_ELEMENT_TYPE_IN_CONFIG = f"{error_prefix} Validation error. Invalid roles for {{}} with id {{}}. Each role must be a non-empty string."
+        INVALID_ROLE_ELEMENT_TYPE = f"{error_prefix} Validation error. Invalid roles. Each role must be a non-empty string."
         EMPTY_CONTEXT_IN_CONFIG = f"{error_prefix} Initialization failed. Invalid context provided for {{}} with id {{}}. Specify context as type Context."
         EMPTY_CONTEXT = f"{error_prefix} Initialization failed. Invalid context provided. Specify context as type Context."
         INVALID_CONTEXT_IN_CONFIG = f"{error_prefix} Initialization failed. Invalid context for {{}} with id {{}}. Specify a valid context."

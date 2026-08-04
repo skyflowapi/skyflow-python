@@ -102,6 +102,14 @@ def validate_token_options(logger, credentials, config_id_type=None, config_id=N
         if not credentials.get(CredentialField.ROLES):
             raise SkyflowError(empty_roles_error, invalid_input_error_code)
 
+        invalid_role_element_error = (
+            SkyflowMessages.Error.INVALID_ROLE_ELEMENT_TYPE_IN_CONFIG.value.format(config_id_type, config_id)
+            if config_id_type and config_id else SkyflowMessages.Error.INVALID_ROLE_ELEMENT_TYPE.value
+        )
+        for role in credentials.get(CredentialField.ROLES):
+            if not isinstance(role, str) or not role.strip():
+                raise SkyflowError(invalid_role_element_error, invalid_input_error_code)
+
     if CredentialField.CONTEXT in credentials:
         empty_context_error = (
             SkyflowMessages.Error.EMPTY_CONTEXT_IN_CONFIG.value.format(config_id_type, config_id)
@@ -310,7 +318,7 @@ def validate_update_connection_config(logger, config):
 
     if ConfigField.CREDENTIALS not in config:
         raise SkyflowError(SkyflowMessages.Error.EMPTY_CREDENTIALS.value.format(ConfigType.CONNECTION, connection_id), invalid_input_error_code)
-    validate_credentials(logger, config.get(ConfigField.CREDENTIALS))
+    validate_credentials(logger, config.get(ConfigField.CREDENTIALS), ConfigType.CONNECTION, connection_id)
 
     return True
 
@@ -519,6 +527,11 @@ def validate_insert_request(logger, request):
         raise SkyflowError(SkyflowMessages.Error.INVALID_CONTINUE_ON_ERROR_TYPE.value, invalid_input_error_code)
 
     if request.tokens:
+        if not isinstance(request.tokens, list) or not request.tokens or not all(
+                isinstance(t, dict) for t in request.tokens):
+            log_error_log(SkyflowMessages.ErrorLogs.EMPTY_TOKENS.value.format(RequestOperation.INSERT), logger=logger)
+            raise SkyflowError(SkyflowMessages.Error.INVALID_TYPE_OF_DATA_IN_INSERT.value, invalid_input_error_code)
+
         for i, item in enumerate(request.tokens, start=1):
             for key, value in item.items():
                 if key is None or key == "":
@@ -528,10 +541,6 @@ def validate_insert_request(logger, request):
                 if value is None or value == "":
                     log_error_log(SkyflowMessages.ErrorLogs.EMPTY_OR_NULL_KEY_IN_TOKENS.value.format(RequestOperation.INSERT, key),
                                   logger=logger)
-        if not isinstance(request.tokens, list) or not request.tokens or not all(
-                isinstance(t, dict) for t in request.tokens):
-            log_error_log(SkyflowMessages.ErrorLogs.EMPTY_TOKENS.value.format(RequestOperation.INSERT), logger=logger)
-            raise SkyflowError(SkyflowMessages.Error.INVALID_TYPE_OF_DATA_IN_INSERT.value, invalid_input_error_code)
 
     if request.token_mode == TokenMode.ENABLE and not request.tokens:
         raise SkyflowError(SkyflowMessages.Error.NO_TOKENS_IN_INSERT.value.format(request.token_mode), invalid_input_error_code)
@@ -737,7 +746,7 @@ def validate_detokenize_request(logger, request):
         raise SkyflowError(SkyflowMessages.Error.EMPTY_TOKENS_LIST_VALUE.value, invalid_input_error_code)
 
     for item in request.data:
-        if ResponseField.TOKEN not in item:
+        if not isinstance(item, dict) or ResponseField.TOKEN not in item:
             raise SkyflowError(SkyflowMessages.Error.INVALID_TOKENS_LIST_VALUE.value.format(type(request.data)),
                                invalid_input_error_code)
 
