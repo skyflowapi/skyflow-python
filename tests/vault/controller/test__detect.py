@@ -4,16 +4,17 @@ import base64
 import os
 import tempfile
 from skyflow.error import SkyflowError
-from skyflow.generated.rest import WordCharacterCount
+from skyflow.generated.rest import WordCharacterCount, FileDataDeidentifyText, FileDataDeidentifyAudio, Format
 from skyflow.utils import SkyflowMessages
 from skyflow.vault.controller import Detect
 from skyflow.vault.detect import DeidentifyTextRequest, ReidentifyTextRequest, \
     TokenFormat, DateTransformation, Transformations, DeidentifyFileRequest, GetDetectRunRequest, \
-    DeidentifyFileResponse, FileInput
+    DeidentifyFileResponse, FileInput, Bleep
 from skyflow.utils.enums import DetectEntities, TokenType
 import io
 
 from skyflow.vault.detect._file import File
+from tests.vault.controller._request_assertions import assert_request
 
 VAULT_ID = "test_vault_id"
 
@@ -65,7 +66,26 @@ class TestDetect(unittest.TestCase):
         # Assertions
         mock_validate.assert_called_once_with(self.vault_client.get_logger(), request)
         mock_parse_response.assert_called_once_with(mock_api_response)
-        detect_api.deidentify_string.assert_called_once()
+
+        # Assert the text, entity list and token format reach the API
+        assert_request(
+            self,
+            detect_api.deidentify_string,
+            {
+                "vault_id": VAULT_ID,
+                "text": "John lives in NYC",
+                "entity_types": [DetectEntities.NAME],
+                "token_type": {
+                    "default": TokenType.ENTITY_ONLY,
+                    "entity_unq_counter": None,
+                    "entity_only": None,
+                    "vault_token": None
+                },
+                "allow_regex": None,
+                "restrict_regex": None,
+                "transformations": None
+            }
+        )
 
     @patch("skyflow.vault.controller._detect.validate_reidentify_text_request")
     @patch("skyflow.vault.controller._detect.parse_reidentify_text_response")
@@ -76,10 +96,12 @@ class TestDetect(unittest.TestCase):
             'text': 'John lives in NYC'
         }
 
-        # Create request
+        # Create request - all three re-identification formats populated
         request = ReidentifyTextRequest(
             text="Token1 lives in Token2",
-            redacted_entities=[DetectEntities.NAME]
+            redacted_entities=[DetectEntities.NAME],
+            masked_entities=[DetectEntities.LOCATION],
+            plain_text_entities=[DetectEntities.EMAIL_ADDRESS]
         )
 
         # Mock detect API
@@ -92,7 +114,21 @@ class TestDetect(unittest.TestCase):
         # Assertions
         mock_validate.assert_called_once_with(self.vault_client.get_logger(), request)
         mock_parse_response.assert_called_once_with(mock_api_response)
-        detect_api.reidentify_string.assert_called_once()
+
+        # Assert each entity list lands on the right re-identification format
+        assert_request(
+            self,
+            detect_api.reidentify_string,
+            {
+                "vault_id": VAULT_ID,
+                "text": "Token1 lives in Token2",
+                "format": Format(
+                    redacted=[DetectEntities.NAME],
+                    masked=[DetectEntities.LOCATION],
+                    plaintext=[DetectEntities.EMAIL_ADDRESS]
+                )
+            }
+        )
 
     @patch("skyflow.vault.controller._detect.validate_deidentify_text_request")
     def test_deidentify_text_handles_generic_error(self, mock_validate):
@@ -165,9 +201,28 @@ class TestDetect(unittest.TestCase):
             result = self.detect.deidentify_file(req)
 
             mock_validate.assert_called_once()
-            files_api.deidentify_text.assert_called_once()
             mock_poll.assert_called_once()
             mock_parse.assert_called_once()
+
+            # Assert the encoded file and detect options reach the txt endpoint
+            assert_request(
+                self,
+                files_api.deidentify_text,
+                {
+                    "vault_id": VAULT_ID,
+                    "file": FileDataDeidentifyText(base_64="dGVzdCBjb250ZW50", data_format="txt"),
+                    "entity_types": [],
+                    "token_type": {
+                        "default": req.token_format.default,
+                        "entity_unq_counter": req.token_format.entity_unique_counter,
+                        "entity_only": req.token_format.entity_only,
+                        "vault_token": req.token_format.vault_token
+                    },
+                    "allow_regex": [],
+                    "restrict_regex": [],
+                    "transformations": None
+                }
+            )
 
             self.assertIsInstance(result, DeidentifyFileResponse)
             self.assertEqual(result.status, "SUCCESS")
@@ -195,7 +250,12 @@ class TestDetect(unittest.TestCase):
         file_obj.read.return_value = file_content
         file_obj.name = "audio.mp3"
         mock_base64.b64encode.return_value = b"YXVkaW8gYnl0ZXM="
-        req = DeidentifyFileRequest(file=FileInput(file=file_obj))
+        bleep = Bleep(gain=0.5, frequency=800.0, start_padding=0.1, stop_padding=0.2)
+        req = DeidentifyFileRequest(
+            file=FileInput(file=file_obj),
+            bleep=bleep,
+            output_processed_audio=True
+        )
         req.entities = []
         req.token_format = Mock(default="default", entity_unique_counter=[], entity_only=[])
         req.allow_regex_list = []
@@ -226,9 +286,34 @@ class TestDetect(unittest.TestCase):
                                                                  status="SUCCESS")) as mock_parse:
             result = self.detect.deidentify_file(req)
             mock_validate.assert_called_once()
-            files_api.deidentify_audio.assert_called_once()
             mock_poll.assert_called_once()
             mock_parse.assert_called_once()
+
+            # Assert the audio-only options - bleep settings and transcription flags - are sent
+            assert_request(
+                self,
+                files_api.deidentify_audio,
+                {
+                    "vault_id": VAULT_ID,
+                    "file": FileDataDeidentifyAudio(base_64="YXVkaW8gYnl0ZXM=", data_format="mp3"),
+                    "entity_types": [],
+                    "token_type": {
+                        "default": req.token_format.default,
+                        "entity_unq_counter": req.token_format.entity_unique_counter,
+                        "entity_only": req.token_format.entity_only,
+                        "vault_token": req.token_format.vault_token
+                    },
+                    "allow_regex": [],
+                    "restrict_regex": [],
+                    "transformations": None,
+                    "output_transcription": None,
+                    "output_processed_audio": True,
+                    "bleep_gain": 0.5,
+                    "bleep_frequency": 800.0,
+                    "bleep_start_padding": 0.1,
+                    "bleep_stop_padding": 0.2
+                }
+            )
             self.assertIsInstance(result, DeidentifyFileResponse)
             self.assertEqual(result.status, "SUCCESS")
 
@@ -267,8 +352,15 @@ class TestDetect(unittest.TestCase):
                                                               run_id="runid789", status="SUCCESS")) as mock_parse:
             result = self.detect.get_detect_run(req)
             mock_validate.assert_called_once()
-            files_api.get_run.assert_called_once()
             mock_parse.assert_called_once()
+
+            # Assert the run id is the one looked up
+            assert_request(
+                self,
+                files_api.get_run,
+                {"vault_id": VAULT_ID},
+                expected_args=("runid789",)
+            )
             self.assertIsInstance(result, DeidentifyFileResponse)
             self.assertEqual(result.status, "SUCCESS")
 
@@ -685,8 +777,29 @@ class TestDetect(unittest.TestCase):
 
             mock_file.read.assert_called_once()
             mock_validate.assert_called_once()
-            files_api.deidentify_text.assert_called_once()
             mock_basename.assert_called_with("/path/to/test.txt")
+            # The file_path branch encodes the file read off disk, same shape as file_object
+            assert_request(
+                self,
+                files_api.deidentify_text,
+                {
+                    "vault_id": VAULT_ID,
+                    "file": FileDataDeidentifyText(
+                        base_64="dGVzdCBjb250ZW50IGZyb20gZmlsZSBwYXRo",
+                        data_format="txt"
+                    ),
+                    "entity_types": [],
+                    "token_type": {
+                        "default": req.token_format.default,
+                        "entity_unq_counter": req.token_format.entity_unique_counter,
+                        "entity_only": req.token_format.entity_only,
+                        "vault_token": req.token_format.vault_token
+                    },
+                    "allow_regex": [],
+                    "restrict_regex": [],
+                    "transformations": None
+                }
+            )
             mock_poll.assert_called_once()
             mock_parse.assert_called_once()
 

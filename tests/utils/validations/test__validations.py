@@ -13,7 +13,7 @@ from skyflow.utils.validations._validations import (
     validate_get_detect_run_request, validate_get_request, validate_update_request,
     validate_detokenize_request, validate_tokenize_request, validate_invoke_connection_params,
     validate_deidentify_text_request, validate_reidentify_text_request, validate_deidentify_file_request,
-    validate_file_upload_request
+    validate_file_upload_request, validate_token_options
 )
 from skyflow.utils import SkyflowMessages
 from skyflow.utils.enums import DetectEntities, RedactionType
@@ -145,7 +145,139 @@ class TestValidations(unittest.TestCase):
             with self.assertRaises(SkyflowError) as context:
                 validate_credentials(self.logger, credentials)
             self.assertEqual(context.exception.message, SkyflowMessages.Error.EMPTY_CONTEXT.value)
-            
+
+    # ------------------------------------------------------------------ #
+    # credentials.context — string and dict/JSON object                  #
+    # ------------------------------------------------------------------ #
+
+    def test_validate_credentials_with_string_context(self):
+        credentials = {
+            "api_key": "sky-abc12-1234567890abcdef1234567890abcdef",
+            "context": "user_12345"
+        }
+        validate_credentials(self.logger, credentials)
+
+    def test_validate_credentials_with_dict_context(self):
+        """A dict/JSON object context is accepted — the token engine supports it."""
+        credentials = {
+            "api_key": "sky-abc12-1234567890abcdef1234567890abcdef",
+            "context": {"role": "admin", "department": "finance"}
+        }
+        validate_credentials(self.logger, credentials)
+
+    def test_validate_credentials_with_empty_dict_context(self):
+        credentials = {
+            "api_key": "sky-abc12-1234567890abcdef1234567890abcdef",
+            "context": {}
+        }
+        with self.assertRaises(SkyflowError) as context:
+            validate_credentials(self.logger, credentials)
+        self.assertEqual(context.exception.message, SkyflowMessages.Error.EMPTY_CONTEXT.value)
+
+    def test_validate_credentials_with_invalid_dict_context_key(self):
+        credentials = {
+            "api_key": "sky-abc12-1234567890abcdef1234567890abcdef",
+            "context": {"invalid key": "value"}
+        }
+        with self.assertRaises(SkyflowError) as context:
+            validate_credentials(self.logger, credentials)
+        self.assertEqual(
+            context.exception.message,
+            SkyflowMessages.Error.INVALID_CTX_MAP_KEY.value.format("invalid key")
+        )
+
+    def test_validate_credentials_with_scalar_context(self):
+        """Numbers and booleans are valid ctx claims, so they must not be rejected here.
+
+        The token engine and the auth service both accept them; rejecting them would make the
+        client stricter than generate_bearer_token for no reason. Falsy scalars are included
+        because nothing on this path may test truthiness.
+        """
+        for scalar_context in [123, 0, 1.5, 0.0, True, False]:
+            with self.subTest(context=scalar_context):
+                credentials = {
+                    "api_key": "sky-abc12-1234567890abcdef1234567890abcdef",
+                    "context": scalar_context
+                }
+                validate_credentials(self.logger, credentials)
+
+    def test_validate_credentials_with_invalid_context_type(self):
+        for invalid_context in [["user_12345"], ("user_12345",), None, object()]:
+            with self.subTest(context=invalid_context):
+                credentials = {
+                    "api_key": "sky-abc12-1234567890abcdef1234567890abcdef",
+                    "context": invalid_context
+                }
+                with self.assertRaises(SkyflowError) as context:
+                    validate_credentials(self.logger, credentials)
+                self.assertEqual(context.exception.message, SkyflowMessages.Error.INVALID_CONTEXT.value)
+
+    def test_validate_credentials_with_dict_context_in_config(self):
+        """Config-scoped messages are used when a config id is available."""
+        credentials = {
+            "api_key": "sky-abc12-1234567890abcdef1234567890abcdef",
+            "context": {}
+        }
+        with self.assertRaises(SkyflowError) as context:
+            validate_credentials(self.logger, credentials, "vault", "vault123")
+        self.assertEqual(
+            context.exception.message,
+            SkyflowMessages.Error.EMPTY_CONTEXT_IN_CONFIG.value.format("vault", "vault123")
+        )
+
+    # ------------------------------------------------------------------ #
+    # credentials.roles                                                  #
+    # ------------------------------------------------------------------ #
+
+    def test_validate_credentials_with_roles(self):
+        credentials = {
+            "api_key": "sky-abc12-1234567890abcdef1234567890abcdef",
+            "roles": ["role_id_1", "role_id_2"]
+        }
+        validate_credentials(self.logger, credentials)
+
+    def test_validate_credentials_with_invalid_roles_type(self):
+        credentials = {
+            "api_key": "sky-abc12-1234567890abcdef1234567890abcdef",
+            "roles": "role_id_1"
+        }
+        with self.assertRaises(SkyflowError) as context:
+            validate_credentials(self.logger, credentials)
+        self.assertEqual(context.exception.message, SkyflowMessages.Error.INVALID_ROLES_KEY_TYPE.value)
+
+    def test_validate_credentials_with_empty_roles(self):
+        credentials = {
+            "api_key": "sky-abc12-1234567890abcdef1234567890abcdef",
+            "roles": []
+        }
+        with self.assertRaises(SkyflowError) as context:
+            validate_credentials(self.logger, credentials)
+        self.assertEqual(context.exception.message, SkyflowMessages.Error.EMPTY_ROLES.value)
+
+    def test_validate_credentials_with_non_string_role_elements(self):
+        credentials = {
+            "api_key": "sky-abc12-1234567890abcdef1234567890abcdef",
+            "roles": [None, 123, {"id": "x"}]
+        }
+        with self.assertRaises(SkyflowError) as context:
+            validate_credentials(self.logger, credentials)
+        self.assertEqual(context.exception.message, SkyflowMessages.Error.INVALID_ROLE_ELEMENT_TYPE.value)
+
+    # ------------------------------------------------------------------ #
+    # validate_token_options — shared by config validation and VaultClient #
+    # ------------------------------------------------------------------ #
+
+    def test_validate_token_options_rejects_empty_values(self):
+        """The contract VaultClient relies on; the cases themselves are covered above
+        via validate_credentials, which delegates here."""
+        with self.assertRaises(SkyflowError) as context:
+            validate_token_options(self.logger, {"roles": []})
+        self.assertEqual(context.exception.message, SkyflowMessages.Error.EMPTY_ROLES.value)
+
+        with self.assertRaises(SkyflowError) as context:
+            validate_token_options(self.logger, {"context": {}})
+        self.assertEqual(context.exception.message, SkyflowMessages.Error.EMPTY_CONTEXT.value)
+
     def test_validate_log_level_valid(self):
         from skyflow.utils.enums import LogLevel
         log_level = LogLevel.ERROR
@@ -307,6 +439,17 @@ class TestValidations(unittest.TestCase):
             validate_update_connection_config(self.logger, config)
         self.assertEqual(context.exception.message, SkyflowMessages.Error.EMPTY_CONNECTION_URL.value.format("conn123"))
 
+    def test_validate_update_connection_config_invalid_credentials_includes_connection_id(self):
+        config = {
+            "connection_id": "conn123",
+            "connection_url": "https://example.com",
+            "credentials": {}
+        }
+        with self.assertRaises(SkyflowError) as context:
+            validate_update_connection_config(self.logger, config)
+        self.assertEqual(context.exception.message,
+            SkyflowMessages.Error.INVALID_CREDENTIALS_IN_CONFIG.value.format("connection", "conn123"))
+
     def test_validate_file_from_request_valid_file(self):
         file_obj = MagicMock()
         file_obj.name = "test.txt"
@@ -376,6 +519,20 @@ class TestValidations(unittest.TestCase):
             validate_insert_request(self.logger, request)
         self.assertEqual(context.exception.message, SkyflowMessages.Error.EMPTY_DATA_IN_INSERT.value)
 
+    def test_validate_insert_request_tokens_as_dict(self):
+        request = MagicMock()
+        request.table = "test_table"
+        request.values = [{"field1": "value1"}]
+        request.upsert = None
+        request.homogeneous = None
+        request.token_mode = None
+        request.return_tokens = False
+        request.continue_on_error = False
+        request.tokens = {"field1": "token1"}
+        with self.assertRaises(SkyflowError) as context:
+            validate_insert_request(self.logger, request)
+        self.assertEqual(context.exception.message, SkyflowMessages.Error.INVALID_TYPE_OF_DATA_IN_INSERT.value)
+
 
     def test_validate_delete_request_valid(self):
         request = MagicMock()
@@ -398,6 +555,19 @@ class TestValidations(unittest.TestCase):
         with self.assertRaises(SkyflowError) as context:
             validate_delete_request(self.logger, request)
         self.assertEqual(context.exception.message, SkyflowMessages.Error.EMPTY_RECORD_IDS_IN_DELETE.value)
+
+    def test_validate_delete_request_non_list_ids(self):
+        for ids in ["id1", 123, {"id": "id1"}, ("id1", "id2")]:
+            with self.subTest(ids=ids):
+                request = MagicMock()
+                request.table = "test_table"
+                request.ids = ids
+                with self.assertRaises(SkyflowError) as context:
+                    validate_delete_request(self.logger, request)
+                self.assertEqual(
+                    context.exception.message,
+                    SkyflowMessages.Error.INVALID_IDS_TYPE.value.format(type(ids))
+                )
 
     def test_validate_query_request_valid(self):
         request = MagicMock()
@@ -564,6 +734,20 @@ class TestValidations(unittest.TestCase):
             validate_update_request(self.logger, request)
         self.assertEqual(context.exception.message, SkyflowMessages.Error.INVALID_TABLE_VALUE.value)
 
+    def test_validate_update_request_non_string_skyflow_id(self):
+        for skyflow_id in [123, ["id123"], {"id": "id123"}]:
+            with self.subTest(skyflow_id=skyflow_id):
+                request = UpdateRequest(
+                    table="test_table",
+                    data={"skyflow_id": skyflow_id, "field1": "value1"}
+                )
+                with self.assertRaises(SkyflowError) as context:
+                    validate_update_request(self.logger, request)
+                self.assertEqual(
+                    context.exception.message,
+                    SkyflowMessages.Error.INVALID_SKYFLOW_ID_TYPE.value.format(type(skyflow_id))
+                )
+
     def test_validate_update_request_invalid_token_mode(self):
         request = UpdateRequest(
             table="test_table",
@@ -594,8 +778,17 @@ class TestValidations(unittest.TestCase):
         request.continue_on_error = False
         with self.assertRaises(SkyflowError) as context:
             validate_detokenize_request(self.logger, request)
-        self.assertEqual(context.exception.message, 
+        self.assertEqual(context.exception.message,
             SkyflowMessages.Error.INVALID_TOKEN_TYPE.value.format("DETOKENIZE"))
+
+    def test_validate_detokenize_request_bare_string_data(self):
+        request = MagicMock()
+        request.data = ["mytoken123"]  # bare string containing 'token' as a substring
+        request.continue_on_error = False
+        with self.assertRaises(SkyflowError) as context:
+            validate_detokenize_request(self.logger, request)
+        self.assertEqual(context.exception.message,
+            SkyflowMessages.Error.INVALID_TOKENS_LIST_VALUE.value.format(list))
 
     def test_validate_tokenize_request_valid(self):
         request = MagicMock()
@@ -1467,6 +1660,29 @@ class TestValidations(unittest.TestCase):
         with self.assertRaises(SkyflowError) as context:
             validate_file_upload_request(self.logger, request)
         self.assertEqual(context.exception.message, SkyflowMessages.Error.MISSING_FILE_SOURCE.value)
+
+    def test_validate_file_upload_request_non_string_fields(self):
+        cases = [
+            ("table", 123, SkyflowMessages.Error.INVALID_TABLE_VALUE.value),
+            ("table", ["test_table"], SkyflowMessages.Error.INVALID_TABLE_VALUE.value),
+            ("column_name", 123, SkyflowMessages.Error.INVALID_COLUMN_NAME.value.format(type(123))),
+            ("column_name", ["file_col"], SkyflowMessages.Error.INVALID_COLUMN_NAME.value.format(type([]))),
+            ("skyflow_id", 123, SkyflowMessages.Error.INVALID_SKYFLOW_ID_TYPE.value.format(type(123))),
+            ("file_name", 123, SkyflowMessages.Error.INVALID_FILE_NAME.value),
+        ]
+        for field, value, expected_message in cases:
+            with self.subTest(field=field, value=value):
+                kwargs = {
+                    "table": "test_table",
+                    "column_name": "file_col",
+                    "base64": "ZmlsZSBjb250ZW50",
+                    "file_name": "sample.txt",
+                    field: value,
+                }
+                request = FileUploadRequest(**kwargs)
+                with self.assertRaises(SkyflowError) as context:
+                    validate_file_upload_request(self.logger, request)
+                self.assertEqual(context.exception.message, expected_message)
 
     # --- validate_deidentify_text_request transformations ---
 
