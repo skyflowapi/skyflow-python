@@ -1,7 +1,7 @@
 from collections import OrderedDict
 from skyflow import LogLevel
 from skyflow.error import SkyflowError
-from skyflow.utils import SkyflowMessages
+from skyflow.utils import SkyflowMessages, SDK_VERSION, is_non_ga_version, any_vault_is_prod
 from skyflow.utils.logger import log_info, log_warn, set_active_log_level, Logger
 from skyflow.utils.constants import OptionField
 from skyflow.utils.validations import validate_vault_config, validate_connection_config, validate_update_vault_config, \
@@ -249,5 +249,8 @@ class Skyflow:
             self.__update_vault_client_logger(self.__log_level, self.__logger)
 
             self.__add_skyflow_credentials(self.__skyflow_credentials)
+
+            if is_non_ga_version(SDK_VERSION) and any_vault_is_prod(self.__vault_list):
+                log_warn(SkyflowMessages.Warning.BETA_BUILD_WARNING.value, self.__logger)
 
             return Skyflow(self)

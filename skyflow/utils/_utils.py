@@ -20,9 +20,9 @@ from skyflow.utils.logger import log_error_log
 from skyflow.vault.detect import DeidentifyTextResponse, ReidentifyTextResponse
 from skyflow.vault.detect import EntityInfo, TextIndex
 from . import SkyflowMessages, SDK_VERSION
-from .constants import (PROTOCOL, HttpHeader, ApiKey, ContentType as ContentTypeConstants, 
-                        EncodingType, BooleanString, ResponseField, CredentialField, SdkPrefix, 
-                        SdkMetricsKey, ErrorDefaults, HttpStatusCode)
+from .constants import (PROTOCOL, HttpHeader, ApiKey, ContentType as ContentTypeConstants,
+                        EncodingType, BooleanString, ResponseField, CredentialField, SdkPrefix,
+                        SdkMetricsKey, ErrorDefaults, HttpStatusCode, ConfigField)
 from .enums import Env, ContentType, EnvUrls
 from skyflow.vault.data import InsertResponse, UpdateResponse, DeleteResponse, QueryResponse, GetResponse
 from .validations import validate_invoke_connection_params
@@ -64,6 +64,16 @@ def get_vault_url(cluster_id, env,vault_id, logger = None):
     protocol = PROTOCOL
 
     return f"{protocol}://{cluster_id}.{base_url}"
+
+# Beta/dev builds are published as <major>.<minor>.<patch>bN (PEP 440) or
+# <major>.<minor>.<patch>.dev0+<sha>; a plain public release has neither suffix.
+def is_non_ga_version(version):
+    return not bool(re.match(r'^\d+\.\d+\.\d+$', version or ''))
+
+def any_vault_is_prod(vault_configs):
+    # Unlike Java/Node/Go, env has no SDK-side default here - it's only ever
+    # PROD if the caller explicitly set it, so there's nothing to default.
+    return any(config.get(ConfigField.ENV) == Env.PROD for config in (vault_configs or []))
 
 def parse_path_params(url, path_params):
     result = url

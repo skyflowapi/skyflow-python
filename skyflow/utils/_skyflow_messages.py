@@ -432,6 +432,11 @@ class SkyflowMessages:
             "Old positional order: (table, skyflow_id, column_name). "
             "New order: FileUploadRequest(table, column_name=..., skyflow_id=...)."
         )
+        BETA_BUILD_WARNING = (
+            f"{WARN}: [{error_prefix}] This is a beta/pre-release build of the Skyflow SDK (v{SDK_VERSION}). "
+            "Beta builds are intended for acceptance testing only - you appear to be connecting to a Production vault. "
+            "Contact your Skyflow representative before using this build in Production."
+        )
 
 
 

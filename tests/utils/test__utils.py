@@ -32,6 +32,8 @@ from skyflow.utils import (
     parse_deidentify_text_response,
     parse_reidentify_text_response,
     convert_detected_entity_to_entity_info,
+    is_non_ga_version,
+    any_vault_is_prod,
 )
 from skyflow.utils._utils import parse_path_params, to_lowercase_keys, get_metrics, handle_json_error, r_urlencode
 from skyflow.utils.enums import EnvUrls, Env, ContentType
@@ -96,6 +98,40 @@ class TestUtils(unittest.TestCase):
         with self.assertRaises(SkyflowError) as context:
             url = get_vault_url(valid_cluster_id, valid_env, valid_vault_id)
         self.assertEqual(context.exception.message, SkyflowMessages.Error.INVALID_ENV.value.format(valid_vault_id))
+
+    # SK-2963: beta-build-in-prod warning
+    def test_is_non_ga_version_plain_semver_is_ga(self):
+        self.assertFalse(is_non_ga_version("1.0.0"))
+        self.assertFalse(is_non_ga_version("2.11.3"))
+
+    def test_is_non_ga_version_beta_suffix_is_non_ga(self):
+        self.assertTrue(is_non_ga_version("2.1.0b1"))
+
+    def test_is_non_ga_version_dev_suffix_is_non_ga(self):
+        self.assertTrue(is_non_ga_version("2.1.3.dev0+5e4b2fb"))
+
+    def test_is_non_ga_version_none_or_empty_is_non_ga(self):
+        self.assertTrue(is_non_ga_version(None))
+        self.assertTrue(is_non_ga_version(""))
+
+    def test_is_non_ga_version_garbage_is_non_ga(self):
+        self.assertTrue(is_non_ga_version("v2"))
+
+    def test_any_vault_is_prod_empty_or_none_is_false(self):
+        self.assertFalse(any_vault_is_prod(None))
+        self.assertFalse(any_vault_is_prod([]))
+
+    def test_any_vault_is_prod_no_vault_is_prod(self):
+        configs = [{"env": Env.DEV}, {"env": Env.SANDBOX}, {"env": Env.STAGE}]
+        self.assertFalse(any_vault_is_prod(configs))
+
+    def test_any_vault_is_prod_one_of_many_is_prod(self):
+        configs = [{"env": Env.DEV}, {"env": Env.PROD}]
+        self.assertTrue(any_vault_is_prod(configs))
+
+    def test_any_vault_is_prod_missing_env_is_not_prod(self):
+        # Unlike Java/Node/Go, Python has no SDK-side default-to-PROD for a missing env.
+        self.assertFalse(any_vault_is_prod([{"vault_id": "v1"}]))
 
     @patch("skyflow.utils._utils.log_and_reject_error")
     def test_handle_json_error_with_dict_data(self, mock_log_and_reject_error):

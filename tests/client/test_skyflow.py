@@ -529,3 +529,52 @@ class TestFileUploadRequestDeprecation(unittest.TestCase):
         self.assertIsNone(req.base64)
         self.assertIsNone(req.file_object)
         self.assertIsNone(req.file_name)
+
+
+class TestSkyflowBetaBuildWarning(unittest.TestCase):
+    """SK-2963: warn at startup when a beta/dev build targets a Production vault."""
+
+    def setUp(self):
+        self.builder = Skyflow.builder()
+
+    @patch("skyflow.client.skyflow.SDK_VERSION", "99.0.0-beta.1")
+    def test_warns_for_non_ga_build_with_prod_vault(self):
+        prod_config = {**VALID_VAULT_CONFIG, "env": Env.PROD}
+        with patch("skyflow.client.skyflow.log_warn") as mock_warn:
+            self.builder.add_vault_config(prod_config).build()
+        mock_warn.assert_called_once()
+        self.assertIn("beta/pre-release build", mock_warn.call_args[0][0])
+
+    @patch("skyflow.client.skyflow.SDK_VERSION", "99.0.0-beta.1")
+    def test_warns_when_one_of_several_vaults_is_prod(self):
+        non_prod_config = {**VALID_VAULT_CONFIG, "vault_id": "OTHER_VAULT_ID", "env": Env.SANDBOX}
+        prod_config = {**VALID_VAULT_CONFIG, "env": Env.PROD}
+        with patch("skyflow.client.skyflow.log_warn") as mock_warn:
+            self.builder.add_vault_config(non_prod_config).add_vault_config(prod_config).build()
+        mock_warn.assert_called_once()
+        self.assertIn("beta/pre-release build", mock_warn.call_args[0][0])
+
+    @patch("skyflow.client.skyflow.SDK_VERSION", "99.0.0-beta.1")
+    def test_does_not_warn_when_no_vault_is_prod(self):
+        # VALID_VAULT_CONFIG uses env=DEV.
+        with patch("skyflow.client.skyflow.log_warn") as mock_warn:
+            self.builder.add_vault_config(VALID_VAULT_CONFIG).build()
+        for call in mock_warn.call_args_list:
+            self.assertNotIn("beta/pre-release build", call.args[0])
+
+    @patch("skyflow.client.skyflow.SDK_VERSION", "99.0.0-beta.1")
+    def test_does_not_warn_when_env_is_missing_entirely(self):
+        # Unlike Java/Node/Go, Python has no SDK-side default-to-PROD for a missing env.
+        config_without_env = {k: v for k, v in VALID_VAULT_CONFIG.items() if k != "env"}
+        with patch("skyflow.client.skyflow.log_warn") as mock_warn:
+            self.builder.add_vault_config(config_without_env).build()
+        for call in mock_warn.call_args_list:
+            self.assertNotIn("beta/pre-release build", call.args[0])
+
+    def test_does_not_warn_for_the_real_ga_version(self):
+        # SDK_VERSION is whatever this checkout's real, unpatched (GA) version is.
+        prod_config = {**VALID_VAULT_CONFIG, "env": Env.PROD}
+        with patch("skyflow.client.skyflow.log_warn") as mock_warn:
+            self.builder.add_vault_config(prod_config).build()
+        for call in mock_warn.call_args_list:
+            self.assertNotIn("beta/pre-release build", call.args[0])
