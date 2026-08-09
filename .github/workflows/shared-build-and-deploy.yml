@@ -74,6 +74,7 @@ jobs:
 
           git add setup.py
           git add skyflow/utils/_version.py
+          git add README.md
 
           if [[ "${{ inputs.tag }}" == "internal" ]]; then
             VERSION="${{ steps.previoustag.outputs.tag }}.dev0+$(git rev-parse --short $GITHUB_SHA)"

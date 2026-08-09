@@ -8,6 +8,7 @@ then
     sed -E "s/current_version = .+/current_version = '$SEMVER'/g" setup.py > tempfile && cat tempfile > setup.py && rm -f tempfile
     sed -E "s/SDK_VERSION = .+/SDK_VERSION = '$SEMVER'/g" skyflow/utils/_version.py > tempfile && cat tempfile > skyflow/utils/_version.py && rm -f tempfile
     sed -E "s/__version__ = .+/__version__ = '$SEMVER'/g" skyflow/generated/rest/version.py > tempfile && cat tempfile > skyflow/generated/rest/version.py && rm -f tempfile
+    ./ci-scripts/toggle_beta_banner.sh README.md "$SEMVER"
 
     echo --------------------------
     echo "Done, Package now at $1"
