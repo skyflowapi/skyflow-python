@@ -1,4 +1,4 @@
-name: CI Checks
+name: PR CI Checks
 
 on: [pull_request]
 
