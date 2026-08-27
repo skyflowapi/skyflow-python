@@ -126,7 +126,7 @@ jobs:
           fi
 
           if [[ "${{ inputs.tag }}" == "internal" ]]; then
-            git commit -m "[AUTOMATED] Private Release ${{ steps.resolve-version.outputs.base_version }}-dev-$(git rev-parse --short $GITHUB_SHA)"
+            git commit -m "[AUTOMATED] Private Release ${{ steps.resolve-version.outputs.base_version }}.dev0+$(git rev-parse --short $GITHUB_SHA)"
             if [[ "${{ inputs.dry-run }}" == "true" ]]; then
               echo "::notice::DRY RUN - not pushing the version-bump commit"
             else
