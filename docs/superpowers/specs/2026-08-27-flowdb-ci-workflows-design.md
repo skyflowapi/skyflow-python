@@ -12,12 +12,20 @@ adopting the same `common/skyvault/flowvault` folder split.
 **Non-goal:** this spec does not create the `common/`, `skyvault/`, `flowvault/`
 folders or move any code. The workflows and scripts below are written for that
 target layout and will only build/test/release successfully once a separate
-migration PR creates it. Until then, `pr.yml`'s full build job and `main.yml`
-will fail (there is nothing at `common/`, `skyvault/`, `flowvault/` yet) — that
-failure is expected and should not be "fixed" by reverting to the old layout;
-it resolves itself when the migration PR lands. `pr-flowvault.yml` won't fire at
-all (no `flowvault/**` paths exist to match), and the release workflows are
-inert until a module tag/branch names a module that actually exists on disk.
+migration PR creates it. This branch is therefore only ever meant to be merged
+into `main` together with (or immediately before) that migration PR — never
+merged alone. It has NOT been made safe to sit on `main` on its own: as
+implemented, `shared-tests.yml`'s per-module loop skips every module that
+doesn't exist yet and exits 0, so `pr.yml`/`main.yml` would report green while
+running zero unit tests; and the release workflows resolve `release/*`
+pushes and legacy bare-`x.y.z` tags to module `skyvault`, which then hard-fails
+at `skyvault/setup.py not found` — meaning today's live release path (JFrog
+and PyPI) would stop working with no fallback until the migration lands. Both
+were confirmed and accepted by the repo owner as out of scope for this spec
+specifically because the merge-together constraint holds; if that constraint
+ever changes (i.e. this needs to land on `main` before the migration PR is
+ready), an interim root-package fallback must be designed first — don't merge
+this alone without one.
 
 Reference implementation: `/home/devb/skyflow/skyflow-java/.github/workflows/`
 (`pr.yml`, `pr-flowvault.yml`, `main.yml`, `release.yml`, `internal-release.yml`,
