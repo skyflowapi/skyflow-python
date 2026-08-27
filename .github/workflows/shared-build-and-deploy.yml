@@ -52,6 +52,9 @@ on:
 jobs:
   publish:
     runs-on: ubuntu-latest
+    env:
+      MODULE: ${{ inputs.module }}
+      RELEASE_BRANCH: ${{ inputs.release-branch }}
     steps:
       - uses: actions/checkout@v2
         with:
@@ -71,17 +74,17 @@ jobs:
       - name: Validate release branch input
         if: ${{ inputs.tag == 'beta' || inputs.tag == 'public' }}
         run: |
-          if [ -z "${{ inputs.release-branch }}" ]; then
+          if [ -z "$RELEASE_BRANCH" ]; then
             echo "::error::release-branch is required for ${{ inputs.tag }} releases."
             exit 1
           fi
           # The tagged commit must actually be on that branch, otherwise the
           # bump would land somewhere the release was never cut from.
-          if ! git merge-base --is-ancestor HEAD "origin/${{ inputs.release-branch }}"; then
-            echo "::error::Tagged commit is not an ancestor of origin/${{ inputs.release-branch }}."
+          if ! git merge-base --is-ancestor HEAD "origin/$RELEASE_BRANCH"; then
+            echo "::error::Tagged commit is not an ancestor of origin/$RELEASE_BRANCH."
             exit 1
           fi
-          echo "Release branch: ${{ inputs.release-branch }}"
+          echo "Release branch: $RELEASE_BRANCH"
 
       # Version priority: inputs.version (beta/public, parsed from the tag) >
       # the module's own setup.py (internal). Tags are a flat repo-wide
@@ -95,17 +98,47 @@ jobs:
           if [ -n "${{ inputs.version }}" ]; then
             BASE_VERSION="${{ inputs.version }}"
           else
-            BASE_VERSION=$(./ci-scripts/current_module_version.sh "${{ inputs.module }}")
+            BASE_VERSION=$(./ci-scripts/current_module_version.sh "$MODULE")
           fi
           echo "base_version=$BASE_VERSION" >> "$GITHUB_OUTPUT"
 
       - name: Bump Version
         run: |
           if [[ "${{ inputs.tag }}" == "internal" ]]; then
-            ./ci-scripts/bump_version.sh "${{ steps.resolve-version.outputs.base_version }}" "$(git rev-parse --short "$GITHUB_SHA")" "${{ inputs.module }}"
+            ./ci-scripts/bump_version.sh "${{ steps.resolve-version.outputs.base_version }}" "$(git rev-parse --short "$GITHUB_SHA")" "$MODULE"
           else
-            ./ci-scripts/bump_version.sh "${{ steps.resolve-version.outputs.base_version }}" "" "${{ inputs.module }}"
+            ./ci-scripts/bump_version.sh "${{ steps.resolve-version.outputs.base_version }}" "" "$MODULE"
           fi
+
+      # Build and publish happen here, BEFORE the version-bump commit lands on
+      # release-branch below: the working tree at this point is still exactly
+      # inputs.ref (the tagged commit) plus the in-place version bump, so the
+      # published artifact's provenance is the tag, never whatever
+      # release-branch happens to look like today. Landing the commit first
+      # would let the branch checkout pull in unrelated branch-tip content
+      # ahead of the build.
+      - name: Build ${{ inputs.module }} package
+        run: |
+          cd "$MODULE"
+          python setup.py sdist bdist_wheel
+
+      - name: Publish to PyPI
+        if: ${{ (inputs.tag == 'beta' || inputs.tag == 'public') && inputs.dry-run != true }}
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_PUBLISH_TOKEN }}
+        run: |
+          cd "$MODULE"
+          twine upload dist/*
+
+      - name: Publish to JFrog Artifactory
+        if: ${{ inputs.tag == 'internal' && inputs.dry-run != true }}
+        env:
+          TWINE_USERNAME: ${{ secrets.JFROG_USERNAME }}
+          TWINE_PASSWORD: ${{ secrets.JFROG_PASSWORD }}
+        run: |
+          cd "$MODULE"
+          twine upload --repository-url https://prekarilabs.jfrog.io/artifactory/api/pypi/skyflow-python/ dist/*
 
       - name: Commit changes
         run: |
@@ -113,15 +146,24 @@ jobs:
           git config user.email "${{ github.actor }}@users.noreply.github.com"
 
           if [[ "${{ inputs.tag }}" == "beta" || "${{ inputs.tag }}" == "public" ]]; then
-            git checkout ${{ inputs.release-branch }}
+            git checkout "$RELEASE_BRANCH"
           fi
 
-          git add ${{ inputs.module }}/setup.py
+          # Stage exactly what bump_version.sh may have touched: setup.py
+          # always, plus the module's runtime _version.py if it has one. Not
+          # `git add -A`: the Build step above already created dist/build/
+          # *.egg-info inside $MODULE, and those must never land in a
+          # version-bump commit.
+          git add "$MODULE/setup.py"
+          version_file=$(find "$MODULE" -name "_version.py" -print -quit)
+          if [ -n "$version_file" ]; then
+            git add "$version_file"
+          fi
 
-          # Nothing staged = setup.py already at this version. That is
+          # Nothing staged = module already at this version. That is
           # success; a bare 'git commit' would exit 1 here.
           if git diff --cached --quiet; then
-            echo "::notice::${{ inputs.module }}/setup.py already at the target version - nothing to commit"
+            echo "::notice::$MODULE already at the target version - nothing to commit"
             exit 0
           fi
 
@@ -138,32 +180,9 @@ jobs:
             if [[ "${{ inputs.dry-run }}" == "true" ]]; then
               echo "::notice::DRY RUN - not pushing the version-bump commit"
             else
-              git push origin ${{ inputs.release-branch }}
+              git push origin "$RELEASE_BRANCH"
             fi
           fi
-
-      - name: Build ${{ inputs.module }} package
-        run: |
-          cd ${{ inputs.module }}
-          python setup.py sdist bdist_wheel
-
-      - name: Publish to PyPI
-        if: ${{ (inputs.tag == 'beta' || inputs.tag == 'public') && inputs.dry-run != true }}
-        env:
-          TWINE_USERNAME: __token__
-          TWINE_PASSWORD: ${{ secrets.PYPI_PUBLISH_TOKEN }}
-        run: |
-          cd ${{ inputs.module }}
-          twine upload dist/*
-
-      - name: Publish to JFrog Artifactory
-        if: ${{ inputs.tag == 'internal' && inputs.dry-run != true }}
-        env:
-          TWINE_USERNAME: ${{ secrets.JFROG_USERNAME }}
-          TWINE_PASSWORD: ${{ secrets.JFROG_PASSWORD }}
-        run: |
-          cd ${{ inputs.module }}
-          twine upload --repository-url https://prekarilabs.jfrog.io/artifactory/api/pypi/skyflow-python/ dist/*
 
       - name: Dry run summary
         if: ${{ inputs.dry-run == true }}

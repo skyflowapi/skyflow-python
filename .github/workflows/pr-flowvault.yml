@@ -23,9 +23,18 @@ jobs:
         with:
           python-version: '3.9'
 
-      - name: Build flowvault
+      # flowvault depends on common as a local path dependency, so common
+      # must be built and installed first or flowvault's own build/install
+      # will fail to resolve it.
+      - name: Build and install common
         run: |
           python -m pip install --upgrade pip setuptools wheel
+          cd common
+          python setup.py sdist bdist_wheel
+          pip install dist/*.whl
+
+      - name: Build flowvault
+        run: |
           cd flowvault
           python setup.py sdist bdist_wheel
 
@@ -47,8 +56,15 @@ jobs:
 
       - name: Run flowvault unit tests
         run: |
-          python -m pip install --upgrade pip setuptools wheel
+          python -m pip install --upgrade pip setuptools wheel coverage
           cp credentials.json flowvault/credentials.json
+
+          # flowvault depends on common as a local path dependency.
+          cd common
+          python setup.py sdist bdist_wheel
+          pip install dist/*.whl
+          cd ..
+
           cd flowvault
           python setup.py sdist bdist_wheel
           pip install dist/*.whl
@@ -63,6 +79,6 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_REPO_UPLOAD_TOKEN }}
           files: flowvault/test-coverage.xml
-          flags: unittests-flowvault
+          flags: flowvault
           name: codecov-skyflow-python-flowvault
           verbose: true

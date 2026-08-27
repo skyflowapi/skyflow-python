@@ -32,8 +32,15 @@ echo "Bumping $Module version to $SEMVER"
 
 sed -E "s/current_version = .+/current_version = '$SEMVER'/g" "$SetupFile" > tempfile && cat tempfile > "$SetupFile" && rm -f tempfile
 
-version_file=$(find "$Module" -name "_version.py" -print -quit)
-if [ -n "$version_file" ]; then
+version_files=$(find "$Module" -name "_version.py")
+version_file_count=$(echo "$version_files" | grep -c . || true)
+
+if [ "$version_file_count" -gt 1 ]; then
+  echo "Error: multiple _version.py files found under $Module - ambiguous, refusing to guess which to bump:" >&2
+  echo "$version_files" >&2
+  exit 1
+elif [ "$version_file_count" -eq 1 ]; then
+  version_file="$version_files"
   sed -E "s/SDK_VERSION = .+/SDK_VERSION = '$SEMVER'/g" "$version_file" > tempfile && cat tempfile > "$version_file" && rm -f tempfile
   echo "Also bumped $version_file"
 else

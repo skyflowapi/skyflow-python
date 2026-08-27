@@ -26,4 +26,13 @@ fi
 # Strip a trailing .devN+<sha> suffix (internal-release versions), if present.
 version=$(echo "$version" | sed -E 's/\.dev[0-9]+\+[0-9a-f]+$//')
 
+# Sanity check: if the sed extraction above silently failed to match (e.g.
+# setup.py used double quotes instead of single), $version would be the
+# entire matched grep line rather than a bare version - catch that here
+# instead of letting a garbage string flow into a version-bump commit.
+if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+ ]]; then
+  echo "Error: could not parse a valid version from $SetupFile (got: '$version')" >&2
+  exit 1
+fi
+
 echo "$version"
