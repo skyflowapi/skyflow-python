@@ -4,8 +4,12 @@ import typing
 
 import httpx
 from .core.client_wrapper import AsyncClientWrapper, SyncClientWrapper
-from .flowservice.client import AsyncFlowserviceClient, FlowserviceClient
+from .core.request_options import RequestOptions
+from .environment import SkyflowAuthEnvironment
+from .query.client import AsyncQueryClient, QueryClient
+from .raw_client import AsyncRawSkyflowAuth, RawSkyflowAuth
 from .records.client import AsyncRecordsClient, RecordsClient
+from .tokens.client import AsyncTokensClient, TokensClient
 
 
 class SkyflowAuth:
@@ -14,9 +18,19 @@ class SkyflowAuth:
 
     Parameters
     ----------
-    base_url : str
+    base_url : typing.Optional[str]
         The base url to use for requests from the client.
 
+    environment : SkyflowAuthEnvironment
+        The environment to use for requests from the client. from .environment import SkyflowAuthEnvironment
+
+
+
+        Defaults to SkyflowAuthEnvironment.PRODUCTION
+
+
+
+    token : typing.Optional[typing.Union[str, typing.Callable[[], str]]]
     headers : typing.Optional[typing.Dict[str, str]]
         Additional headers to send with every request.
 
@@ -34,14 +48,16 @@ class SkyflowAuth:
     from skyflow import SkyflowAuth
 
     client = SkyflowAuth(
-        base_url="https://yourhost.com/path/to/api",
+        token="YOUR_TOKEN",
     )
     """
 
     def __init__(
         self,
         *,
-        base_url: str,
+        base_url: typing.Optional[str] = None,
+        environment: SkyflowAuthEnvironment = SkyflowAuthEnvironment.PRODUCTION,
+        token: typing.Optional[typing.Union[str, typing.Callable[[], str]]] = None,
         headers: typing.Optional[typing.Dict[str, str]] = None,
         timeout: typing.Optional[float] = None,
         follow_redirects: typing.Optional[bool] = True,
@@ -51,7 +67,8 @@ class SkyflowAuth:
             timeout if timeout is not None else 60 if httpx_client is None else httpx_client.timeout.read
         )
         self._client_wrapper = SyncClientWrapper(
-            base_url=base_url,
+            base_url=_get_base_url(base_url=base_url, environment=environment),
+            token=token,
             headers=headers,
             httpx_client=httpx_client
             if httpx_client is not None
@@ -60,8 +77,48 @@ class SkyflowAuth:
             else httpx.Client(timeout=_defaulted_timeout),
             timeout=_defaulted_timeout,
         )
+        self._raw_client = RawSkyflowAuth(client_wrapper=self._client_wrapper)
+        self.query = QueryClient(client_wrapper=self._client_wrapper)
         self.records = RecordsClient(client_wrapper=self._client_wrapper)
-        self.flowservice = FlowserviceClient(client_wrapper=self._client_wrapper)
+        self.tokens = TokensClient(client_wrapper=self._client_wrapper)
+
+    @property
+    def with_raw_response(self) -> RawSkyflowAuth:
+        """
+        Retrieves a raw implementation of this client that returns raw responses.
+
+        Returns
+        -------
+        RawSkyflowAuth
+        """
+        return self._raw_client
+
+    def patch_v2vaults_id(
+        self, vault_id: typing.Optional[str], *, request_options: typing.Optional[RequestOptions] = None
+    ) -> None:
+        """
+        Parameters
+        ----------
+        vault_id : typing.Optional[str]
+
+        request_options : typing.Optional[RequestOptions]
+            Request-specific configuration.
+
+        Returns
+        -------
+        None
+
+        Examples
+        --------
+        from skyflow import SkyflowAuth
+
+        client = SkyflowAuth(
+            token="YOUR_TOKEN",
+        )
+        client.patch_v2vaults_id()
+        """
+        _response = self._raw_client.patch_v2vaults_id(vault_id, request_options=request_options)
+        return _response.data
 
 
 class AsyncSkyflowAuth:
@@ -70,9 +127,19 @@ class AsyncSkyflowAuth:
 
     Parameters
     ----------
-    base_url : str
+    base_url : typing.Optional[str]
         The base url to use for requests from the client.
 
+    environment : SkyflowAuthEnvironment
+        The environment to use for requests from the client. from .environment import SkyflowAuthEnvironment
+
+
+
+        Defaults to SkyflowAuthEnvironment.PRODUCTION
+
+
+
+    token : typing.Optional[typing.Union[str, typing.Callable[[], str]]]
     headers : typing.Optional[typing.Dict[str, str]]
         Additional headers to send with every request.
 
@@ -90,14 +157,16 @@ class AsyncSkyflowAuth:
     from skyflow import AsyncSkyflowAuth
 
     client = AsyncSkyflowAuth(
-        base_url="https://yourhost.com/path/to/api",
+        token="YOUR_TOKEN",
     )
     """
 
     def __init__(
         self,
         *,
-        base_url: str,
+        base_url: typing.Optional[str] = None,
+        environment: SkyflowAuthEnvironment = SkyflowAuthEnvironment.PRODUCTION,
+        token: typing.Optional[typing.Union[str, typing.Callable[[], str]]] = None,
         headers: typing.Optional[typing.Dict[str, str]] = None,
         timeout: typing.Optional[float] = None,
         follow_redirects: typing.Optional[bool] = True,
@@ -107,7 +176,8 @@ class AsyncSkyflowAuth:
             timeout if timeout is not None else 60 if httpx_client is None else httpx_client.timeout.read
         )
         self._client_wrapper = AsyncClientWrapper(
-            base_url=base_url,
+            base_url=_get_base_url(base_url=base_url, environment=environment),
+            token=token,
             headers=headers,
             httpx_client=httpx_client
             if httpx_client is not None
@@ -116,5 +186,62 @@ class AsyncSkyflowAuth:
             else httpx.AsyncClient(timeout=_defaulted_timeout),
             timeout=_defaulted_timeout,
         )
+        self._raw_client = AsyncRawSkyflowAuth(client_wrapper=self._client_wrapper)
+        self.query = AsyncQueryClient(client_wrapper=self._client_wrapper)
         self.records = AsyncRecordsClient(client_wrapper=self._client_wrapper)
-        self.flowservice = AsyncFlowserviceClient(client_wrapper=self._client_wrapper)
+        self.tokens = AsyncTokensClient(client_wrapper=self._client_wrapper)
+
+    @property
+    def with_raw_response(self) -> AsyncRawSkyflowAuth:
+        """
+        Retrieves a raw implementation of this client that returns raw responses.
+
+        Returns
+        -------
+        AsyncRawSkyflowAuth
+        """
+        return self._raw_client
+
+    async def patch_v2vaults_id(
+        self, vault_id: typing.Optional[str], *, request_options: typing.Optional[RequestOptions] = None
+    ) -> None:
+        """
+        Parameters
+        ----------
+        vault_id : typing.Optional[str]
+
+        request_options : typing.Optional[RequestOptions]
+            Request-specific configuration.
+
+        Returns
+        -------
+        None
+
+        Examples
+        --------
+        import asyncio
+
+        from skyflow import AsyncSkyflowAuth
+
+        client = AsyncSkyflowAuth(
+            token="YOUR_TOKEN",
+        )
+
+
+        async def main() -> None:
+            await client.patch_v2vaults_id()
+
+
+        asyncio.run(main())
+        """
+        _response = await self._raw_client.patch_v2vaults_id(vault_id, request_options=request_options)
+        return _response.data
+
+
+def _get_base_url(*, base_url: typing.Optional[str] = None, environment: SkyflowAuthEnvironment) -> str:
+    if base_url is not None:
+        return base_url
+    elif environment is not None:
+        return environment.value
+    else:
+        raise Exception("Please pass in either base_url or environment to construct the client")

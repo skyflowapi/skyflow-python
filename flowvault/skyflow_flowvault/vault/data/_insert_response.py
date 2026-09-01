@@ -1,6 +1,9 @@
-from common.vault.data import BaseInsertResponse
+class InsertResponse:
+    def __init__(self, records=None):
+        self.records = records
 
+    def __repr__(self):
+        return f"InsertResponse(records={self.records})"
 
-class InsertResponse(BaseInsertResponse):
-    """flowvault's own insert() response class -- currently identical to the shared base, kept as
-    its own subclass so flowvault-specific fields can be added later without touching PDB."""
+    def __str__(self):
+        return self.__repr__()

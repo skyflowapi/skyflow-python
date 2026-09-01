@@ -6,5 +6,7 @@ from ._validations import (
     validate_update_request,
     validate_delete_request,
     validate_detokenize_request,
-    validate_tokenize_request,
+    validate_query_request,
+    validate_bulk_insert_request,
+    validate_bulk_detokenize_request,
 )

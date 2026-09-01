@@ -17,10 +17,10 @@ class SkyflowMessages:
 
     class Error(Enum):
         EMPTY_RECORDS_IN_INSERT = f"{error_prefix} Insert failed. Specify at least one record to insert."
-        INVALID_RECORDS_TYPE_IN_INSERT = f"{error_prefix} Insert failed. 'records' must be a list of dicts."
+        INVALID_RECORDS_TYPE_IN_INSERT = f"{error_prefix} Insert failed. 'records' must be a list of InsertRequestRecord objects."
         INVALID_RECORD_DATA_IN_INSERT = f"{error_prefix} Validation error. Each record's 'values' must be a non-empty dict."
         INVALID_TABLE_NAME_IN_INSERT = f"{error_prefix} Validation error. 'table' must be a non-empty string."
-        INVALID_UPSERT_TYPE_IN_INSERT = f"{error_prefix} Insert failed. 'upsert' must be a dict."
+        INVALID_UPSERT_TYPE_IN_INSERT = f"{error_prefix} Insert failed. 'upsert' must be an UpsertOptions object."
         INVALID_UPSERT_UNIQUE_COLUMNS_IN_INSERT = f"{error_prefix} Insert failed. Upsert's 'unique_columns' must be a non-empty list of strings."
         INVALID_UPSERT_UPDATE_TYPE_IN_INSERT = f"{error_prefix} Insert failed. Upsert's 'update_type' must be an UpsertType value."
         TOO_MANY_RECORDS_IN_INSERT = f"{error_prefix} Insert failed. A single insert request cannot contain more than 10000 records."
@@ -50,6 +50,8 @@ class SkyflowMessages:
         MISSING_TABLE_NAME_IN_GET = f"{error_prefix} Get failed. Specify a table name."
         MISSING_IDS_OR_UNIQUE_VALUES_IN_GET = f"{error_prefix} Get failed. Specify at least one of 'ids' or 'unique_values'."
         INVALID_IDS_IN_GET = f"{error_prefix} Get failed. 'ids' must be a non-empty list of strings."
+        INVALID_RECORDS_TYPE_IN_GET = f"{error_prefix} Get failed. 'records' must be a non-empty list of GetRecordRequest objects."
+        GET_MODE_CONFLICT = f"{error_prefix} Get failed. Use either 'records' (multi-table) or the single-table fields (table/ids/unique_values/columns/column_redactions/limit/offset), not both."
 
         EMPTY_RECORDS_IN_UPDATE = f"{error_prefix} Update failed. Specify at least one record to update."
         INVALID_RECORDS_TYPE_IN_UPDATE = f"{error_prefix} Update failed. 'records' must be a list of dicts."
@@ -74,9 +76,19 @@ class SkyflowMessages:
         INVALID_TOKENS_TYPE_IN_DETOKENIZE = f"{error_prefix} Detokenize failed. 'tokens' must be a non-empty list of strings."
         INVALID_TOKEN_GROUP_REDACTIONS_IN_DETOKENIZE = f"{error_prefix} Detokenize failed. 'token_group_redactions' must be a list of dicts with 'token_group_name' and 'redaction' keys."
 
-        EMPTY_VALUES_IN_TOKENIZE = f"{error_prefix} Tokenize failed. Specify at least one value to tokenize."
-        INVALID_VALUES_TYPE_IN_TOKENIZE = f"{error_prefix} Tokenize failed. 'values' must be a list of dicts."
-        MISSING_TOKEN_GROUP_NAMES_IN_TOKENIZE = f"{error_prefix} Tokenize failed. Each value must specify a non-empty 'token_group_names' list of strings."
+        INVALID_QUERY_IN_QUERY = f"{error_prefix} Query failed. 'query' must be a non-empty string."
+
+
+        EMPTY_RECORDS_IN_BULK_INSERT = f"{error_prefix} Bulk insert failed. Specify at least one record to insert."
+        INVALID_RECORDS_TYPE_IN_BULK_INSERT = f"{error_prefix} Bulk insert failed. 'records' must be a list of BulkInsertRecord objects."
+        INVALID_RECORD_IN_BULK_INSERT = f"{error_prefix} Bulk insert failed. Each record must be a BulkInsertRecord object."
+        TOO_MANY_RECORDS_IN_BULK_INSERT = f"{error_prefix} Bulk insert failed. A single bulk insert request cannot contain more than 10000 records."
+        TOO_MANY_TOKENS_IN_BULK_DETOKENIZE = f"{error_prefix} Bulk detokenize failed. A single bulk detokenize request cannot contain more than 10000 tokens."
+
+        INVALID_BATCH_SIZE = f"{error_prefix} Invalid batch size provided. Falling back to the default batch size."
+        BATCH_SIZE_EXCEEDS_MAX = f"{error_prefix} Batch size exceeds the maximum allowed. Using the maximum batch size."
+        INVALID_CONCURRENCY_LIMIT = f"{error_prefix} Invalid concurrency limit provided. Falling back to the default concurrency limit."
+        CONCURRENCY_EXCEEDS_MAX = f"{error_prefix} Concurrency limit exceeds the maximum allowed. Using the maximum concurrency limit."
 
     class Info(Enum):
         VALIDATE_INSERT_REQUEST = f"{INFO}: [{error_prefix}] Validating insert request."
@@ -104,10 +116,23 @@ class SkyflowMessages:
         DETOKENIZE_REQUEST_RESOLVED = f"{INFO}: [{error_prefix}] Detokenize request resolved."
         DETOKENIZE_SUCCESS = f"{INFO}: [{error_prefix}] Tokens detokenized."
 
-        VALIDATE_TOKENIZE_REQUEST = f"{INFO}: [{error_prefix}] Validating tokenize request."
-        TOKENIZE_TRIGGERED = f"{INFO}: [{error_prefix}] Tokenize method triggered."
-        TOKENIZE_REQUEST_RESOLVED = f"{INFO}: [{error_prefix}] Tokenize request resolved."
-        TOKENIZE_SUCCESS = f"{INFO}: [{error_prefix}] Values tokenized."
+        VALIDATE_QUERY_REQUEST = f"{INFO}: [{error_prefix}] Validating query request."
+        QUERY_TRIGGERED = f"{INFO}: [{error_prefix}] Query method triggered."
+        QUERY_REQUEST_RESOLVED = f"{INFO}: [{error_prefix}] Query request resolved."
+        QUERY_SUCCESS = f"{INFO}: [{error_prefix}] Query executed."
+
+
+        VALIDATE_BULK_INSERT_REQUEST = f"{INFO}: [{error_prefix}] Validating bulk insert request."
+        BULK_INSERT_TRIGGERED = f"{INFO}: [{error_prefix}] Bulk insert method triggered."
+        BULK_INSERT_REQUEST_RESOLVED = f"{INFO}: [{error_prefix}] Bulk insert request resolved."
+        BULK_INSERT_SUCCESS = f"{INFO}: [{error_prefix}] Bulk insert completed."
+
+        VALIDATE_BULK_DETOKENIZE_REQUEST = f"{INFO}: [{error_prefix}] Validating bulk detokenize request."
+        BULK_DETOKENIZE_TRIGGERED = f"{INFO}: [{error_prefix}] Bulk detokenize method triggered."
+        BULK_DETOKENIZE_REQUEST_RESOLVED = f"{INFO}: [{error_prefix}] Bulk detokenize request resolved."
+        BULK_DETOKENIZE_SUCCESS = f"{INFO}: [{error_prefix}] Bulk detokenize completed."
+
+        PROCESSING_BATCHES = f"{INFO}: [{error_prefix}] Processing batches."
 
     class ErrorLogs(Enum):
         INSERT_RECORDS_REJECTED = f"{ERROR}: [{error_prefix}] Insert call resulted in failure."
@@ -115,4 +140,6 @@ class SkyflowMessages:
         UPDATE_RECORDS_REJECTED = f"{ERROR}: [{error_prefix}] Update call resulted in failure."
         DELETE_RECORDS_REJECTED = f"{ERROR}: [{error_prefix}] Delete call resulted in failure."
         DETOKENIZE_RECORDS_REJECTED = f"{ERROR}: [{error_prefix}] Detokenize call resulted in failure."
-        TOKENIZE_RECORDS_REJECTED = f"{ERROR}: [{error_prefix}] Tokenize call resulted in failure."
+        QUERY_RECORDS_REJECTED = f"{ERROR}: [{error_prefix}] Query call resulted in failure."
+        BULK_INSERT_RECORDS_REJECTED = f"{ERROR}: [{error_prefix}] Bulk insert batch resulted in failure."
+        BULK_DETOKENIZE_RECORDS_REJECTED = f"{ERROR}: [{error_prefix}] Bulk detokenize batch resulted in failure."

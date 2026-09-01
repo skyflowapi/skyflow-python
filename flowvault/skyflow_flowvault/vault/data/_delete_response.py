@@ -1,10 +1,9 @@
 class DeleteResponse:
-    def __init__(self, records=None, errors=None):
+    def __init__(self, records=None):
         self.records = records
-        self.errors = errors
 
     def __repr__(self):
-        return f"DeleteResponse(records={self.records}, errors={self.errors})"
+        return f"DeleteResponse(records={self.records})"
 
     def __str__(self):
         return self.__repr__()
