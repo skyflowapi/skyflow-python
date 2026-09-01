@@ -31,14 +31,15 @@ class's `__init__` signature and public members.
 
   Review the `api-report/*.api.json` diff and commit it with your code change, so a reviewer sees
   exactly what contract change was approved (CI also posts that diff as a PR comment).
-- **skyvault is additionally guarded against the last public release**:
-  `griffe check skyflow -s skyvault -a skyflow==<release>` fails if skyvault breaks any API a consumer
-  of the released `skyflow` relies on. Bump `SKYVAULT_RELEASE` in the workflow when skyvault releases.
+
+To spot-check that skyvault has not broken the last published release, install the `pypi` extra and
+run `griffe check skyflow -s skyvault -a skyflow==<release>` (non-zero on any breaking change). This
+is an ad-hoc safety check, not part of CI.
 
 ## Running locally
 
 ```bash
-pip install "griffe[pypi]==2.2.0"
+pip install "griffe==2.2.0"
 python ci-scripts/contract/griffe_contract.py check skyvault skyvault/api-report/skyflow.api.json
 python ci-scripts/contract/griffe_contract.py check flowvault flowvault/api-report/skyflow_flowvault.api.json
 ```
