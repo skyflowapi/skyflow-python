@@ -5,7 +5,7 @@ from unittest.mock import MagicMock
 
 from skyflow_flowvault.vault.client.client import VaultClient
 from skyflow_flowvault.vault.controller import VaultController
-from skyflow_flowvault.vault.data import InsertRequest
+from skyflow_flowvault.vault.data import InsertRequestRecord, InsertRequest
 
 
 def build_vault():
@@ -18,13 +18,13 @@ def build_vault():
     vault_client = VaultClient(config)
     vault_client.initialize_client_configuration = MagicMock()  # skip real credential/URL resolution
     insert_api = MagicMock()
-    vault_client.get_insert_api = MagicMock(return_value=insert_api)
+    vault_client.get_records_api = MagicMock(return_value=insert_api)
     vault = VaultController(vault_client)
     return vault, insert_api
 
 
 def build_insert_request(n):
-    return InsertRequest(table="contract_table", values=[dict(values={"field": f"value{i}"}) for i in range(n)])
+    return InsertRequest(table_name="contract_table", records=[InsertRequestRecord(data={"field": f"value{i}"}) for i in range(n)])
 
 
 def call_insert(vault, insert_api, request):
@@ -35,18 +35,18 @@ def call_insert(vault, insert_api, request):
         ]
         return SimpleNamespace(data=SimpleNamespace(records=records), headers={})
 
-    insert_api.with_raw_response.insert.side_effect = fake_insert
+    insert_api.with_raw_response.insert_records.side_effect = fake_insert
     response = vault.insert(request)
-    call_count = insert_api.with_raw_response.insert.call_count
+    call_count = insert_api.with_raw_response.insert_records.call_count
     return response, call_count
 
 
-# v3's InsertResponse now shares the exact same shape as v2's (inserted_fields/errors, each
-# entry tagged request_index) -- kept as separate accessor functions per adapter anyway, since
-# the contract module intentionally treats each variant's response as opaque.
+# v3's InsertResponse is a single records list (FlowDB contract) with success/failure inline;
+# kept as separate accessor functions per adapter, since the contract module intentionally
+# treats each variant's response as opaque.
 def count_successes(response):
-    return len(response.inserted_fields)
+    return len([r for r in (response.records or []) if r.get("error") is None])
 
 
 def count_errors(response):
-    return len(response.errors) if response.errors else 0
+    return len([r for r in (response.records or []) if r.get("error") is not None])

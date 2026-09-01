@@ -1,7 +1,11 @@
-from common.vault.data import BaseInsertRequest
-from skyflow_flowvault.vault.data._upsert import Upsert
+from typing import List
+
+from ._insert_request_record import InsertRequestRecord
+from ._upsert_options import UpsertOptions
 
 
-class InsertRequest(BaseInsertRequest):
-    def __init__(self, values: list, table: str = None, upsert: Upsert = None):
-        super().__init__(table, values, upsert=upsert)
+class InsertRequest:
+    def __init__(self, records: List[InsertRequestRecord], table_name: str = None, upsert: UpsertOptions = None):
+        self.records = records
+        self.table_name = table_name
+        self.upsert = upsert
