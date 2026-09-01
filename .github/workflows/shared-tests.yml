@@ -7,20 +7,6 @@ on:
         description: 'Python version to use'
         required: true
         type: string
-      variant:
-        description: 'Build variant directory to test (v2 or flowvault)'
-        required: true
-        type: string
-      package-name:
-        description: 'Importable package name for this variant (e.g. skyflow or skyflow_flowvault)'
-        required: false
-        type: string
-        default: 'skyflow'
-      coverage-omit:
-        description: 'Comma-separated coverage --omit patterns, relative to the variant directory'
-        required: false
-        type: string
-        default: 'skyflow/generated/*'
 
 jobs:
   run-tests:
@@ -37,15 +23,11 @@ jobs:
         with:
           name: "credentials.json"
           json: ${{ secrets.VALID_SKYFLOW_CREDS_TEST }}
-          dir: ${{ inputs.variant }}
 
-      - name: Build and install package
-        working-directory: ${{ inputs.variant }}
+      - name: Install dev dependencies
         run: |
-          pip install --upgrade pip setuptools wheel
-          python setup.py sdist bdist_wheel
-          pip install dist/*.whl
-          pip install ".[dev]"
+          python -m pip install --upgrade pip
+          pip install "codespell>=2.4.1" "ruff>=0.9.0" "coverage>=7.8.0"
 
       - name: Run Spell Check
         run: codespell
@@ -53,20 +35,57 @@ jobs:
       - name: Run Linter Ruff
         run: ruff check . --output-format=github
 
-      - name: 'Run Tests'
-        working-directory: ${{ inputs.variant }}
+      # Each module (common, skyvault, flowvault) is its own installable
+      # distribution with its own setup.py and test suite, mirroring Java's
+      # per-module Maven build. A module directory that doesn't exist yet
+      # (pre-migration) is skipped with a notice rather than failing the job.
+      - name: Build, install and test each module
         run: |
-          pip install -r requirements.txt
-          python -m coverage run --source=${{ inputs.package-name }} --omit=${{ inputs.coverage-omit }} -m unittest discover
+          for module in common skyvault flowvault; do
+            if [ ! -f "$module/setup.py" ]; then
+              echo "::notice::$module/setup.py not found yet - skipping (pre-migration)."
+              continue
+            fi
+            cp credentials.json "$module/credentials.json"
+            (
+              cd "$module"
+              python -m pip install --upgrade pip setuptools wheel
+              python setup.py sdist bdist_wheel
+              pip install dist/*.whl
+              if [ -f requirements.txt ]; then
+                pip install -r requirements.txt
+              fi
+              python -m coverage run --source=. -m unittest discover
+              coverage xml -o test-coverage.xml
+            )
+          done
 
-      - name: coverage
-        working-directory: ${{ inputs.variant }}
-        run: coverage xml -o test-coverage.xml
-
-      - name: Codecov
+      - name: Codecov (common)
+        if: hashFiles('common/test-coverage.xml') != ''
         uses: codecov/codecov-action@v2.1.0
         with:
           token: ${{ secrets.CODECOV_REPO_UPLOAD_TOKEN }}
-          files: ${{ inputs.variant }}/test-coverage.xml
-          name: codecov-skyflow-python-${{ inputs.variant }}
+          files: common/test-coverage.xml
+          flags: common
+          name: codecov-skyflow-python-common
+          verbose: true
+
+      - name: Codecov (skyvault)
+        if: hashFiles('skyvault/test-coverage.xml') != ''
+        uses: codecov/codecov-action@v2.1.0
+        with:
+          token: ${{ secrets.CODECOV_REPO_UPLOAD_TOKEN }}
+          files: skyvault/test-coverage.xml
+          flags: skyvault
+          name: codecov-skyflow-python-skyvault
+          verbose: true
+
+      - name: Codecov (flowvault)
+        if: hashFiles('flowvault/test-coverage.xml') != ''
+        uses: codecov/codecov-action@v2.1.0
+        with:
+          token: ${{ secrets.CODECOV_REPO_UPLOAD_TOKEN }}
+          files: flowvault/test-coverage.xml
+          flags: flowvault
+          name: codecov-skyflow-python-flowvault
           verbose: true

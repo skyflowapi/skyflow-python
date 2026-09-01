@@ -17,7 +17,7 @@ HERE = os.path.abspath(os.path.dirname(__file__))
 REPO_ROOT = os.path.dirname(HERE)
 COMMON_SRC = os.path.join(REPO_ROOT, 'common')
 
-with open(os.path.join(REPO_ROOT, 'README.md'), 'r', encoding='utf-8') as f:
+with open(os.path.join(HERE, 'README.md'), 'r', encoding='utf-8') as f:
     long_description = f.read()
 
 # Anything under common/ that must never ride along into a built wheel.
