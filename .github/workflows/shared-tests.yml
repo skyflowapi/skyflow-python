@@ -41,6 +41,11 @@ jobs:
       # (pre-migration) is skipped with a notice rather than failing the job.
       - name: Build, install and test each module
         run: |
+          # Run every module even if one fails, then fail the job if any did, so a
+          # single module never hides the others' results. common/ is imported as a
+          # namespace package (e.g. common.vault has no __init__), so the repo root is
+          # added to PYTHONPATH for import resolution across all modules.
+          overall_rc=0
           for module in common skyvault flowvault; do
             if [ ! -f "$module/setup.py" ]; then
               echo "::notice::$module/setup.py not found yet - skipping (pre-migration)."
@@ -55,10 +60,16 @@ jobs:
               if [ -f requirements.txt ]; then
                 pip install -r requirements.txt
               fi
-              python -m coverage run --source=. -m unittest discover
+              PYTHONPATH="$GITHUB_WORKSPACE:$PYTHONPATH" python -m coverage run --source=. -m unittest discover
               coverage xml -o test-coverage.xml
             )
+            module_rc=$?
+            if [ "$module_rc" -ne 0 ]; then
+              echo "::error::$module unit tests failed (exit $module_rc)."
+              overall_rc=1
+            fi
           done
+          exit $overall_rc
 
       - name: Codecov (common)
         if: hashFiles('common/test-coverage.xml') != ''
