@@ -173,6 +173,11 @@ def validate_keys(logger, config, config_keys, messages=None):
             raise SkyflowError(messages.Error.INVALID_KEY.value.format(key), invalid_input_error_code)
 
 
+def validate_non_empty_string_list(logger, value, error):
+    if not isinstance(value, list) or not value or not all(isinstance(item, str) and item.strip() for item in value):
+        raise SkyflowError(error, invalid_input_error_code)
+
+
 def validate_vault_config(logger, config, messages=None):
     messages = messages or SkyflowMessages
     log_info(messages.Info.VALIDATING_VAULT_CONFIG.value, logger)

@@ -4,6 +4,7 @@ from ._validations import (
     validate_credentials,
     validate_log_level,
     validate_keys,
+    validate_non_empty_string_list,
     validate_vault_config,
     validate_update_vault_config,
 )

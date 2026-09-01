@@ -1,27 +1,51 @@
-Version=$1
-SEMVER=$Version
-PackageName=${3:-skyflow}
+#!/usr/bin/env bash
+# Bumps <module>'s version.
+#
+# Usage: bump_version.sh <version> [<commit-sha>] <module>
+#
+# Always patches <module>/setup.py's `current_version = '...'` line.
+# Also patches a runtime version constant, if this module ships one, found
+# at <module>/**/_version.py (matching today's skyflow/utils/_version.py
+# convention) - skipped with a notice if no such file exists yet, so this
+# script stays correct both before and after modules gain their own runtime
+# version file.
+set -euo pipefail
 
-if [ -z "$2" ]
-then
-    echo "Bumping package version to $1"
+Version="${1:?"Usage: bump_version.sh <version> [<commit-sha>] <module>"}"
+CommitHash="${2:-}"
+Module="${3:?"Usage: bump_version.sh <version> [<commit-sha>] <module>"}"
 
-    sed -E "s/current_version = .+/current_version = '$SEMVER'/g" setup.py > tempfile && cat tempfile > setup.py && rm -f tempfile
-    sed -E "s/SDK_VERSION = .+/SDK_VERSION = '$SEMVER'/g" $PackageName/utils/_version.py > tempfile && cat tempfile > $PackageName/utils/_version.py && rm -f tempfile
-    sed -E "s/__version__ = .+/__version__ = '$SEMVER'/g" $PackageName/generated/rest/version.py > tempfile && cat tempfile > $PackageName/generated/rest/version.py && rm -f tempfile
+SetupFile="$Module/setup.py"
 
-    echo --------------------------
-    echo "Done, Package now at $1"
-else
-    # Use dev version with commit SHA
-    DEV_VERSION="${SEMVER}.dev0+$(echo $2 | tr -dc '0-9a-f')"
-
-    echo "Bumping package version to $DEV_VERSION"
-
-    sed -E "s/current_version = .+/current_version = '$DEV_VERSION'/g" setup.py > tempfile && cat tempfile > setup.py && rm -f tempfile
-    sed -E "s/SDK_VERSION = .+/SDK_VERSION = '$DEV_VERSION'/g" $PackageName/utils/_version.py > tempfile && cat tempfile > $PackageName/utils/_version.py && rm -f tempfile
-    sed -E "s/__version__ = .+/__version__ = '$DEV_VERSION'/g" $PackageName/generated/rest/version.py > tempfile && cat tempfile > $PackageName/generated/rest/version.py && rm -f tempfile
-
-    echo --------------------------
-    echo "Done, Package now at $DEV_VERSION"
+if [ ! -f "$SetupFile" ]; then
+  echo "Error: $SetupFile not found." >&2
+  exit 1
 fi
+
+if [ -z "$CommitHash" ]; then
+  SEMVER="$Version"
+else
+  SEMVER="${Version}.dev0+$(echo "$CommitHash" | tr -dc '0-9a-f')"
+fi
+
+echo "Bumping $Module version to $SEMVER"
+
+sed -E "s/current_version = .+/current_version = '$SEMVER'/g" "$SetupFile" > tempfile && cat tempfile > "$SetupFile" && rm -f tempfile
+
+version_files=$(find "$Module" -name "_version.py")
+version_file_count=$(echo "$version_files" | grep -c . || true)
+
+if [ "$version_file_count" -gt 1 ]; then
+  echo "Error: multiple _version.py files found under $Module - ambiguous, refusing to guess which to bump:" >&2
+  echo "$version_files" >&2
+  exit 1
+elif [ "$version_file_count" -eq 1 ]; then
+  version_file="$version_files"
+  sed -E "s/SDK_VERSION = .+/SDK_VERSION = '$SEMVER'/g" "$version_file" > tempfile && cat tempfile > "$version_file" && rm -f tempfile
+  echo "Also bumped $version_file"
+else
+  echo "::notice::No _version.py found under $Module yet - skipping runtime version bump"
+fi
+
+echo --------------------------
+echo "Done, $Module now at $SEMVER"

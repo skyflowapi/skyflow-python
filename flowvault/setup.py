@@ -17,7 +17,7 @@ HERE = os.path.abspath(os.path.dirname(__file__))
 REPO_ROOT = os.path.dirname(HERE)
 COMMON_SRC = os.path.join(REPO_ROOT, 'common')
 
-with open(os.path.join(REPO_ROOT, 'README.md'), 'r', encoding='utf-8') as f:
+with open(os.path.join(HERE, 'README.md'), 'r', encoding='utf-8') as f:
     long_description = f.read()
 
 _COMMON_EXCLUDE_DIRS = {'__pycache__', '.pytest_cache', 'tests', '.mypy_cache'}
@@ -36,7 +36,7 @@ def _ignore_common_files(_directory, names):
 
 
 class CustomBuildPy(_build_py):
-    """SK-2938 Option C bundling mechanism -- see v2/setup.py for full rationale. Bundles the
+    """SK-2938 Option C bundling mechanism -- see skyvault/setup.py for full rationale. Bundles the
     sibling common/ source tree into this variant's wheel; wheel builds only, not sdist."""
 
     def run(self):

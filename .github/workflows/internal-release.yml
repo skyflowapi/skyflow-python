@@ -1,37 +1,53 @@
-name: Internal Release
+name: Publish module to the JFrog Artifactory
 
 on:
   push:
+    # '**' not '*.*': Actions glob '*' does not match '/', so '*.*' let slash
+    # tags (flowvault/v1.0.0) through and fired this branch-only workflow.
     tags-ignore:
-      - '*.*'
+      - '**'
     paths-ignore:
-      - "*/setup.py"
-      - "*.yml"
       - "*.md"
-      - "*/skyflow/utils/_version.py"
-      - "samples/**"
-      - "flowvault/samples/**"
     branches:
-      - release/*
       - flowvault-release/*
+      - skyvault-release/*
+      # Legacy: predates the per-module naming, still maps to skyvault.
+      - release/*
 
 jobs:
+  resolve-module:
+    runs-on: ubuntu-latest
+    # Skip our own bump commit, or this loops: bump -> push -> release -> bump.
+    # PAT-authenticated pushes DO trigger workflows; GITHUB_TOKEN pushes do not.
+    # build-and-deploy needs this job, so skipping here skips the run.
+    if: ${{ !contains(github.event.head_commit.message, '[AUTOMATED]') }}
+    outputs:
+      module: ${{ steps.set-module.outputs.module }}
+    steps:
+      # Explicit match, no catch-all: defaulting once published the wrong module.
+      - name: Resolve module from branch name
+        id: set-module
+        env:
+          BRANCH: ${{ github.ref_name }}
+        run: |
+          case "$BRANCH" in
+            flowvault-release/*) MODULE="flowvault" ;;
+            skyvault-release/*)  MODULE="skyvault" ;;
+            release/*)           MODULE="skyvault" ;;
+            *)
+              echo "::error::Branch '$BRANCH' does not map to a module."
+              exit 1
+              ;;
+          esac
+          echo "Branch '$BRANCH' -> module '$MODULE'"
+          echo "module=$MODULE" >> "$GITHUB_OUTPUT"
+
   build-and-deploy:
-    strategy:
-      matrix:
-        include:
-          - variant: v2
-            package-name: skyflow
-            tag-prefix: ''
-          - variant: flowvault
-            package-name: skyflow_flowvault
-            tag-prefix: 'flowvault-'
-    if: (matrix.variant == 'flowvault' && startsWith(github.ref_name, 'flowvault-')) || (matrix.variant == 'v2' && !startsWith(github.ref_name, 'flowvault-'))
+    needs: resolve-module
     uses: ./.github/workflows/shared-build-and-deploy.yml
     with:
       ref: ${{ github.ref_name }}
       tag: 'internal'
-      variant: ${{ matrix.variant }}
-      package-name: ${{ matrix.package-name }}
-      tag-prefix: ${{ matrix.tag-prefix }}
+      module: ${{ needs.resolve-module.outputs.module }}
     secrets: inherit
+      

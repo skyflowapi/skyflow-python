@@ -6,7 +6,7 @@ fixture.
 Usage (run once per variant, in that variant's own installed/PYTHONPATH environment -- v2's
 skyflow and flowvault's skyflow_flowvault can never coexist in one process):
 
-    SKYFLOW_TEST_VARIANT=v2 PYTHONPATH=.:v2 python -m unittest discover -s tests/contract -t .
+    SKYFLOW_TEST_VARIANT=v2 PYTHONPATH=.:skyvault python -m unittest discover -s tests/contract -t .
     SKYFLOW_TEST_VARIANT=v3 PYTHONPATH=.:flowvault python -m unittest discover -s tests/contract -t .
 """
 import os
@@ -20,7 +20,7 @@ elif _VARIANT == "v3":
 else:
     raise RuntimeError(
         "SKYFLOW_TEST_VARIANT must be set to 'v2' or 'v3' before running tests/contract/ "
-        "(e.g. SKYFLOW_TEST_VARIANT=v2 PYTHONPATH=.:v2 python -m unittest discover -s tests/contract -t .)"
+        "(e.g. SKYFLOW_TEST_VARIANT=v2 PYTHONPATH=.:skyvault python -m unittest discover -s tests/contract -t .)"
     )
 
 VARIANT = _VARIANT
