@@ -142,11 +142,16 @@ jobs:
           twine upload --repository-url https://prekarilabs.jfrog.io/artifactory/api/pypi/skyflow-python/ dist/*
 
       - name: Commit changes
+        env:
+          TAG: ${{ inputs.tag }}
+          DRY_RUN: ${{ inputs.dry-run }}
+          BASE_VERSION: ${{ steps.resolve-version.outputs.base_version }}
+          REF_NAME: ${{ github.ref_name }}
         run: |
           git config user.name "$GITHUB_ACTOR"
           git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
 
-          if [[ "${{ inputs.tag }}" == "beta" || "${{ inputs.tag }}" == "public" ]]; then
+          if [[ "$TAG" == "beta" || "$TAG" == "public" ]]; then
             git checkout "$RELEASE_BRANCH"
           fi
 
@@ -168,17 +173,17 @@ jobs:
             exit 0
           fi
 
-          if [[ "${{ inputs.tag }}" == "internal" ]]; then
-            git commit -m "[AUTOMATED] Private Release ${{ steps.resolve-version.outputs.base_version }}.dev0+$(git rev-parse --short $GITHUB_SHA)"
-            if [[ "${{ inputs.dry-run }}" == "true" ]]; then
+          if [[ "$TAG" == "internal" ]]; then
+            git commit -m "[AUTOMATED] Private Release ${BASE_VERSION}.dev0+$(git rev-parse --short $GITHUB_SHA)"
+            if [[ "$DRY_RUN" == "true" ]]; then
               echo "::notice::DRY RUN - not pushing the version-bump commit"
             else
-              git push origin ${{ github.ref_name }} -f
+              git push origin "$REF_NAME" -f
             fi
           fi
-          if [[ "${{ inputs.tag }}" == "beta" || "${{ inputs.tag }}" == "public" ]]; then
-            git commit -m "[AUTOMATED] Public Release - ${{ steps.resolve-version.outputs.base_version }}"
-            if [[ "${{ inputs.dry-run }}" == "true" ]]; then
+          if [[ "$TAG" == "beta" || "$TAG" == "public" ]]; then
+            git commit -m "[AUTOMATED] Public Release - ${BASE_VERSION}"
+            if [[ "$DRY_RUN" == "true" ]]; then
               echo "::notice::DRY RUN - not pushing the version-bump commit"
             else
               git push origin "$RELEASE_BRANCH"
