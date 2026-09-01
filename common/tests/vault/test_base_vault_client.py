@@ -1,6 +1,8 @@
 import unittest
 from unittest.mock import patch, MagicMock
 
+from common.errors import SkyflowError
+from common.utils import SkyflowMessages
 from common.vault.base_vault_client import BaseVaultClient
 
 CONFIG = {
@@ -16,6 +18,25 @@ CREDENTIALS_WITH_API_KEY = {"api_key": "dummy_api_key"}
 CREDENTIALS_WITH_TOKEN = {"token": "dummy_static_token"}
 CREDENTIALS_WITH_PATH = {"path": "/some/path/credentials.json"}
 CREDENTIALS_WITH_STRING = {"credentials_string": '{"clientID": "x"}'}
+
+ROLES = ["role_id_1", "role_id_2"]
+STRING_CONTEXT = "user_12345"
+DICT_CONTEXT = {"role": "admin", "department": "finance"}
+
+CREDENTIALS_WITH_PATH_ROLES_AND_STRING_CONTEXT = {
+    "path": "/some/path/credentials.json",
+    "roles": ROLES,
+    "context": STRING_CONTEXT,
+}
+CREDENTIALS_WITH_PATH_AND_DICT_CONTEXT = {
+    "path": "/some/path/credentials.json",
+    "context": DICT_CONTEXT,
+}
+CREDENTIALS_WITH_STRING_ROLES_AND_CONTEXT = {
+    "credentials_string": '{"clientID": "x"}',
+    "roles": ROLES,
+    "context": STRING_CONTEXT,
+}
 
 
 class DummyVaultClient(BaseVaultClient):
@@ -283,6 +304,100 @@ class TestBaseVaultClient(unittest.TestCase):
 
         with self.assertRaises(TypeError):
             MissingResolveVaultUrl(dict(CONFIG))
+
+    # ------------------------------------------------------------------ #
+    # get_bearer_token — roles / context forwarded to the token engine
+    # ------------------------------------------------------------------ #
+
+    @patch("common.vault.base_vault_client.generate_bearer_token", return_value=("sa_token", None))
+    def test_get_bearer_token_forwards_roles_and_string_context_from_path_credentials(self, mock_generate):
+        self.vault_client.get_bearer_token(CREDENTIALS_WITH_PATH_ROLES_AND_STRING_CONTEXT)
+        _, options, _ = mock_generate.call_args[0]
+        self.assertEqual(options["role_ids"], ROLES)
+        self.assertEqual(options["ctx"], STRING_CONTEXT)
+
+    @patch("common.vault.base_vault_client.generate_bearer_token_from_creds", return_value=("sa_token_str", None))
+    @patch("common.vault.base_vault_client.log_info")
+    def test_get_bearer_token_forwards_roles_and_context_from_credentials_string(self, mock_log, mock_generate):
+        self.vault_client.get_bearer_token(CREDENTIALS_WITH_STRING_ROLES_AND_CONTEXT)
+        _, options, _ = mock_generate.call_args[0]
+        self.assertEqual(options["role_ids"], ROLES)
+        self.assertEqual(options["ctx"], STRING_CONTEXT)
+
+    @patch("common.vault.base_vault_client.generate_bearer_token", return_value=("sa_token", None))
+    def test_get_bearer_token_forwards_dict_context_unmodified(self, mock_generate):
+        self.vault_client.get_bearer_token(CREDENTIALS_WITH_PATH_AND_DICT_CONTEXT)
+        _, options, _ = mock_generate.call_args[0]
+        self.assertEqual(options["ctx"], DICT_CONTEXT)
+        self.assertNotIn("role_ids", options)
+
+    @patch("common.vault.base_vault_client.generate_bearer_token", return_value=("sa_token", None))
+    def test_get_bearer_token_forwards_scalar_context_unmodified(self, mock_generate):
+        for scalar_context in [123, 0, 1.5, 0.0, True, False]:
+            with self.subTest(context=scalar_context):
+                mock_generate.reset_mock()
+                self.vault_client._bearer_token = None
+                credentials = {**CREDENTIALS_WITH_PATH, "context": scalar_context}
+                self.vault_client.get_bearer_token(credentials)
+                _, options, _ = mock_generate.call_args[0]
+                self.assertEqual(options["ctx"], scalar_context)
+                self.assertIs(type(options["ctx"]), type(scalar_context))
+
+    @patch("common.vault.base_vault_client.generate_bearer_token", return_value=("sa_token", None))
+    def test_get_bearer_token_omits_options_when_roles_and_context_absent(self, mock_generate):
+        self.vault_client.get_bearer_token(CREDENTIALS_WITH_PATH)
+        _, options, _ = mock_generate.call_args[0]
+        self.assertNotIn("role_ids", options)
+        self.assertNotIn("ctx", options)
+
+    @patch("common.vault.base_vault_client.generate_bearer_token")
+    def test_get_bearer_token_rejects_empty_roles(self, mock_generate):
+        credentials = {**CREDENTIALS_WITH_PATH, "roles": []}
+        with self.assertRaises(SkyflowError) as ctx:
+            self.vault_client.get_bearer_token(credentials)
+        self.assertEqual(ctx.exception.message, SkyflowMessages.Error.EMPTY_ROLES.value)
+        mock_generate.assert_not_called()
+
+    @patch("common.vault.base_vault_client.generate_bearer_token")
+    def test_get_bearer_token_rejects_empty_context(self, mock_generate):
+        for empty_context in [{}, "", "   "]:
+            credentials = {**CREDENTIALS_WITH_PATH, "context": empty_context}
+            with self.assertRaises(SkyflowError) as ctx:
+                self.vault_client.get_bearer_token(credentials)
+            self.assertEqual(ctx.exception.message, SkyflowMessages.Error.EMPTY_CONTEXT.value)
+        mock_generate.assert_not_called()
+
+    @patch("common.vault.base_vault_client.generate_bearer_token", return_value=("sa_token", None))
+    def test_get_bearer_token_ignores_top_level_config_roles_and_ctx(self, mock_generate):
+        vault_client = DummyVaultClient({**CONFIG, "roles": ["stale_role"], "ctx": "stale_ctx"})
+        vault_client.get_bearer_token(CREDENTIALS_WITH_PATH)
+        _, options, _ = mock_generate.call_args[0]
+        self.assertNotIn("role_ids", options)
+        self.assertNotIn("ctx", options)
+
+    @patch("common.vault.base_vault_client.generate_bearer_token", return_value=("sa_token", None))
+    def test_get_bearer_token_forwards_token_uri_alongside_roles_and_context(self, mock_generate):
+        credentials = {
+            **CREDENTIALS_WITH_PATH_ROLES_AND_STRING_CONTEXT,
+            "token_uri": "https://manage.skyflowapis.com/v1/auth/sa/oauth/token",
+        }
+        self.vault_client.get_bearer_token(credentials)
+        _, options, _ = mock_generate.call_args[0]
+        self.assertEqual(options["role_ids"], ROLES)
+        self.assertEqual(options["ctx"], STRING_CONTEXT)
+        self.assertEqual(options["token_uri"], credentials["token_uri"])
+
+    @patch("common.vault.base_vault_client.generate_bearer_token", return_value=("refreshed_token", None))
+    @patch("common.vault.base_vault_client.is_expired", return_value=True)
+    def test_initialize_client_configuration_refresh_preserves_roles_and_context(self, mock_is_expired, mock_generate):
+        self.vault_client._api_client = MagicMock()
+        self.vault_client._is_static_token = False
+        self.vault_client._bearer_token = "expired_sa_token"
+        self.vault_client._credentials = CREDENTIALS_WITH_PATH_ROLES_AND_STRING_CONTEXT
+        self.vault_client.initialize_client_configuration()
+        _, options, _ = mock_generate.call_args[0]
+        self.assertEqual(options["role_ids"], ROLES)
+        self.assertEqual(options["ctx"], STRING_CONTEXT)
 
 
 if __name__ == "__main__":

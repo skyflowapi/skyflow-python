@@ -9,6 +9,7 @@ from skyflow.vault.data import InsertRequest, InsertResponse, UpdateResponse, Up
 from skyflow.vault.tokens import DetokenizeRequest, DetokenizeResponse, TokenizeResponse, TokenizeRequest
 from skyflow.error import SkyflowError
 from skyflow.utils.validations import validate_file_upload_request
+from tests.vault.controller._request_assertions import assert_request, assert_sky_metadata, request_options_headers
 VAULT_ID = "test_vault_id"
 TABLE_NAME = "test_table"
 
@@ -78,6 +79,18 @@ class TestVault(unittest.TestCase):
         mock_validate.assert_called_once_with(self.vault_client.get_logger(), request)
         mock_parse_response.assert_called_once_with(mock_api_response, True)
 
+        # Assert the request built for the API matches the expected batch body
+        assert_request(
+            self,
+            records_api.with_raw_response.record_service_batch_operation,
+            {
+                "records": expected_body,
+                "continue_on_error": True,
+                "byot": request.token_mode.value
+            },
+            expected_args=(VAULT_ID,)
+        )
+
         # Assert that the result matches the expected InsertResponse
         self.assertEqual(result.inserted_fields, expected_inserted_fields)
         self.assertEqual(result.errors, expected_errors)
@@ -122,6 +135,20 @@ class TestVault(unittest.TestCase):
         # Assertions
         mock_validate.assert_called_once_with(self.vault_client.get_logger(), request)
         mock_parse_response.assert_called_once_with(mock_api_response, False)
+
+        # Assert the request built for the API matches the expected bulk body
+        assert_request(
+            self,
+            records_api.with_raw_response.record_service_insert_record,
+            {
+                "records": expected_body,
+                "tokenization": request.return_tokens,
+                "upsert": request.upsert,
+                "homogeneous": request.homogeneous,
+                "byot": request.token_mode.value
+            },
+            expected_args=(VAULT_ID, TABLE_NAME)
+        )
 
         # Assert that the result matches the expected InsertResponse
         self.assertEqual(result.inserted_fields, expected_inserted_fields)
@@ -206,6 +233,20 @@ class TestVault(unittest.TestCase):
         mock_validate.assert_called_once_with(self.vault_client.get_logger(), request)
         mock_parse_response.assert_called_once_with(mock_api_response, False)
 
+        # Assert the request built for the API matches the expected bulk body
+        assert_request(
+            self,
+            records_api.with_raw_response.record_service_insert_record,
+            {
+                "records": expected_body,
+                "tokenization": request.return_tokens,
+                "upsert": request.upsert,
+                "homogeneous": request.homogeneous,
+                "byot": request.token_mode.value
+            },
+            expected_args=(VAULT_ID, TABLE_NAME)
+        )
+
         # Assert that the result matches the expected InsertResponse
         self.assertEqual(result.inserted_fields, expected_inserted_fields)
         self.assertEqual(result.errors, None)  # No errors expected
@@ -247,6 +288,19 @@ class TestVault(unittest.TestCase):
         # Assertions
         mock_validate.assert_called_once_with(self.vault_client.get_logger(), request)
         mock_parse_response.assert_called_once_with(mock_api_response)
+
+        # Assert the request built for the API strips skyflow_id out of the record fields
+        assert_request(
+            self,
+            records_api.record_service_update_record,
+            {
+                "id": "12345",
+                "record": expected_record,
+                "tokenization": request.return_tokens,
+                "byot": request.token_mode.value
+            },
+            expected_args=(VAULT_ID, TABLE_NAME)
+        )
 
         # Check that the result matches the expected UpdateResponse
         self.assertEqual(result.updated_field, expected_updated_field)
@@ -297,6 +351,14 @@ class TestVault(unittest.TestCase):
         # Assertions
         mock_validate.assert_called_once_with(self.vault_client.get_logger(), request)
         mock_parse_response.assert_called_once_with(mock_api_response)
+
+        # Assert the request built for the API carries the ids to delete
+        assert_request(
+            self,
+            records_api.record_service_bulk_delete_record,
+            {"skyflow_ids": expected_payload},
+            expected_args=(VAULT_ID, TABLE_NAME)
+        )
 
         # Check that the result matches the expected DeleteResponse
         self.assertEqual(result.deleted_ids, expected_deleted_ids)
@@ -371,6 +433,14 @@ class TestVault(unittest.TestCase):
         mock_validate.assert_called_once_with(self.vault_client.get_logger(), request)
         mock_parse_response.assert_called_once_with(mock_api_response)
 
+        # Assert the request built for the API carries every get parameter
+        assert_request(
+            self,
+            records_api.record_service_bulk_get_record,
+            expected_payload,
+            expected_args=(VAULT_ID,)
+        )
+
         # Check that the result matches the expected GetResponse
         self.assertEqual(result.data, expected_data)
         self.assertEqual(result.errors, None)  # No errors expected
@@ -388,10 +458,16 @@ class TestVault(unittest.TestCase):
             column_name='email'
         )
 
-        # Expected payload
+        # Expected payload - ids/fields/paging are absent on a column lookup
         expected_payload = {
             "object_name": request.table,
+            "skyflow_ids": None,
+            "redaction": request.redaction_type.value,
             "tokenization": request.return_tokens,
+            "fields": None,
+            "offset": None,
+            "limit": None,
+            "download_url": None,
             "column_name": request.column_name,
             "column_values": request.column_values
         }
@@ -420,7 +496,13 @@ class TestVault(unittest.TestCase):
 
         # Assertions
         mock_validate.assert_called_once_with(self.vault_client.get_logger(), request)
-        records_api.record_service_bulk_get_record.assert_called_once()
+        # Assert the request built for the API looks the record up by column, not by id
+        assert_request(
+            self,
+            records_api.record_service_bulk_get_record,
+            expected_payload,
+            expected_args=(VAULT_ID,)
+        )
 
         # Check that the result matches the expected GetResponse
         self.assertEqual(result.data, expected_data)
@@ -471,9 +553,28 @@ class TestVault(unittest.TestCase):
         # Assertions
         mock_validate.assert_called_once_with(self.vault_client.get_logger(), request)
 
+        # Assert the query string reaches the API unaltered
+        assert_request(
+            self,
+            query_api.query_service_execute_query,
+            {"query": "SELECT * FROM test_table"},
+            expected_args=(VAULT_ID,)
+        )
+
         # Check that the result matches the expected QueryResponse
         self.assertEqual(result.fields, expected_fields)
         self.assertEqual(result.errors, None)  # No errors expected
+
+    @patch("skyflow.vault.controller._vault.validate_query_request")
+    @patch("skyflow.vault.controller._vault.parse_query_response")
+    def test_request_carries_sky_metadata_header(self, mock_parse_response, mock_validate):
+        """Every controller call attaches the sky-metadata header naming this SDK version."""
+        query_api = self.vault_client.get_query_api.return_value
+        query_api.query_service_execute_query.return_value = Mock()
+
+        self.vault.query(QueryRequest(query="SELECT * FROM test_table"))
+
+        assert_sky_metadata(self, request_options_headers(query_api.query_service_execute_query))
 
     @patch("skyflow.vault.controller._vault.validate_query_request")
     def test_query_handles_generic_error(self, mock_validate):
@@ -535,6 +636,17 @@ class TestVault(unittest.TestCase):
         # Assertions
         mock_validate.assert_called_once_with(self.vault_client.get_logger(), request)
         mock_parse_response.assert_called_once_with(mock_api_response)
+
+        # Assert every token and its redaction reach the API
+        assert_request(
+            self,
+            tokens_api.with_raw_response.record_service_detokenize,
+            {
+                "detokenization_parameters": expected_tokens_list,
+                "continue_on_error": False
+            },
+            expected_args=(VAULT_ID,)
+        )
 
         # Check that the result matches the expected DetokenizeResponse
         self.assertEqual(result.detokenized_fields, expected_fields)
@@ -607,6 +719,14 @@ class TestVault(unittest.TestCase):
         mock_validate.assert_called_once_with(self.vault_client.get_logger(), request)
         mock_parse_response.assert_called_once_with(mock_api_response)
 
+        # Assert every value and its column group reach the API
+        assert_request(
+            self,
+            tokens_api.record_service_tokenize,
+            {"tokenization_parameters": expected_records_list},
+            expected_args=(VAULT_ID,)
+        )
+
         # Check that the result matches the expected TokenizeResponse
         self.assertEqual(result.tokenized_fields, expected_fields)
 
@@ -651,6 +771,19 @@ class TestVault(unittest.TestCase):
             result = self.vault.upload_file(request)
             mock_validate.assert_called_once_with(self.vault_client.get_logger(), request)
             mocked_open.assert_called_once_with("/path/to/test.txt", "rb")
+            # The file name is derived from the path and the bytes are read off disk
+            assert_request(
+                self,
+                records_api.with_raw_response.upload_file_v_2,
+                {
+                    "table_name": "test_table",
+                    "column_name": "file_column",
+                    "file": ("test.txt", b"test file content"),
+                    "skyflow_id": "123",
+                    "return_file_metadata": False
+                },
+                expected_args=(VAULT_ID,)
+            )
             self.assertEqual(result.skyflow_id, "123")
             self.assertIsNone(result.errors)
 
@@ -676,6 +809,19 @@ class TestVault(unittest.TestCase):
         # Call upload_file
         result = self.vault.upload_file(request)
         mock_validate.assert_called_once_with(self.vault_client.get_logger(), request)
+        # base64 is decoded to bytes and the caller-supplied file name is used
+        assert_request(
+            self,
+            records_api.with_raw_response.upload_file_v_2,
+            {
+                "table_name": "test_table",
+                "column_name": "file_column",
+                "file": ("test.txt", b"test file content"),
+                "skyflow_id": "123",
+                "return_file_metadata": False
+            },
+            expected_args=(VAULT_ID,)
+        )
         self.assertEqual(result.skyflow_id, "123")
         self.assertIsNone(result.errors)
 
@@ -704,6 +850,19 @@ class TestVault(unittest.TestCase):
         # Call upload_file
         result = self.vault.upload_file(request)
         mock_validate.assert_called_once_with(self.vault_client.get_logger(), request)
+        # The file object is forwarded as-is, named from its own .name attribute
+        assert_request(
+            self,
+            records_api.with_raw_response.upload_file_v_2,
+            {
+                "table_name": "test_table",
+                "column_name": "file_column",
+                "file": ("test.txt", mock_file),
+                "skyflow_id": "123",
+                "return_file_metadata": False
+            },
+            expected_args=(VAULT_ID,)
+        )
         self.assertEqual(result.skyflow_id, "123")
         self.assertIsNone(result.errors)
 
@@ -764,6 +923,19 @@ class TestVault(unittest.TestCase):
             result = self.vault.upload_file(request)
         mock_validate.assert_called_once_with(self.vault_client.get_logger(), request)
         self.assertIsNone(request.skyflow_id)
+        # skyflow_id is still sent, explicitly as None, so the vault generates one
+        assert_request(
+            self,
+            records_api.with_raw_response.upload_file_v_2,
+            {
+                "table_name": "test_table",
+                "column_name": "file_column",
+                "file": ("test.txt", b"test file content"),
+                "skyflow_id": None,
+                "return_file_metadata": False
+            },
+            expected_args=(VAULT_ID,)
+        )
         self.assertEqual(result.skyflow_id, "generated-id-123")
         self.assertIsNone(result.errors)
 

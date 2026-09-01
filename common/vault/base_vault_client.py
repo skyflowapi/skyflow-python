@@ -4,6 +4,7 @@ from common.service_account import generate_bearer_token, generate_bearer_token_
 from common.utils import get_credentials, SkyflowMessages
 from common.utils.logger import log_info
 from common.utils.constants import OptionField, CredentialField, ConfigField
+from common.utils.validations import validate_token_options
 
 
 class IVaultClient(ABC):
@@ -71,10 +72,15 @@ class BaseVaultClient(IVaultClient):
         elif CredentialField.TOKEN in credentials:
             return credentials.get(CredentialField.TOKEN)
 
-        options = {
-            OptionField.ROLE_IDS: self._config.get(OptionField.ROLES),
-            OptionField.CTX: self._config.get(OptionField.CTX)
-        }
+        validate_token_options(self._logger, credentials)
+
+        options = {}
+        if CredentialField.ROLES in credentials:
+            options[OptionField.ROLE_IDS] = credentials.get(CredentialField.ROLES)
+
+        if CredentialField.CONTEXT in credentials:
+            options[OptionField.CTX] = credentials.get(CredentialField.CONTEXT)
+
         if CredentialField.TOKEN_URI_OPTION in credentials and credentials.get(CredentialField.TOKEN_URI_OPTION):
             options[CredentialField.TOKEN_URI_OPTION] = credentials.get(CredentialField.TOKEN_URI_OPTION)
 

@@ -61,8 +61,9 @@ jobs:
           fetch-depth: 0
           ref: ${{ inputs.ref }}
           # Persist an admin credential so the automated version-bump push
-          # below satisfies the branch-protection ruleset's repo-admin
-          # bypass; the default GITHUB_TOKEN is not a bypass actor.
+          # below satisfies the branch-protection ruleset's repo-admin bypass;
+          # the default GITHUB_TOKEN (github-actions[bot]) is not a bypass
+          # actor and would be rejected once PR enforcement is active. SK-2986.
           token: ${{ secrets.PAT_ACTIONS }}
 
       - uses: actions/setup-python@v2

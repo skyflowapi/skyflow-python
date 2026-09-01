@@ -1,5 +1,6 @@
 from common.errors import SkyflowError
 from common.service_account import is_expired
+from common.service_account._utils import _validate_and_resolve_ctx
 from common.utils import SkyflowMessages
 from common.utils.constants import ApiKey, ConfigField, CredentialField, OptionField
 from common.utils.enums import Env, LogLevel
@@ -64,6 +65,48 @@ def validate_api_key(api_key: str, logger=None, messages=None) -> bool:
     return True
 
 
+def validate_token_options(logger, credentials, config_id_type=None, config_id=None, messages=None):
+    messages = messages or SkyflowMessages
+
+    if CredentialField.ROLES in credentials:
+        empty_roles_error = (
+            messages.Error.EMPTY_ROLES_IN_CONFIG.value.format(config_id_type, config_id)
+            if config_id_type and config_id else messages.Error.EMPTY_ROLES.value
+        )
+        validate_required_field(
+            logger, credentials, CredentialField.ROLES, list,
+            empty_roles_error,
+            messages.Error.INVALID_ROLES_KEY_TYPE_IN_CONFIG.value.format(config_id_type, config_id)
+            if config_id_type and config_id else messages.Error.INVALID_ROLES_KEY_TYPE.value,
+            messages=messages)
+        if not credentials.get(CredentialField.ROLES):
+            raise SkyflowError(empty_roles_error, invalid_input_error_code)
+
+        invalid_role_element_error = (
+            messages.Error.INVALID_ROLE_ELEMENT_TYPE_IN_CONFIG.value.format(config_id_type, config_id)
+            if config_id_type and config_id else messages.Error.INVALID_ROLE_ELEMENT_TYPE.value
+        )
+        for role in credentials.get(CredentialField.ROLES):
+            if not isinstance(role, str) or not role.strip():
+                raise SkyflowError(invalid_role_element_error, invalid_input_error_code)
+
+    if CredentialField.CONTEXT in credentials:
+        empty_context_error = (
+            messages.Error.EMPTY_CONTEXT_IN_CONFIG.value.format(config_id_type, config_id)
+            if config_id_type and config_id else messages.Error.EMPTY_CONTEXT.value
+        )
+        validate_required_field(
+            logger, credentials, CredentialField.CONTEXT, (str, dict, bool, int, float),
+            empty_context_error,
+            messages.Error.INVALID_CONTEXT_IN_CONFIG.value.format(config_id_type, config_id)
+            if config_id_type and config_id else messages.Error.INVALID_CONTEXT.value,
+            messages=messages)
+        context = credentials.get(CredentialField.CONTEXT)
+        if isinstance(context, dict):
+            if not context:
+                raise SkyflowError(empty_context_error, invalid_input_error_code)
+            _validate_and_resolve_ctx(context, messages=messages)
+
 def validate_credentials(logger, credentials, config_id_type=None, config_id=None, messages=None):
     messages = messages or SkyflowMessages
     key_present = [k for k in [CredentialField.PATH, CredentialField.TOKEN, CredentialField.CREDENTIALS_STRING, CredentialField.API_KEY] if credentials.get(k)]
@@ -85,23 +128,7 @@ def validate_credentials(logger, credentials, config_id_type=None, config_id=Non
         log_error_log(error_message, logger)
         raise SkyflowError(error_message, invalid_input_error_code)
 
-    if CredentialField.ROLES in credentials:
-        validate_required_field(
-            logger, credentials, CredentialField.ROLES, list,
-            messages.Error.INVALID_ROLES_KEY_TYPE_IN_CONFIG.value.format(config_id_type, config_id)
-            if config_id_type and config_id else messages.Error.INVALID_ROLES_KEY_TYPE.value,
-            messages.Error.EMPTY_ROLES_IN_CONFIG.value.format(config_id_type, config_id)
-            if config_id_type and config_id else messages.Error.EMPTY_ROLES.value,
-        messages=messages)
-
-    if CredentialField.CONTEXT in credentials:
-        validate_required_field(
-            logger, credentials, CredentialField.CONTEXT, str,
-            messages.Error.EMPTY_CONTEXT_IN_CONFIG.value.format(config_id_type, config_id)
-            if config_id_type and config_id else messages.Error.EMPTY_CONTEXT.value,
-            messages.Error.INVALID_CONTEXT_IN_CONFIG.value.format(config_id_type, config_id)
-            if config_id_type and config_id else messages.Error.INVALID_CONTEXT.value,
-        messages=messages)
+    validate_token_options(logger, credentials, config_id_type, config_id, messages=messages)
 
     if CredentialField.CREDENTIALS_STRING in credentials:
         validate_required_field(

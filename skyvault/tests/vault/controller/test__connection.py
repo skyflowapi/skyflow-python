@@ -6,6 +6,7 @@ from skyflow.error import SkyflowError
 from skyflow.utils import SkyflowMessages, parse_invoke_connection_response
 from skyflow.utils._utils import get_data_from_content_type, construct_invoke_connection_request
 from skyflow.utils.enums import RequestMethod, ContentType
+from skyflow.utils.constants import SKY_META_DATA_HEADER
 from skyflow.utils._version import SDK_VERSION
 from skyflow.vault.connection import InvokeConnectionRequest
 from skyflow.vault.controller import Connection
@@ -70,6 +71,13 @@ class TestConnection(unittest.TestCase):
         self.mock_vault_client.get_bearer_token.assert_called_once()
         mock_get_credentials.assert_called_once()
 
+        # Assert the request actually sent - method, url with query params, body, content type
+        sent_request = mock_send.call_args[0][0]
+        self.assertEqual(sent_request.method, "POST")
+        self.assertEqual(sent_request.url, "https://connection_url/?query_key=value")
+        self.assertEqual(sent_request.body, json.dumps(VALID_BODY))
+        self.assertEqual(sent_request.headers['content-type'], "application/json")
+
     @patch('skyflow.vault.controller._connections.get_credentials')
     @patch('requests.Session.send')
     def test_invoke_with_x_skyflow_authorization_already_present(self, mock_send, mock_get_credentials):
@@ -83,16 +91,46 @@ class TestConnection(unittest.TestCase):
         mock_send.return_value = mock_response
 
         custom_auth = "custom_bearer_token"
+        # The guard compares against a lowercase literal, so any casing must be honoured
+        for header_key in ["x-skyflow-authorization", "X-Skyflow-Authorization", "X-SKYFLOW-AUTHORIZATION"]:
+            with self.subTest(header_key=header_key):
+                mock_send.reset_mock()
+                request = InvokeConnectionRequest(
+                    method=RequestMethod.POST,
+                    body=VALID_BODY,
+                    headers={header_key: custom_auth}
+                )
+
+                response = self.connection.invoke(request)
+
+                # Verify bearer token from vault_client is NOT used
+                self.assertIsNotNone(response)
+                sent_headers = mock_send.call_args[0][0].headers
+                self.assertEqual(sent_headers['x-skyflow-authorization'], custom_auth)
+                self.assertNotIn(VALID_BEARER_TOKEN, sent_headers.values())
+
+    @patch('skyflow.vault.controller._connections.get_credentials')
+    @patch('requests.Session.send')
+    def test_invoke_injects_bearer_token_when_header_absent(self, mock_send, mock_get_credentials):
+        """Test that the SDK-generated bearer token is used when the caller supplies none."""
+        mock_get_credentials.return_value = {"api_key": "test_api_key"}
+
+        mock_response = Mock()
+        mock_response.status_code = SUCCESS_STATUS_CODE
+        mock_response.content = SUCCESS_RESPONSE_CONTENT
+        mock_response.headers = {'x-request-id': 'test-request-id'}
+        mock_send.return_value = mock_response
+
         request = InvokeConnectionRequest(
             method=RequestMethod.POST,
             body=VALID_BODY,
-            headers={"x-skyflow-authorization": custom_auth}
+            headers=VALID_HEADERS
         )
 
-        response = self.connection.invoke(request)
-        
-        # Verify bearer token from vault_client is NOT used
-        self.assertIsNotNone(response)
+        self.connection.invoke(request)
+
+        sent_headers = mock_send.call_args[0][0].headers
+        self.assertEqual(sent_headers['x-skyflow-authorization'], VALID_BEARER_TOKEN)
 
     @patch('skyflow.vault.controller._connections.get_credentials')
     def test_invoke_invalid_headers(self, mock_get_credentials):
@@ -239,9 +277,11 @@ class TestConnection(unittest.TestCase):
 
         response = self.connection.invoke(request)
         
-        # Verify get_metrics was called
+        # Verify get_metrics was called and its payload is on the sent request
         mock_get_metrics.assert_called_once()
         self.assertIsNotNone(response)
+        sent_headers = mock_send.call_args[0][0].headers
+        self.assertEqual(json.loads(sent_headers[SKY_META_DATA_HEADER]), {"sdk_version": SDK_VERSION})
 
     def test_parse_invoke_connection_response_error_from_client(self):
         mock_response = Mock(spec=requests.Response)

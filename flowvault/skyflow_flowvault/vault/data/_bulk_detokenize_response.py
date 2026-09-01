@@ -1,5 +1,14 @@
+MIN_RETRYABLE_HTTP_CODE = 500
+MAX_RETRYABLE_HTTP_CODE = 599
+NON_RETRYABLE_HTTP_CODE = 529
+
+
 def _is_retryable(http_code):
-    return isinstance(http_code, int) and 500 <= http_code <= 599 and http_code != 529
+    return (
+        isinstance(http_code, int)
+        and MIN_RETRYABLE_HTTP_CODE <= http_code <= MAX_RETRYABLE_HTTP_CODE
+        and http_code != NON_RETRYABLE_HTTP_CODE
+    )
 
 
 class BulkDetokenizeResponse:

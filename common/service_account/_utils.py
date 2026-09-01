@@ -31,10 +31,11 @@ def _normalize_credentials(credentials):
     return {_SNAKE_TO_CAMEL_CRED_MAP.get(k, k): v for k, v in credentials.items()}
 
 
-def _validate_and_resolve_ctx(ctx):
+def _validate_and_resolve_ctx(ctx, messages=None):
     """Validate ctx value and return resolved value for JWT claims.
     Returns None if ctx should be omitted, the value if valid, or raises SkyflowError if invalid.
     """
+    messages = messages or SkyflowMessages
     if ctx is None:
         return None
     if isinstance(ctx, str):
@@ -47,14 +48,14 @@ def _validate_and_resolve_ctx(ctx):
         for key in ctx:
             if not isinstance(key, str) or not _CTX_KEY_PATTERN.match(key):
                 raise SkyflowError(
-                    SkyflowMessages.Error.INVALID_CTX_MAP_KEY.value.format(key),
+                    messages.Error.INVALID_CTX_MAP_KEY.value.format(key),
                     invalid_input_error_code
                 )
         return ctx
     if isinstance(ctx, (bool, int, float)):
         return ctx
     raise SkyflowError(
-        SkyflowMessages.Error.INVALID_CTX_TYPE.value,
+        messages.Error.INVALID_CTX_TYPE.value,
         invalid_input_error_code
     )
 

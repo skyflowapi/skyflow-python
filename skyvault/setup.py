@@ -11,7 +11,7 @@ from setuptools.command.build_py import build_py as _build_py
 
 if sys.version_info < (3, 9):
     raise RuntimeError("skyflow requires Python 3.9+")
-current_version = '2.1.2'
+current_version = '2.1.3'
 
 HERE = os.path.abspath(os.path.dirname(__file__))
 REPO_ROOT = os.path.dirname(HERE)
