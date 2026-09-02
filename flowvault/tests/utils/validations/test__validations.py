@@ -25,7 +25,7 @@ from skyflow_flowvault.vault.data import (
     DeleteRequest,
     DetokenizeRequest,
     QueryRequest,
-    BulkInsertRecord,
+    BulkInsertRequestRecord,
     BulkInsertRequest,
     BulkDetokenizeRequest,
 )
@@ -182,40 +182,40 @@ class TestValidateInsertRequest(unittest.TestCase):
 
 class TestValidateGetRequest(unittest.TestCase):
     def test_valid_request_with_ids(self):
-        request = GetRequest(table="t1", ids=["id1"])
+        request = GetRequest(table_name="t1", ids=["id1"])
         validate_get_request(None, request)  # should not raise
 
     def test_valid_request_with_unique_values(self):
-        request = GetRequest(table="t1", unique_values=[{"email": "a@b.com"}])
+        request = GetRequest(table_name="t1", unique_values=[{"email": "a@b.com"}])
         validate_get_request(None, request)  # should not raise
 
     def test_missing_table_raises(self):
-        request = GetRequest(table=None, ids=["id1"])
+        request = GetRequest(table_name=None, ids=["id1"])
         with self.assertRaises(SkyflowError):
             validate_get_request(None, request)
 
     def test_empty_table_raises(self):
-        request = GetRequest(table="", ids=["id1"])
+        request = GetRequest(table_name="", ids=["id1"])
         with self.assertRaises(SkyflowError):
             validate_get_request(None, request)
 
     def test_missing_ids_and_unique_values_raises(self):
-        request = GetRequest(table="t1")
+        request = GetRequest(table_name="t1")
         with self.assertRaises(SkyflowError):
             validate_get_request(None, request)
 
     def test_ids_must_be_a_list(self):
-        request = GetRequest(table="t1", ids="not-a-list")
+        request = GetRequest(table_name="t1", ids="not-a-list")
         with self.assertRaises(SkyflowError):
             validate_get_request(None, request)
 
     def test_ids_must_be_non_empty(self):
-        request = GetRequest(table="t1", ids=[])
+        request = GetRequest(table_name="t1", ids=[])
         with self.assertRaises(SkyflowError):
             validate_get_request(None, request)
 
     def test_ids_must_be_strings(self):
-        request = GetRequest(table="t1", ids=[123])
+        request = GetRequest(table_name="t1", ids=[123])
         with self.assertRaises(SkyflowError):
             validate_get_request(None, request)
 
@@ -283,30 +283,30 @@ class TestValidateUpdateRequest(unittest.TestCase):
 
 class TestValidateDeleteRequest(unittest.TestCase):
     def test_valid_request_with_ids(self):
-        request = DeleteRequest(table="t1", ids=["id1"])
+        request = DeleteRequest(table_name="t1", ids=["id1"])
         validate_delete_request(None, request)  # should not raise
 
     def test_valid_request_with_unique_values(self):
-        request = DeleteRequest(table="t1", unique_values=[{"email": "a@b.com"}])
+        request = DeleteRequest(table_name="t1", unique_values=[{"email": "a@b.com"}])
         validate_delete_request(None, request)  # should not raise
 
     def test_missing_table_raises(self):
-        request = DeleteRequest(table=None, ids=["id1"])
+        request = DeleteRequest(table_name=None, ids=["id1"])
         with self.assertRaises(SkyflowError):
             validate_delete_request(None, request)
 
     def test_missing_ids_and_unique_values_raises(self):
-        request = DeleteRequest(table="t1")
+        request = DeleteRequest(table_name="t1")
         with self.assertRaises(SkyflowError):
             validate_delete_request(None, request)
 
     def test_ids_must_be_non_empty(self):
-        request = DeleteRequest(table="t1", ids=[])
+        request = DeleteRequest(table_name="t1", ids=[])
         with self.assertRaises(SkyflowError):
             validate_delete_request(None, request)
 
     def test_ids_must_be_strings(self):
-        request = DeleteRequest(table="t1", ids=[123])
+        request = DeleteRequest(table_name="t1", ids=[123])
         with self.assertRaises(SkyflowError):
             validate_delete_request(None, request)
 
@@ -368,7 +368,7 @@ class TestValidateQueryRequest(unittest.TestCase):
 
 class TestValidateGetRequestMultiTable(unittest.TestCase):
     def test_valid_multi_table_request(self):
-        request = GetRequest(records=[GetRecordRequest(table="persons", ids=["id1"])])
+        request = GetRequest(records=[GetRecordRequest(table_name="persons", ids=["id1"])])
         validate_get_request(None, request)  # should not raise
 
     def test_records_must_be_get_record_request_objects(self):
@@ -381,15 +381,15 @@ class TestValidateGetRequestMultiTable(unittest.TestCase):
 
     def test_records_and_single_table_fields_are_mutually_exclusive(self):
         with self.assertRaises(SkyflowError):
-            validate_get_request(None, GetRequest(table="persons", records=[GetRecordRequest(table="persons", ids=["id1"])]))
+            validate_get_request(None, GetRequest(table_name="persons", records=[GetRecordRequest(table_name="persons", ids=["id1"])]))
 
     def test_each_record_needs_a_table(self):
         with self.assertRaises(SkyflowError):
-            validate_get_request(None, GetRequest(records=[GetRecordRequest(table=None, ids=["id1"])]))
+            validate_get_request(None, GetRequest(records=[GetRecordRequest(table_name=None, ids=["id1"])]))
 
     def test_each_record_needs_ids_or_unique_values(self):
         with self.assertRaises(SkyflowError):
-            validate_get_request(None, GetRequest(records=[GetRecordRequest(table="persons")]))
+            validate_get_request(None, GetRequest(records=[GetRecordRequest(table_name="persons")]))
 
 
 class TestValidateVaultConfig(unittest.TestCase):
@@ -413,49 +413,75 @@ class TestValidateVaultConfig(unittest.TestCase):
         with self.assertRaises(SkyflowError):
             validate_vault_config(None, config)
 
+    def test_valid_full_http_config(self):
+        config = {
+            "vault_id": "v", "cluster_id": "c",
+            "timeout": 30, "connect_timeout": 5, "read_timeout": 20, "write_timeout": 5,
+            "max_retries": 2, "initial_retry_delay_millis": 250, "max_retry_delay_millis": 4000,
+            "vault_url": "https://custom.example.com",
+        }
+        self.assertTrue(validate_vault_config(None, config))
+
+    def test_invalid_timeout_seconds_raise(self):
+        for key in ("timeout", "connect_timeout", "read_timeout", "write_timeout"):
+            for bad in [0, -1, "5", True, None]:
+                with self.assertRaises(SkyflowError):
+                    validate_vault_config(None, {"vault_id": "v", "cluster_id": "c", key: bad})
+
+    def test_invalid_retry_settings_raise(self):
+        for key in ("max_retries", "initial_retry_delay_millis", "max_retry_delay_millis"):
+            for bad in [-1, 1.5, "3", True, None]:
+                with self.assertRaises(SkyflowError):
+                    validate_vault_config(None, {"vault_id": "v", "cluster_id": "c", key: bad})
+
+    def test_invalid_vault_url_raises(self):
+        for bad in ["", 123, None]:
+            with self.assertRaises(SkyflowError):
+                validate_vault_config(None, {"vault_id": "v", "cluster_id": "c", "vault_url": bad})
+
 
 class TestValidateBulkInsertRequest(unittest.TestCase):
     def test_valid_request_level(self):
-        validate_bulk_insert_request(None, BulkInsertRequest(records=[BulkInsertRecord(data={"a": 1})], table="t1"))
+        validate_bulk_insert_request(None, BulkInsertRequest(records=[BulkInsertRequestRecord(data={"a": 1})], table_name="t1"))
 
     def test_valid_per_record(self):
-        validate_bulk_insert_request(None, BulkInsertRequest(records=[BulkInsertRecord(data={"a": 1}, table="t1")]))
+        validate_bulk_insert_request(None, BulkInsertRequest(records=[BulkInsertRequestRecord(data={"a": 1}, table_name="t1")]))
 
     def test_invalid_records_type_raises(self):
         with self.assertRaises(SkyflowError):
-            validate_bulk_insert_request(None, BulkInsertRequest(records="nope", table="t1"))
+            validate_bulk_insert_request(None, BulkInsertRequest(records="nope", table_name="t1"))
         with self.assertRaises(SkyflowError):
-            validate_bulk_insert_request(None, BulkInsertRequest(records=[{"a": 1}], table="t1"))
+            validate_bulk_insert_request(None, BulkInsertRequest(records=[{"a": 1}], table_name="t1"))
 
     def test_empty_records_raises(self):
         with self.assertRaises(SkyflowError):
-            validate_bulk_insert_request(None, BulkInsertRequest(records=[], table="t1"))
+            validate_bulk_insert_request(None, BulkInsertRequest(records=[], table_name="t1"))
 
     def test_too_many_records_raises(self):
-        records = [BulkInsertRecord(data={"a": 1})] * 10001
+        records = [BulkInsertRequestRecord(data={"a": 1})] * 10001
         with self.assertRaises(SkyflowError):
-            validate_bulk_insert_request(None, BulkInsertRequest(records=records, table="t1"))
+            validate_bulk_insert_request(None, BulkInsertRequest(records=records, table_name="t1"))
 
     def test_table_in_both_places_raises(self):
-        req = BulkInsertRequest(records=[BulkInsertRecord(data={"a": 1}, table="t2")], table="t1")
+        req = BulkInsertRequest(records=[BulkInsertRequestRecord(data={"a": 1}, table_name="t2")], table_name="t1")
         with self.assertRaises(SkyflowError):
             validate_bulk_insert_request(None, req)
 
     def test_table_missing_raises(self):
         with self.assertRaises(SkyflowError):
-            validate_bulk_insert_request(None, BulkInsertRequest(records=[BulkInsertRecord(data={"a": 1})]))
+            validate_bulk_insert_request(None, BulkInsertRequest(records=[BulkInsertRequestRecord(data={"a": 1})]))
 
     def test_record_level_upsert_not_allowed_with_request_table(self):
         req = BulkInsertRequest(
-            records=[BulkInsertRecord(data={"a": 1}, upsert=UpsertOptions(unique_columns=["a"]))],
-            table="t1",
+            records=[BulkInsertRequestRecord(data={"a": 1}, upsert=UpsertOptions(unique_columns=["a"]))],
+            table_name="t1",
         )
         with self.assertRaises(SkyflowError):
             validate_bulk_insert_request(None, req)
 
     def test_request_level_upsert_not_allowed_with_per_record_table(self):
         req = BulkInsertRequest(
-            records=[BulkInsertRecord(data={"a": 1}, table="t1")],
+            records=[BulkInsertRequestRecord(data={"a": 1}, table_name="t1")],
             upsert=UpsertOptions(unique_columns=["a"]),
         )
         with self.assertRaises(SkyflowError):

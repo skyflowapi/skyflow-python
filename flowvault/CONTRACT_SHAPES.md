@@ -86,11 +86,11 @@ Per-record table_name/upsert instead of request-level (exactly one level, never 
 
 Two **mutually exclusive** request modes.
 
-**Request — single-table mode** — `GetRequest(table, ids, unique_values, columns, column_redactions, limit, offset)`
+**Request — single-table mode** — `GetRequest(table_name, ids, unique_values, columns, column_redactions, limit, offset)`
 ```jsonc
 // GetRequest
 {
-  "table": "persons",
+  "table_name": "persons",
   "ids": ["9f5b8e6e-..."],
   "unique_values": [ { "email": "john@example.com" } ],
   "columns": ["name", "email"],
@@ -99,15 +99,15 @@ Two **mutually exclusive** request modes.
   "offset": 0
 }
 ```
-**Request — multi-table batch mode** — `GetRequest(records=[GetRecordRequest(table, ids, columns, column_redactions: List[ColumnRedaction], unique_values)])` (no `limit`/`offset`; single-table fields must be unset)
+**Request — multi-table batch mode** — `GetRequest(records=[GetRecordRequest(table_name, ids, columns, column_redactions: List[ColumnRedaction], unique_values)])` (no `limit`/`offset`; single-table fields must be unset)
 ```jsonc
 // GetRequest
 {
   "records": [
-    // GetRecordRequest(table, ids=None, columns=None, column_redactions=None, unique_values=None)
-    { "table": "persons", "ids": ["9f5b8e6e-..."], "columns": ["name"],
+    // GetRecordRequest(table_name, ids=None, columns=None, column_redactions=None, unique_values=None)
+    { "table_name": "persons", "ids": ["9f5b8e6e-..."], "columns": ["name"],
       "column_redactions": [], "unique_values": [] },
-    { "table": "cards", "unique_values": [ { "email": "john@example.com" } ] }
+    { "table_name": "cards", "unique_values": [ { "email": "john@example.com" } ] }
   ]
 }
 ```
@@ -144,10 +144,10 @@ Two **mutually exclusive** request modes.
 
 ## Unary — delete
 
-**Request** — `DeleteRequest(table, ids, unique_values)`
+**Request** — `DeleteRequest(table_name, ids, unique_values)`
 ```jsonc
 // DeleteRequest
-{ "table": "persons", "ids": ["9f5b8e6e-..."], "unique_values": [ { "email": "john@example.com" } ] }
+{ "table_name": "persons", "ids": ["9f5b8e6e-..."], "unique_values": [ { "email": "john@example.com" } ] }
 ```
 
 **Response** — `DeleteResponse(records)`
@@ -233,20 +233,20 @@ On a failed call (`metadata` is `null`):
 
 ## Bulk — bulk_insert / bulk_insert_async
 
-**Request** — `BulkInsertRequest(records: List[BulkInsertRecord], table=None, upsert=None)`
+**Request** — `BulkInsertRequest(records: List[BulkInsertRequestRecord], table_name=None, upsert=None)`
+**Options** (optional 2nd arg) — `bulk_insert(request, options: BulkInsertOptions = None)` — see [Custom request headers](#custom-request-headers).
 
-> Naming/shape difference vs Java and vs unary: the bulk record type is `BulkInsertRecord(data, table=None, upsert=None)`
-> (**no** `tokens` field), whereas unary insert uses `InsertRequestRecord(data, table, tokens, upsert)`.
-> Java has `BulkInsertRequestRecord extends InsertRequestRecord` (same fields, `tokens` included).
+> The bulk record type is `BulkInsertRequestRecord(data, table_name=None, tokens=None, upsert=None)` — same fields as
+> Java's `BulkInsertRequestRecord extends InsertRequestRecord`, `tokens` included (BYOT).
 ```jsonc
 // BulkInsertRequest
 {
-  "table": "cards",
+  "table_name": "cards",
   "upsert": { "unique_columns": ["card_number"], "update_type": "UPDATE" }, // UpsertOptions
   "records": [
-    // BulkInsertRecord(data, table=None, upsert: UpsertOptions=None)  -- note: field is `table`, not `table_name`
+    // BulkInsertRequestRecord(data, table_name=None, upsert: UpsertOptions=None)
     { "data": { "card_number": "4111111111111111", "cardholder_name": "john doe" } },
-    { "data": { "email": "jane@example.com" }, "table": "contacts",
+    { "data": { "email": "jane@example.com" }, "table_name": "contacts",
       "upsert": { "unique_columns": ["email"] } } // UpsertOptions
   ]
 }
@@ -284,13 +284,14 @@ On a failed call (`metadata` is `null`):
   ]
 }
 ```
-> `response.records_to_retry()` returns the original `BulkInsertRecord`s whose `http_code` is 500–599 (excluding 529). Not part of the JSON.
+> `response.records_to_retry()` returns the original `BulkInsertRequestRecord`s whose `http_code` is 500–599 (excluding 529). Not part of the JSON.
 
 ---
 
 ## Bulk — bulk_detokenize / bulk_detokenize_async
 
 **Request** — `BulkDetokenizeRequest(tokens, token_group_redactions)`
+**Options** (optional 2nd arg) — `bulk_detokenize(request, options: BulkDetokenizeOptions = None)` — see [Custom request headers](#custom-request-headers).
 ```jsonc
 // BulkDetokenizeRequest
 {
@@ -359,3 +360,72 @@ On a failed call (`metadata` is `null`):
   "errors": [ { "request_index": 1, "error": "not found", "code": 404, "request_id": "req-..." } ]
 }
 ```
+
+---
+
+## Custom request headers
+
+Bulk operations (`bulk_insert`/`bulk_insert_async`, `bulk_detokenize`/`bulk_detokenize_async`) accept an
+optional `options` object carrying an **interceptor** — a callable run **once per batch** that can add
+custom headers to that batch's outgoing request (mirrors Java's `RequestInterceptor`).
+
+- `BulkInsertOptions(interceptor=None)` / `BulkDetokenizeOptions(interceptor=None)` — `interceptor: Callable[[RequestContext], None]`
+- `RequestContext(operation, batch_index, total_batches)` — `.operation` (`"INSERT"` / `"DETOKENIZE"`),
+  `.batch_index` (0-based, `-1` when not batched), `.total_batches`, `.add_header(key, value)`, `.headers`
+- `CustomHeaderKey` enum — allowed header keys: `SKYFLOW_ACCOUNT_ID` (`x-skyflow-account-id`),
+  `SKYFLOW_ACCOUNT_NAME` (`x-skyflow-account-name`), `REQUEST_ID_HEADER` (`x-request-id`)
+
+```python
+from skyflow_flowvault.vault.data import BulkInsertOptions, CustomHeaderKey
+
+def add_request_id(context):
+    context.add_header(CustomHeaderKey.REQUEST_ID_HEADER, f"req-{context.batch_index}")
+
+vault.bulk_insert(insert_request, BulkInsertOptions(interceptor=add_request_id))
+```
+
+> The interceptor runs once per batch, so a value it generates (e.g. a fresh request id) differs
+> between the batches a single bulk call is split into. Headers added by the interceptor are merged
+> on top of the SDK's own headers (metrics + `Authorization`).
+
+---
+
+## Timeouts & retries (Java `VaultConfig` parity, flowvault only)
+
+Full parity with Java's `VaultConfig` HTTP settings, exposed at **two levels** — per-vault (keys on the
+config dict passed to `add_vault_config`) and client-wide (chainable builder methods). Precedence is
+resolved **per field: per-vault → client-wide → SDK default**.
+
+| Per-vault key | Builder method | Type | Default | Meaning |
+|---|---|---|---|---|
+| `timeout` | `.timeout(s)` | seconds | `60` | Overall call ceiling, bounds the whole call incl. retries + backoff. |
+| `connect_timeout` | `.connect_timeout(s)` | seconds | `10` | Per-attempt connection-establishment timeout. |
+| `read_timeout` | `.read_timeout(s)` | seconds | `10` | Per-attempt response-read timeout. |
+| `write_timeout` | `.write_timeout(s)` | seconds | `10` | Per-attempt request-write timeout. |
+| `max_retries` | `.max_retries(n)` | int ≥ 0 | `0` | Retry attempts after the first failure. `0` = opt-in off. |
+| `initial_retry_delay_millis` | `.initial_retry_delay_millis(ms)` | int ≥ 0 | `500` | Backoff before the first retry. |
+| `max_retry_delay_millis` | `.max_retry_delay_millis(ms)` | int ≥ 0 | `2000` | Ceiling the exponential backoff grows to. |
+| `vault_url` | *(per-vault only)* | string | — | Overrides the URL derived from `cluster_id`/`env`. |
+
+```python
+Skyflow.builder()
+    .timeout(60).max_retries(3).initial_retry_delay_millis(500).max_retry_delay_millis(4000)  # client-wide
+    .add_vault_config({
+        "vault_id": "<VAULT_ID>", "cluster_id": "<CLUSTER_ID>", "env": Env.PROD,
+        "credentials": {...},
+        "timeout": 30, "connect_timeout": 5, "read_timeout": 20, "max_retries": 2,  # per-vault overrides
+    })
+    .build()
+```
+
+> **Implementation (mirrors Java exactly, no generated-code edits).** Like Java — which hand-writes
+> `SkyflowRetryInterceptor` and injects a configured `OkHttpClient` into the generated client — flowvault
+> injects a custom **httpx transport** (`RetryTransport`, httpx's equivalent of an OkHttp interceptor)
+> plus an `httpx.Timeout` into the generated `SkyflowAuth(httpx_client=...)`. The transport retries on
+> `408 / 429 / 5xx` with exponential backoff + jitter (`JITTER_FACTOR` 0.2), honoring `initial`/`max`
+> delay bounds and the overall `timeout` as a deadline across attempts. `max_retries` = the actual
+> number of retries.
+>
+> **Differences from Java:** the overall `timeout` is enforced at attempt boundaries (httpx has no
+> socket-level call timeout), and `vault_url` is per-vault only (Java exposes it the same way). Every
+> value is validated at `add_vault_config` / on the builder setter (`SkyflowError` on a bad value).

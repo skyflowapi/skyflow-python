@@ -14,10 +14,14 @@ from ._detokenize_request import DetokenizeRequest
 from ._detokenize_response import DetokenizeResponse
 from ._query_request import QueryRequest
 from ._query_response import QueryResponse
-from ._bulk_insert_record import BulkInsertRecord
+from ._bulk_insert_request_record import BulkInsertRequestRecord
 from ._bulk_insert_request import BulkInsertRequest
 from ._bulk_summary import BulkSummary
 from ._bulk_insert_response import BulkInsertResponse
 from ._bulk_detokenize_request import BulkDetokenizeRequest
 from ._detokenize_summary import DetokenizeSummary
 from ._bulk_detokenize_response import BulkDetokenizeResponse
+from ._request_context import RequestContext
+from ._bulk_insert_options import BulkInsertOptions
+from ._bulk_detokenize_options import BulkDetokenizeOptions
+from skyflow_flowvault.utils.enums import CustomHeaderKey

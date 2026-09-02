@@ -4,16 +4,55 @@ from common.utils.validations import (
     validate_keys,
     validate_credentials,
     validate_non_empty_string_list,
-    validate_vault_config,
-    validate_update_vault_config,
 )
+from common.utils.validations import validate_vault_config as _common_validate_vault_config
+from common.utils.validations import validate_update_vault_config as _common_validate_update_vault_config
 from skyflow_flowvault.utils import SkyflowMessages
 from skyflow_flowvault.utils.enums import UpsertType
-from skyflow_flowvault.vault.data import GetRecordRequest, BulkInsertRecord, InsertRequestRecord, UpsertOptions
+from skyflow_flowvault.utils._http_config import (
+    POSITIVE_SECOND_KEYS,
+    NON_NEGATIVE_INT_KEYS,
+    VAULT_URL_KEY,
+    VAULT_CONFIG_KEYS,
+)
+from skyflow_flowvault.vault.data import GetRecordRequest, BulkInsertRequestRecord, InsertRequestRecord, UpsertOptions
 
 VALID_UPDATE_RECORD_KEYS = ["skyflow_id", "data", "tokens", "table_name"]
 
 invalid_input_error_code = CommonMessages.ErrorCodes.INVALID_INPUT.value
+
+
+def _is_number(value):
+    return isinstance(value, (int, float)) and not isinstance(value, bool)
+
+
+def validate_http_config_value(key, value):
+    if key in POSITIVE_SECOND_KEYS:
+        if not _is_number(value) or value <= 0:
+            raise SkyflowError(SkyflowMessages.Error.INVALID_TIMEOUT.value.format(key), invalid_input_error_code)
+    elif key in NON_NEGATIVE_INT_KEYS:
+        if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+            raise SkyflowError(SkyflowMessages.Error.INVALID_RETRY_SETTING.value.format(key), invalid_input_error_code)
+
+
+def _validate_http_config(logger, config):
+    for key in (*POSITIVE_SECOND_KEYS, *NON_NEGATIVE_INT_KEYS):
+        if key in config:
+            validate_http_config_value(key, config[key])
+    if VAULT_URL_KEY in config:
+        vault_url = config[VAULT_URL_KEY]
+        if not isinstance(vault_url, str) or not vault_url:
+            raise SkyflowError(SkyflowMessages.Error.INVALID_VAULT_URL.value, invalid_input_error_code)
+
+
+def validate_vault_config(logger, config):
+    _validate_http_config(logger, config)
+    return _common_validate_vault_config(logger, config, messages=CommonMessages, allowed_keys=VAULT_CONFIG_KEYS)
+
+
+def validate_update_vault_config(logger, config):
+    _validate_http_config(logger, config)
+    return _common_validate_update_vault_config(logger, config, messages=CommonMessages, allowed_keys=VAULT_CONFIG_KEYS)
 
 
 def _validate_upsert(logger, upsert):
@@ -68,7 +107,7 @@ def validate_insert_request(logger, request):
 def validate_get_request(logger, request):
     if request.records is not None:
         single_table_fields_set = (
-            request.table or request.ids or request.unique_values or request.columns
+            request.table_name or request.ids or request.unique_values or request.columns
             or request.column_redactions or request.limit is not None or request.offset is not None
         )
         if single_table_fields_set:
@@ -77,7 +116,7 @@ def validate_get_request(logger, request):
                 or not all(isinstance(r, GetRecordRequest) for r in request.records)):
             raise SkyflowError(SkyflowMessages.Error.INVALID_RECORDS_TYPE_IN_GET.value, invalid_input_error_code)
         for record in request.records:
-            if not record.table:
+            if not record.table_name:
                 raise SkyflowError(SkyflowMessages.Error.MISSING_TABLE_NAME_IN_GET.value, invalid_input_error_code)
             if not record.ids and not record.unique_values:
                 raise SkyflowError(SkyflowMessages.Error.MISSING_IDS_OR_UNIQUE_VALUES_IN_GET.value, invalid_input_error_code)
@@ -85,7 +124,7 @@ def validate_get_request(logger, request):
                 validate_non_empty_string_list(logger, record.ids, SkyflowMessages.Error.INVALID_IDS_IN_GET.value)
         return
 
-    if not request.table:
+    if not request.table_name:
         raise SkyflowError(SkyflowMessages.Error.MISSING_TABLE_NAME_IN_GET.value, invalid_input_error_code)
 
     if not request.ids and not request.unique_values:
@@ -124,7 +163,7 @@ def validate_update_request(logger, request):
 
 
 def validate_delete_request(logger, request):
-    if not request.table:
+    if not request.table_name:
         raise SkyflowError(SkyflowMessages.Error.MISSING_TABLE_NAME_IN_DELETE.value, invalid_input_error_code)
 
     if not request.ids and not request.unique_values:
@@ -161,7 +200,7 @@ def validate_query_request(logger, request):
 
 
 def validate_bulk_insert_request(logger, request):
-    if not isinstance(request.records, list) or not all(isinstance(r, BulkInsertRecord) for r in request.records):
+    if not isinstance(request.records, list) or not all(isinstance(r, BulkInsertRequestRecord) for r in request.records):
         raise SkyflowError(SkyflowMessages.Error.INVALID_RECORDS_TYPE_IN_BULK_INSERT.value, invalid_input_error_code)
 
     if not request.records:
@@ -174,15 +213,15 @@ def validate_bulk_insert_request(logger, request):
     for record in request.records:
         _validate_upsert(logger, record.upsert)
 
-    table_at_request_level = request.table is not None
+    table_at_request_level = request.table_name is not None
 
     if table_at_request_level:
         for record in request.records:
-            if record.table is not None:
+            if record.table_name is not None:
                 raise SkyflowError(SkyflowMessages.Error.TABLE_NAME_IN_BOTH_PLACES_IN_INSERT.value, invalid_input_error_code)
     else:
         for record in request.records:
-            if record.table is None:
+            if record.table_name is None:
                 raise SkyflowError(SkyflowMessages.Error.TABLE_NAME_MISSING_IN_INSERT.value, invalid_input_error_code)
 
     if table_at_request_level:

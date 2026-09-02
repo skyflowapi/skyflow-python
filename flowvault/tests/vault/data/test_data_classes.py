@@ -1,7 +1,10 @@
 import unittest
 
-from skyflow_flowvault.utils.enums import UpsertType
+from skyflow_flowvault.utils.enums import UpsertType, CustomHeaderKey
 from skyflow_flowvault.vault.data import (
+    RequestContext,
+    BulkInsertOptions,
+    BulkDetokenizeOptions,
     UpsertOptions,
     ColumnRedaction,
     InsertRequestRecord,
@@ -18,7 +21,7 @@ from skyflow_flowvault.vault.data import (
     QueryRequest,
     QueryResponse,
     GetRecordRequest,
-    BulkInsertRecord,
+    BulkInsertRequestRecord,
     BulkInsertRequest,
     BulkInsertResponse,
     BulkSummary,
@@ -92,8 +95,8 @@ class TestInsertResponse(unittest.TestCase):
 
 class TestGetRequest(unittest.TestCase):
     def test_required_and_optional_defaults(self):
-        request = GetRequest(table="t1", ids=["id1"])
-        self.assertEqual(request.table, "t1")
+        request = GetRequest(table_name="t1", ids=["id1"])
+        self.assertEqual(request.table_name, "t1")
         self.assertEqual(request.ids, ["id1"])
         self.assertIsNone(request.unique_values)
         self.assertIsNone(request.columns)
@@ -103,7 +106,7 @@ class TestGetRequest(unittest.TestCase):
 
     def test_all_fields_stored(self):
         request = GetRequest(
-            table="t1", ids=["id1"], unique_values=[{"email": "a@b.com"}], columns=["a", "b"],
+            table_name="t1", ids=["id1"], unique_values=[{"email": "a@b.com"}], columns=["a", "b"],
             column_redactions=[ColumnRedaction(column_name="a", redaction="mask1")], limit=10, offset=5,
         )
         self.assertEqual(request.unique_values, [{"email": "a@b.com"}])
@@ -167,13 +170,13 @@ class TestUpdateResponse(unittest.TestCase):
 
 class TestDeleteRequest(unittest.TestCase):
     def test_required_and_optional_defaults(self):
-        request = DeleteRequest(table="t1", ids=["id1"])
-        self.assertEqual(request.table, "t1")
+        request = DeleteRequest(table_name="t1", ids=["id1"])
+        self.assertEqual(request.table_name, "t1")
         self.assertEqual(request.ids, ["id1"])
         self.assertIsNone(request.unique_values)
 
     def test_unique_values_stored(self):
-        request = DeleteRequest(table="t1", unique_values=[{"email": "a@b.com"}])
+        request = DeleteRequest(table_name="t1", unique_values=[{"email": "a@b.com"}])
         self.assertEqual(request.unique_values, [{"email": "a@b.com"}])
 
 
@@ -248,10 +251,10 @@ class TestQueryResponse(unittest.TestCase):
 
 class TestGetRecordRequest(unittest.TestCase):
     def test_fields_stored(self):
-        record = GetRecordRequest(table="t1", ids=["id1"], columns=["a"],
+        record = GetRecordRequest(table_name="t1", ids=["id1"], columns=["a"],
                                   column_redactions=[ColumnRedaction(column_name="a", redaction="MASKED")],
                                   unique_values=[{"email": "a@b.com"}])
-        self.assertEqual(record.table, "t1")
+        self.assertEqual(record.table_name, "t1")
         self.assertEqual(record.ids, ["id1"])
         self.assertEqual(record.columns, ["a"])
         self.assertEqual(record.column_redactions[0].column_name, "a")
@@ -259,32 +262,35 @@ class TestGetRecordRequest(unittest.TestCase):
         self.assertEqual(record.unique_values, [{"email": "a@b.com"}])
 
     def test_optional_defaults(self):
-        record = GetRecordRequest(table="t1")
+        record = GetRecordRequest(table_name="t1")
         self.assertIsNone(record.ids)
         self.assertIsNone(record.columns)
         self.assertIsNone(record.column_redactions)
         self.assertIsNone(record.unique_values)
 
 
-class TestBulkInsertRecord(unittest.TestCase):
+class TestBulkInsertRequestRecord(unittest.TestCase):
     def test_fields_stored(self):
-        record = BulkInsertRecord(data={"a": 1}, table="t1", upsert=UpsertOptions(unique_columns=["a"]))
+        record = BulkInsertRequestRecord(data={"a": 1}, table_name="t1", tokens={"a": ["tok"]},
+                                         upsert=UpsertOptions(unique_columns=["a"]))
         self.assertEqual(record.data, {"a": 1})
-        self.assertEqual(record.table, "t1")
+        self.assertEqual(record.table_name, "t1")
+        self.assertEqual(record.tokens, {"a": ["tok"]})
         self.assertEqual(record.upsert.unique_columns, ["a"])
 
     def test_optional_defaults(self):
-        record = BulkInsertRecord(data={"a": 1})
-        self.assertIsNone(record.table)
+        record = BulkInsertRequestRecord(data={"a": 1})
+        self.assertIsNone(record.table_name)
+        self.assertIsNone(record.tokens)
         self.assertIsNone(record.upsert)
 
 
 class TestBulkInsertRequest(unittest.TestCase):
     def test_fields_stored(self):
-        records = [BulkInsertRecord(data={"a": 1})]
-        request = BulkInsertRequest(records=records, table="t1")
+        records = [BulkInsertRequestRecord(data={"a": 1})]
+        request = BulkInsertRequest(records=records, table_name="t1")
         self.assertIs(request.records, records)
-        self.assertEqual(request.table, "t1")
+        self.assertEqual(request.table_name, "t1")
         self.assertIsNone(request.upsert)
 
 
@@ -354,6 +360,39 @@ class TestBulkDetokenizeResponse(unittest.TestCase):
     def test_str_matches_repr(self):
         response = BulkDetokenizeResponse(summary=DetokenizeSummary(), records=[])
         self.assertEqual(str(response), repr(response))
+
+
+class TestCustomHeaders(unittest.TestCase):
+    def test_custom_header_key_str_is_wire_name(self):
+        self.assertEqual(str(CustomHeaderKey.SKYFLOW_ACCOUNT_ID), "x-skyflow-account-id")
+        self.assertEqual(str(CustomHeaderKey.SKYFLOW_ACCOUNT_NAME), "x-skyflow-account-name")
+        self.assertEqual(str(CustomHeaderKey.REQUEST_ID_HEADER), "x-request-id")
+
+    def test_request_context_defaults_not_batched(self):
+        context = RequestContext("INSERT")
+        self.assertEqual(context.operation, "INSERT")
+        self.assertEqual(context.batch_index, -1)
+        self.assertEqual(context.total_batches, -1)
+        self.assertEqual(context.headers, {})
+
+    def test_request_context_add_header_and_snapshot(self):
+        context = RequestContext("DETOKENIZE", 1, 4)
+        context.add_header(CustomHeaderKey.REQUEST_ID_HEADER, "abc")
+        self.assertEqual(context.batch_index, 1)
+        self.assertEqual(context.total_batches, 4)
+        self.assertEqual(context.headers, {CustomHeaderKey.REQUEST_ID_HEADER: "abc"})
+        context.headers[CustomHeaderKey.SKYFLOW_ACCOUNT_ID] = "leak"
+        self.assertNotIn(CustomHeaderKey.SKYFLOW_ACCOUNT_ID, context.headers)
+
+    def test_bulk_options_default_and_explicit_interceptor(self):
+        self.assertIsNone(BulkInsertOptions().interceptor)
+        self.assertIsNone(BulkDetokenizeOptions().interceptor)
+
+        def interceptor(context):
+            return None
+
+        self.assertIs(BulkInsertOptions(interceptor=interceptor).interceptor, interceptor)
+        self.assertIs(BulkDetokenizeOptions(interceptor=interceptor).interceptor, interceptor)
 
 
 if __name__ == "__main__":

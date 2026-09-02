@@ -68,6 +68,43 @@ class TestVaultClient(unittest.TestCase):
         result = self.vault_client.get_async_tokens_api()
         self.assertEqual(result, self.vault_client._async_api_client.tokens)
 
+    # ------------------------------------------------------------------ #
+    # HTTP config resolution (vault -> client-wide -> default) + vault_url
+    # ------------------------------------------------------------------ #
+
+    def test_vault_url_override_wins_over_derivation(self):
+        client = VaultClient({"vault_id": "v", "vault_url": "https://override.example.com"})
+        self.assertEqual(client.resolve_vault_url("cluster", Env.PROD, "v"), "https://override.example.com")
+
+    def test_resolve_precedence_vault_then_common_then_default(self):
+        client = VaultClient({"vault_id": "v", "read_timeout": 22})
+        client.set_common_http_config({"read_timeout": 5, "connect_timeout": 7})
+        self.assertEqual(client._resolve("read_timeout", 10), 22)     # per-vault wins
+        self.assertEqual(client._resolve("connect_timeout", 10), 7)   # falls to client-wide
+        self.assertEqual(client._resolve("write_timeout", 10), 10)    # falls to default
+
+    def test_build_timeout_uses_resolved_values(self):
+        client = VaultClient({"vault_id": "v", "connect_timeout": 3, "read_timeout": 8, "write_timeout": 4})
+        timeout = client._build_timeout()
+        self.assertEqual(timeout.connect, 3)
+        self.assertEqual(timeout.read, 8)
+        self.assertEqual(timeout.write, 4)
+        self.assertEqual(timeout.pool, 8)
+
+    def test_retry_params_defaults_and_overrides(self):
+        client = VaultClient({"vault_id": "v"})
+        self.assertEqual(client._retry_params(), (0, 500, 2000, 60))
+        client2 = VaultClient({
+            "vault_id": "v", "max_retries": 3, "initial_retry_delay_millis": 100,
+            "max_retry_delay_millis": 5000, "timeout": 30,
+        })
+        self.assertEqual(client2._retry_params(), (3, 100, 5000, 30))
+
+    def test_set_common_http_config_none_is_empty(self):
+        client = VaultClient({"vault_id": "v"})
+        client.set_common_http_config(None)
+        self.assertEqual(client._resolve("timeout", 60), 60)
+
 
 if __name__ == "__main__":
     unittest.main()

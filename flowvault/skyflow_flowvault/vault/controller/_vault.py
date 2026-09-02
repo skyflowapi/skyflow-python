@@ -56,11 +56,16 @@ from skyflow_flowvault.vault.data import (
     BulkDetokenizeRequest,
     BulkDetokenizeResponse,
     DetokenizeSummary,
+    BulkInsertOptions,
+    BulkDetokenizeOptions,
+    RequestContext,
 )
 
 REQUEST_ID_HEADER = "x-request-id"
 ADDITIONAL_HEADERS_KEY = "additional_headers"
 UNKNOWN_ERROR_MESSAGE = "Unknown error"
+OPERATION_INSERT = "INSERT"
+OPERATION_DETOKENIZE = "DETOKENIZE"
 
 
 class VaultController(BaseVaultController):
@@ -91,7 +96,6 @@ class VaultController(BaseVaultController):
 
         try:
             log_info(SkyflowMessages.Info.INSERT_TRIGGERED.value, self._vault_client.get_logger())
-            headers = self.__build_headers()
             upsert_kwargs = self.__omit_none(
                 upsert=None if needs_per_record_upsert else self.__to_upsert(request.upsert),
             )
@@ -99,7 +103,7 @@ class VaultController(BaseVaultController):
                 vault_id=self._vault_client.get_vault_id(),
                 table_name=request.table_name,
                 records=wire_records,
-                request_options={ADDITIONAL_HEADERS_KEY: headers},
+                request_options=self.__request_options(),
                 **upsert_kwargs,
             )
             records = [self.__record_row(record, include_data=False) for record in (raw_response.data.records or [])]
@@ -113,7 +117,7 @@ class VaultController(BaseVaultController):
     def get(self, request: GetRequest) -> GetResponse:
         log_info(SkyflowMessages.Info.VALIDATE_GET_REQUEST.value, self._vault_client.get_logger())
         validate_get_request(self._vault_client.get_logger(), request)
-        self._validate_table_name_if_present(request.table)
+        self._validate_table_name_if_present(request.table_name)
         log_info(SkyflowMessages.Info.GET_REQUEST_RESOLVED.value, self._vault_client.get_logger())
         self._vault_client.initialize_client_configuration()
 
@@ -124,7 +128,7 @@ class VaultController(BaseVaultController):
             error_count = len(request.records)
         else:
             call_kwargs = {
-                'table_name': request.table,
+                'table_name': request.table_name,
                 'skyflow_i_ds': request.ids,
                 'unique_values': self.__to_unique_values(request.unique_values),
                 'columns': request.columns,
@@ -138,7 +142,7 @@ class VaultController(BaseVaultController):
             log_info(SkyflowMessages.Info.GET_TRIGGERED.value, self._vault_client.get_logger())
             raw_response = records_api.with_raw_response.get_records(
                 vault_id=self._vault_client.get_vault_id(),
-                request_options={ADDITIONAL_HEADERS_KEY: self.__build_headers()},
+                request_options=self.__request_options(),
                 **call_kwargs,
             )
             records = [self.__record_row(record, include_data=True) for record in (raw_response.data.records or [])]
@@ -175,7 +179,7 @@ class VaultController(BaseVaultController):
                 vault_id=self._vault_client.get_vault_id(),
                 table_name=request.table_name,
                 records=wire_records,
-                request_options={ADDITIONAL_HEADERS_KEY: self.__build_headers()},
+                request_options=self.__request_options(),
             )
             request_id = self.__extract_request_id(raw_response.headers)
             records, errors = self.__split_success_and_errors(
@@ -191,7 +195,7 @@ class VaultController(BaseVaultController):
     def delete(self, request: DeleteRequest) -> DeleteResponse:
         log_info(SkyflowMessages.Info.VALIDATE_DELETE_REQUEST.value, self._vault_client.get_logger())
         validate_delete_request(self._vault_client.get_logger(), request)
-        self._validate_table_name_if_present(request.table)
+        self._validate_table_name_if_present(request.table_name)
         log_info(SkyflowMessages.Info.DELETE_REQUEST_RESOLVED.value, self._vault_client.get_logger())
         self._vault_client.initialize_client_configuration()
 
@@ -202,10 +206,10 @@ class VaultController(BaseVaultController):
             log_info(SkyflowMessages.Info.DELETE_TRIGGERED.value, self._vault_client.get_logger())
             raw_response = records_api.with_raw_response.delete_records(
                 vault_id=self._vault_client.get_vault_id(),
-                table_name=request.table,
+                table_name=request.table_name,
                 skyflow_i_ds=request.ids,
                 unique_values=self.__to_unique_values(request.unique_values),
-                request_options={ADDITIONAL_HEADERS_KEY: self.__build_headers()},
+                request_options=self.__request_options(),
             )
             records = [self.__delete_row(record) for record in (raw_response.data.records or [])]
         except Exception as e:
@@ -228,7 +232,7 @@ class VaultController(BaseVaultController):
             raw_response = query_api.with_raw_response.execute_query(
                 vault_id=self._vault_client.get_vault_id(),
                 query=request.query,
-                request_options={ADDITIONAL_HEADERS_KEY: self.__build_headers()},
+                request_options=self.__request_options(),
             )
             records = [{'data': getattr(record, 'data', None)} for record in (raw_response.data.records or [])]
             metadata = self.__query_metadata(raw_response.data)
@@ -254,7 +258,7 @@ class VaultController(BaseVaultController):
                 vault_id=self._vault_client.get_vault_id(),
                 tokens=request.tokens,
                 token_group_redactions=self.__to_token_group_redactions(request.token_group_redactions),
-                request_options={ADDITIONAL_HEADERS_KEY: self.__build_headers()},
+                request_options=self.__request_options(),
             )
             records = [self.__detokenize_row(resp) for resp in (raw_response.data.response or [])]
         except Exception as e:
@@ -264,19 +268,20 @@ class VaultController(BaseVaultController):
         log_info(SkyflowMessages.Info.DETOKENIZE_SUCCESS.value, self._vault_client.get_logger())
         return DetokenizeResponse(records=records)
 
-    def bulk_insert(self, request: BulkInsertRequest) -> BulkInsertResponse:
+    def bulk_insert(self, request: BulkInsertRequest, options: BulkInsertOptions = None) -> BulkInsertResponse:
         batches, concurrency, top_kwargs = self.__prepare_bulk_insert(request)
+        interceptor = options.interceptor if options is not None else None
         records_api = self._vault_client.get_records_api()
         logger = self._vault_client.get_logger()
         log_info(SkyflowMessages.Info.BULK_INSERT_TRIGGERED.value, logger)
 
-        def call_batch(batch, start_index):
+        def call_batch(batch, start_index, batch_index, total_batches):
             try:
                 raw_response = records_api.with_raw_response.insert_records(
                     vault_id=self._vault_client.get_vault_id(),
-                    table_name=request.table,
+                    table_name=request.table_name,
                     records=batch,
-                    request_options={ADDITIONAL_HEADERS_KEY: self.__build_headers()},
+                    request_options=self.__bulk_request_options(OPERATION_INSERT, batch_index, total_batches, interceptor),
                     **top_kwargs,
                 )
                 return self.__format_bulk_insert_batch(raw_response.data.records or [], start_index, raw_response.headers)
@@ -288,19 +293,20 @@ class VaultController(BaseVaultController):
         log_info(SkyflowMessages.Info.BULK_INSERT_SUCCESS.value, logger)
         return self.__build_bulk_insert_response(records, request.records)
 
-    async def bulk_insert_async(self, request: BulkInsertRequest) -> BulkInsertResponse:
+    async def bulk_insert_async(self, request: BulkInsertRequest, options: BulkInsertOptions = None) -> BulkInsertResponse:
         batches, concurrency, top_kwargs = self.__prepare_bulk_insert(request)
+        interceptor = options.interceptor if options is not None else None
         records_api = self._vault_client.get_async_records_api()
         logger = self._vault_client.get_logger()
         log_info(SkyflowMessages.Info.BULK_INSERT_TRIGGERED.value, logger)
 
-        async def call_batch(batch, start_index):
+        async def call_batch(batch, start_index, batch_index, total_batches):
             try:
                 raw_response = await records_api.with_raw_response.insert_records(
                     vault_id=self._vault_client.get_vault_id(),
-                    table_name=request.table,
+                    table_name=request.table_name,
                     records=batch,
-                    request_options={ADDITIONAL_HEADERS_KEY: self.__build_headers()},
+                    request_options=self.__bulk_request_options(OPERATION_INSERT, batch_index, total_batches, interceptor),
                     **top_kwargs,
                 )
                 return self.__format_bulk_insert_batch(raw_response.data.records or [], start_index, raw_response.headers)
@@ -312,19 +318,20 @@ class VaultController(BaseVaultController):
         log_info(SkyflowMessages.Info.BULK_INSERT_SUCCESS.value, logger)
         return self.__build_bulk_insert_response(records, request.records)
 
-    def bulk_detokenize(self, request: BulkDetokenizeRequest) -> BulkDetokenizeResponse:
+    def bulk_detokenize(self, request: BulkDetokenizeRequest, options: BulkDetokenizeOptions = None) -> BulkDetokenizeResponse:
         batches, concurrency, redactions = self.__prepare_bulk_detokenize(request)
+        interceptor = options.interceptor if options is not None else None
         tokens_api = self._vault_client.get_tokens_api()
         logger = self._vault_client.get_logger()
         log_info(SkyflowMessages.Info.BULK_DETOKENIZE_TRIGGERED.value, logger)
 
-        def call_batch(batch, start_index):
+        def call_batch(batch, start_index, batch_index, total_batches):
             try:
                 raw_response = tokens_api.with_raw_response.detokenize(
                     vault_id=self._vault_client.get_vault_id(),
                     tokens=batch,
                     token_group_redactions=redactions,
-                    request_options={ADDITIONAL_HEADERS_KEY: self.__build_headers()},
+                    request_options=self.__bulk_request_options(OPERATION_DETOKENIZE, batch_index, total_batches, interceptor),
                 )
                 return self.__format_bulk_detokenize_batch(raw_response.data.response or [], start_index, raw_response.headers)
             except Exception as e:
@@ -335,19 +342,20 @@ class VaultController(BaseVaultController):
         log_info(SkyflowMessages.Info.BULK_DETOKENIZE_SUCCESS.value, logger)
         return self.__build_bulk_detokenize_response(records, request.tokens)
 
-    async def bulk_detokenize_async(self, request: BulkDetokenizeRequest) -> BulkDetokenizeResponse:
+    async def bulk_detokenize_async(self, request: BulkDetokenizeRequest, options: BulkDetokenizeOptions = None) -> BulkDetokenizeResponse:
         batches, concurrency, redactions = self.__prepare_bulk_detokenize(request)
+        interceptor = options.interceptor if options is not None else None
         tokens_api = self._vault_client.get_async_tokens_api()
         logger = self._vault_client.get_logger()
         log_info(SkyflowMessages.Info.BULK_DETOKENIZE_TRIGGERED.value, logger)
 
-        async def call_batch(batch, start_index):
+        async def call_batch(batch, start_index, batch_index, total_batches):
             try:
                 raw_response = await tokens_api.with_raw_response.detokenize(
                     vault_id=self._vault_client.get_vault_id(),
                     tokens=batch,
                     token_group_redactions=redactions,
-                    request_options={ADDITIONAL_HEADERS_KEY: self.__build_headers()},
+                    request_options=self.__bulk_request_options(OPERATION_DETOKENIZE, batch_index, total_batches, interceptor),
                 )
                 return self.__format_bulk_detokenize_batch(raw_response.data.response or [], start_index, raw_response.headers)
             except Exception as e:
@@ -362,9 +370,9 @@ class VaultController(BaseVaultController):
         logger = self._vault_client.get_logger()
         log_info(SkyflowMessages.Info.VALIDATE_BULK_INSERT_REQUEST.value, logger)
         validate_bulk_insert_request(logger, request)
-        self._validate_table_name_if_present(request.table)
+        self._validate_table_name_if_present(request.table_name)
         for record in request.records:
-            self._validate_table_name_if_present(record.table)
+            self._validate_table_name_if_present(record.table_name)
             self._validate_field_values(record.data)
         log_info(SkyflowMessages.Info.BULK_INSERT_REQUEST_RESOLVED.value, logger)
         self._vault_client.initialize_client_configuration()
@@ -372,7 +380,7 @@ class VaultController(BaseVaultController):
         batch_size, concurrency = resolve_batch_config(
             INSERT_BATCH_SIZE_KEY, INSERT_CONCURRENCY_LIMIT_KEY, len(request.records), logger,
         )
-        needs_per_record_table = any(r.table is not None for r in request.records)
+        needs_per_record_table = any(r.table_name is not None for r in request.records)
         needs_per_record_upsert = any(r.upsert is not None for r in request.records)
         wire_records = [
             self.__build_bulk_insert_wire_record(r, request, needs_per_record_table, needs_per_record_upsert)
@@ -401,15 +409,16 @@ class VaultController(BaseVaultController):
         return batches, concurrency, redactions
 
     def __index_batches(self, items, batch_size):
-        batches, start_index, indexed = create_batches(items, batch_size), 0, []
-        for batch in batches:
-            indexed.append((batch, start_index))
+        batches = create_batches(items, batch_size)
+        total_batches, start_index, indexed = len(batches), 0, []
+        for batch_index, batch in enumerate(batches):
+            indexed.append((batch, start_index, batch_index, total_batches))
             start_index += len(batch)
         return indexed
 
     def __run_batches_sync(self, batches, call_batch, concurrency):
         with ThreadPoolExecutor(max_workers=max(1, concurrency)) as executor:
-            futures = [executor.submit(call_batch, batch, start_index) for batch, start_index in batches]
+            futures = [executor.submit(call_batch, *batch) for batch in batches]
             merged = []
             for future in futures:
                 merged.extend(future.result())
@@ -418,11 +427,11 @@ class VaultController(BaseVaultController):
     async def __run_batches_async(self, batches, call_batch, concurrency):
         semaphore = asyncio.Semaphore(max(1, concurrency))
 
-        async def guarded(batch, start_index):
+        async def guarded(batch):
             async with semaphore:
-                return await call_batch(batch, start_index)
+                return await call_batch(*batch)
 
-        results = await asyncio.gather(*(guarded(batch, start_index) for batch, start_index in batches))
+        results = await asyncio.gather(*(guarded(batch) for batch in batches))
         merged = []
         for result in results:
             merged.extend(result)
@@ -430,7 +439,8 @@ class VaultController(BaseVaultController):
 
     def __build_bulk_insert_wire_record(self, record, request, needs_per_record_table, needs_per_record_upsert):
         return InsertRecordData(data=record.data, **self.__omit_none(
-            table_name=(record.table or request.table) if needs_per_record_table else None,
+            tokens=record.tokens,
+            table_name=(record.table_name or request.table_name) if needs_per_record_table else None,
             upsert=self.__to_upsert(record.upsert or request.upsert) if needs_per_record_upsert else None,
         ))
 
@@ -549,6 +559,20 @@ class VaultController(BaseVaultController):
             headers['Authorization'] = f'Bearer {token}'
         return headers
 
+    def __request_options(self, custom_headers=None):
+        headers = self.__build_headers()
+        if custom_headers:
+            headers.update(custom_headers)
+        return {ADDITIONAL_HEADERS_KEY: headers}
+
+    def __bulk_request_options(self, operation, batch_index, total_batches, interceptor):
+        custom_headers = None
+        if interceptor is not None:
+            context = RequestContext(operation, batch_index, total_batches)
+            interceptor(context)
+            custom_headers = {str(key): value for key, value in context.headers.items()}
+        return self.__request_options(custom_headers)
+
     def __to_upsert(self, upsert):
         if upsert is None:
             return None
@@ -605,7 +629,7 @@ class VaultController(BaseVaultController):
     def __to_get_request_data(self, records):
         return [
             GetRequestData(
-                table_name=record.table,
+                table_name=record.table_name,
                 skyflow_i_ds=record.ids or [],
                 **self.__omit_none(
                     columns=record.columns,

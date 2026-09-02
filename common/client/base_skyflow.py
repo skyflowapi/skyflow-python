@@ -149,6 +149,9 @@ class BaseSkyflowImpl(BaseSkyflow):
             self.__log_level = self._default_log_level
             self.__logger = self._logger_cls(self._default_log_level)
 
+        def _on_vault_client_created(self, vault_client):
+            pass
+
         def _require_connections(self):
             if self._connection_cls is None:
                 raise NotImplementedError(_CONNECTIONS_NOT_SUPPORTED_ERROR)
@@ -269,6 +272,7 @@ class BaseSkyflowImpl(BaseSkyflow):
                     self._skyflow_messages.ErrorCodes.INVALID_INPUT.value
                 )
             vault_client = self._vault_client_cls(config)
+            self._on_vault_client_created(vault_client)
             vault_config = {
                 OptionField.VAULT_CLIENT: vault_client,
                 OptionField.VAULT_CONTROLLER: self._vault_controller_cls(vault_client),

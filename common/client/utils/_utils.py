@@ -88,7 +88,7 @@ def make_skyflow_class(*, vault_client_cls, vault_controller_cls, skyflow_messag
                         logger_cls=_CommonLogger, default_log_level=_CommonLogLevel.ERROR,
                         connection_cls=None, detect_cls=None,
                         validate_connection_config=None, validate_update_connection_config=None,
-                        set_active_log_level=None):
+                        set_active_log_level=None, builder_mixins=()):
 
     if connection_cls is not None and (validate_connection_config is None or validate_update_connection_config is None):
         raise ValueError("connection_cls requires validate_connection_config and validate_update_connection_config")
@@ -114,7 +114,7 @@ def make_skyflow_class(*, vault_client_cls, vault_controller_cls, skyflow_messag
         '_validate_credentials': staticmethod(validate_credentials),
         '_set_active_log_level': staticmethod(set_active_log_level) if set_active_log_level else None,
     }
-    variant_builder = type('Builder', (BaseSkyflowImpl.Builder,), builder_attrs)
+    variant_builder = type('Builder', (*builder_mixins, BaseSkyflowImpl.Builder), builder_attrs)
 
     bases = [BaseSkyflowImpl]
     if connection_cls is not None:

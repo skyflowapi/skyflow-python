@@ -16,6 +16,9 @@ class SkyflowMessages:
     infrastructure text lives in common.utils.SkyflowMessages instead."""
 
     class Error(Enum):
+        INVALID_TIMEOUT = f"{error_prefix} Validation error. '{{}}' must be a positive number of seconds."
+        INVALID_RETRY_SETTING = f"{error_prefix} Validation error. '{{}}' must be a non-negative integer."
+        INVALID_VAULT_URL = f"{error_prefix} Validation error. 'vault_url' must be a non-empty string."
         EMPTY_RECORDS_IN_INSERT = f"{error_prefix} Insert failed. Specify at least one record to insert."
         INVALID_RECORDS_TYPE_IN_INSERT = f"{error_prefix} Insert failed. 'records' must be a list of InsertRequestRecord objects."
         INVALID_RECORD_DATA_IN_INSERT = f"{error_prefix} Validation error. Each record's 'values' must be a non-empty dict."
@@ -80,8 +83,8 @@ class SkyflowMessages:
 
 
         EMPTY_RECORDS_IN_BULK_INSERT = f"{error_prefix} Bulk insert failed. Specify at least one record to insert."
-        INVALID_RECORDS_TYPE_IN_BULK_INSERT = f"{error_prefix} Bulk insert failed. 'records' must be a list of BulkInsertRecord objects."
-        INVALID_RECORD_IN_BULK_INSERT = f"{error_prefix} Bulk insert failed. Each record must be a BulkInsertRecord object."
+        INVALID_RECORDS_TYPE_IN_BULK_INSERT = f"{error_prefix} Bulk insert failed. 'records' must be a list of BulkInsertRequestRecord objects."
+        INVALID_RECORD_IN_BULK_INSERT = f"{error_prefix} Bulk insert failed. Each record must be a BulkInsertRequestRecord object."
         TOO_MANY_RECORDS_IN_BULK_INSERT = f"{error_prefix} Bulk insert failed. A single bulk insert request cannot contain more than 10000 records."
         TOO_MANY_TOKENS_IN_BULK_DETOKENIZE = f"{error_prefix} Bulk detokenize failed. A single bulk detokenize request cannot contain more than 10000 tokens."
 

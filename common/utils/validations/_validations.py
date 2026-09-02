@@ -205,10 +205,11 @@ def validate_non_empty_string_list(logger, value, error):
         raise SkyflowError(error, invalid_input_error_code)
 
 
-def validate_vault_config(logger, config, messages=None):
+def validate_vault_config(logger, config, messages=None, allowed_keys=None):
     messages = messages or SkyflowMessages
+    allowed_keys = allowed_keys or VALID_VAULT_CONFIG_KEYS
     log_info(messages.Info.VALIDATING_VAULT_CONFIG.value, logger)
-    validate_keys(logger, config, VALID_VAULT_CONFIG_KEYS, messages=messages)
+    validate_keys(logger, config, allowed_keys, messages=messages)
 
     validate_required_field(
         logger, config, ConfigField.VAULT_ID, str,
@@ -238,10 +239,11 @@ def validate_vault_config(logger, config, messages=None):
     return True
 
 
-def validate_update_vault_config(logger, config, messages=None):
+def validate_update_vault_config(logger, config, messages=None, allowed_keys=None):
     """Credentials are required on update (unlike on initial add, where they're optional)."""
     messages = messages or SkyflowMessages
-    validate_keys(logger, config, VALID_VAULT_CONFIG_KEYS, messages=messages)
+    allowed_keys = allowed_keys or VALID_VAULT_CONFIG_KEYS
+    validate_keys(logger, config, allowed_keys, messages=messages)
 
     validate_required_field(
         logger, config, ConfigField.VAULT_ID, str,
