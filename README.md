@@ -8,15 +8,15 @@ that matches the vault you're using.
 | Package (PyPI) | Import | Vault type | Docs |
 |---|---|---|---|
 | **`skyflow`** | `import skyflow` | Privacy DB (v2.x) — vault CRUD, tokenize/detokenize, query, files, Detect, Connections | [skyvault/README.md](skyvault/README.md) |
-| **`skyflow-flowvault`** | `import skyflow_flowvault` | Flow DB (v1.x) — high-throughput bulk + unary vault operations | [flowvault/README.md](flowvault/README.md) |
+| **`skyflow-flowvault-python`** | `import skyflow_flowvault` | Flow DB (v1.x) — high-throughput bulk + unary vault operations | [flowvault/README.md](flowvault/README.md) |
 
 ```bash
 pip install skyflow            # Privacy DB SDK
-pip install skyflow-flowvault  # Flow DB SDK
+pip install skyflow-flowvault-python  # Flow DB SDK
 ```
 
 > The two artifacts have **independent version lines** and cannot be installed into the same Python
-> environment at once. A lower `skyflow-flowvault` version number (1.x) does not mean it is behind
+> environment at once. A lower `skyflow-flowvault-python` version number (1.x) does not mean it is behind
 > `skyflow` (2.x) — they are separate products.
 
 ## Repository layout
@@ -25,7 +25,7 @@ pip install skyflow-flowvault  # Flow DB SDK
 |---|---|
 | `common/` | Shared client, credentials, config, and error code — depended on by both SDKs, never published on its own. |
 | `skyvault/` | The `skyflow` (Privacy DB / v2) SDK. |
-| `flowvault/` | The `skyflow-flowvault` (Flow DB / v1) SDK. |
+| `flowvault/` | The `skyflow-flowvault-python` (Flow DB / v1) SDK. |
 | `docs/` | Reference docs and the [v1 → v2 migration guide](docs/migrate_to_v2.md). |
 | `CHANGELOG.md` | Release history. |
 

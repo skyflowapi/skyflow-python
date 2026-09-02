@@ -1,11 +1,11 @@
 # Skyflow FlowVault Python SDK
 
-`skyflow-flowvault` is the Skyflow Python SDK built for **Flow DB** vaults. It shares its client,
+`skyflow-flowvault-python` is the Skyflow Python SDK built for **Flow DB** vaults. It shares its client,
 credentials, and configuration with the [skyvault SDK](../skyvault/README.md) (both depend on the
 `common` module) but exposes its own surface: **unary** vault operations plus **bulk** (batched,
 concurrent) insert and detokenize.
 
-> **`skyflow-flowvault` is versioned independently of `skyflow`.** It launched at `1.0.0` while
+> **`skyflow-flowvault-python` is versioned independently of `skyflow`.** It launched at `1.0.0` while
 > `skyflow` is at `2.x`. The two are separate artifacts on separate version lines and cannot be
 > installed into the same Python environment at once.
 
@@ -38,7 +38,7 @@ concurrent) insert and detokenize.
 ## Install
 
 ```bash
-pip install skyflow-flowvault
+pip install skyflow-flowvault-python
 ```
 
 Requirements: **Python 3.9+**.

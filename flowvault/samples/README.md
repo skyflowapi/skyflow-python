@@ -1,12 +1,12 @@
 # FlowVault Python samples
 
-Runnable examples for the `skyflow-flowvault` SDK — one file per operation. See the
+Runnable examples for the `skyflow-flowvault-python` SDK — one file per operation. See the
 [flowvault README](../README.md) for the full SDK guide.
 
 ## Prerequisites
 
 - Python 3.9+
-- `pip install skyflow-flowvault`
+- `pip install skyflow-flowvault-python`
 - A Flow DB vault and Skyflow credentials (a service-account `credentials.json`, an API key, or a
   bearer token).
 

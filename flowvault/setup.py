@@ -48,7 +48,7 @@ class CustomBuildPy(_build_py):
 
 
 setup(
-    name='skyflow-flowvault',
+    name='skyflow-flowvault-python',
     version=current_version,
     author='Skyflow',
     author_email='service-ops@skyflow.com',
