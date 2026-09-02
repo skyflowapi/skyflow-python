@@ -161,7 +161,7 @@ jobs:
           # *.egg-info inside $MODULE, and those must never land in a
           # version-bump commit.
           git add "$MODULE/setup.py"
-          version_file=$(find "$MODULE" -name "_version.py" -print -quit)
+          version_file=$(find "$MODULE" -name "_version.py" -not -path "*/build/*" -not -path "*/dist/*" -print -quit)
           if [ -n "$version_file" ]; then
             git add "$version_file"
           fi
