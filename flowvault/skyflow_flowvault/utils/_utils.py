@@ -18,7 +18,7 @@ def get_vault_url(cluster_id, env, vault_id, logger=None):
     if not cluster_id or not isinstance(cluster_id, str) or not cluster_id.strip():
         raise SkyflowError(CommonMessages.Error.INVALID_CLUSTER_ID.value.format(vault_id), invalid_input_error_code)
 
-    if env not in Env:
+    if not isinstance(env, Env):
         raise SkyflowError(CommonMessages.Error.INVALID_ENV.value.format(vault_id), invalid_input_error_code)
 
     base_url = EnvUrls[env.name].value

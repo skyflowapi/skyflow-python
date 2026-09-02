@@ -15,10 +15,6 @@ VALID_UPDATE_RECORD_KEYS = ["skyflow_id", "data", "tokens", "table_name"]
 
 invalid_input_error_code = CommonMessages.ErrorCodes.INVALID_INPUT.value
 
-# validate_vault_config/validate_update_vault_config/validate_credentials are re-exported
-# directly from common.utils.validations -- flowvault's own logic here was field-for-field
-# identical to v2's, confirmed, so both variants now share one implementation.
-
 
 def _validate_upsert(logger, upsert):
     if upsert is None:
@@ -33,7 +29,7 @@ def _validate_upsert(logger, upsert):
         raise SkyflowError(SkyflowMessages.Error.INVALID_UPSERT_UPDATE_TYPE_IN_INSERT.value, invalid_input_error_code)
 
 
-MAX_INSERT_RECORDS = 10000  # matches Java's v3 Validations.validateInsertRequest (hardcoded, not configurable)
+MAX_INSERT_RECORDS = 10000
 
 
 def validate_insert_request(logger, request):
@@ -46,15 +42,10 @@ def validate_insert_request(logger, request):
     if len(request.records) > MAX_INSERT_RECORDS:
         raise SkyflowError(SkyflowMessages.Error.TOO_MANY_RECORDS_IN_INSERT.value, invalid_input_error_code)
 
-    # record.table format and record.data emptiness/key/value validity are checked by the controller
-    # via BaseVaultController._validate_table_name_if_present() / _validate_field_values().
-
     _validate_upsert(logger, request.upsert)
     for record in request.records:
         _validate_upsert(logger, record.upsert)
 
-    # table must be set in exactly one place -- request-level (every record) or per-record (no
-    # partial mix) -- and upsert must live at that same place (mirrors Java's v3 Validations).
     table_at_request_level = request.table_name is not None
 
     if table_at_request_level:
@@ -75,7 +66,6 @@ def validate_insert_request(logger, request):
 
 
 def validate_get_request(logger, request):
-    # Two mutually exclusive modes: multi-table batch (request.records) vs single-table.
     if request.records is not None:
         single_table_fields_set = (
             request.table or request.ids or request.unique_values or request.columns

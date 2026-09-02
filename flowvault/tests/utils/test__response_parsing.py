@@ -29,6 +29,12 @@ class TestParseTokens(unittest.TestCase):
     def test_none_returns_none(self):
         self.assertIsNone(parse_tokens(None))
 
+    def test_none_column_value_is_skipped(self):
+        self.assertEqual(parse_tokens({"ssn": None}), {})
+
+    def test_none_entry_in_list_is_dropped(self):
+        self.assertEqual(parse_tokens({"ssn": [None]}), {"ssn": []})
+
 
 class TestParseHashedData(unittest.TestCase):
     def test_list_of_hash_entries(self):
@@ -43,6 +49,9 @@ class TestParseHashedData(unittest.TestCase):
 
     def test_none_returns_none(self):
         self.assertIsNone(parse_hashed_data(None))
+
+    def test_none_entry_in_list_is_dropped(self):
+        self.assertEqual(parse_hashed_data({"ssn": [None]}), {"ssn": []})
 
 
 class TestParseMetadata(unittest.TestCase):

@@ -726,6 +726,62 @@ class TestVaultUpdate(unittest.TestCase):
         self.assertEqual(response.errors[0]["code"], 404)
         self.assertEqual(response.errors[0]["request_id"], "req-3")
 
+    def test_success_record_with_hashed_data_and_scalar_tokens(self):
+        self.update_api.with_raw_response.update_records.return_value = fake_update_raw_response([
+            FakeRecordResponseObject(
+                skyflow_id="id1",
+                tokens={"name": "tok1"},
+                hashed_data={"email": "hashed"},
+            ),
+        ], headers={"x-request-id": "req-h"})
+
+        response = self.vault.update(UpdateRequest(
+            records=[{"skyflow_id": "id1", "data": {"a": 1}}], table_name="t1",
+        ))
+
+        record = response.records[0]
+        self.assertEqual(record["name"], "tok1")
+        self.assertEqual(record["hashed_data"], {"email": "hashed"})
+
+    def test_api_error_with_string_error_body_marks_every_record(self):
+        self.update_api.with_raw_response.update_records.side_effect = ApiError(
+            status_code=500, headers={"x-request-id": "req-s"}, body={"error": "server exploded"},
+        )
+
+        response = self.vault.update(UpdateRequest(
+            records=[{"skyflow_id": "id1", "data": {"a": 1}}, {"skyflow_id": "id2", "data": {"a": 2}}],
+            table_name="t1",
+        ))
+
+        self.assertEqual(len(response.errors), 2)
+        self.assertTrue(all(e["error"] == "server exploded" for e in response.errors))
+        self.assertTrue(all(e["code"] == 500 for e in response.errors))
+
+    def test_api_error_with_dict_error_body_marks_every_record(self):
+        self.update_api.with_raw_response.update_records.side_effect = ApiError(
+            status_code=500, headers={"x-request-id": "req-d"},
+            body={"error": {"message": "boom", "httpCode": 500}},
+        )
+
+        response = self.vault.update(UpdateRequest(
+            records=[{"skyflow_id": "id1", "data": {"a": 1}}], table_name="t1",
+        ))
+
+        self.assertEqual(len(response.errors), 1)
+        self.assertEqual(response.errors[0]["error"], "boom")
+
+    def test_api_error_without_error_or_records_falls_back_to_exception_string(self):
+        self.update_api.with_raw_response.update_records.side_effect = ApiError(
+            status_code=500, headers={}, body={"foo": "bar"},
+        )
+
+        response = self.vault.update(UpdateRequest(
+            records=[{"skyflow_id": "id1", "data": {"a": 1}}], table_name="t1",
+        ))
+
+        self.assertEqual(len(response.errors), 1)
+        self.assertEqual(response.errors[0]["code"], 500)
+
     # ------------------------------------------------------------------ #
     # per-call Authorization header injection
     # ------------------------------------------------------------------ #
@@ -1360,6 +1416,19 @@ class TestVaultBulkInsertAsync(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(all(r["skyflow_id"] == f"id-{r['index']}" for r in response.records))
         self.assertEqual(response.summary.total_inserted, 500)
 
+    async def test_bulk_insert_async_batch_error_produces_error_rows(self):
+        self.records_api.with_raw_response.insert_records = AsyncMock(
+            side_effect=ApiError(status_code=500, headers={"x-request-id": "req-e"}, body={}))
+        self.vault_client.get_async_records_api.return_value = self.records_api
+        request = BulkInsertRequest(records=[BulkInsertRecord(data={"a": i}) for i in range(3)], table="t1")
+
+        response = await self.vault.bulk_insert_async(request)
+
+        self.assertEqual(len(response.records), 3)
+        self.assertTrue(all(r["error"] is not None for r in response.records))
+        self.assertEqual(response.summary.total_inserted, 0)
+        self.assertEqual(response.summary.total_failed, 3)
+
 
 class TestVaultBulkDetokenizeAsync(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
@@ -1382,6 +1451,17 @@ class TestVaultBulkDetokenizeAsync(unittest.IsolatedAsyncioTestCase):
         self.assertEqual([r["index"] for r in response.records], [0, 1, 2])
         self.assertEqual(response.summary.total_tokens, 3)
         self.assertEqual(response.summary.total_detokenized, 3)
+
+    async def test_bulk_detokenize_async_batch_error_produces_error_rows(self):
+        self.tokens_api.with_raw_response.detokenize = AsyncMock(
+            side_effect=ApiError(status_code=500, headers={"x-request-id": "req-e"}, body={}))
+        self.vault_client.get_async_tokens_api.return_value = self.tokens_api
+
+        response = await self.vault.bulk_detokenize_async(BulkDetokenizeRequest(tokens=["t0", "t1", "t2"]))
+
+        self.assertEqual(len(response.records), 3)
+        self.assertTrue(all(r["error"] is not None for r in response.records))
+        self.assertEqual(response.summary.total_failed, 3)
 
 
 if __name__ == "__main__":

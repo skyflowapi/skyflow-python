@@ -41,7 +41,6 @@ from skyflow_flowvault.vault.data import (
     InsertRequest,
     InsertResponse,
     GetRequest,
-    GetRecordRequest,
     GetResponse,
     UpdateRequest,
     UpdateResponse,
@@ -60,6 +59,8 @@ from skyflow_flowvault.vault.data import (
 )
 
 REQUEST_ID_HEADER = "x-request-id"
+ADDITIONAL_HEADERS_KEY = "additional_headers"
+UNKNOWN_ERROR_MESSAGE = "Unknown error"
 
 
 class VaultController(BaseVaultController):
@@ -98,7 +99,7 @@ class VaultController(BaseVaultController):
                 vault_id=self._vault_client.get_vault_id(),
                 table_name=request.table_name,
                 records=wire_records,
-                request_options={'additional_headers': headers},
+                request_options={ADDITIONAL_HEADERS_KEY: headers},
                 **upsert_kwargs,
             )
             records = [self.__record_row(record, include_data=False) for record in (raw_response.data.records or [])]
@@ -137,7 +138,7 @@ class VaultController(BaseVaultController):
             log_info(SkyflowMessages.Info.GET_TRIGGERED.value, self._vault_client.get_logger())
             raw_response = records_api.with_raw_response.get_records(
                 vault_id=self._vault_client.get_vault_id(),
-                request_options={'additional_headers': self.__build_headers()},
+                request_options={ADDITIONAL_HEADERS_KEY: self.__build_headers()},
                 **call_kwargs,
             )
             records = [self.__record_row(record, include_data=True) for record in (raw_response.data.records or [])]
@@ -174,7 +175,7 @@ class VaultController(BaseVaultController):
                 vault_id=self._vault_client.get_vault_id(),
                 table_name=request.table_name,
                 records=wire_records,
-                request_options={'additional_headers': self.__build_headers()},
+                request_options={ADDITIONAL_HEADERS_KEY: self.__build_headers()},
             )
             request_id = self.__extract_request_id(raw_response.headers)
             records, errors = self.__split_success_and_errors(
@@ -204,7 +205,7 @@ class VaultController(BaseVaultController):
                 table_name=request.table,
                 skyflow_i_ds=request.ids,
                 unique_values=self.__to_unique_values(request.unique_values),
-                request_options={'additional_headers': self.__build_headers()},
+                request_options={ADDITIONAL_HEADERS_KEY: self.__build_headers()},
             )
             records = [self.__delete_row(record) for record in (raw_response.data.records or [])]
         except Exception as e:
@@ -227,7 +228,7 @@ class VaultController(BaseVaultController):
             raw_response = query_api.with_raw_response.execute_query(
                 vault_id=self._vault_client.get_vault_id(),
                 query=request.query,
-                request_options={'additional_headers': self.__build_headers()},
+                request_options={ADDITIONAL_HEADERS_KEY: self.__build_headers()},
             )
             records = [{'data': getattr(record, 'data', None)} for record in (raw_response.data.records or [])]
             metadata = self.__query_metadata(raw_response.data)
@@ -253,7 +254,7 @@ class VaultController(BaseVaultController):
                 vault_id=self._vault_client.get_vault_id(),
                 tokens=request.tokens,
                 token_group_redactions=self.__to_token_group_redactions(request.token_group_redactions),
-                request_options={'additional_headers': self.__build_headers()},
+                request_options={ADDITIONAL_HEADERS_KEY: self.__build_headers()},
             )
             records = [self.__detokenize_row(resp) for resp in (raw_response.data.response or [])]
         except Exception as e:
@@ -275,7 +276,7 @@ class VaultController(BaseVaultController):
                     vault_id=self._vault_client.get_vault_id(),
                     table_name=request.table,
                     records=batch,
-                    request_options={'additional_headers': self.__build_headers()},
+                    request_options={ADDITIONAL_HEADERS_KEY: self.__build_headers()},
                     **top_kwargs,
                 )
                 return self.__format_bulk_insert_batch(raw_response.data.records or [], start_index, raw_response.headers)
@@ -299,7 +300,7 @@ class VaultController(BaseVaultController):
                     vault_id=self._vault_client.get_vault_id(),
                     table_name=request.table,
                     records=batch,
-                    request_options={'additional_headers': self.__build_headers()},
+                    request_options={ADDITIONAL_HEADERS_KEY: self.__build_headers()},
                     **top_kwargs,
                 )
                 return self.__format_bulk_insert_batch(raw_response.data.records or [], start_index, raw_response.headers)
@@ -323,7 +324,7 @@ class VaultController(BaseVaultController):
                     vault_id=self._vault_client.get_vault_id(),
                     tokens=batch,
                     token_group_redactions=redactions,
-                    request_options={'additional_headers': self.__build_headers()},
+                    request_options={ADDITIONAL_HEADERS_KEY: self.__build_headers()},
                 )
                 return self.__format_bulk_detokenize_batch(raw_response.data.response or [], start_index, raw_response.headers)
             except Exception as e:
@@ -346,7 +347,7 @@ class VaultController(BaseVaultController):
                     vault_id=self._vault_client.get_vault_id(),
                     tokens=batch,
                     token_group_redactions=redactions,
-                    request_options={'additional_headers': self.__build_headers()},
+                    request_options={ADDITIONAL_HEADERS_KEY: self.__build_headers()},
                 )
                 return self.__format_bulk_detokenize_batch(raw_response.data.response or [], start_index, raw_response.headers)
             except Exception as e:
@@ -476,7 +477,7 @@ class VaultController(BaseVaultController):
             if body and isinstance(body.get('records'), list) and body['records']:
                 tuples = [
                     (start_index + offset, request_id,
-                     record.get('error', record.get('message', 'Unknown error')),
+                     record.get('error', record.get('message', UNKNOWN_ERROR_MESSAGE)),
                      record.get('http_code', record.get('httpCode', record.get('statusCode', status))))
                     for offset, record in enumerate(body['records']) if isinstance(record, dict)
                 ]
@@ -710,5 +711,5 @@ class VaultController(BaseVaultController):
 
     def __error_dict_from_record_map(self, record_map, request_index, request_id):
         code = record_map.get('http_code', record_map.get('httpCode', record_map.get('statusCode')))
-        message = record_map.get('error', record_map.get('message', 'Unknown error'))
+        message = record_map.get('error', record_map.get('message', UNKNOWN_ERROR_MESSAGE))
         return {'request_index': request_index, 'error': message, 'code': code, 'request_id': request_id}

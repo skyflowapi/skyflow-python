@@ -6,8 +6,6 @@ from dotenv import dotenv_values, find_dotenv
 from common.utils.logger import log_warn
 from skyflow_flowvault.utils._skyflow_messages import SkyflowMessages
 
-MAX_BULK_DATA_SIZE = 10000
-
 DEFAULT_BATCH_SIZE = 50
 MAX_BATCH_SIZE = 1000
 DEFAULT_CONCURRENCY = 1

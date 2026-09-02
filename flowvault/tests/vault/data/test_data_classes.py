@@ -315,6 +315,10 @@ class TestBulkInsertResponse(unittest.TestCase):
     def test_repr_does_not_raise(self):
         self.assertIn("BulkInsertResponse", repr(BulkInsertResponse(summary=BulkSummary(), records=[])))
 
+    def test_str_matches_repr(self):
+        response = BulkInsertResponse(summary=BulkSummary(), records=[])
+        self.assertEqual(str(response), repr(response))
+
 
 class TestBulkDetokenizeRequest(unittest.TestCase):
     def test_fields_stored(self):
@@ -340,8 +344,16 @@ class TestBulkDetokenizeResponse(unittest.TestCase):
         response = BulkDetokenizeResponse(summary=None, records=records, _original_tokens=["a", "b", "c"])
         self.assertEqual(response.tokens_to_retry(), ["b"])
 
+    def test_tokens_to_retry_empty_without_originals(self):
+        response = BulkDetokenizeResponse(summary=None, records=[{"index": 0, "http_code": 500}])
+        self.assertEqual(response.tokens_to_retry(), [])
+
     def test_repr_does_not_raise(self):
         self.assertIn("BulkDetokenizeResponse", repr(BulkDetokenizeResponse(summary=DetokenizeSummary(), records=[])))
+
+    def test_str_matches_repr(self):
+        response = BulkDetokenizeResponse(summary=DetokenizeSummary(), records=[])
+        self.assertEqual(str(response), repr(response))
 
 
 if __name__ == "__main__":

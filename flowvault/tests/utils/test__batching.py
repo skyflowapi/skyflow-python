@@ -63,11 +63,28 @@ class TestResolveBatchConfig(unittest.TestCase):
             _, concurrency = resolve_batch_config(INSERT_BATCH_SIZE_KEY, INSERT_CONCURRENCY_LIMIT_KEY, 500)
         self.assertEqual(concurrency, 1)
 
+    def test_zero_or_negative_concurrency_falls_back(self):
+        for raw in ("0", "-3"):
+            with _with_settings({INSERT_CONCURRENCY_LIMIT_KEY: raw}):
+                _, concurrency = resolve_batch_config(INSERT_BATCH_SIZE_KEY, INSERT_CONCURRENCY_LIMIT_KEY, 500)
+            self.assertEqual(concurrency, 1)
+
 
 class TestResolveSetting(unittest.TestCase):
     def test_reads_process_env_first(self):
         with patch.dict(os.environ, {INSERT_BATCH_SIZE_KEY: "77"}):
             self.assertEqual(_batching._resolve_setting(INSERT_BATCH_SIZE_KEY), "77")
+
+    def test_falls_back_to_dotenv_when_env_absent(self):
+        with patch.dict(os.environ, {}, clear=True), \
+                patch.object(_batching, "find_dotenv", return_value="/tmp/.env"), \
+                patch.object(_batching, "dotenv_values", return_value={INSERT_BATCH_SIZE_KEY: "88"}):
+            self.assertEqual(_batching._resolve_setting(INSERT_BATCH_SIZE_KEY), "88")
+
+    def test_dotenv_lookup_error_returns_none(self):
+        with patch.dict(os.environ, {}, clear=True), \
+                patch.object(_batching, "find_dotenv", side_effect=Exception("boom")):
+            self.assertIsNone(_batching._resolve_setting(INSERT_BATCH_SIZE_KEY))
 
 
 if __name__ == "__main__":
