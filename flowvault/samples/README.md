@@ -52,4 +52,22 @@ Each bulk operation ships a **sync** and an **async** variant.
 | Sample | Demonstrates |
 |---|---|
 | [bulk_insert_sync.py](vault_api/bulk_insert_sync.py) / [bulk_insert_async.py](vault_api/bulk_insert_async.py) | Batched, concurrent insert of many records; `summary`, per-record results, `records_to_retry()` |
+| [bulk_multi_table_insert_sync.py](vault_api/bulk_multi_table_insert_sync.py) / [bulk_multi_table_insert_async.py](vault_api/bulk_multi_table_insert_async.py) | Bulk insert across multiple tables (per-record `table_name`) |
 | [bulk_detokenize_sync.py](vault_api/bulk_detokenize_sync.py) / [bulk_detokenize_async.py](vault_api/bulk_detokenize_async.py) | Batched, concurrent detokenize of many tokens; `tokens_to_retry()` |
+
+## Custom headers & HTTP config
+
+| Sample | Demonstrates |
+|---|---|
+| [custom_header_example.py](vault_api/custom_header_example.py) | Attach custom headers per batch via a `BulkInsertOptions` interceptor (`CustomHeaderKey`) |
+| [timeout_and_retry_config_example.py](vault_api/timeout_and_retry_config_example.py) | Per-vault `timeout` and `max_retries` config keys |
+
+## Service account (token generation)
+
+| Sample | Demonstrates |
+|---|---|
+| [bearer_token_generation_example.py](service_account/bearer_token_generation_example.py) | Bearer token from a credentials file path or a credentials string |
+| [bearer_token_generation_with_context_example.py](service_account/bearer_token_generation_with_context_example.py) | Context-aware bearer tokens (string context and dict context) |
+| [bearer_token_generation_using_threads_example.py](service_account/bearer_token_generation_using_threads_example.py) | Multithreaded token generation with a shared context |
+| [scoped_token_generation_example.py](service_account/scoped_token_generation_example.py) | Scoped tokens via `role_ids` |
+| [signed_token_generation_example.py](service_account/signed_token_generation_example.py) | Signed data tokens (`generate_signed_data_tokens`) |
