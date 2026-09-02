@@ -12,7 +12,7 @@ rules:
     - golang
     - docker
   patterns:
-  - pattern-regex: (?i)\b(api[_-]key|api[_-]token|api[_-]secret[_-]key|api[_-]password|token|secret[_-]key|password|auth[_-]key|auth[_-]token|AUTH_PASSWORD)\s*[:=]\s*(['"]?)((?!YOUR_EXCLUSION_PATTERN_HERE)[A-Z]+.*?)\2
+  - pattern-regex: (?i)\b(api[_-]key|api[_-]token|api[_-]secret[_-]key|api[_-]password|token|secret[_-]key|password|auth[_-]key|auth[_-]token|AUTH_PASSWORD)\s*[:=]\s*(['"])(?!\1\2)((?!YOUR_EXCLUSION_PATTERN_HERE)[A-Z]+.*?)\2
 
 - id: check-logger-appconfig
   message: >-

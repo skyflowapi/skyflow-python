@@ -24,31 +24,79 @@ jobs:
           name: "credentials.json"
           json: ${{ secrets.VALID_SKYFLOW_CREDS_TEST }}
 
-      - name: Build and install skyflow package
+      - name: Install dev dependencies
         run: |
-          pip install --upgrade pip setuptools wheel
-          python setup.py sdist bdist_wheel
-          pip install dist/skyflow-*.whl
-          pip install ".[dev]"
+          python -m pip install --upgrade pip
+          pip install "codespell>=2.4.1" "ruff>=0.9.0" "coverage>=7.8.0"
 
       - name: Run Spell Check
         run: codespell
 
       - name: Run Linter Ruff
         run: ruff check . --output-format=github
-      
-      - name: 'Run Tests'
+
+      # Each module (common, skyvault, flowvault) is its own installable
+      # distribution with its own setup.py and test suite, mirroring Java's
+      # per-module Maven build. A module directory that doesn't exist yet
+      # (pre-migration) is skipped with a notice rather than failing the job.
+      - name: Build, install and test each module
         run: |
-          pip install -r requirements.txt
-          python -m coverage run --source=skyflow --omit=skyflow/generated/*,skyflow/utils/validations/*,skyflow/vault/data/*,skyflow/vault/detect/*,skyflow/vault/tokens/*,skyflow/vault/connection/*,skyflow/error/*,skyflow/utils/enums/*,skyflow/vault/controller/_audit.py,skyflow/vault/controller/_bin_look_up.py -m unittest discover
+          # Run every module even if one fails, then fail the job if any did, so a
+          # single module never hides the others' results. common/ is imported as a
+          # namespace package (e.g. common.vault has no __init__), so the repo root is
+          # added to PYTHONPATH for import resolution across all modules.
+          overall_rc=0
+          for module in common skyvault flowvault; do
+            if [ ! -f "$module/setup.py" ]; then
+              echo "::notice::$module/setup.py not found yet - skipping (pre-migration)."
+              continue
+            fi
+            cp credentials.json "$module/credentials.json"
+            (
+              cd "$module"
+              python -m pip install --upgrade pip setuptools wheel
+              python setup.py sdist bdist_wheel
+              pip install dist/*.whl
+              if [ -f requirements.txt ]; then
+                pip install -r requirements.txt
+              fi
+              PYTHONPATH="$GITHUB_WORKSPACE:$PYTHONPATH" python -m coverage run --source=. -m unittest discover
+              coverage xml -o test-coverage.xml
+            )
+            module_rc=$?
+            if [ "$module_rc" -ne 0 ]; then
+              echo "::error::$module unit tests failed (exit $module_rc)."
+              overall_rc=1
+            fi
+          done
+          exit $overall_rc
 
-      - name: coverage
-        run: coverage xml -o test-coverage.xml
-
-      - name: Codecov
+      - name: Codecov (common)
+        if: hashFiles('common/test-coverage.xml') != ''
         uses: codecov/codecov-action@v2.1.0
         with:
           token: ${{ secrets.CODECOV_REPO_UPLOAD_TOKEN }}
-          files: test-coverage.xml
-          name: codecov-skyflow-python
+          files: common/test-coverage.xml
+          flags: common
+          name: codecov-skyflow-python-common
+          verbose: true
+
+      - name: Codecov (skyvault)
+        if: hashFiles('skyvault/test-coverage.xml') != ''
+        uses: codecov/codecov-action@v2.1.0
+        with:
+          token: ${{ secrets.CODECOV_REPO_UPLOAD_TOKEN }}
+          files: skyvault/test-coverage.xml
+          flags: skyvault
+          name: codecov-skyflow-python-skyvault
+          verbose: true
+
+      - name: Codecov (flowvault)
+        if: hashFiles('flowvault/test-coverage.xml') != ''
+        uses: codecov/codecov-action@v2.1.0
+        with:
+          token: ${{ secrets.CODECOV_REPO_UPLOAD_TOKEN }}
+          files: flowvault/test-coverage.xml
+          flags: flowvault
+          name: codecov-skyflow-python-flowvault
           verbose: true

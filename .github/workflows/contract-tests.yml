@@ -1,0 +1,116 @@
+name: Contract Tests
+
+on:
+  pull_request:
+    branches:
+      - main
+      - skyvault-release/**
+      - flowvault-release/**
+    paths:
+      - "skyvault/**"
+      - "flowvault/**"
+      - "common/**"
+      - "ci-scripts/contract/**"
+      - ".github/workflows/contract-tests.yml"
+
+jobs:
+  contract-tests:
+    name: Contract Tests (${{ matrix.module }})
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - module: skyvault
+            pkg: skyflow
+          - module: flowvault
+            pkg: skyflow_flowvault
+
+    permissions:
+      contents: read
+      pull-requests: write
+
+    env:
+      GRIFFE_VERSION: "2.2.0"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.10'
+
+      - name: Install griffe
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install "griffe==${GRIFFE_VERSION}"
+
+      - name: Verify public API surface against the committed baseline
+        run: |
+          python ci-scripts/contract/griffe_contract.py check \
+            "${{ matrix.module }}" \
+            "${{ matrix.module }}/api-report/${{ matrix.pkg }}.api.json"
+
+      - name: How to update the baseline
+        if: failure()
+        run: |
+          echo "### Public API contract drift in ${{ matrix.module }} ###"
+          echo "If this change is intentional, run:"
+          echo "    ci-scripts/contract-snapshot-update.sh ${{ matrix.module }}"
+          echo "review the api-report/${{ matrix.pkg }}.api.json diff, and commit it with your change."
+
+      - name: Detect baseline change
+        id: baseline-diff
+        if: always() && github.event.pull_request
+        run: |
+          git fetch origin "${{ github.event.pull_request.base.ref }}" --depth=1
+          BASELINE="${{ matrix.module }}/api-report/${{ matrix.pkg }}.api.json"
+          if ! git diff --quiet "origin/${{ github.event.pull_request.base.ref }}" HEAD -- "$BASELINE"; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            {
+              echo 'diff<<GRIFFE_EOF'
+              git diff "origin/${{ github.event.pull_request.base.ref }}" HEAD -- "$BASELINE" | head -300
+              echo 'GRIFFE_EOF'
+            } >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Comment contract baseline change on PR
+        if: always() && github.event.pull_request && steps.baseline-diff.outputs.changed == 'true'
+        uses: actions/github-script@v7
+        env:
+          MODULE: ${{ matrix.module }}
+          PKG: ${{ matrix.pkg }}
+          DIFF: ${{ steps.baseline-diff.outputs.diff }}
+        with:
+          script: |
+            const module = process.env.MODULE;
+            const pkg = process.env.PKG;
+            const marker = `<!-- contract-baseline-diff:${module} -->`;
+            const body = `${marker}\n## Public API contract change (\`${module}\`)\n\n`
+              + `This PR changes \`${module}/api-report/${pkg}.api.json\` (the approved public API `
+              + `contract for \`${pkg}\`). Review the surface change below:\n\n`
+              + '```diff\n' + (process.env.DIFF || '(diff too large - see the file change)') + '\n```';
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            const existing = comments.find(c => c.body && c.body.includes(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner, repo: context.repo.repo,
+                comment_id: existing.id, body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner, repo: context.repo.repo,
+                issue_number: context.issue.number, body,
+              });
+            }
