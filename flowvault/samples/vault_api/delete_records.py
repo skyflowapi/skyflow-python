@@ -25,7 +25,7 @@ def perform_secure_data_deletion():
         )
 
         delete_request = DeleteRequest(
-            table='<SENSITIVE_DATA_TABLE>',
+            table_name='<SENSITIVE_DATA_TABLE>',
             ids=['<SKYFLOW_ID1>', '<SKYFLOW_ID2>'],
         )
 

@@ -3,7 +3,7 @@ import asyncio
 from skyflow_flowvault.error import SkyflowError
 from skyflow_flowvault import Env
 from skyflow_flowvault import Skyflow, LogLevel
-from skyflow_flowvault.vault.data import BulkInsertRequest, BulkInsertRecord
+from skyflow_flowvault.vault.data import BulkInsertRequest, BulkInsertRequestRecord
 
 
 async def perform_bulk_insert_async():
@@ -27,10 +27,10 @@ async def perform_bulk_insert_async():
         )
 
         insert_request = BulkInsertRequest(
-            table='<SENSITIVE_DATA_TABLE>',
+            table_name='<SENSITIVE_DATA_TABLE>',
             records=[
-                BulkInsertRecord(data={'name': 'John Doe', 'email': 'john@example.com'}),
-                BulkInsertRecord(data={'name': 'Jane Doe', 'email': 'jane@example.com'}),
+                BulkInsertRequestRecord(data={'name': 'John Doe', 'email': 'john@example.com'}),
+                BulkInsertRequestRecord(data={'name': 'Jane Doe', 'email': 'jane@example.com'}),
             ],
         )
 

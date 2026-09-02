@@ -4,9 +4,9 @@ from ._column_redaction import ColumnRedaction
 
 
 class GetRecordRequest:
-    def __init__(self, table: str, ids: list = None, columns: list = None,
+    def __init__(self, table_name: str, ids: list = None, columns: list = None,
                  column_redactions: List[ColumnRedaction] = None, unique_values: list = None):
-        self.table = table
+        self.table_name = table_name
         self.ids = ids
         self.columns = columns
         self.column_redactions = column_redactions

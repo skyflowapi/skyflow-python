@@ -1,7 +1,7 @@
 from skyflow_flowvault.error import SkyflowError
 from skyflow_flowvault import Env
 from skyflow_flowvault import Skyflow, LogLevel
-from skyflow_flowvault.vault.data import BulkInsertRequest, BulkInsertRecord, UpsertOptions
+from skyflow_flowvault.vault.data import BulkInsertRequest, BulkInsertRequestRecord, UpsertOptions
 from skyflow_flowvault.utils.enums import UpsertType
 
 
@@ -29,12 +29,12 @@ def perform_bulk_insert():
         #   INSERT_BATCH_SIZE (default 50, max 1000), INSERT_CONCURRENCY_LIMIT (default 1, max 10).
         # A single bulk call accepts at most 10,000 records.
         insert_request = BulkInsertRequest(
-            table='<SENSITIVE_DATA_TABLE>',
+            table_name='<SENSITIVE_DATA_TABLE>',
             # upsert is optional; when present it sits at the same level as the table.
             upsert=UpsertOptions(unique_columns=['email'], update_type=UpsertType.UPDATE),
             records=[
-                BulkInsertRecord(data={'name': 'John Doe', 'email': 'john@example.com'}),
-                BulkInsertRecord(data={'name': 'Jane Doe', 'email': 'jane@example.com'}),
+                BulkInsertRequestRecord(data={'name': 'John Doe', 'email': 'john@example.com'}),
+                BulkInsertRequestRecord(data={'name': 'Jane Doe', 'email': 'jane@example.com'}),
             ],
         )
 
