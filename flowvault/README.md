@@ -5,9 +5,9 @@ credentials, and configuration with the [skyvault SDK](../skyvault/README.md) (b
 `common` module) but exposes its own surface: **unary** vault operations plus **bulk** (batched,
 concurrent) insert and detokenize.
 
-> **`skyflow-flowvault-python` is versioned independently of `skyflow`.** It launched at `1.0.0` while
-> `skyflow` is at `2.x`. The two are separate artifacts on separate version lines and cannot be
-> installed into the same Python environment at once.
+> **Install name vs. import name.** You `pip install skyflow-flowvault-python`, then `import skyflow` —
+> the same import name the `skyflow` (Privacy DB) SDK uses. The two are separate artifacts and **cannot
+> be installed into the same Python environment at once** (they'd collide on the `skyflow` package).
 
 ## Table of Contents
 
@@ -16,15 +16,16 @@ concurrent) insert and detokenize.
 - [Quickstart](#quickstart)
 - [Authenticate](#authenticate)
 - [Initialize the client](#initialize-the-client)
+- [Timeouts and retries](#timeouts-and-retries)
 - [Unary operations](#unary-operations)
   - [Insert](#insert) · [Get](#get) · [Update](#update) · [Delete](#delete) · [Detokenize](#detokenize) · [Query](#query)
 - [Bulk operations](#bulk-operations)
   - [Bulk insert](#bulk-insert) · [Bulk detokenize](#bulk-detokenize)
   - [Batching and concurrency](#batching-and-concurrency)
+  - [Custom request headers](#custom-request-headers)
 - [Error handling](#error-handling)
 - [Logging](#logging)
 - [Samples](#samples)
-- [Request / response shapes](#request--response-shapes)
 
 ## Overview
 
@@ -32,8 +33,9 @@ concurrent) insert and detokenize.
 - Perform **unary** operations — insert, get, update, delete, detokenize, query.
 - Perform **bulk** operations — insert and detokenize — each with a synchronous and an async
   variant, built for high-throughput Flow DB workloads.
-- **Per-record reporting, not all-or-nothing.** A call succeeds as a call even when individual
-  records fail; each response reports the outcome of every record (its own `http_code` and `error`).
+- **Unary calls raise on failure; bulk calls report per-record.** A unary API error raises a
+  `SkyflowError` with the server's details; a bulk call reports every record's outcome inline (its
+  own `http_code` and `error`) so one bad record or batch never sinks the whole call.
 
 ## Install
 
@@ -46,8 +48,8 @@ Requirements: **Python 3.9+**.
 ## Quickstart
 
 ```python
-from skyflow_flowvault import Skyflow, LogLevel, Env
-from skyflow_flowvault.vault.data import InsertRequest, InsertRequestRecord
+from skyflow import Skyflow, LogLevel, Env
+from skyflow.vault.data import InsertRequest, InsertRequestRecord
 
 credentials = {'api_key': '<API_KEY>'}  # or 'token' / 'path' / 'credentials_string'
 
@@ -89,6 +91,9 @@ Set **exactly one** of:
 Credentials resolve **most specific first**: per-vault (`vault_config['credentials']`) → client-wide
 (`Skyflow.builder().add_skyflow_credentials(...)`) → the `SKYFLOW_CREDENTIALS` environment variable.
 
+For **scoped / context-aware** tokens, add `roles` (list of role ids) and/or `context` to a
+`path`/`credentials_string` credentials dict — they are embedded in the generated bearer token.
+
 ## Initialize the client
 
 Build the client once and keep it for your application's lifetime; get a controller from it with
@@ -106,11 +111,47 @@ skyflow_client = Skyflow.builder().add_vault_config(vault_config).build()
 vault = skyflow_client.vault('<VAULT_ID>')
 ```
 
+`vault_url` may be set on the vault config to override the URL derived from `cluster_id`/`env`.
+
+## Timeouts and retries
+
+HTTP timeout and retry behavior can be set at **two levels** — per-vault (keys on the vault config
+dict) and client-wide (chainable builder methods) — resolved **per field: per-vault → client-wide →
+SDK default**.
+
+| Per-vault key | Builder method | Unit | Default | Meaning |
+|---|---|---|---|---|
+| `timeout` | `.timeout(s)` | seconds | `60` | Overall call ceiling (bounds the whole call incl. retries). |
+| `connect_timeout` | `.connect_timeout(s)` | seconds | `10` | Per-attempt connection-establishment timeout. |
+| `read_timeout` | `.read_timeout(s)` | seconds | `10` | Per-attempt response-read timeout. |
+| `write_timeout` | `.write_timeout(s)` | seconds | `10` | Per-attempt request-write timeout. |
+| `max_retries` | `.max_retries(n)` | int ≥ 0 | `0` | Retry attempts after the first failure. `0` = off. |
+| `initial_retry_delay_millis` | `.initial_retry_delay_millis(ms)` | int ≥ 0 | `500` | Backoff before the first retry. |
+| `max_retry_delay_millis` | `.max_retry_delay_millis(ms)` | int ≥ 0 | `2000` | Ceiling the exponential backoff grows to. |
+
+```python
+skyflow_client = (
+    Skyflow.builder()
+    .timeout(60).max_retries(3)                    # client-wide defaults
+    .add_vault_config({
+        'vault_id': '<VAULT_ID>', 'cluster_id': '<CLUSTER_ID>', 'env': Env.PROD,
+        'credentials': {'api_key': '<API_KEY>'},
+        'read_timeout': 30, 'max_retries': 2,      # per-vault overrides
+    })
+    .build()
+)
+```
+
+Retries are **opt-in** (default `0`) so non-idempotent writes are never replayed silently. When
+enabled, retryable responses (HTTP `408` / `429` / `5xx`) are retried with exponential backoff and
+jitter. A large batch can exceed the default per-attempt timeouts, so raise `read_timeout`/`timeout`
+for big bulk calls.
+
 ## Unary operations
 
-Every unary response is a single **`records`** list — success and failure inline, one entry per
-input, each carrying its own `http_code` and `error`. Exact JSON for each is in
-[CONTRACT_SHAPES.md](CONTRACT_SHAPES.md).
+A unary API error (the server rejects the call) raises a `SkyflowError` carrying the server's
+`http_code`, `message`, `grpc_code`, `http_status`, and `details`. On success the response is a single
+**`records`** list — one entry per input, each carrying its own `http_code` and `error`.
 
 ### Insert
 
@@ -118,8 +159,8 @@ input, each carrying its own `http_code` and `error`. Exact JSON for each is in
 every record — never both. `upsert` is an `UpsertOptions`; `tokens` is optional BYOT.
 
 ```python
-from skyflow_flowvault.vault.data import InsertRequest, InsertRequestRecord, UpsertOptions
-from skyflow_flowvault.utils.enums import UpsertType
+from skyflow.vault.data import InsertRequest, InsertRequestRecord, UpsertOptions
+from skyflow.utils.enums import UpsertType
 
 request = InsertRequest(
     table_name='cards',
@@ -128,7 +169,7 @@ request = InsertRequest(
 )
 response = vault.insert(request)
 for r in response.records:
-    print(r['index'] if 'index' in r else '', r['skyflow_id'], r['tokens'], r['http_code'], r['error'])
+    print(r['skyflow_id'], r['tokens'], r['http_code'], r['error'])
 ```
 Each record: `{table_name, skyflow_id, tokens, hashed_data, http_code, error}` (no plaintext `data`).
 
@@ -138,18 +179,18 @@ Two mutually exclusive modes — single-table, or multi-table via `records=[GetR
 `column_redactions` entries are `ColumnRedaction` objects.
 
 ```python
-from skyflow_flowvault.vault.data import GetRequest, GetRecordRequest, ColumnRedaction
+from skyflow.vault.data import GetRequest, GetRecordRequest, ColumnRedaction
 
 # single-table
 vault.get(GetRequest(
-    table='persons', ids=['<SKYFLOW_ID>'], columns=['name', 'email'],
+    table_name='persons', ids=['<SKYFLOW_ID>'], columns=['name', 'email'],
     column_redactions=[ColumnRedaction(column_name='email', redaction='MASKED')],
 ))
 
 # multi-table batch
 vault.get(GetRequest(records=[
-    GetRecordRequest(table='persons', ids=['<SKYFLOW_ID>'], columns=['name']),
-    GetRecordRequest(table='cards', unique_values=[{'email': 'john@example.com'}]),
+    GetRecordRequest(table_name='persons', ids=['<SKYFLOW_ID>'], columns=['name']),
+    GetRecordRequest(table_name='cards', unique_values=[{'email': 'john@example.com'}]),
 ]))
 ```
 Each record: `{table_name, skyflow_id, tokens, data, hashed_data, http_code, error}`.
@@ -157,7 +198,7 @@ Each record: `{table_name, skyflow_id, tokens, data, hashed_data, http_code, err
 ### Update
 
 ```python
-from skyflow_flowvault.vault.data import UpdateRequest
+from skyflow.vault.data import UpdateRequest
 
 vault.update(UpdateRequest(
     table_name='persons',
@@ -168,20 +209,22 @@ vault.update(UpdateRequest(
 ### Delete
 
 ```python
-from skyflow_flowvault.vault.data import DeleteRequest
+from skyflow.vault.data import DeleteRequest
 
-vault.delete(DeleteRequest(table='persons', ids=['<SKYFLOW_ID>']))
+vault.delete(DeleteRequest(table_name='persons', ids=['<SKYFLOW_ID>']))
 ```
 Each record: `{skyflow_id, http_code, error}`.
 
 ### Detokenize
 
+`token_group_redactions` entries are `TokenGroupRedactions` objects.
+
 ```python
-from skyflow_flowvault.vault.data import DetokenizeRequest
+from skyflow.vault.data import DetokenizeRequest, TokenGroupRedactions
 
 vault.detokenize(DetokenizeRequest(
     tokens=['<TOKEN>'],
-    token_group_redactions=[{'token_group_name': 'card_number_cg', 'redaction': 'MASKED'}],
+    token_group_redactions=[TokenGroupRedactions(token_group_name='card_number_cg', redaction='MASKED')],
 ))
 ```
 Each record: `{token, token_group_name, value, metadata, http_code, error}`.
@@ -189,7 +232,7 @@ Each record: `{token, token_group_name, value, metadata, http_code, error}`.
 ### Query
 
 ```python
-from skyflow_flowvault.vault.data import QueryRequest
+from skyflow.vault.data import QueryRequest
 
 response = vault.query(QueryRequest(query="SELECT * FROM persons WHERE skyflow_id = '<SKYFLOW_ID>'"))
 print(response.records)    # [{'data': {...}}, ...]
@@ -200,16 +243,17 @@ print(response.metadata)   # {'columns': [...]}
 
 Bulk operations split the payload into batches sent **concurrently** and return a **`summary`** plus
 a **`records`** list — one entry per submitted item, in input order, each tagged with its `index`.
-A single bulk call accepts at most **10,000** items.
+A single bulk call accepts at most **10,000** items. Unlike unary calls, a bulk call does **not**
+raise on a batch API error — every record's outcome is reported inline.
 
 ### Bulk insert
 
 ```python
-from skyflow_flowvault.vault.data import BulkInsertRequest, BulkInsertRecord
+from skyflow.vault.data import BulkInsertRequest, BulkInsertRequestRecord
 
-request = BulkInsertRequest(table='cards', records=[
-    BulkInsertRecord(data={'card_number': '4111111111111111'}),
-    BulkInsertRecord(data={'card_number': '4222222222222222'}),
+request = BulkInsertRequest(table_name='cards', records=[
+    BulkInsertRequestRecord(data={'card_number': '4111111111111111'}),
+    BulkInsertRequestRecord(data={'card_number': '4222222222222222'}),
 ])
 
 response = vault.bulk_insert(request)                 # synchronous
@@ -221,14 +265,18 @@ for r in response.records:
 
 retry = response.records_to_retry()   # original records whose http_code is 500-599 (excl. 529)
 ```
-> `BulkInsertRecord` uses the field name `table` (not `table_name`) and has no `tokens` field.
+`BulkInsertRequestRecord(data, table_name=None, tokens=None, upsert=None)` — mirrors Java's
+`BulkInsertRequestRecord`; `tokens` is optional BYOT.
 
 ### Bulk detokenize
 
 ```python
-from skyflow_flowvault.vault.data import BulkDetokenizeRequest
+from skyflow.vault.data import BulkDetokenizeRequest, TokenGroupRedactions
 
-request = BulkDetokenizeRequest(tokens=['<TOKEN_1>', '<TOKEN_2>'])
+request = BulkDetokenizeRequest(
+    tokens=['<TOKEN_1>', '<TOKEN_2>'],
+    token_group_redactions=[TokenGroupRedactions(token_group_name='<TOKEN_GROUP_NAME>', redaction='MASKED')],
+)
 
 response = vault.bulk_detokenize(request)                 # synchronous
 # response = await vault.bulk_detokenize_async(request)   # async variant
@@ -256,28 +304,60 @@ INSERT_BATCH_SIZE=100
 INSERT_CONCURRENCY_LIMIT=5
 ```
 
+**Picking a concurrency value.** A good starting point is the standard formula
+`N_concurrency = N_cpu × U_cpu × (1 + W/C)` — where `N_cpu` is the number of cores (`os.cpu_count()`),
+`U_cpu` is your target CPU utilization (0–1, ≈1.0 if this is the only workload), and `W/C` is the
+ratio of wait time (API latency) to compute time per task. Bulk work is I/O-bound, so `W/C` is large
+and concurrency well above core count is usually optimal (up to the max of 10).
+
 Merging is by input order regardless of which batch finishes first, so `index` always matches an
 item's position in your submitted payload. A per-batch failure only fails that batch's records.
 
-## Error handling
+### Custom request headers
 
-Two layers:
-
-- **Request-level** — the call could not be made or wholly failed (invalid request, missing
-  credentials, auth failure, over the 10,000 ceiling): raised as a `SkyflowError`.
-- **Record-level** — the call succeeded but individual records failed: returned in the response.
-  **Nothing is raised.** Each entry in `records` reports its own `http_code` and `error`.
+Bulk operations accept an optional `options` object whose **interceptor** runs **once per batch** and
+can attach custom headers to that batch's request (mirrors Java's `RequestInterceptor`).
 
 ```python
-from skyflow_flowvault.error import SkyflowError
+from skyflow.vault.data import BulkInsertOptions, CustomHeaderKey
 
+def add_request_id(context):
+    # context.operation ('INSERT'/'DETOKENIZE'), context.batch_index, context.total_batches
+    context.add_header(CustomHeaderKey.REQUEST_ID_HEADER, f'req-{context.batch_index}')
+
+vault.bulk_insert(request, BulkInsertOptions(interceptor=add_request_id))
+```
+
+- Options classes: `BulkInsertOptions(interceptor=...)`, `BulkDetokenizeOptions(interceptor=...)`.
+- `CustomHeaderKey`: `SKYFLOW_ACCOUNT_ID` (`x-skyflow-account-id`), `SKYFLOW_ACCOUNT_NAME`
+  (`x-skyflow-account-name`), `REQUEST_ID_HEADER` (`x-request-id`).
+- The interceptor runs once per batch, so a value it generates (e.g. a fresh request id) differs
+  between batches; its headers are merged on top of the SDK's own (metrics + `Authorization`).
+
+## Error handling
+
+- **Validation errors** (invalid request, missing credentials, over the 10,000 ceiling) — raised as a
+  `SkyflowError` before any network call, for every operation.
+- **Unary API errors** (the server rejects the call: 4xx/5xx) — raised as a `SkyflowError` with the
+  server's `http_code`, `message`, `grpc_code`, `http_status`, and `details`.
+- **Bulk / per-record failures** — the bulk call itself does not raise; each entry in `records`
+  reports its own `http_code` and `error`, and `records_to_retry()` / `tokens_to_retry()` return the
+  inputs worth resending (retryable `5xx`).
+
+```python
+from skyflow.error import SkyflowError
+
+# unary — an API error raises
 try:
-    response = vault.bulk_insert(request)   # reaching here means the CALL succeeded
-    for r in response.records:
-        if r['error'] is not None:
-            print('row', r['index'], 'failed', r['http_code'], r['error'])
+    response = vault.insert(request)
 except SkyflowError as e:
-    print(e.http_code, e.message, e.details)
+    print(e.http_code, e.message, e.grpc_code, e.details)
+
+# bulk — inspect per-record outcomes, nothing raised for API errors
+response = vault.bulk_insert(bulk_request)
+for r in response.records:
+    if r['error'] is not None:
+        print('row', r['index'], 'failed', r['http_code'], r['error'])
 ```
 
 ## Logging
@@ -289,9 +369,5 @@ batching warnings above are emitted at `WARN`.
 ## Samples
 
 Runnable examples live in [samples/](samples/) — one file per operation, with sync/async pairs for
-the bulk ops. See [samples/README.md](samples/README.md) to run them.
-
-## Request / response shapes
-
-[CONTRACT_SHAPES.md](CONTRACT_SHAPES.md) documents the exact request and response JSON for every
-operation (unary and bulk), for reference and comparison against the Java FlowDB contract.
+the bulk ops, plus custom-header, timeout/retry, and service-account examples. See
+[samples/README.md](samples/README.md) to run them.
