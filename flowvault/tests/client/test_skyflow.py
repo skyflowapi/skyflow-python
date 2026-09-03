@@ -3,7 +3,7 @@ from unittest.mock import patch
 
 from common.errors import SkyflowError
 from common.utils import LogLevel, Env
-from skyflow_flowvault.client import Skyflow
+from skyflow.client import Skyflow
 
 VALID_VAULT_CONFIG = {
     "vault_id": "VAULT_ID",
@@ -42,7 +42,7 @@ class TestSkyflowVaultConfig(unittest.TestCase):
         config = client.get_vault_config("VAULT_ID")
         self.assertEqual(config.get("vault_id"), "VAULT_ID")
 
-    @patch("skyflow_flowvault.vault.client.client.VaultClient.update_config")
+    @patch("skyflow.vault.client.client.VaultClient.update_config")
     def test_update_vault_config(self, mock_update_config):
         client = self.builder.add_vault_config(VALID_VAULT_CONFIG).build()
         updated = dict(VALID_VAULT_CONFIG)

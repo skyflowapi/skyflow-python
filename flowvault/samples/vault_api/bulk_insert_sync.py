@@ -1,8 +1,8 @@
-from skyflow_flowvault.error import SkyflowError
-from skyflow_flowvault import Env
-from skyflow_flowvault import Skyflow, LogLevel
-from skyflow_flowvault.vault.data import BulkInsertRequest, BulkInsertRequestRecord, UpsertOptions
-from skyflow_flowvault.utils.enums import UpsertType
+from skyflow.error import SkyflowError
+from skyflow import Env
+from skyflow import Skyflow, LogLevel
+from skyflow.vault.data import BulkInsertRequest, BulkInsertRequestRecord, UpsertOptions
+from skyflow.utils.enums import UpsertType
 
 
 def perform_bulk_insert():

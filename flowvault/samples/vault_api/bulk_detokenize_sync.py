@@ -1,7 +1,7 @@
-from skyflow_flowvault.error import SkyflowError
-from skyflow_flowvault import Env
-from skyflow_flowvault import Skyflow, LogLevel
-from skyflow_flowvault.vault.data import BulkDetokenizeRequest
+from skyflow.error import SkyflowError
+from skyflow import Env
+from skyflow import Skyflow, LogLevel
+from skyflow.vault.data import BulkDetokenizeRequest, TokenGroupRedactions
 
 
 def perform_bulk_detokenize():
@@ -30,7 +30,7 @@ def perform_bulk_detokenize():
         detokenize_request = BulkDetokenizeRequest(
             tokens=['<TOKEN_1>', '<TOKEN_2>'],
             # optional per-group redaction override:
-            token_group_redactions=[{'token_group_name': '<TOKEN_GROUP_NAME>', 'redaction': 'MASKED'}],
+            token_group_redactions=[TokenGroupRedactions(token_group_name='<TOKEN_GROUP_NAME>', redaction='MASKED')],
         )
 
         response = skyflow_client.vault(vault_config.get('vault_id')).bulk_detokenize(detokenize_request)

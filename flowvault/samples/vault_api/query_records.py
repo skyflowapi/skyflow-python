@@ -1,7 +1,7 @@
-from skyflow_flowvault.error import SkyflowError
-from skyflow_flowvault import Env
-from skyflow_flowvault import Skyflow, LogLevel
-from skyflow_flowvault.vault.data import QueryRequest
+from skyflow.error import SkyflowError
+from skyflow import Env
+from skyflow import Skyflow, LogLevel
+from skyflow.vault.data import QueryRequest
 
 
 def perform_secure_query():

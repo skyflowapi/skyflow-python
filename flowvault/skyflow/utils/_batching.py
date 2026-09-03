@@ -4,7 +4,7 @@ import os
 from dotenv import dotenv_values, find_dotenv
 
 from common.utils.logger import log_warn
-from skyflow_flowvault.utils._skyflow_messages import SkyflowMessages
+from skyflow.utils._skyflow_messages import SkyflowMessages
 
 DEFAULT_BATCH_SIZE = 50
 MAX_BATCH_SIZE = 1000

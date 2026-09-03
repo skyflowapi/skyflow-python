@@ -1,6 +1,6 @@
 import unittest
 
-from skyflow_flowvault.utils._response_parsing import parse_tokens, parse_hashed_data, parse_metadata
+from skyflow.utils._response_parsing import parse_tokens, parse_hashed_data, parse_metadata
 
 
 class TestParseTokens(unittest.TestCase):

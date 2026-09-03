@@ -23,7 +23,7 @@ GRIFFE_VERSION="2.2.0"
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$REPO_ROOT"
 
-declare -A PACKAGES=( [skyvault]="skyflow" [flowvault]="skyflow_flowvault" )
+declare -A PACKAGES=( [skyvault]="skyflow" [flowvault]="skyflow" )
 
 modules=("$@")
 if [ ${#modules[@]} -eq 0 ]; then

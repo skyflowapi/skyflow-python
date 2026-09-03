@@ -4,8 +4,8 @@ from unittest.mock import patch
 
 import httpx
 
-from skyflow_flowvault.utils import _retry
-from skyflow_flowvault.utils._retry import (
+from skyflow.utils import _retry
+from skyflow.utils._retry import (
     should_retry,
     backoff_millis,
     RetryTransport,

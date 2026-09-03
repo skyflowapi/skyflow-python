@@ -1,9 +1,9 @@
 import httpx
 
 from common.vault.base_vault_client import BaseVaultClient
-from skyflow_flowvault.generated.rest.client import SkyflowAuth, AsyncSkyflowAuth
-from skyflow_flowvault.utils import get_vault_url
-from skyflow_flowvault.utils._http_config import (
+from skyflow.generated.rest.client import SkyflowAuth, AsyncSkyflowAuth
+from skyflow.utils import get_vault_url
+from skyflow.utils._http_config import (
     TIMEOUT_KEY,
     CONNECT_TIMEOUT_KEY,
     READ_TIMEOUT_KEY,
@@ -21,7 +21,7 @@ from skyflow_flowvault.utils._http_config import (
     DEFAULT_MAX_RETRY_DELAY_MILLIS,
     resolve_setting,
 )
-from skyflow_flowvault.utils._retry import RetryTransport, AsyncRetryTransport
+from skyflow.utils._retry import RetryTransport, AsyncRetryTransport
 
 
 class VaultClient(BaseVaultClient):

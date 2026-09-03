@@ -2,8 +2,8 @@ import os
 import unittest
 from unittest.mock import patch
 
-from skyflow_flowvault.utils import _batching
-from skyflow_flowvault.utils._batching import (
+from skyflow.utils import _batching
+from skyflow.utils._batching import (
     resolve_batch_config,
     create_batches,
     DEFAULT_BATCH_SIZE,

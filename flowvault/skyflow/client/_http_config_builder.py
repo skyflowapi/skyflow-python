@@ -1,4 +1,4 @@
-from skyflow_flowvault.utils._http_config import (
+from skyflow.utils._http_config import (
     TIMEOUT_KEY,
     CONNECT_TIMEOUT_KEY,
     READ_TIMEOUT_KEY,
@@ -7,7 +7,7 @@ from skyflow_flowvault.utils._http_config import (
     INITIAL_RETRY_DELAY_MILLIS_KEY,
     MAX_RETRY_DELAY_MILLIS_KEY,
 )
-from skyflow_flowvault.utils.validations._validations import validate_http_config_value
+from skyflow.utils.validations._validations import validate_http_config_value
 
 
 class HttpConfigBuilderMixin:

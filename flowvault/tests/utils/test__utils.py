@@ -4,8 +4,8 @@ from unittest.mock import patch
 from common.errors import SkyflowError
 from common.utils.enums import Env
 from common.utils.constants import SdkMetricsKey
-from skyflow_flowvault.utils import _utils
-from skyflow_flowvault.utils._utils import get_vault_url, get_metrics
+from skyflow.utils import _utils
+from skyflow.utils._utils import get_vault_url, get_metrics
 
 
 class TestGetVaultUrl(unittest.TestCase):

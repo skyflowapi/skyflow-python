@@ -1,9 +1,9 @@
 from common.client.utils import make_skyflow_class
 from common.utils import SkyflowMessages
-from skyflow_flowvault.client._http_config_builder import HttpConfigBuilderMixin
-from skyflow_flowvault.utils.validations import validate_vault_config, validate_update_vault_config
-from skyflow_flowvault.vault.client.client import VaultClient
-from skyflow_flowvault.vault.controller import VaultController
+from skyflow.client._http_config_builder import HttpConfigBuilderMixin
+from skyflow.utils.validations import validate_vault_config, validate_update_vault_config
+from skyflow.vault.client.client import VaultClient
+from skyflow.vault.controller import VaultController
 
 Skyflow = make_skyflow_class(
     vault_client_cls=VaultClient,

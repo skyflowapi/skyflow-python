@@ -2,7 +2,7 @@ import unittest
 
 from common.errors import SkyflowError
 from common.utils.enums import Env
-from skyflow_flowvault import Skyflow
+from skyflow import Skyflow
 
 
 def _vault_config(**extra):

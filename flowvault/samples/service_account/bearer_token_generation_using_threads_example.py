@@ -1,7 +1,7 @@
 import json
 import threading
 
-from skyflow_flowvault.service_account import (
+from skyflow.service_account import (
     generate_bearer_token,
     generate_bearer_token_from_creds,
 )

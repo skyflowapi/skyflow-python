@@ -1,7 +1,7 @@
 import unittest
 
-from skyflow_flowvault.utils.enums import UpsertType, CustomHeaderKey
-from skyflow_flowvault.vault.data import (
+from skyflow.utils.enums import UpsertType, CustomHeaderKey
+from skyflow.vault.data import (
     RequestContext,
     BulkInsertOptions,
     BulkDetokenizeOptions,
@@ -18,6 +18,7 @@ from skyflow_flowvault.vault.data import (
     DeleteResponse,
     DetokenizeRequest,
     DetokenizeResponse,
+    TokenGroupRedactions,
     QueryRequest,
     QueryResponse,
     GetRecordRequest,
@@ -203,10 +204,10 @@ class TestDetokenizeRequest(unittest.TestCase):
         self.assertIsNone(request.token_group_redactions)
 
     def test_token_group_redactions_stored(self):
-        request = DetokenizeRequest(
-            tokens=["tok1"], token_group_redactions=[{"token_group_name": "g1", "redaction": "mask1"}],
-        )
-        self.assertEqual(request.token_group_redactions, [{"token_group_name": "g1", "redaction": "mask1"}])
+        redaction = TokenGroupRedactions(token_group_name="g1", redaction="mask1")
+        request = DetokenizeRequest(tokens=["tok1"], token_group_redactions=[redaction])
+        self.assertEqual(request.token_group_redactions[0].token_group_name, "g1")
+        self.assertEqual(request.token_group_redactions[0].redaction, "mask1")
 
 
 class TestDetokenizeResponse(unittest.TestCase):
@@ -328,9 +329,13 @@ class TestBulkInsertResponse(unittest.TestCase):
 
 class TestBulkDetokenizeRequest(unittest.TestCase):
     def test_fields_stored(self):
-        request = BulkDetokenizeRequest(tokens=["t1", "t2"], token_group_redactions=[{"token_group_name": "g", "redaction": "MASKED"}])
+        request = BulkDetokenizeRequest(
+            tokens=["t1", "t2"],
+            token_group_redactions=[TokenGroupRedactions(token_group_name="g", redaction="mask1")],
+        )
         self.assertEqual(request.tokens, ["t1", "t2"])
-        self.assertEqual(request.token_group_redactions, [{"token_group_name": "g", "redaction": "MASKED"}])
+        self.assertEqual(request.token_group_redactions[0].token_group_name, "g")
+        self.assertEqual(request.token_group_redactions[0].redaction, "mask1")
 
 
 class TestDetokenizeSummary(unittest.TestCase):

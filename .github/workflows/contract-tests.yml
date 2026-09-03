@@ -25,7 +25,7 @@ jobs:
           - module: skyvault
             pkg: skyflow
           - module: flowvault
-            pkg: skyflow_flowvault
+            pkg: skyflow
 
     permissions:
       contents: read

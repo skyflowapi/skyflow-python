@@ -1,8 +1,8 @@
-from skyflow_flowvault.error import SkyflowError
-from skyflow_flowvault import Env
-from skyflow_flowvault import Skyflow, LogLevel
-from skyflow_flowvault.utils.enums import UpsertType
-from skyflow_flowvault.vault.data import InsertRequest, InsertRequestRecord, UpsertOptions
+from skyflow.error import SkyflowError
+from skyflow import Env
+from skyflow import Skyflow, LogLevel
+from skyflow.utils.enums import UpsertType
+from skyflow.vault.data import InsertRequest, InsertRequestRecord, UpsertOptions
 
 
 def perform_secure_data_insertion():

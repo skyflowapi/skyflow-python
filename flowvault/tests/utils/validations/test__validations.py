@@ -2,8 +2,8 @@ import unittest
 
 from common.errors import SkyflowError
 from common.utils.enums import Env
-from skyflow_flowvault.utils.enums import UpsertType
-from skyflow_flowvault.utils.validations import (
+from skyflow.utils.enums import UpsertType
+from skyflow.utils.validations import (
     validate_insert_request,
     validate_get_request,
     validate_update_request,
@@ -14,7 +14,7 @@ from skyflow_flowvault.utils.validations import (
     validate_bulk_insert_request,
     validate_bulk_detokenize_request,
 )
-from skyflow_flowvault.vault.data import (
+from skyflow.vault.data import (
     UpsertOptions,
     ColumnRedaction,
     InsertRequestRecord,
@@ -28,6 +28,7 @@ from skyflow_flowvault.vault.data import (
     BulkInsertRequestRecord,
     BulkInsertRequest,
     BulkDetokenizeRequest,
+    TokenGroupRedactions,
 )
 
 
@@ -318,9 +319,16 @@ class TestValidateDetokenizeRequest(unittest.TestCase):
 
     def test_valid_request_with_token_group_redactions(self):
         request = DetokenizeRequest(
-            tokens=["tok1"], token_group_redactions=[{"token_group_name": "g1", "redaction": "mask1"}],
+            tokens=["tok1"], token_group_redactions=[TokenGroupRedactions(token_group_name="g1", redaction="mask1")],
         )
         validate_detokenize_request(None, request)  # should not raise
+
+    def test_token_group_redactions_must_be_typed_objects(self):
+        request = DetokenizeRequest(
+            tokens=["tok1"], token_group_redactions=[{"token_group_name": "g1", "redaction": "mask1"}],
+        )
+        with self.assertRaises(SkyflowError):
+            validate_detokenize_request(None, request)
 
     def test_tokens_must_be_a_list(self):
         request = DetokenizeRequest(tokens="not-a-list")

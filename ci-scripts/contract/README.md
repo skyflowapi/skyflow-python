@@ -8,7 +8,7 @@ API analysis).
 | Module | Package | Baseline |
 |---|---|---|
 | `skyvault` | `skyflow` | `skyvault/api-report/skyflow.api.json` |
-| `flowvault` | `skyflow_flowvault` | `flowvault/api-report/skyflow_flowvault.api.json` |
+| `flowvault` | `skyflow` | `flowvault/api-report/skyflow.api.json` |
 
 ## What is "the contract"
 
@@ -41,7 +41,7 @@ is an ad-hoc safety check, not part of CI.
 ```bash
 pip install "griffe==2.2.0"
 python ci-scripts/contract/griffe_contract.py check skyvault skyvault/api-report/skyflow.api.json
-python ci-scripts/contract/griffe_contract.py check flowvault flowvault/api-report/skyflow_flowvault.api.json
+python ci-scripts/contract/griffe_contract.py check flowvault flowvault/api-report/skyflow.api.json
 ```
 
 No wheel build is needed — griffe analyzes the source statically; the repo root is on the search path

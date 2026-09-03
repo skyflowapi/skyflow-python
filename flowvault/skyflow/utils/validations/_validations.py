@@ -7,15 +7,15 @@ from common.utils.validations import (
 )
 from common.utils.validations import validate_vault_config as _common_validate_vault_config
 from common.utils.validations import validate_update_vault_config as _common_validate_update_vault_config
-from skyflow_flowvault.utils import SkyflowMessages
-from skyflow_flowvault.utils.enums import UpsertType
-from skyflow_flowvault.utils._http_config import (
+from skyflow.utils import SkyflowMessages
+from skyflow.utils.enums import UpsertType
+from skyflow.utils._http_config import (
     POSITIVE_SECOND_KEYS,
     NON_NEGATIVE_INT_KEYS,
     VAULT_URL_KEY,
     VAULT_CONFIG_KEYS,
 )
-from skyflow_flowvault.vault.data import GetRecordRequest, BulkInsertRequestRecord, InsertRequestRecord, UpsertOptions
+from skyflow.vault.data import GetRecordRequest, BulkInsertRequestRecord, InsertRequestRecord, UpsertOptions, TokenGroupRedactions
 
 VALID_UPDATE_RECORD_KEYS = ["skyflow_id", "data", "tokens", "table_name"]
 
@@ -186,7 +186,8 @@ def validate_detokenize_request(logger, request):
         valid = (
             isinstance(request.token_group_redactions, list)
             and all(
-                isinstance(entry, dict) and isinstance(entry.get("token_group_name"), str) and entry.get("token_group_name").strip()
+                isinstance(entry, TokenGroupRedactions)
+                and isinstance(entry.token_group_name, str) and entry.token_group_name.strip()
                 for entry in request.token_group_redactions
             )
         )

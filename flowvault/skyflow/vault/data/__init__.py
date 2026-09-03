@@ -10,6 +10,7 @@ from ._update_request import UpdateRequest
 from ._update_response import UpdateResponse
 from ._delete_request import DeleteRequest
 from ._delete_response import DeleteResponse
+from ._token_group_redactions import TokenGroupRedactions
 from ._detokenize_request import DetokenizeRequest
 from ._detokenize_response import DetokenizeResponse
 from ._query_request import QueryRequest
@@ -24,4 +25,4 @@ from ._bulk_detokenize_response import BulkDetokenizeResponse
 from ._request_context import RequestContext
 from ._bulk_insert_options import BulkInsertOptions
 from ._bulk_detokenize_options import BulkDetokenizeOptions
-from skyflow_flowvault.utils.enums import CustomHeaderKey
+from skyflow.utils.enums import CustomHeaderKey

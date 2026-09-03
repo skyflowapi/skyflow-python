@@ -1,5 +1,5 @@
 import json
-from skyflow_flowvault.service_account import (
+from skyflow.service_account import (
     generate_signed_data_tokens,
     generate_signed_data_tokens_from_creds,
 )

@@ -77,7 +77,7 @@ class SkyflowMessages:
 
         EMPTY_TOKENS_IN_DETOKENIZE = f"{error_prefix} Detokenize failed. Specify at least one token to detokenize."
         INVALID_TOKENS_TYPE_IN_DETOKENIZE = f"{error_prefix} Detokenize failed. 'tokens' must be a non-empty list of strings."
-        INVALID_TOKEN_GROUP_REDACTIONS_IN_DETOKENIZE = f"{error_prefix} Detokenize failed. 'token_group_redactions' must be a list of dicts with 'token_group_name' and 'redaction' keys."
+        INVALID_TOKEN_GROUP_REDACTIONS_IN_DETOKENIZE = f"{error_prefix} Detokenize failed. 'token_group_redactions' must be a list of TokenGroupRedactions objects with a non-empty 'token_group_name'."
 
         INVALID_QUERY_IN_QUERY = f"{error_prefix} Query failed. 'query' must be a non-empty string."
 
