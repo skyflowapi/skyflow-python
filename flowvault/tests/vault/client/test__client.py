@@ -105,6 +105,34 @@ class TestVaultClient(unittest.TestCase):
         client.set_common_http_config(None)
         self.assertEqual(client._resolve("timeout", 60), 60)
 
+    def test_reinitialize_closes_previous_httpx_clients(self):
+        client = VaultClient({"vault_id": "v"})
+        client.initialize_api_client("http://localhost:3015", "t1")
+        old_sync = client._sync_httpx_client
+        old_async = client._async_httpx_client
+        self.assertFalse(old_sync.is_closed)
+        self.assertFalse(old_async.is_closed)
+
+        client.initialize_api_client("http://localhost:3015", "t2")
+
+        self.assertTrue(old_sync.is_closed)
+        self.assertTrue(old_async.is_closed)
+        self.assertIsNot(client._sync_httpx_client, old_sync)
+        self.assertIsNot(client._async_httpx_client, old_async)
+
+    def test_close_releases_clients_and_clears_state(self):
+        client = VaultClient({"vault_id": "v"})
+        client.initialize_api_client("http://localhost:3015", "t1")
+        sync_client = client._sync_httpx_client
+
+        client.close()
+
+        self.assertTrue(sync_client.is_closed)
+        self.assertIsNone(client._sync_httpx_client)
+        self.assertIsNone(client._async_httpx_client)
+        self.assertIsNone(client._api_client)
+        self.assertIsNone(client._async_api_client)
+
 
 if __name__ == "__main__":
     unittest.main()

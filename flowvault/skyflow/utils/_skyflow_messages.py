@@ -59,6 +59,8 @@ class SkyflowMessages:
         EMPTY_RECORDS_IN_UPDATE = f"{error_prefix} Update failed. Specify at least one record to update."
         INVALID_RECORDS_TYPE_IN_UPDATE = f"{error_prefix} Update failed. 'records' must be a list of dicts."
         MISSING_SKYFLOW_ID_IN_UPDATE = f"{error_prefix} Update failed. Each record must specify a non-empty 'skyflow_id'."
+        MISSING_DATA_IN_UPDATE = f"{error_prefix} Update failed. Each record must specify a non-empty 'data' object."
+        INVALID_DATA_TYPE_IN_UPDATE = f"{error_prefix} Update failed. Each record's 'data' must be a dict."
         INVALID_UPDATE_TYPE_IN_UPDATE = f"{error_prefix} Update failed. 'update_type' must be an UpsertType value."
         TABLE_NAME_IN_BOTH_PLACES_IN_UPDATE = (
             f"{error_prefix} Update failed. 'table' cannot be set on UpdateRequest at the same "

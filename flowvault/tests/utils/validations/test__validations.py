@@ -250,6 +250,26 @@ class TestValidateUpdateRequest(unittest.TestCase):
         with self.assertRaises(SkyflowError):
             validate_update_request(None, request)
 
+    def test_missing_data_raises(self):
+        request = UpdateRequest(records=[{"skyflow_id": "id1"}], table_name="t1")
+        with self.assertRaises(SkyflowError):
+            validate_update_request(None, request)
+
+    def test_none_data_raises(self):
+        request = UpdateRequest(records=[{"skyflow_id": "id1", "data": None}], table_name="t1")
+        with self.assertRaises(SkyflowError):
+            validate_update_request(None, request)
+
+    def test_non_dict_data_raises(self):
+        request = UpdateRequest(records=[{"skyflow_id": "id1", "data": "not-a-dict"}], table_name="t1")
+        with self.assertRaises(SkyflowError):
+            validate_update_request(None, request)
+
+    def test_empty_data_raises(self):
+        request = UpdateRequest(records=[{"skyflow_id": "id1", "data": {}}], table_name="t1")
+        with self.assertRaises(SkyflowError):
+            validate_update_request(None, request)
+
     def test_record_with_unknown_key_raises(self):
         request = UpdateRequest(records=[{"skyflow_id": "id1", "unexpected": 1}], table_name="t1")
         with self.assertRaises(SkyflowError):

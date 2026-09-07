@@ -652,6 +652,22 @@ class TestVaultUpdate(unittest.TestCase):
         _, kwargs = self.update_api.with_raw_response.update_records.call_args
         self.assertNotIn("update_type", kwargs)
 
+    def test_byot_tokens_are_sent_on_update_record(self):
+        self.update_api.with_raw_response.update_records.return_value = fake_update_raw_response([])
+        request = UpdateRequest(
+            records=[{"skyflow_id": "id1", "data": {"a": 1}, "tokens": {"a": "tok-a"}}], table_name="t1",
+        )
+
+        self.vault.update(request)
+
+        _, kwargs = self.update_api.with_raw_response.update_records.call_args
+        self.assertEqual(kwargs["records"][0].tokens, {"a": "tok-a"})
+
+    def test_update_record_without_data_raises_skyflow_error(self):
+        with self.assertRaises(SkyflowError):
+            self.vault.update(UpdateRequest(records=[{"skyflow_id": "id1"}], table_name="t1"))
+        self.update_api.with_raw_response.update_records.assert_not_called()
+
     # ------------------------------------------------------------------ #
     # response shape -- includes data, like get
     # ------------------------------------------------------------------ #

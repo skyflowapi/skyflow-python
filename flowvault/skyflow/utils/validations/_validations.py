@@ -149,6 +149,13 @@ def validate_update_request(logger, request):
         skyflow_id = record.get("skyflow_id")
         if not isinstance(skyflow_id, str) or not skyflow_id.strip():
             raise SkyflowError(SkyflowMessages.Error.MISSING_SKYFLOW_ID_IN_UPDATE.value, invalid_input_error_code)
+        data = record.get("data")
+        if data is None:
+            raise SkyflowError(SkyflowMessages.Error.MISSING_DATA_IN_UPDATE.value, invalid_input_error_code)
+        if not isinstance(data, dict):
+            raise SkyflowError(SkyflowMessages.Error.INVALID_DATA_TYPE_IN_UPDATE.value, invalid_input_error_code)
+        if not data:
+            raise SkyflowError(SkyflowMessages.Error.MISSING_DATA_IN_UPDATE.value, invalid_input_error_code)
 
     table_at_request_level = request.table_name is not None
 

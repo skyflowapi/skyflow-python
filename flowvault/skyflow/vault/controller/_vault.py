@@ -167,14 +167,14 @@ class VaultController(BaseVaultController):
 
         records_api = self._vault_client.get_records_api()
 
-        needs_per_record_table = any(r.get("table_name") is not None for r in request.records)
-
-        wire_records = [
-            self.__build_update_wire_record(record, request, needs_per_record_table)
-            for record in request.records
-        ]
-
         try:
+            needs_per_record_table = any(r.get("table_name") is not None for r in request.records)
+
+            wire_records = [
+                self.__build_update_wire_record(record, request, needs_per_record_table)
+                for record in request.records
+            ]
+
             log_info(SkyflowMessages.Info.UPDATE_TRIGGERED.value, self._vault_client.get_logger())
             raw_response = records_api.with_raw_response.update_records(
                 vault_id=self._vault_client.get_vault_id(),
@@ -541,6 +541,7 @@ class VaultController(BaseVaultController):
             skyflow_id=record.get("skyflow_id"),
             data=record.get("data"),
             **self.__omit_none(
+                tokens=record.get("tokens"),
                 table_name=(record.get("table_name") or request.table_name) if needs_per_record_table else None,
             ),
         )

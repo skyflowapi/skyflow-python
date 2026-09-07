@@ -1,3 +1,5 @@
+import asyncio
+
 import httpx
 
 from common.vault.base_vault_client import BaseVaultClient
@@ -28,6 +30,8 @@ class VaultClient(BaseVaultClient):
     def __init__(self, config):
         super().__init__(config)
         self._common_http_config = {}
+        self._sync_httpx_client = None
+        self._async_httpx_client = None
 
     def set_common_http_config(self, common_http_config):
         self._common_http_config = common_http_config or {}
@@ -59,6 +63,7 @@ class VaultClient(BaseVaultClient):
         )
 
     def initialize_api_client(self, vault_url, bearer_token):
+        self.__close_httpx_clients()
         timeout = self._build_timeout()
         max_retries, initial_millis, max_millis, call_timeout = self._retry_params()
         sync_client = httpx.Client(
@@ -71,8 +76,59 @@ class VaultClient(BaseVaultClient):
             follow_redirects=True,
             transport=AsyncRetryTransport(httpx.AsyncHTTPTransport(), max_retries, initial_millis, max_millis, call_timeout),
         )
+        self._sync_httpx_client = sync_client
+        self._async_httpx_client = async_client
         self._api_client = SkyflowAuth(base_url=vault_url, token=bearer_token or "", httpx_client=sync_client)
         self._async_api_client = AsyncSkyflowAuth(base_url=vault_url, token=bearer_token or "", httpx_client=async_client)
+
+    def close(self):
+        self.__close_httpx_clients()
+        self._api_client = None
+        self._async_api_client = None
+
+    async def aclose(self):
+        sync_client = self._sync_httpx_client
+        if sync_client is not None:
+            try:
+                sync_client.close()
+            except Exception:
+                pass
+        async_client = self._async_httpx_client
+        if async_client is not None:
+            try:
+                await async_client.aclose()
+            except Exception:
+                pass
+        self._sync_httpx_client = None
+        self._async_httpx_client = None
+        self._api_client = None
+        self._async_api_client = None
+
+    def __close_httpx_clients(self):
+        sync_client = self._sync_httpx_client
+        if sync_client is not None:
+            try:
+                sync_client.close()
+            except Exception:
+                pass
+        async_client = self._async_httpx_client
+        if async_client is not None:
+            self.__close_async_client(async_client)
+        self._sync_httpx_client = None
+        self._async_httpx_client = None
+
+    def __close_async_client(self, async_client):
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            loop = None
+        try:
+            if loop is not None and loop.is_running():
+                loop.create_task(async_client.aclose())
+            else:
+                asyncio.run(async_client.aclose())
+        except Exception:
+            pass
 
     def get_records_api(self):
         return self._api_client.records
