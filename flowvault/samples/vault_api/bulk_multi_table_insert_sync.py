@@ -45,11 +45,11 @@ def perform_bulk_multi_table_insert():
 
         print('inserted:', response.summary.total_inserted, 'of', response.summary.total_records)
         for record in response.records:
-            if record.get('error') is None:
-                print(f"[{record['index']}] {record.get('table_name')} -> skyflow_id={record.get('skyflow_id')}")
+            if record.error is None:
+                print(f"[{record.index}] {record.table_name} -> skyflow_id={record.skyflow_id}")
             else:
-                print(f"[{record['index']}] failed ({record.get('http_code')}): {record.get('error')} "
-                      f"[request_id={record.get('request_id')}]")
+                print(f"[{record.index}] failed ({record.http_code}): {record.error} "
+                      f"[request_id={record.request_id}]")
 
         # Retry the records that failed with a retryable status (5xx other than 529). Each returned
         # record still carries its own table_name/upsert, so the retry needs no request-level table.

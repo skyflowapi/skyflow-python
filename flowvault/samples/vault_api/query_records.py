@@ -30,8 +30,8 @@ def perform_secure_query():
 
         response = skyflow_client.vault(vault_config.get('vault_id')).query(query_request)
 
-        # response.records: [{'data': {'skyflow_id': '<ID>', 'name': 'John Doe', 'email': '<TOKEN>'}}, ...]
-        # response.metadata: {'columns': ['skyflow_id', 'name', 'email']}
+        # response.records: list of QueryResponseRecord, each with .data (a row dict).
+        # response.metadata: QueryResponseMetadata with .columns.
         print('Records: ', response.records)
         print('Metadata: ', response.metadata)
 

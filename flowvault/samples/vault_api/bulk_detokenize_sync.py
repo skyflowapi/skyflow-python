@@ -36,9 +36,8 @@ def perform_bulk_detokenize():
         response = skyflow_client.vault(vault_config.get('vault_id')).bulk_detokenize(detokenize_request)
 
         # response.summary: total_tokens / total_detokenized / total_failed
-        # response.records: one entry per input token, in order, each tagged with 'index':
-        #   {'index': 0, 'request_id': None, 'value': '<VALUE>', 'token_group_name': '<GROUP>',
-        #    'metadata': {...}, 'http_code': 200, 'token': '<TOKEN_1>', 'error': None}
+        # response.records: list of BulkDetokenizeResponseRecord, one per input token, in order.
+        # Each has .index, .token, .value, .token_group_name, .metadata, .http_code, .error, .request_id.
         print('Summary: ', response.summary)
         print('Records: ', response.records)
 

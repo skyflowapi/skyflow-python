@@ -13,6 +13,7 @@ from skyflow.vault.data import (
     GetRequest,
     GetResponse,
     UpdateRequest,
+    UpdateRequestRecord,
     UpdateResponse,
     DeleteRequest,
     DeleteResponse,
@@ -21,13 +22,15 @@ from skyflow.vault.data import (
     TokenGroupRedactions,
     QueryRequest,
     QueryResponse,
-    GetRecordRequest,
+    GetRequestRecord,
     BulkInsertRequestRecord,
     BulkInsertRequest,
     BulkInsertResponse,
     BulkSummary,
     BulkDetokenizeRequest,
     BulkDetokenizeResponse,
+    BulkInsertResponseRecord,
+    BulkDetokenizeResponseRecord,
     DetokenizeSummary,
 )
 
@@ -89,16 +92,16 @@ class TestInsertResponse(unittest.TestCase):
         self.assertIsNone(response.records)
 
     def test_repr_does_not_raise(self):
-        response = InsertResponse(records=[{"skyflow_id": "id1"}])
+        response = InsertResponse(records=[UpdateRequestRecord(skyflow_id='id1')])
         self.assertIn("InsertResponse", repr(response))
         self.assertIn("InsertResponse", str(response))
 
 
 class TestGetRequest(unittest.TestCase):
     def test_required_and_optional_defaults(self):
-        request = GetRequest(table_name="t1", ids=["id1"])
+        request = GetRequest(table_name="t1", skyflow_ids=["id1"])
         self.assertEqual(request.table_name, "t1")
-        self.assertEqual(request.ids, ["id1"])
+        self.assertEqual(request.skyflow_ids, ["id1"])
         self.assertIsNone(request.unique_values)
         self.assertIsNone(request.columns)
         self.assertIsNone(request.column_redactions)
@@ -107,7 +110,7 @@ class TestGetRequest(unittest.TestCase):
 
     def test_all_fields_stored(self):
         request = GetRequest(
-            table_name="t1", ids=["id1"], unique_values=[{"email": "a@b.com"}], columns=["a", "b"],
+            table_name="t1", skyflow_ids=["id1"], unique_values=[{"email": "a@b.com"}], columns=["a", "b"],
             column_redactions=[ColumnRedactions(column_name="a", redaction="mask1")], limit=10, offset=5,
         )
         self.assertEqual(request.unique_values, [{"email": "a@b.com"}])
@@ -136,35 +139,34 @@ class TestGetResponse(unittest.TestCase):
 
 class TestUpdateRequest(unittest.TestCase):
     def test_required_and_optional_defaults(self):
-        request = UpdateRequest(records=[{"skyflow_id": "id1", "data": {"a": 1}}])
-        self.assertEqual(request.records, [{"skyflow_id": "id1", "data": {"a": 1}}])
+        request = UpdateRequest(records=[UpdateRequestRecord(skyflow_id='id1', data={'a': 1})])
+        self.assertEqual(request.records[0].skyflow_id, 'id1')
+        self.assertEqual(request.records[0].data, {'a': 1})
         self.assertIsNone(request.table_name)
         self.assertIsNone(request.update_type)
 
     def test_all_fields_stored(self):
         request = UpdateRequest(
-            records=[{"skyflow_id": "id1", "data": {"a": 1}, "tokens": {"a": "tok"}, "table_name": "t2"}],
+            records=[UpdateRequestRecord(skyflow_id='id1', data={'a': 1}, tokens={'a': 'tok'}, table_name='t2')],
             table_name="t1", update_type=UpsertType.REPLACE,
         )
         self.assertEqual(request.table_name, "t1")
         self.assertEqual(request.update_type, UpsertType.REPLACE)
-        self.assertEqual(request.records[0]["tokens"], {"a": "tok"})
+        self.assertEqual(request.records[0].tokens, {"a": "tok"})
 
 
 class TestUpdateResponse(unittest.TestCase):
     def test_shape(self):
-        records = [{"request_index": 0, "skyflow_id": "id1"}]
-        response = UpdateResponse(records=records, errors=[])
+        records = [{"skyflow_id": "id1"}]
+        response = UpdateResponse(records=records)
         self.assertIs(response.records, records)
-        self.assertEqual(response.errors, [])
 
     def test_defaults(self):
         response = UpdateResponse()
         self.assertIsNone(response.records)
-        self.assertIsNone(response.errors)
 
     def test_repr_and_str_do_not_raise(self):
-        response = UpdateResponse(records=[], errors=[{"request_index": 0, "error": "boom"}])
+        response = UpdateResponse(records=[])
         self.assertIn("UpdateResponse", repr(response))
         self.assertIn("UpdateResponse", str(response))
 
@@ -250,21 +252,21 @@ class TestQueryResponse(unittest.TestCase):
         self.assertIn("QueryResponse", str(response))
 
 
-class TestGetRecordRequest(unittest.TestCase):
+class TestGetRequestRecord(unittest.TestCase):
     def test_fields_stored(self):
-        record = GetRecordRequest(table_name="t1", ids=["id1"], columns=["a"],
+        record = GetRequestRecord(table_name="t1", skyflow_ids=["id1"], columns=["a"],
                                   column_redactions=[ColumnRedactions(column_name="a", redaction="MASKED")],
                                   unique_values=[{"email": "a@b.com"}])
         self.assertEqual(record.table_name, "t1")
-        self.assertEqual(record.ids, ["id1"])
+        self.assertEqual(record.skyflow_ids, ["id1"])
         self.assertEqual(record.columns, ["a"])
         self.assertEqual(record.column_redactions[0].column_name, "a")
         self.assertEqual(record.column_redactions[0].redaction, "MASKED")
         self.assertEqual(record.unique_values, [{"email": "a@b.com"}])
 
     def test_optional_defaults(self):
-        record = GetRecordRequest(table_name="t1")
-        self.assertIsNone(record.ids)
+        record = GetRequestRecord(table_name="t1")
+        self.assertIsNone(record.skyflow_ids)
         self.assertIsNone(record.columns)
         self.assertIsNone(record.column_redactions)
         self.assertIsNone(record.unique_values)
@@ -305,18 +307,18 @@ class TestBulkSummary(unittest.TestCase):
 class TestBulkInsertResponse(unittest.TestCase):
     def test_records_to_retry_only_server_5xx_except_529(self):
         records = [
-            {"index": 0, "http_code": 200},
-            {"index": 1, "http_code": 500},
-            {"index": 2, "http_code": 529},
-            {"index": 3, "http_code": 400},
-            {"index": 4, "http_code": 503},
+            BulkInsertResponseRecord(index=0, http_code=200),
+            BulkInsertResponseRecord(index=1, http_code=500),
+            BulkInsertResponseRecord(index=2, http_code=529),
+            BulkInsertResponseRecord(index=3, http_code=400),
+            BulkInsertResponseRecord(index=4, http_code=503),
         ]
         originals = ["r0", "r1", "r2", "r3", "r4"]
         response = BulkInsertResponse(summary=None, records=records, _original_records=originals)
         self.assertEqual(response.records_to_retry(), ["r1", "r4"])
 
     def test_records_to_retry_empty_without_originals(self):
-        response = BulkInsertResponse(summary=None, records=[{"index": 0, "http_code": 500}])
+        response = BulkInsertResponse(summary=None, records=[BulkInsertResponseRecord(index=0, http_code=500)])
         self.assertEqual(response.records_to_retry(), [])
 
     def test_repr_does_not_raise(self):
@@ -348,15 +350,15 @@ class TestDetokenizeSummary(unittest.TestCase):
 class TestBulkDetokenizeResponse(unittest.TestCase):
     def test_tokens_to_retry_only_server_5xx_except_529(self):
         records = [
-            {"index": 0, "http_code": 200},
-            {"index": 1, "http_code": 500},
-            {"index": 2, "http_code": 529},
+            BulkDetokenizeResponseRecord(index=0, http_code=200),
+            BulkDetokenizeResponseRecord(index=1, http_code=500),
+            BulkDetokenizeResponseRecord(index=2, http_code=529),
         ]
         response = BulkDetokenizeResponse(summary=None, records=records, _original_tokens=["a", "b", "c"])
         self.assertEqual(response.tokens_to_retry(), ["b"])
 
     def test_tokens_to_retry_empty_without_originals(self):
-        response = BulkDetokenizeResponse(summary=None, records=[{"index": 0, "http_code": 500}])
+        response = BulkDetokenizeResponse(summary=None, records=[BulkDetokenizeResponseRecord(index=0, http_code=500)])
         self.assertEqual(response.tokens_to_retry(), [])
 
     def test_repr_does_not_raise(self):

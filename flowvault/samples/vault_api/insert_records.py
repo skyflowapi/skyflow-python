@@ -44,14 +44,14 @@ def perform_secure_data_insertion():
 
         response = skyflow_client.vault(vault_config.get('vault_id')).insert(insert_request)
 
-        # response.records: [
-        #   {'table_name': '<TABLE>', 'skyflow_id': '<SKYFLOW_ID>',
-        #    'tokens': {'email': [{'token': '<TOKEN>', 'token_group_name': '<GROUP>', 'path': None}]},
-        #    'hashed_data': {...}, 'http_code': 200, 'error': None},
-        #   {'table_name': None, 'skyflow_id': None, 'tokens': None, 'hashed_data': None,
-        #    'http_code': 400, 'error': '<ERROR_MESSAGE>'}
-        # ]
-        print('Records: ', response.records)
+        # response.records: list of InsertResponseRecord, one per input, in order.
+        # Each has .skyflow_id, .table_name, .tokens (dict of column -> list of Token),
+        # .hashed_data, .http_code, .error, .request_id.
+        for record in response.records:
+            if record.error is None:
+                print(f"{record.skyflow_id} -> tokens={record.tokens}")
+            else:
+                print(f"failed ({record.http_code}): {record.error} [request_id={record.request_id}]")
 
     except SkyflowError as error:
         print('Skyflow Specific Error: ', {

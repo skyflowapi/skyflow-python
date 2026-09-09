@@ -30,10 +30,9 @@ def perform_secure_detokenization():
 
         response = skyflow_client.vault(vault_config.get('vault_id')).detokenize(detokenize_request)
 
-        # response.records (one entry per input, success + failure inline):
-        #   {'token': '<TOKEN1>', 'token_group_name': '<GROUP>', 'value': '<VALUE>',
-        #    'metadata': {'skyflow_id': '<ID>', 'table_name': '<TABLE>'}, 'http_code': 200, 'error': None}
-        #   {'token': '<TOKEN2>', ..., 'http_code': 404, 'error': '<ERROR_MESSAGE>'}
+        # response.records: list of DetokenizeResponseRecord, one per input, in order.
+        # Each has .token, .value, .token_group_name, .metadata (DetokenizeResponseRecordMetadata
+        # with .skyflow_id / .table_name), .http_code, .error, .request_id.
         print('Records: ', response.records)
 
     except SkyflowError as error:

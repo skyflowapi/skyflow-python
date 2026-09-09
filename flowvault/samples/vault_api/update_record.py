@@ -1,7 +1,7 @@
 from skyflow.error import SkyflowError
 from skyflow import Env
 from skyflow import Skyflow, LogLevel
-from skyflow.vault.data import UpdateRequest
+from skyflow.vault.data import UpdateRequest, UpdateRequestRecord
 
 
 def perform_secure_data_update():
@@ -26,17 +26,19 @@ def perform_secure_data_update():
 
         update_request = UpdateRequest(
             records=[
-                dict(skyflow_id='<SKYFLOW_ID>', data={'name': 'Jane Doe'}),
+                UpdateRequestRecord(skyflow_id='<SKYFLOW_ID>', data={'name': 'Jane Doe'}),
             ],
             table_name='<SENSITIVE_DATA_TABLE>',
         )
 
         response = skyflow_client.vault(vault_config.get('vault_id')).update(update_request)
 
-        # response.records: [{'request_index': 0, 'skyflow_id': '<SKYFLOW_ID>', 'name': '<TOKEN>'}, ...]
-        # response.errors: [{'request_index': 0, 'error': '<ERROR_MESSAGE>', 'code': 404, 'request_id': '<REQUEST_ID>'}, ...]
-        print('Records: ', response.records)
-        print('Errors: ', response.errors)
+        for record in response.records:
+            if record.error is None:
+                print(f"{record.skyflow_id} updated -> tokens={record.tokens}")
+            else:
+                print(f"{record.skyflow_id} failed ({record.http_code}): {record.error} "
+                      f"[request_id={record.request_id}]")
 
     except SkyflowError as error:
         print('Skyflow Specific Error: ', {

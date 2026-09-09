@@ -41,9 +41,8 @@ def perform_bulk_insert():
         response = skyflow_client.vault(vault_config.get('vault_id')).bulk_insert(insert_request)
 
         # response.summary: total_records / total_inserted / total_failed
-        # response.records: one entry per input, in order, each tagged with 'index':
-        #   {'index': 0, 'request_id': None, 'table_name': '<TABLE>', 'skyflow_id': '<ID>',
-        #    'tokens': {...}, 'data': {...}, 'hashed_data': {...}, 'http_code': 200, 'error': None}
+        # response.records: list of BulkInsertResponseRecord, one per input, in order.
+        # Each has .index, .skyflow_id, .table_name, .tokens, .hashed_data, .http_code, .error, .request_id.
         print('Summary: ', response.summary)
         print('Records: ', response.records)
 

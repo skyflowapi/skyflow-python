@@ -15,7 +15,7 @@ from skyflow.utils._http_config import (
     VAULT_URL_KEY,
     VAULT_CONFIG_KEYS,
 )
-from skyflow.vault.data import GetRecordRequest, BulkInsertRequestRecord, InsertRequestRecord, UpsertOptions, TokenGroupRedactions
+from skyflow.vault.data import GetRequestRecord, BulkInsertRequestRecord, InsertRequestRecord, UpdateRequestRecord, UpsertOptions, TokenGroupRedactions
 
 VALID_UPDATE_RECORD_KEYS = ["skyflow_id", "data", "tokens", "table_name"]
 
@@ -107,35 +107,35 @@ def validate_insert_request(logger, request):
 def validate_get_request(logger, request):
     if request.records is not None:
         single_table_fields_set = (
-            request.table_name or request.ids or request.unique_values or request.columns
+            request.table_name or request.skyflow_ids or request.unique_values or request.columns
             or request.column_redactions or request.limit is not None or request.offset is not None
         )
         if single_table_fields_set:
             raise SkyflowError(SkyflowMessages.Error.GET_MODE_CONFLICT.value, invalid_input_error_code)
         if (not isinstance(request.records, list) or not request.records
-                or not all(isinstance(r, GetRecordRequest) for r in request.records)):
+                or not all(isinstance(r, GetRequestRecord) for r in request.records)):
             raise SkyflowError(SkyflowMessages.Error.INVALID_RECORDS_TYPE_IN_GET.value, invalid_input_error_code)
         for record in request.records:
             if not record.table_name:
                 raise SkyflowError(SkyflowMessages.Error.MISSING_TABLE_NAME_IN_GET.value, invalid_input_error_code)
-            if not record.ids and not record.unique_values:
+            if not record.skyflow_ids and not record.unique_values:
                 raise SkyflowError(SkyflowMessages.Error.MISSING_IDS_OR_UNIQUE_VALUES_IN_GET.value, invalid_input_error_code)
-            if record.ids is not None:
-                validate_non_empty_string_list(logger, record.ids, SkyflowMessages.Error.INVALID_IDS_IN_GET.value)
+            if record.skyflow_ids is not None:
+                validate_non_empty_string_list(logger, record.skyflow_ids, SkyflowMessages.Error.INVALID_IDS_IN_GET.value)
         return
 
     if not request.table_name:
         raise SkyflowError(SkyflowMessages.Error.MISSING_TABLE_NAME_IN_GET.value, invalid_input_error_code)
 
-    if not request.ids and not request.unique_values:
+    if not request.skyflow_ids and not request.unique_values:
         raise SkyflowError(SkyflowMessages.Error.MISSING_IDS_OR_UNIQUE_VALUES_IN_GET.value, invalid_input_error_code)
 
-    if request.ids is not None:
-        validate_non_empty_string_list(logger, request.ids, SkyflowMessages.Error.INVALID_IDS_IN_GET.value)
+    if request.skyflow_ids is not None:
+        validate_non_empty_string_list(logger, request.skyflow_ids, SkyflowMessages.Error.INVALID_IDS_IN_GET.value)
 
 
 def validate_update_request(logger, request):
-    if not isinstance(request.records, list) or not all(isinstance(r, dict) for r in request.records):
+    if not isinstance(request.records, list) or not all(isinstance(r, UpdateRequestRecord) for r in request.records):
         raise SkyflowError(SkyflowMessages.Error.INVALID_RECORDS_TYPE_IN_UPDATE.value, invalid_input_error_code)
 
     if not request.records:
@@ -145,11 +145,10 @@ def validate_update_request(logger, request):
         raise SkyflowError(SkyflowMessages.Error.INVALID_UPDATE_TYPE_IN_UPDATE.value, invalid_input_error_code)
 
     for record in request.records:
-        validate_keys(logger, record, VALID_UPDATE_RECORD_KEYS)
-        skyflow_id = record.get("skyflow_id")
+        skyflow_id = record.skyflow_id
         if not isinstance(skyflow_id, str) or not skyflow_id.strip():
             raise SkyflowError(SkyflowMessages.Error.MISSING_SKYFLOW_ID_IN_UPDATE.value, invalid_input_error_code)
-        data = record.get("data")
+        data = record.data
         if data is None:
             raise SkyflowError(SkyflowMessages.Error.MISSING_DATA_IN_UPDATE.value, invalid_input_error_code)
         if not isinstance(data, dict):
@@ -161,11 +160,11 @@ def validate_update_request(logger, request):
 
     if table_at_request_level:
         for record in request.records:
-            if record.get("table_name") is not None:
+            if record.table_name is not None:
                 raise SkyflowError(SkyflowMessages.Error.TABLE_NAME_IN_BOTH_PLACES_IN_UPDATE.value, invalid_input_error_code)
     else:
         for record in request.records:
-            if record.get("table_name") is None:
+            if record.table_name is None:
                 raise SkyflowError(SkyflowMessages.Error.TABLE_NAME_MISSING_IN_UPDATE.value, invalid_input_error_code)
 
 

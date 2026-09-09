@@ -13,8 +13,9 @@ from skyflow.vault.data import (
     InsertRequestRecord,
     InsertRequest,
     GetRequest,
-    GetRecordRequest,
+    GetRequestRecord,
     UpdateRequest,
+    UpdateRequestRecord,
     DeleteRequest,
     DetokenizeRequest,
     QueryRequest,
@@ -22,10 +23,23 @@ from skyflow.vault.data import (
     BulkInsertRequest,
     BulkDetokenizeRequest,
     BulkInsertOptions,
+    InsertOptions,
     BulkDetokenizeOptions,
     TokenGroupRedactions,
 )
 from skyflow.utils.enums import UpsertType, CustomHeaderKey
+
+
+def tokens_as_dicts(tokens):
+    if tokens is None:
+        return None
+    return {
+        column: [
+            {"token": t.token, "token_group_name": t.token_group_name, "path": t.path}
+            for t in entries
+        ]
+        for column, entries in tokens.items()
+    }
 
 
 class FakeExecuteQueryRecord:
@@ -89,6 +103,23 @@ class TestVault(unittest.TestCase):
     # ------------------------------------------------------------------ #
     # validation / initialization sequencing
     # ------------------------------------------------------------------ #
+
+    def test_unary_interceptor_adds_custom_header(self):
+        self.insert_api.with_raw_response.insert_records.return_value = FakeRawResponse([])
+        seen = []
+
+        def interceptor(context):
+            seen.append((context.operation, context.batch_index, context.total_batches))
+            context.add_header(CustomHeaderKey.REQUEST_ID_HEADER, "req-x")
+
+        self.vault.insert(
+            InsertRequest(records=[InsertRequestRecord(data={"a": 1})], table_name="t1"),
+            InsertOptions(interceptor=interceptor),
+        )
+
+        _, kwargs = self.insert_api.with_raw_response.insert_records.call_args
+        self.assertEqual(kwargs["request_options"]["additional_headers"]["x-request-id"], "req-x")
+        self.assertEqual(seen, [("INSERT", -1, -1)])
 
     @patch("skyflow.vault.controller._vault.validate_insert_request")
     def test_insert_validates_before_initializing_client(self, mock_validate):
@@ -254,13 +285,13 @@ class TestVault(unittest.TestCase):
 
         self.assertEqual(len(response.records), 1)
         record = response.records[0]
-        self.assertEqual(record["skyflow_id"], "id1")
-        self.assertEqual(record["table_name"], "table1")
-        self.assertEqual(record["tokens"], {"name": [{"token": "tok1", "token_group_name": "deterministic_string", "path": "p"}]})
-        self.assertNotIn("data", record)  # insert response omits data
-        self.assertEqual(record["hashed_data"], {"name": [{"data": "h", "hash_name": "hash1"}]})
-        self.assertEqual(record["http_code"], 200)
-        self.assertIsNone(record["error"])
+        self.assertEqual(record.skyflow_id, "id1")
+        self.assertEqual(record.table_name, "table1")
+        self.assertEqual(tokens_as_dicts(record.tokens), {"name": [{"token": "tok1", "token_group_name": "deterministic_string", "path": "p"}]})
+        self.assertIsNone(record.data)  # insert response omits data
+        self.assertEqual(record.hashed_data, {"name": [{"data": "h", "hash_name": "hash1"}]})
+        self.assertEqual(record.http_code, 200)
+        self.assertIsNone(record.error)
 
     def test_tokens_normalized_to_typed_list_per_group(self):
         self.insert_api.with_raw_response.insert_records.return_value = FakeRawResponse([
@@ -274,7 +305,7 @@ class TestVault(unittest.TestCase):
         ])
         response = self.vault.insert(InsertRequest(records=[InsertRequestRecord(data={"email": "a@b.com"})], table_name="t1"))
 
-        self.assertEqual(response.records[0]["tokens"]["email"], [
+        self.assertEqual(tokens_as_dicts(response.records[0].tokens)["email"], [
             {"token": "tok-det", "token_group_name": "deterministic_string", "path": None},
             {"token": "tok-nondet", "token_group_name": "nondeterministic_string", "path": None},
         ])
@@ -289,11 +320,11 @@ class TestVault(unittest.TestCase):
         ))
 
         self.assertEqual(len(response.records), 2)
-        self.assertEqual(response.records[0]["skyflow_id"], "id1")
-        self.assertIsNone(response.records[0]["error"])
-        self.assertEqual(response.records[1]["error"], "bad row")
-        self.assertEqual(response.records[1]["http_code"], 400)
-        self.assertIsNone(response.records[1]["skyflow_id"])
+        self.assertEqual(response.records[0].skyflow_id, "id1")
+        self.assertIsNone(response.records[0].error)
+        self.assertEqual(response.records[1].error, "bad row")
+        self.assertEqual(response.records[1].http_code, 400)
+        self.assertIsNone(response.records[1].skyflow_id)
 
     # ------------------------------------------------------------------ #
     # no batching -- every insert is exactly one API call
@@ -311,7 +342,7 @@ class TestVault(unittest.TestCase):
         call_size = len(self.insert_api.with_raw_response.insert_records.call_args.kwargs["records"])
         self.assertEqual(call_size, 4)
         self.assertEqual(len(response.records), 4)
-        self.assertEqual([r["skyflow_id"] for r in response.records], ["id-0", "id-1", "id-2", "id-3"])
+        self.assertEqual([r.skyflow_id for r in response.records], ["id-0", "id-1", "id-2", "id-3"])
 
     # ------------------------------------------------------------------ #
     # transport failure
@@ -402,7 +433,7 @@ class TestVaultGet(unittest.TestCase):
     @patch("skyflow.vault.controller._vault.validate_get_request")
     def test_get_validates_before_initializing_client(self, mock_validate):
         self.get_api.with_raw_response.get_records.return_value = fake_get_raw_response([])
-        request = GetRequest(table_name="t1", ids=["id1"])
+        request = GetRequest(table_name="t1", skyflow_ids=["id1"])
 
         self.vault.get(request)
 
@@ -416,7 +447,7 @@ class TestVaultGet(unittest.TestCase):
 
     def test_get_raises_on_invalid_table_name(self):
         with self.assertRaises(SkyflowError):
-            self.vault.get(GetRequest(table_name="   ", ids=["id1"]))
+            self.vault.get(GetRequest(table_name="   ", skyflow_ids=["id1"]))
         self.get_api.with_raw_response.get_records.assert_not_called()
 
     # ------------------------------------------------------------------ #
@@ -426,7 +457,7 @@ class TestVaultGet(unittest.TestCase):
     def test_maps_table_and_ids(self):
         self.get_api.with_raw_response.get_records.return_value = fake_get_raw_response([])
 
-        self.vault.get(GetRequest(table_name="t1", ids=["id1", "id2"]))
+        self.vault.get(GetRequest(table_name="t1", skyflow_ids=["id1", "id2"]))
 
         _, kwargs = self.get_api.with_raw_response.get_records.call_args
         self.assertEqual(kwargs["vault_id"], "vault123")
@@ -446,8 +477,8 @@ class TestVaultGet(unittest.TestCase):
         self.get_api.with_raw_response.get_records.return_value = fake_get_raw_response([])
 
         self.vault.get(GetRequest(records=[
-            GetRecordRequest(table_name="persons", ids=["id1"], columns=["name"]),
-            GetRecordRequest(table_name="cards", unique_values=[{"email": "a@b.com"}]),
+            GetRequestRecord(table_name="persons", skyflow_ids=["id1"], columns=["name"]),
+            GetRequestRecord(table_name="cards", unique_values=[{"email": "a@b.com"}]),
         ]))
 
         _, kwargs = self.get_api.with_raw_response.get_records.call_args
@@ -465,7 +496,7 @@ class TestVaultGet(unittest.TestCase):
         self.get_api.with_raw_response.get_records.return_value = fake_get_raw_response([])
 
         self.vault.get(GetRequest(
-            table_name="t1", ids=["id1"], column_redactions=[ColumnRedactions(column_name="ssn", redaction="mask1")],
+            table_name="t1", skyflow_ids=["id1"], column_redactions=[ColumnRedactions(column_name="ssn", redaction="mask1")],
         ))
 
         _, kwargs = self.get_api.with_raw_response.get_records.call_args
@@ -476,7 +507,7 @@ class TestVaultGet(unittest.TestCase):
     def test_maps_limit_offset_columns(self):
         self.get_api.with_raw_response.get_records.return_value = fake_get_raw_response([])
 
-        self.vault.get(GetRequest(table_name="t1", ids=["id1"], columns=["a", "b"], limit=10, offset=5))
+        self.vault.get(GetRequest(table_name="t1", skyflow_ids=["id1"], columns=["a", "b"], limit=10, offset=5))
 
         _, kwargs = self.get_api.with_raw_response.get_records.call_args
         self.assertEqual(kwargs["columns"], ["a", "b"])
@@ -499,17 +530,17 @@ class TestVaultGet(unittest.TestCase):
             ),
         ], headers={"x-request-id": "req-1"})
 
-        response = self.vault.get(GetRequest(table_name="t1", ids=["id1"]))
+        response = self.vault.get(GetRequest(table_name="t1", skyflow_ids=["id1"]))
 
         self.assertEqual(len(response.records), 1)
         record = response.records[0]
-        self.assertEqual(record["skyflow_id"], "id1")
-        self.assertEqual(record["table_name"], "t1")
-        self.assertEqual(record["data"], {"name": "john doe"})
-        self.assertEqual(record["hashed_data"], {"email": [{"data": "a1b2c3", "hash_name": "hash1"}]})
-        self.assertEqual(record["tokens"], {"name": [{"token": "tok1", "token_group_name": "deterministic_string", "path": None}]})
-        self.assertEqual(record["http_code"], 200)
-        self.assertIsNone(record["error"])
+        self.assertEqual(record.skyflow_id, "id1")
+        self.assertEqual(record.table_name, "t1")
+        self.assertEqual(record.data, {"name": "john doe"})
+        self.assertEqual(record.hashed_data, {"email": [{"data": "a1b2c3", "hash_name": "hash1"}]})
+        self.assertEqual(tokens_as_dicts(record.tokens), {"name": [{"token": "tok1", "token_group_name": "deterministic_string", "path": None}]})
+        self.assertEqual(record.http_code, 200)
+        self.assertIsNone(record.error)
 
     def test_success_and_error_records_in_one_list(self):
         self.get_api.with_raw_response.get_records.return_value = fake_get_raw_response([
@@ -517,13 +548,13 @@ class TestVaultGet(unittest.TestCase):
             FakeRecordResponseObject(error="not found", http_code=404),
         ], headers={"x-request-id": "req-2"})
 
-        response = self.vault.get(GetRequest(table_name="t1", ids=["id1", "id2"]))
+        response = self.vault.get(GetRequest(table_name="t1", skyflow_ids=["id1", "id2"]))
 
         self.assertEqual(len(response.records), 2)
-        self.assertEqual(response.records[0]["data"], {"a": 1})
-        self.assertIsNone(response.records[0]["error"])
-        self.assertEqual(response.records[1]["error"], "not found")
-        self.assertEqual(response.records[1]["http_code"], 404)
+        self.assertEqual(response.records[0].data, {"a": 1})
+        self.assertIsNone(response.records[0].error)
+        self.assertEqual(response.records[1].error, "not found")
+        self.assertEqual(response.records[1].http_code, 404)
 
     # ------------------------------------------------------------------ #
     # transport failure
@@ -532,7 +563,7 @@ class TestVaultGet(unittest.TestCase):
     def test_transport_exception_raises_skyflow_error(self):
         self.get_api.with_raw_response.get_records.side_effect = Exception("network blip")
         with self.assertRaises(SkyflowError) as ctx:
-            self.vault.get(GetRequest(table_name="t1", ids=["id1", "id2"]))
+            self.vault.get(GetRequest(table_name="t1", skyflow_ids=["id1", "id2"]))
         self.assertIn("network blip", ctx.exception.message)
 
     def test_api_error_raises_with_message_and_status(self):
@@ -544,7 +575,7 @@ class TestVaultGet(unittest.TestCase):
         self.get_api.with_raw_response.get_records.side_effect = api_error
 
         with self.assertRaises(SkyflowError) as ctx:
-            self.vault.get(GetRequest(table_name="t1", ids=["id1"]))
+            self.vault.get(GetRequest(table_name="t1", skyflow_ids=["id1"]))
         self.assertEqual(ctx.exception.message, "not found")
         self.assertEqual(ctx.exception.http_code, 404)
 
@@ -556,7 +587,7 @@ class TestVaultGet(unittest.TestCase):
         self.vault_client.get_current_bearer_token.return_value = "the-current-token"
         self.get_api.with_raw_response.get_records.return_value = fake_get_raw_response([])
 
-        self.vault.get(GetRequest(table_name="t1", ids=["id1"]))
+        self.vault.get(GetRequest(table_name="t1", skyflow_ids=["id1"]))
 
         _, kwargs = self.get_api.with_raw_response.get_records.call_args
         headers = kwargs["request_options"]["additional_headers"]
@@ -584,7 +615,7 @@ class TestVaultUpdate(unittest.TestCase):
     @patch("skyflow.vault.controller._vault.validate_update_request")
     def test_update_validates_before_initializing_client(self, mock_validate):
         self.update_api.with_raw_response.update_records.return_value = fake_update_raw_response([])
-        request = UpdateRequest(records=[{"skyflow_id": "id1", "data": {"a": 1}}], table_name="t1")
+        request = UpdateRequest(records=[UpdateRequestRecord(skyflow_id='id1', data={'a': 1})], table_name="t1")
 
         self.vault.update(request)
 
@@ -599,14 +630,14 @@ class TestVaultUpdate(unittest.TestCase):
     def test_update_raises_on_empty_key(self):
         with self.assertRaises(SkyflowError):
             self.vault.update(UpdateRequest(
-                records=[{"skyflow_id": "id1", "data": {"": "value"}}], table_name="t1",
+                records=[UpdateRequestRecord(skyflow_id='id1', data={'': 'value'})], table_name="t1",
             ))
         self.update_api.with_raw_response.update_records.assert_not_called()
 
     def test_update_raises_on_invalid_table_name(self):
         with self.assertRaises(SkyflowError):
             self.vault.update(UpdateRequest(
-                records=[{"skyflow_id": "id1", "data": {"a": 1}}], table_name="   ",
+                records=[UpdateRequestRecord(skyflow_id='id1', data={'a': 1})], table_name="   ",
             ))
 
     # ------------------------------------------------------------------ #
@@ -616,7 +647,7 @@ class TestVaultUpdate(unittest.TestCase):
     def test_maps_request_level_table(self):
         self.update_api.with_raw_response.update_records.return_value = fake_update_raw_response([])
         request = UpdateRequest(
-            records=[{"skyflow_id": "id1", "data": {"a": 1}}], table_name="t1",
+            records=[UpdateRequestRecord(skyflow_id='id1', data={'a': 1})], table_name="t1",
         )
 
         self.vault.update(request)
@@ -632,7 +663,7 @@ class TestVaultUpdate(unittest.TestCase):
     def test_maps_per_record_table_when_request_level_unset(self):
         self.update_api.with_raw_response.update_records.return_value = fake_update_raw_response([])
         request = UpdateRequest(records=[
-            {"skyflow_id": "id1", "data": {"a": 1}, "table_name": "t2"},
+            UpdateRequestRecord(skyflow_id='id1', data={'a': 1}, table_name='t2'),
         ])
 
         self.vault.update(request)
@@ -644,7 +675,7 @@ class TestVaultUpdate(unittest.TestCase):
     def test_update_type_is_sent_to_the_update_endpoint(self):
         self.update_api.with_raw_response.update_records.return_value = fake_update_raw_response([])
         request = UpdateRequest(
-            records=[{"skyflow_id": "id1", "data": {"a": 1}}], table_name="t1", update_type=UpsertType.REPLACE,
+            records=[UpdateRequestRecord(skyflow_id='id1', data={'a': 1})], table_name="t1", update_type=UpsertType.REPLACE,
         )
 
         self.vault.update(request)
@@ -654,7 +685,7 @@ class TestVaultUpdate(unittest.TestCase):
 
     def test_update_type_omitted_when_not_set(self):
         self.update_api.with_raw_response.update_records.return_value = fake_update_raw_response([])
-        self.vault.update(UpdateRequest(records=[{"skyflow_id": "id1", "data": {"a": 1}}], table_name="t1"))
+        self.vault.update(UpdateRequest(records=[UpdateRequestRecord(skyflow_id='id1', data={'a': 1})], table_name="t1"))
 
         _, kwargs = self.update_api.with_raw_response.update_records.call_args
         self.assertNotIn("update_type", kwargs)
@@ -662,7 +693,7 @@ class TestVaultUpdate(unittest.TestCase):
     def test_byot_tokens_are_sent_on_update_record(self):
         self.update_api.with_raw_response.update_records.return_value = fake_update_raw_response([])
         request = UpdateRequest(
-            records=[{"skyflow_id": "id1", "data": {"a": 1}, "tokens": {"a": "tok-a"}}], table_name="t1",
+            records=[UpdateRequestRecord(skyflow_id='id1', data={'a': 1}, tokens={'a': 'tok-a'})], table_name="t1",
         )
 
         self.vault.update(request)
@@ -672,7 +703,7 @@ class TestVaultUpdate(unittest.TestCase):
 
     def test_update_record_without_data_raises_skyflow_error(self):
         with self.assertRaises(SkyflowError):
-            self.vault.update(UpdateRequest(records=[{"skyflow_id": "id1"}], table_name="t1"))
+            self.vault.update(UpdateRequest(records=[UpdateRequestRecord(skyflow_id='id1')], table_name="t1"))
         self.update_api.with_raw_response.update_records.assert_not_called()
 
     # ------------------------------------------------------------------ #
@@ -689,15 +720,15 @@ class TestVaultUpdate(unittest.TestCase):
         ], headers={"x-request-id": "req-1"})
 
         response = self.vault.update(UpdateRequest(
-            records=[{"skyflow_id": "id1", "data": {"name": "john doe"}}], table_name="t1",
+            records=[UpdateRequestRecord(skyflow_id='id1', data={'name': 'john doe'})], table_name="t1",
         ))
 
         self.assertEqual(len(response.records), 1)
         record = response.records[0]
-        self.assertEqual(record["skyflow_id"], "id1")
-        self.assertEqual(record["name"], "tok1")
-        self.assertEqual(record["data"], {"name": "john doe"})
-        self.assertIsNone(response.errors)
+        self.assertEqual(record.skyflow_id, "id1")
+        self.assertEqual(tokens_as_dicts(record.tokens), {"name": [{"token": "tok1", "token_group_name": "deterministic_string", "path": None}]})
+        self.assertEqual(record.data, {"name": "john doe"})
+        self.assertIsNone(record.error)
 
     def test_mixed_success_and_error_records_are_split(self):
         self.update_api.with_raw_response.update_records.return_value = fake_update_raw_response([
@@ -706,14 +737,16 @@ class TestVaultUpdate(unittest.TestCase):
         ], headers={"x-request-id": "req-2"})
 
         response = self.vault.update(UpdateRequest(records=[
-            {"skyflow_id": "id1", "data": {"a": 1}},
-            {"skyflow_id": "id2", "data": {"a": 2}},
+            UpdateRequestRecord(skyflow_id='id1', data={'a': 1}),
+            UpdateRequestRecord(skyflow_id='id2', data={'a': 2}),
         ], table_name="t1"))
 
-        self.assertEqual(len(response.records), 1)
-        self.assertEqual(len(response.errors), 1)
-        self.assertEqual(response.errors[0]["error"], "not found")
-        self.assertEqual(response.errors[0]["code"], 404)
+        self.assertEqual(len(response.records), 2)
+        self.assertEqual(response.records[0].skyflow_id, "id1")
+        self.assertIsNone(response.records[0].error)
+        self.assertEqual(response.records[1].error, "not found")
+        self.assertEqual(response.records[1].http_code, 404)
+        self.assertEqual(response.records[1].request_id, "req-2")
 
     # ------------------------------------------------------------------ #
     # transport failure
@@ -722,7 +755,7 @@ class TestVaultUpdate(unittest.TestCase):
     def test_transport_exception_raises_skyflow_error(self):
         self.update_api.with_raw_response.update_records.side_effect = Exception("network blip")
         with self.assertRaises(SkyflowError) as ctx:
-            self.vault.update(UpdateRequest(records=[{"skyflow_id": "id1", "data": {"a": 1}}], table_name="t1"))
+            self.vault.update(UpdateRequest(records=[UpdateRequestRecord(skyflow_id='id1', data={'a': 1})], table_name="t1"))
         self.assertIn("network blip", ctx.exception.message)
 
     def test_api_error_with_per_record_body_raises(self):
@@ -734,7 +767,7 @@ class TestVaultUpdate(unittest.TestCase):
         self.update_api.with_raw_response.update_records.side_effect = api_error
 
         with self.assertRaises(SkyflowError) as ctx:
-            self.vault.update(UpdateRequest(records=[{"skyflow_id": "id1", "data": {"a": 1}}], table_name="t1"))
+            self.vault.update(UpdateRequest(records=[UpdateRequestRecord(skyflow_id='id1', data={'a': 1})], table_name="t1"))
         self.assertEqual(ctx.exception.message, "not found")
         self.assertEqual(ctx.exception.http_code, 404)
         self.assertEqual(ctx.exception.request_id, "req-3")
@@ -749,12 +782,12 @@ class TestVaultUpdate(unittest.TestCase):
         ], headers={"x-request-id": "req-h"})
 
         response = self.vault.update(UpdateRequest(
-            records=[{"skyflow_id": "id1", "data": {"a": 1}}], table_name="t1",
+            records=[UpdateRequestRecord(skyflow_id='id1', data={'a': 1})], table_name="t1",
         ))
 
         record = response.records[0]
-        self.assertEqual(record["name"], "tok1")
-        self.assertEqual(record["hashed_data"], {"email": "hashed"})
+        self.assertEqual(tokens_as_dicts(record.tokens), {"name": [{"token": "tok1", "token_group_name": None, "path": None}]})
+        self.assertEqual(record.hashed_data, {"email": [{"data": "hashed", "hash_name": None}]})
 
     def test_api_error_with_string_error_body_raises(self):
         self.update_api.with_raw_response.update_records.side_effect = ApiError(
@@ -762,7 +795,7 @@ class TestVaultUpdate(unittest.TestCase):
         )
 
         with self.assertRaises(SkyflowError) as ctx:
-            self.vault.update(UpdateRequest(records=[{"skyflow_id": "id1", "data": {"a": 1}}], table_name="t1"))
+            self.vault.update(UpdateRequest(records=[UpdateRequestRecord(skyflow_id='id1', data={'a': 1})], table_name="t1"))
         self.assertEqual(ctx.exception.message, "server exploded")
         self.assertEqual(ctx.exception.http_code, 500)
 
@@ -773,7 +806,7 @@ class TestVaultUpdate(unittest.TestCase):
         )
 
         with self.assertRaises(SkyflowError) as ctx:
-            self.vault.update(UpdateRequest(records=[{"skyflow_id": "id1", "data": {"a": 1}}], table_name="t1"))
+            self.vault.update(UpdateRequest(records=[UpdateRequestRecord(skyflow_id='id1', data={'a': 1})], table_name="t1"))
         self.assertEqual(ctx.exception.message, "boom")
 
     def test_api_error_without_error_or_records_raises_unknown(self):
@@ -782,7 +815,7 @@ class TestVaultUpdate(unittest.TestCase):
         )
 
         with self.assertRaises(SkyflowError) as ctx:
-            self.vault.update(UpdateRequest(records=[{"skyflow_id": "id1", "data": {"a": 1}}], table_name="t1"))
+            self.vault.update(UpdateRequest(records=[UpdateRequestRecord(skyflow_id='id1', data={'a': 1})], table_name="t1"))
         self.assertEqual(ctx.exception.http_code, 500)
 
     # ------------------------------------------------------------------ #
@@ -793,7 +826,7 @@ class TestVaultUpdate(unittest.TestCase):
         self.vault_client.get_current_bearer_token.return_value = "the-current-token"
         self.update_api.with_raw_response.update_records.return_value = fake_update_raw_response([])
 
-        self.vault.update(UpdateRequest(records=[{"skyflow_id": "id1", "data": {"a": 1}}], table_name="t1"))
+        self.vault.update(UpdateRequest(records=[UpdateRequestRecord(skyflow_id='id1', data={'a': 1})], table_name="t1"))
 
         _, kwargs = self.update_api.with_raw_response.update_records.call_args
         headers = kwargs["request_options"]["additional_headers"]
@@ -874,11 +907,11 @@ class TestVaultDelete(unittest.TestCase):
 
         self.assertEqual(len(response.records), 1)
         record = response.records[0]
-        self.assertEqual(record["skyflow_id"], "id1")
-        self.assertEqual(record["http_code"], 200)
-        self.assertIsNone(record["error"])
-        self.assertNotIn("data", record)
-        self.assertNotIn("tokens", record)
+        self.assertEqual(record.skyflow_id, "id1")
+        self.assertEqual(record.http_code, 200)
+        self.assertIsNone(record.error)
+        self.assertFalse(hasattr(record, "data"))
+        self.assertFalse(hasattr(record, "tokens"))
 
     def test_success_and_error_records_in_one_list(self):
         self.delete_api.with_raw_response.delete_records.return_value = fake_delete_raw_response([
@@ -889,9 +922,9 @@ class TestVaultDelete(unittest.TestCase):
         response = self.vault.delete(DeleteRequest(table_name="t1", ids=["id1", "id2"]))
 
         self.assertEqual(len(response.records), 2)
-        self.assertEqual(response.records[0]["skyflow_id"], "id1")
-        self.assertEqual(response.records[1]["error"], "not found")
-        self.assertEqual(response.records[1]["http_code"], 404)
+        self.assertEqual(response.records[0].skyflow_id, "id1")
+        self.assertEqual(response.records[1].error, "not found")
+        self.assertEqual(response.records[1].http_code, 404)
 
     # ------------------------------------------------------------------ #
     # transport failure
@@ -1005,13 +1038,13 @@ class TestVaultDetokenize(unittest.TestCase):
 
         self.assertEqual(len(response.records), 1)
         record = response.records[0]
-        self.assertEqual(record["token"], "tok1")
-        self.assertEqual(record["value"], "john doe")
-        self.assertEqual(record["token_group_name"], "deterministic_string")
-        self.assertEqual(record["metadata"].skyflow_id, "sid")
-        self.assertEqual(record["metadata"].table_name, "t1")
-        self.assertEqual(record["http_code"], 200)
-        self.assertIsNone(record["error"])
+        self.assertEqual(record.token, "tok1")
+        self.assertEqual(record.value, "john doe")
+        self.assertEqual(record.token_group_name, "deterministic_string")
+        self.assertEqual(record.metadata.skyflow_id, "sid")
+        self.assertEqual(record.metadata.table_name, "t1")
+        self.assertEqual(record.http_code, 200)
+        self.assertIsNone(record.error)
 
     def test_success_and_error_records_in_one_list(self):
         self.detokenize_api.with_raw_response.detokenize.return_value = fake_detokenize_raw_response([
@@ -1022,10 +1055,10 @@ class TestVaultDetokenize(unittest.TestCase):
         response = self.vault.detokenize(DetokenizeRequest(tokens=["tok1", "tok2"]))
 
         self.assertEqual(len(response.records), 2)
-        self.assertEqual(response.records[0]["value"], "john doe")
-        self.assertEqual(response.records[1]["token"], "tok2")
-        self.assertEqual(response.records[1]["error"], "invalid token")
-        self.assertEqual(response.records[1]["http_code"], 404)
+        self.assertEqual(response.records[0].value, "john doe")
+        self.assertEqual(response.records[1].token, "tok2")
+        self.assertEqual(response.records[1].error, "invalid token")
+        self.assertEqual(response.records[1].http_code, 404)
 
     # ------------------------------------------------------------------ #
     # transport failure
@@ -1113,9 +1146,9 @@ class TestVaultQuery(unittest.TestCase):
         response = self.vault.query(QueryRequest(query="SELECT * FROM t1"))
 
         self.assertEqual(len(response.records), 2)
-        self.assertEqual(response.records[0], {"data": {"a": 1}})
-        self.assertEqual(response.records[1], {"data": {"a": 2}})
-        self.assertEqual(response.metadata, {"columns": ["a"]})
+        self.assertEqual(response.records[0].data, {"a": 1})
+        self.assertEqual(response.records[1].data, {"a": 2})
+        self.assertEqual(response.metadata.columns, ["a"])
 
     def test_transport_exception_raises_skyflow_error(self):
         self.query_api.with_raw_response.execute_query.side_effect = Exception("network blip")
@@ -1195,7 +1228,7 @@ class TestVaultBulkInsert(unittest.TestCase):
         response = self.vault.bulk_insert(self._request(3))
 
         self.assertEqual(self.records_api.with_raw_response.insert_records.call_count, 2)
-        self.assertEqual([r["index"] for r in response.records], [0, 1, 2])
+        self.assertEqual([r.index for r in response.records], [0, 1, 2])
         self.assertEqual(response.summary.total_records, 3)
         self.assertEqual(response.summary.total_inserted, 3)
         self.assertEqual(response.summary.total_failed, 0)
@@ -1216,8 +1249,8 @@ class TestVaultBulkInsert(unittest.TestCase):
             response = self.vault.bulk_insert(request)
 
         self.assertEqual(self.records_api.with_raw_response.insert_records.call_count, 10)  # 500 / 50
-        self.assertEqual([r["index"] for r in response.records], list(range(500)))  # contiguous, in order, no gaps/dupes
-        self.assertTrue(all(r["skyflow_id"] == f"id-{r['index']}" for r in response.records))  # index aligns with input
+        self.assertEqual([r.index for r in response.records], list(range(500)))  # contiguous, in order, no gaps/dupes
+        self.assertTrue(all(r.skyflow_id == f"id-{r.index}" for r in response.records))  # index aligns with input
         self.assertEqual(response.summary.total_records, 500)
         self.assertEqual(response.summary.total_inserted, 500)
         self.assertEqual(response.summary.total_failed, 0)
@@ -1237,10 +1270,10 @@ class TestVaultBulkInsert(unittest.TestCase):
         with patch.dict(os.environ, {"INSERT_BATCH_SIZE": "50", "INSERT_CONCURRENCY_LIMIT": "10"}):
             response = self.vault.bulk_insert(request)
 
-        self.assertEqual([r["index"] for r in response.records], list(range(500)))
-        failed = [r["index"] for r in response.records if r["error"] is not None]
+        self.assertEqual([r.index for r in response.records], list(range(500)))
+        failed = [r.index for r in response.records if r.error is not None]
         self.assertEqual(failed, list(range(200, 250)))  # exactly the failed batch's indices
-        self.assertTrue(all(response.records[i]["http_code"] == 500 for i in range(200, 250)))
+        self.assertTrue(all(response.records[i].http_code == 500 for i in range(200, 250)))
         self.assertEqual(response.summary.total_failed, 50)
         self.assertEqual(response.summary.total_inserted, 450)
         # 500 is retryable -> exactly the original records at those indices come back, in order
@@ -1260,8 +1293,8 @@ class TestVaultBulkInsert(unittest.TestCase):
         response = self.vault.bulk_insert(self._request(1))
 
         record = response.records[0]
-        self.assertEqual(record["tokens"], {"ssn": [{"token": "t1", "token_group_name": "g1", "path": "p"}]})
-        self.assertEqual(record["hashed_data"], {"ssn": [{"data": "h", "hash_name": "hash1"}]})
+        self.assertEqual(tokens_as_dicts(record.tokens), {"ssn": [{"token": "t1", "token_group_name": "g1", "path": "p"}]})
+        self.assertEqual(record.hashed_data, {"ssn": [{"data": "h", "hash_name": "hash1"}]})
 
     def test_failed_batch_marks_its_records_and_reports_summary(self):
         calls = {"n": 0}
@@ -1279,11 +1312,11 @@ class TestVaultBulkInsert(unittest.TestCase):
         self.assertEqual(response.summary.total_records, 3)
         self.assertEqual(response.summary.total_inserted, 2)
         self.assertEqual(response.summary.total_failed, 1)
-        failed = [r for r in response.records if r["error"] is not None]
+        failed = [r for r in response.records if r.error is not None]
         self.assertEqual(len(failed), 1)
-        self.assertEqual(failed[0]["index"], 2)
-        self.assertEqual(failed[0]["http_code"], 500)
-        self.assertEqual(failed[0]["request_id"], "req-err")
+        self.assertEqual(failed[0].index, 2)
+        self.assertEqual(failed[0].http_code, 500)
+        self.assertEqual(failed[0].request_id, "req-err")
         # 500 is retryable -> the original record at index 2 comes back
         retry = response.records_to_retry()
         self.assertEqual(len(retry), 1)
@@ -1320,7 +1353,7 @@ class TestVaultBulkInsert(unittest.TestCase):
         response = self.vault.bulk_insert(self._request(2))
 
         self.assertEqual(response.summary.total_failed, 2)
-        self.assertTrue(all("network blip" in r["error"] for r in response.records))
+        self.assertTrue(all("network blip" in r.error for r in response.records))
 
     def test_batch_per_record_error_body_maps_each_row(self):
         self.records_api.with_raw_response.insert_records.side_effect = ApiError(
@@ -1331,8 +1364,8 @@ class TestVaultBulkInsert(unittest.TestCase):
         response = self.vault.bulk_insert(self._request(2))
 
         self.assertEqual(response.summary.total_failed, 2)
-        self.assertEqual(response.records[0]["error"], "bad col a")
-        self.assertEqual(response.records[1]["error"], "bad col b")
+        self.assertEqual(response.records[0].error, "bad col a")
+        self.assertEqual(response.records[1].error, "bad col b")
 
     def test_batch_error_response_object_body_uses_clean_message(self):
         error_obj = SimpleNamespace(
@@ -1347,10 +1380,10 @@ class TestVaultBulkInsert(unittest.TestCase):
 
         self.assertEqual(response.summary.total_failed, 2)
         self.assertTrue(all(
-            r["error"] == "Invalid request. Table name table56 is invalid. Specify a valid table name."
+            r.error == "Invalid request. Table name table56 is invalid. Specify a valid table name."
             for r in response.records
         ))
-        self.assertTrue(all(r["http_code"] == 400 for r in response.records))
+        self.assertTrue(all(r.http_code == 400 for r in response.records))
 
     def test_interceptor_adds_custom_headers_per_batch(self):
         self.vault_client.get_config.return_value = {}
@@ -1396,9 +1429,9 @@ class TestVaultBulkDetokenize(unittest.TestCase):
         response = self.vault.bulk_detokenize(BulkDetokenizeRequest(tokens=["t0", "t1", "t2"]))
 
         self.assertEqual(self.tokens_api.with_raw_response.detokenize.call_count, 2)
-        self.assertEqual([r["index"] for r in response.records], [0, 1, 2])
-        self.assertEqual(response.records[0]["token"], "t0")
-        self.assertEqual(response.records[0]["value"], "v-t0")
+        self.assertEqual([r.index for r in response.records], [0, 1, 2])
+        self.assertEqual(response.records[0].token, "t0")
+        self.assertEqual(response.records[0].value, "v-t0")
         self.assertEqual(response.summary.total_tokens, 3)
         self.assertEqual(response.summary.total_detokenized, 3)
         self.assertEqual(response.summary.total_failed, 0)
@@ -1411,10 +1444,10 @@ class TestVaultBulkDetokenize(unittest.TestCase):
             response = self.vault.bulk_detokenize(BulkDetokenizeRequest(tokens=tokens))
 
         self.assertEqual(self.tokens_api.with_raw_response.detokenize.call_count, 6)  # 300 / 50
-        self.assertEqual([r["index"] for r in response.records], list(range(300)))
+        self.assertEqual([r.index for r in response.records], list(range(300)))
         # each merged record's token/value line up with its original input position
-        self.assertTrue(all(r["token"] == f"t{r['index']}" for r in response.records))
-        self.assertTrue(all(r["value"] == f"v-t{r['index']}" for r in response.records))
+        self.assertTrue(all(r.token == f"t{r.index}" for r in response.records))
+        self.assertTrue(all(r.value == f"v-t{r.index}" for r in response.records))
         self.assertEqual(response.summary.total_tokens, 300)
         self.assertEqual(response.summary.total_detokenized, 300)
 
@@ -1479,7 +1512,7 @@ class TestVaultBulkInsertAsync(unittest.IsolatedAsyncioTestCase):
         response = await self.vault.bulk_insert_async(request)
 
         self.assertEqual(self.records_api.with_raw_response.insert_records.await_count, 2)
-        self.assertEqual([r["index"] for r in response.records], [0, 1, 2])
+        self.assertEqual([r.index for r in response.records], [0, 1, 2])
         self.assertEqual(response.summary.total_records, 3)
         self.assertEqual(response.summary.total_inserted, 3)
 
@@ -1501,8 +1534,8 @@ class TestVaultBulkInsertAsync(unittest.IsolatedAsyncioTestCase):
             response = await self.vault.bulk_insert_async(request)
 
         self.assertEqual(self.records_api.with_raw_response.insert_records.await_count, 10)
-        self.assertEqual([r["index"] for r in response.records], list(range(500)))
-        self.assertTrue(all(r["skyflow_id"] == f"id-{r['index']}" for r in response.records))
+        self.assertEqual([r.index for r in response.records], list(range(500)))
+        self.assertTrue(all(r.skyflow_id == f"id-{r.index}" for r in response.records))
         self.assertEqual(response.summary.total_inserted, 500)
 
     async def test_bulk_insert_async_batch_error_produces_error_rows(self):
@@ -1514,7 +1547,7 @@ class TestVaultBulkInsertAsync(unittest.IsolatedAsyncioTestCase):
         response = await self.vault.bulk_insert_async(request)
 
         self.assertEqual(len(response.records), 3)
-        self.assertTrue(all(r["error"] is not None for r in response.records))
+        self.assertTrue(all(r.error is not None for r in response.records))
         self.assertEqual(response.summary.total_inserted, 0)
         self.assertEqual(response.summary.total_failed, 3)
 
@@ -1537,7 +1570,7 @@ class TestVaultBulkDetokenizeAsync(unittest.IsolatedAsyncioTestCase):
         response = await self.vault.bulk_detokenize_async(BulkDetokenizeRequest(tokens=["t0", "t1", "t2"]))
 
         self.assertEqual(self.tokens_api.with_raw_response.detokenize.await_count, 2)
-        self.assertEqual([r["index"] for r in response.records], [0, 1, 2])
+        self.assertEqual([r.index for r in response.records], [0, 1, 2])
         self.assertEqual(response.summary.total_tokens, 3)
         self.assertEqual(response.summary.total_detokenized, 3)
 
@@ -1549,7 +1582,7 @@ class TestVaultBulkDetokenizeAsync(unittest.IsolatedAsyncioTestCase):
         response = await self.vault.bulk_detokenize_async(BulkDetokenizeRequest(tokens=["t0", "t1", "t2"]))
 
         self.assertEqual(len(response.records), 3)
-        self.assertTrue(all(r["error"] is not None for r in response.records))
+        self.assertTrue(all(r.error is not None for r in response.records))
         self.assertEqual(response.summary.total_failed, 3)
 
 

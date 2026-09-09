@@ -31,9 +31,8 @@ def perform_secure_data_deletion():
 
         response = skyflow_client.vault(vault_config.get('vault_id')).delete(delete_request)
 
-        # response.records (one entry per input, success + failure inline):
-        #   {'skyflow_id': '<SKYFLOW_ID1>', 'http_code': 200, 'error': None}
-        #   {'skyflow_id': None, 'http_code': 404, 'error': '<ERROR_MESSAGE>'}
+        # response.records: list of DeleteResponseRecord, one per input, in order.
+        # Each has .skyflow_id, .http_code, .error, .request_id.
         print('Records: ', response.records)
 
     except SkyflowError as error:

@@ -9,21 +9,25 @@ class TestParseTokens(unittest.TestCase):
             {"token": "t1", "tokenGroupName": "g1", "path": "p1"},
             {"token": "t2", "tokenGroupName": "g2"},
         ]}
-        self.assertEqual(parse_tokens(raw), {"ssn": [
-            {"token": "t1", "token_group_name": "g1", "path": "p1"},
-            {"token": "t2", "token_group_name": "g2", "path": None},
-        ]})
+        parsed = parse_tokens(raw)
+        self.assertEqual(list(parsed.keys()), ["ssn"])
+        self.assertEqual(
+            [(t.token, t.token_group_name, t.path) for t in parsed["ssn"]],
+            [("t1", "g1", "p1"), ("t2", "g2", None)],
+        )
 
     def test_single_unwrapped_entry_becomes_a_list(self):
+        parsed = parse_tokens({"ssn": {"token": "t1", "tokenGroupName": "g1"}})
         self.assertEqual(
-            parse_tokens({"ssn": {"token": "t1", "tokenGroupName": "g1"}}),
-            {"ssn": [{"token": "t1", "token_group_name": "g1", "path": None}]},
+            [(t.token, t.token_group_name, t.path) for t in parsed["ssn"]],
+            [("t1", "g1", None)],
         )
 
     def test_bare_value_becomes_a_token(self):
+        parsed = parse_tokens({"ssn": "bare"})
         self.assertEqual(
-            parse_tokens({"ssn": "bare"}),
-            {"ssn": [{"token": "bare", "token_group_name": None, "path": None}]},
+            [(t.token, t.token_group_name, t.path) for t in parsed["ssn"]],
+            [("bare", None, None)],
         )
 
     def test_none_returns_none(self):

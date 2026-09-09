@@ -26,15 +26,13 @@ def perform_secure_data_retrieval():
 
         get_request = GetRequest(
             table_name='<SENSITIVE_DATA_TABLE>',
-            ids=['<SKYFLOW_ID1>', '<SKYFLOW_ID2>'],
+            skyflow_ids=['<SKYFLOW_ID1>', '<SKYFLOW_ID2>'],
         )
 
         response = skyflow_client.vault(vault_config.get('vault_id')).get(get_request)
 
-        # response.records (one entry per input, success + failure inline):
-        #   {'table_name': 'persons', 'skyflow_id': '<ID>', 'tokens': {...}, 'data': {...},
-        #    'hashed_data': {...}, 'http_code': 200, 'error': None}
-        #   {'table_name': None, 'skyflow_id': None, ..., 'http_code': 404, 'error': 'Record not found'}
+        # response.records: list of GetResponseRecord, one per input, in order.
+        # Each has .skyflow_id, .table_name, .data, .tokens, .hashed_data, .http_code, .error, .request_id.
         print('Records: ', response.records)
 
     except SkyflowError as error:

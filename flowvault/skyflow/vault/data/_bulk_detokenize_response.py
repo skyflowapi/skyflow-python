@@ -21,9 +21,9 @@ class BulkDetokenizeResponse:
         if not self._original_tokens:
             return []
         return [
-            self._original_tokens[record["index"]]
+            self._original_tokens[record.index]
             for record in (self.records or [])
-            if _is_retryable(record.get("http_code")) and 0 <= record.get("index", -1) < len(self._original_tokens)
+            if _is_retryable(record.http_code) and record.index is not None and 0 <= record.index < len(self._original_tokens)
         ]
 
     def __repr__(self):

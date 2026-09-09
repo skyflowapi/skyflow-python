@@ -43,14 +43,15 @@ def _parse_entries(raw_value, to_entry):
 
 
 def _to_token(entry):
+    from skyflow.vault.data._token import Token
     if isinstance(entry, dict):
-        return {
-            'token': entry.get('token'),
-            'token_group_name': entry.get('tokenGroupName', entry.get('token_group_name')),
-            'path': entry.get('path'),
-        }
+        return Token(
+            token=entry.get('token'),
+            token_group_name=entry.get('tokenGroupName', entry.get('token_group_name')),
+            path=entry.get('path'),
+        )
     if entry is not None:
-        return {'token': entry, 'token_group_name': None, 'path': None}
+        return Token(token=entry)
     return None
 
 

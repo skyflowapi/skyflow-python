@@ -20,8 +20,9 @@ from skyflow.vault.data import (
     InsertRequestRecord,
     InsertRequest,
     GetRequest,
-    GetRecordRequest,
+    GetRequestRecord,
     UpdateRequest,
+    UpdateRequestRecord,
     DeleteRequest,
     DetokenizeRequest,
     QueryRequest,
@@ -183,7 +184,7 @@ class TestValidateInsertRequest(unittest.TestCase):
 
 class TestValidateGetRequest(unittest.TestCase):
     def test_valid_request_with_ids(self):
-        request = GetRequest(table_name="t1", ids=["id1"])
+        request = GetRequest(table_name="t1", skyflow_ids=["id1"])
         validate_get_request(None, request)  # should not raise
 
     def test_valid_request_with_unique_values(self):
@@ -191,12 +192,12 @@ class TestValidateGetRequest(unittest.TestCase):
         validate_get_request(None, request)  # should not raise
 
     def test_missing_table_raises(self):
-        request = GetRequest(table_name=None, ids=["id1"])
+        request = GetRequest(table_name=None, skyflow_ids=["id1"])
         with self.assertRaises(SkyflowError):
             validate_get_request(None, request)
 
     def test_empty_table_raises(self):
-        request = GetRequest(table_name="", ids=["id1"])
+        request = GetRequest(table_name="", skyflow_ids=["id1"])
         with self.assertRaises(SkyflowError):
             validate_get_request(None, request)
 
@@ -206,28 +207,28 @@ class TestValidateGetRequest(unittest.TestCase):
             validate_get_request(None, request)
 
     def test_ids_must_be_a_list(self):
-        request = GetRequest(table_name="t1", ids="not-a-list")
+        request = GetRequest(table_name="t1", skyflow_ids="not-a-list")
         with self.assertRaises(SkyflowError):
             validate_get_request(None, request)
 
     def test_ids_must_be_non_empty(self):
-        request = GetRequest(table_name="t1", ids=[])
+        request = GetRequest(table_name="t1", skyflow_ids=[])
         with self.assertRaises(SkyflowError):
             validate_get_request(None, request)
 
     def test_ids_must_be_strings(self):
-        request = GetRequest(table_name="t1", ids=[123])
+        request = GetRequest(table_name="t1", skyflow_ids=[123])
         with self.assertRaises(SkyflowError):
             validate_get_request(None, request)
 
 
 class TestValidateUpdateRequest(unittest.TestCase):
     def test_valid_request_with_request_level_table(self):
-        request = UpdateRequest(records=[{"skyflow_id": "id1", "data": {"a": 1}}], table_name="t1")
+        request = UpdateRequest(records=[UpdateRequestRecord(skyflow_id='id1', data={'a': 1})], table_name="t1")
         validate_update_request(None, request)  # should not raise
 
     def test_valid_request_with_per_record_table(self):
-        request = UpdateRequest(records=[{"skyflow_id": "id1", "data": {"a": 1}, "table_name": "t1"}])
+        request = UpdateRequest(records=[UpdateRequestRecord(skyflow_id='id1', data={'a': 1}, table_name='t1')])
         validate_update_request(None, request)  # should not raise
 
     def test_records_must_be_a_list(self):
@@ -246,27 +247,27 @@ class TestValidateUpdateRequest(unittest.TestCase):
             validate_update_request(None, request)
 
     def test_empty_skyflow_id_raises(self):
-        request = UpdateRequest(records=[{"skyflow_id": "  ", "data": {"a": 1}}], table_name="t1")
+        request = UpdateRequest(records=[UpdateRequestRecord(skyflow_id='  ', data={'a': 1})], table_name="t1")
         with self.assertRaises(SkyflowError):
             validate_update_request(None, request)
 
     def test_missing_data_raises(self):
-        request = UpdateRequest(records=[{"skyflow_id": "id1"}], table_name="t1")
+        request = UpdateRequest(records=[UpdateRequestRecord(skyflow_id='id1')], table_name="t1")
         with self.assertRaises(SkyflowError):
             validate_update_request(None, request)
 
     def test_none_data_raises(self):
-        request = UpdateRequest(records=[{"skyflow_id": "id1", "data": None}], table_name="t1")
+        request = UpdateRequest(records=[UpdateRequestRecord(skyflow_id='id1', data=None)], table_name="t1")
         with self.assertRaises(SkyflowError):
             validate_update_request(None, request)
 
     def test_non_dict_data_raises(self):
-        request = UpdateRequest(records=[{"skyflow_id": "id1", "data": "not-a-dict"}], table_name="t1")
+        request = UpdateRequest(records=[UpdateRequestRecord(skyflow_id='id1', data='not-a-dict')], table_name="t1")
         with self.assertRaises(SkyflowError):
             validate_update_request(None, request)
 
     def test_empty_data_raises(self):
-        request = UpdateRequest(records=[{"skyflow_id": "id1", "data": {}}], table_name="t1")
+        request = UpdateRequest(records=[UpdateRequestRecord(skyflow_id='id1', data={})], table_name="t1")
         with self.assertRaises(SkyflowError):
             validate_update_request(None, request)
 
@@ -276,28 +277,28 @@ class TestValidateUpdateRequest(unittest.TestCase):
             validate_update_request(None, request)
 
     def test_table_in_both_places_raises(self):
-        request = UpdateRequest(records=[{"skyflow_id": "id1", "data": {"a": 1}, "table_name": "t2"}], table_name="t1")
+        request = UpdateRequest(records=[UpdateRequestRecord(skyflow_id='id1', data={'a': 1}, table_name='t2')], table_name="t1")
         with self.assertRaises(SkyflowError):
             validate_update_request(None, request)
 
     def test_table_missing_from_one_record_raises(self):
         request = UpdateRequest(records=[
-            {"skyflow_id": "id1", "data": {"a": 1}, "table_name": "t1"},
-            {"skyflow_id": "id2", "data": {"a": 2}},
+            UpdateRequestRecord(skyflow_id='id1', data={'a': 1}, table_name='t1'),
+            UpdateRequestRecord(skyflow_id='id2', data={'a': 2}),
         ])
         with self.assertRaises(SkyflowError):
             validate_update_request(None, request)
 
     def test_invalid_update_type_raises(self):
         request = UpdateRequest(
-            records=[{"skyflow_id": "id1", "data": {"a": 1}}], table_name="t1", update_type="REPLACE",
+            records=[UpdateRequestRecord(skyflow_id='id1', data={'a': 1})], table_name="t1", update_type="REPLACE",
         )
         with self.assertRaises(SkyflowError):
             validate_update_request(None, request)
 
     def test_valid_update_type_enum_is_valid(self):
         request = UpdateRequest(
-            records=[{"skyflow_id": "id1", "data": {"a": 1}}], table_name="t1", update_type=UpsertType.REPLACE,
+            records=[UpdateRequestRecord(skyflow_id='id1', data={'a': 1})], table_name="t1", update_type=UpsertType.REPLACE,
         )
         validate_update_request(None, request)  # should not raise
 
@@ -396,7 +397,7 @@ class TestValidateQueryRequest(unittest.TestCase):
 
 class TestValidateGetRequestMultiTable(unittest.TestCase):
     def test_valid_multi_table_request(self):
-        request = GetRequest(records=[GetRecordRequest(table_name="persons", ids=["id1"])])
+        request = GetRequest(records=[GetRequestRecord(table_name="persons", skyflow_ids=["id1"])])
         validate_get_request(None, request)  # should not raise
 
     def test_records_must_be_get_record_request_objects(self):
@@ -409,15 +410,15 @@ class TestValidateGetRequestMultiTable(unittest.TestCase):
 
     def test_records_and_single_table_fields_are_mutually_exclusive(self):
         with self.assertRaises(SkyflowError):
-            validate_get_request(None, GetRequest(table_name="persons", records=[GetRecordRequest(table_name="persons", ids=["id1"])]))
+            validate_get_request(None, GetRequest(table_name="persons", records=[GetRequestRecord(table_name="persons", skyflow_ids=["id1"])]))
 
     def test_each_record_needs_a_table(self):
         with self.assertRaises(SkyflowError):
-            validate_get_request(None, GetRequest(records=[GetRecordRequest(table_name=None, ids=["id1"])]))
+            validate_get_request(None, GetRequest(records=[GetRequestRecord(table_name=None, skyflow_ids=["id1"])]))
 
     def test_each_record_needs_ids_or_unique_values(self):
         with self.assertRaises(SkyflowError):
-            validate_get_request(None, GetRequest(records=[GetRecordRequest(table_name="persons")]))
+            validate_get_request(None, GetRequest(records=[GetRequestRecord(table_name="persons")]))
 
 
 class TestValidateVaultConfig(unittest.TestCase):

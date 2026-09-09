@@ -169,42 +169,43 @@ request = InsertRequest(
 )
 response = vault.insert(request)
 for r in response.records:
-    print(r['skyflow_id'], r['tokens'], r['http_code'], r['error'])
+    print(r.skyflow_id, r.tokens, r.http_code, r.error)
 ```
-Each record: `{table_name, skyflow_id, tokens, hashed_data, http_code, error}` (no plaintext `data`).
+Each record is an `InsertResponseRecord`: `.table_name, .skyflow_id, .tokens, .hashed_data, .http_code, .error, .request_id` (no plaintext `data`). `.tokens` maps each column to a list of `Token` objects (`.token, .token_group_name, .path`).
 
 ### Get
 
-Two mutually exclusive modes — single-table, or multi-table via `records=[GetRecordRequest(...)]`.
-`column_redactions` entries are `ColumnRedaction` objects.
+Two mutually exclusive modes — single-table, or multi-table via `records=[GetRequestRecord(...)]`.
+`column_redactions` entries are `ColumnRedactions` objects.
 
 ```python
-from skyflow.vault.data import GetRequest, GetRecordRequest, ColumnRedaction
+from skyflow.vault.data import GetRequest, GetRequestRecord, ColumnRedactions
 
 # single-table
 vault.get(GetRequest(
-    table_name='persons', ids=['<SKYFLOW_ID>'], columns=['name', 'email'],
-    column_redactions=[ColumnRedaction(column_name='email', redaction='MASKED')],
+    table_name='persons', skyflow_ids=['<SKYFLOW_ID>'], columns=['name', 'email'],
+    column_redactions=[ColumnRedactions(column_name='email', redaction='MASKED')],
 ))
 
 # multi-table batch
 vault.get(GetRequest(records=[
-    GetRecordRequest(table_name='persons', ids=['<SKYFLOW_ID>'], columns=['name']),
-    GetRecordRequest(table_name='cards', unique_values=[{'email': 'john@example.com'}]),
+    GetRequestRecord(table_name='persons', skyflow_ids=['<SKYFLOW_ID>'], columns=['name']),
+    GetRequestRecord(table_name='cards', unique_values=[{'email': 'john@example.com'}]),
 ]))
 ```
-Each record: `{table_name, skyflow_id, tokens, data, hashed_data, http_code, error}`.
+Each record is a `GetResponseRecord`: `.table_name, .skyflow_id, .tokens, .data, .hashed_data, .http_code, .error, .request_id`.
 
 ### Update
 
 ```python
-from skyflow.vault.data import UpdateRequest
+from skyflow.vault.data import UpdateRequest, UpdateRequestRecord
 
 vault.update(UpdateRequest(
     table_name='persons',
-    records=[{'skyflow_id': '<SKYFLOW_ID>', 'data': {'name': 'Jane'}}],
+    records=[UpdateRequestRecord(skyflow_id='<SKYFLOW_ID>', data={'name': 'Jane'})],
 ))
 ```
+Each record is an `UpdateResponseRecord`: `.table_name, .skyflow_id, .tokens, .data, .hashed_data, .http_code, .error, .request_id`.
 
 ### Delete
 
@@ -213,7 +214,7 @@ from skyflow.vault.data import DeleteRequest
 
 vault.delete(DeleteRequest(table_name='persons', ids=['<SKYFLOW_ID>']))
 ```
-Each record: `{skyflow_id, http_code, error}`.
+Each record is a `DeleteResponseRecord`: `.skyflow_id, .http_code, .error, .request_id`.
 
 ### Detokenize
 
@@ -227,7 +228,7 @@ vault.detokenize(DetokenizeRequest(
     token_group_redactions=[TokenGroupRedactions(token_group_name='card_number_cg', redaction='MASKED')],
 ))
 ```
-Each record: `{token, token_group_name, value, metadata, http_code, error}`.
+Each record is a `DetokenizeResponseRecord`: `.token, .token_group_name, .value, .metadata, .http_code, .error, .request_id`.
 
 ### Query
 
@@ -235,8 +236,9 @@ Each record: `{token, token_group_name, value, metadata, http_code, error}`.
 from skyflow.vault.data import QueryRequest
 
 response = vault.query(QueryRequest(query="SELECT * FROM persons WHERE skyflow_id = '<SKYFLOW_ID>'"))
-print(response.records)    # [{'data': {...}}, ...]
-print(response.metadata)   # {'columns': [...]}
+for r in response.records:   # each r is a QueryResponseRecord with .data
+    print(r.data)
+print(response.metadata.columns)   # QueryResponseMetadata with .columns
 ```
 
 ## Bulk operations
@@ -260,8 +262,8 @@ response = vault.bulk_insert(request)                 # synchronous
 # response = await vault.bulk_insert_async(request)   # async variant
 
 print(response.summary.total_records, response.summary.total_inserted, response.summary.total_failed)
-for r in response.records:
-    print(r['index'], r['skyflow_id'], r['http_code'], r['error'])
+for r in response.records:            # each r is a BulkInsertResponseRecord
+    print(r.index, r.skyflow_id, r.http_code, r.error)
 
 retry = response.records_to_retry()   # original records whose http_code is 500-599 (excl. 529)
 ```
@@ -356,8 +358,8 @@ except SkyflowError as e:
 # bulk — inspect per-record outcomes, nothing raised for API errors
 response = vault.bulk_insert(bulk_request)
 for r in response.records:
-    if r['error'] is not None:
-        print('row', r['index'], 'failed', r['http_code'], r['error'])
+    if r.error is not None:
+        print('row', r.index, 'failed', r.http_code, r.error)
 ```
 
 ## Logging

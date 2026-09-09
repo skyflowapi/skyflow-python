@@ -53,11 +53,11 @@ class SkyflowMessages:
         MISSING_TABLE_NAME_IN_GET = f"{error_prefix} Get failed. Specify a table name."
         MISSING_IDS_OR_UNIQUE_VALUES_IN_GET = f"{error_prefix} Get failed. Specify at least one of 'ids' or 'unique_values'."
         INVALID_IDS_IN_GET = f"{error_prefix} Get failed. 'ids' must be a non-empty list of strings."
-        INVALID_RECORDS_TYPE_IN_GET = f"{error_prefix} Get failed. 'records' must be a non-empty list of GetRecordRequest objects."
+        INVALID_RECORDS_TYPE_IN_GET = f"{error_prefix} Get failed. 'records' must be a non-empty list of GetRequestRecord objects."
         GET_MODE_CONFLICT = f"{error_prefix} Get failed. Use either 'records' (multi-table) or the single-table fields (table/ids/unique_values/columns/column_redactions/limit/offset), not both."
 
         EMPTY_RECORDS_IN_UPDATE = f"{error_prefix} Update failed. Specify at least one record to update."
-        INVALID_RECORDS_TYPE_IN_UPDATE = f"{error_prefix} Update failed. 'records' must be a list of dicts."
+        INVALID_RECORDS_TYPE_IN_UPDATE = f"{error_prefix} Update failed. 'records' must be a list of UpdateRequestRecord objects."
         MISSING_SKYFLOW_ID_IN_UPDATE = f"{error_prefix} Update failed. Each record must specify a non-empty 'skyflow_id'."
         MISSING_DATA_IN_UPDATE = f"{error_prefix} Update failed. Each record must specify a non-empty 'data' object."
         INVALID_DATA_TYPE_IN_UPDATE = f"{error_prefix} Update failed. Each record's 'data' must be a dict."
