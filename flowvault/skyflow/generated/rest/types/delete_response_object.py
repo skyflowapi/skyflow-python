@@ -9,7 +9,11 @@ from ..core.serialization import FieldMetadata
 
 
 class DeleteResponseObject(UniversalBaseModel):
-    skyflow_id: typing_extensions.Annotated[str, FieldMetadata(alias="skyflowID")] = pydantic.Field()
+    skyflow_id: typing_extensions.Annotated[
+        str,
+        FieldMetadata(alias="skyflowID"),
+        pydantic.Field(alias="skyflowID", description="Skyflow ID of the deleted record."),
+    ]
     """
     Skyflow ID of the deleted record.
     """
@@ -19,7 +23,11 @@ class DeleteResponseObject(UniversalBaseModel):
     Error message, if any.
     """
 
-    http_code: typing_extensions.Annotated[int, FieldMetadata(alias="httpCode")] = pydantic.Field()
+    http_code: typing_extensions.Annotated[
+        int,
+        FieldMetadata(alias="httpCode"),
+        pydantic.Field(alias="httpCode", description="HTTP status code of the response."),
+    ]
     """
     HTTP status code of the response.
     """

@@ -9,7 +9,11 @@ from ..core.serialization import FieldMetadata
 
 
 class ColumnRedactions(UniversalBaseModel):
-    column_name: typing_extensions.Annotated[str, FieldMetadata(alias="columnName")] = pydantic.Field()
+    column_name: typing_extensions.Annotated[
+        str,
+        FieldMetadata(alias="columnName"),
+        pydantic.Field(alias="columnName", description="Name of the column to redact."),
+    ]
     """
     Name of the column to redact.
     """

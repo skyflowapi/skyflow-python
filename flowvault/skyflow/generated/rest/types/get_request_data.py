@@ -11,19 +11,27 @@ from .unique_value import UniqueValue
 
 
 class GetRequestData(UniversalBaseModel):
-    table_name: typing_extensions.Annotated[str, FieldMetadata(alias="tableName")] = pydantic.Field()
+    table_name: typing_extensions.Annotated[
+        str, FieldMetadata(alias="tableName"), pydantic.Field(alias="tableName", description="Name of the table.")
+    ]
     """
     Name of the table.
     """
 
-    skyflow_i_ds: typing_extensions.Annotated[typing.List[str], FieldMetadata(alias="skyflowIDs")] = pydantic.Field()
+    skyflow_i_ds: typing_extensions.Annotated[
+        typing.List[str],
+        FieldMetadata(alias="skyflowIDs"),
+        pydantic.Field(alias="skyflowIDs", description="Skyflow IDs of the records to return."),
+    ]
     """
     Skyflow IDs of the records to return.
     """
 
     column_redactions: typing_extensions.Annotated[
-        typing.Optional[typing.List[ColumnRedactions]], FieldMetadata(alias="columnRedactions")
-    ] = pydantic.Field(default=None)
+        typing.Optional[typing.List[ColumnRedactions]],
+        FieldMetadata(alias="columnRedactions"),
+        pydantic.Field(alias="columnRedactions", description="List of columns to redact."),
+    ] = None
     """
     List of columns to redact.
     """
@@ -34,8 +42,10 @@ class GetRequestData(UniversalBaseModel):
     """
 
     unique_values: typing_extensions.Annotated[
-        typing.Optional[typing.List[UniqueValue]], FieldMetadata(alias="uniqueValues")
-    ] = pydantic.Field(default=None)
+        typing.Optional[typing.List[UniqueValue]],
+        FieldMetadata(alias="uniqueValues"),
+        pydantic.Field(alias="uniqueValues", description="List of unique constraint values to query records by data."),
+    ] = None
     """
     List of unique constraint values to query records by data.
     """

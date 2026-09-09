@@ -14,16 +14,23 @@ class Upsert(UniversalBaseModel):
     Upsert details.
     """
 
-    update_type: typing_extensions.Annotated[typing.Optional[UpsertUpdateType], FieldMetadata(alias="updateType")] = (
-        pydantic.Field(default=None)
-    )
+    update_type: typing_extensions.Annotated[
+        typing.Optional[UpsertUpdateType],
+        FieldMetadata(alias="updateType"),
+        pydantic.Field(alias="updateType", description="Type of update operation to perform."),
+    ] = None
     """
     Type of update operation to perform.
     """
 
-    unique_columns: typing_extensions.Annotated[typing.List[str], FieldMetadata(alias="uniqueColumns")] = (
-        pydantic.Field()
-    )
+    unique_columns: typing_extensions.Annotated[
+        typing.List[str],
+        FieldMetadata(alias="uniqueColumns"),
+        pydantic.Field(
+            alias="uniqueColumns",
+            description="List of unique columns in the table that upsert operations use to identify if a record with matching values exists. If a matching record exists, the record updates with the specified values. If a matching record doesn't exist, the upsert operation inserts a new record.",
+        ),
+    ]
     """
     List of unique columns in the table that upsert operations use to identify if a record with matching values exists. If a matching record exists, the record updates with the specified values. If a matching record doesn't exist, the upsert operation inserts a new record.
     """

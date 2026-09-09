@@ -9,19 +9,25 @@ from ..core.serialization import FieldMetadata
 
 
 class UpdateRecordData(UniversalBaseModel):
-    skyflow_id: typing_extensions.Annotated[str, FieldMetadata(alias="skyflowID")] = pydantic.Field()
+    skyflow_id: typing_extensions.Annotated[
+        str,
+        FieldMetadata(alias="skyflowID"),
+        pydantic.Field(alias="skyflowID", description="Skyflow ID of the record to update."),
+    ]
     """
     Skyflow ID of the record to update.
     """
 
-    data: typing.Dict[str, typing.Optional[typing.Any]] = pydantic.Field()
+    data: typing.Dict[str, typing.Any] = pydantic.Field()
     """
     Columns and values for the record.
     """
 
-    table_name: typing_extensions.Annotated[typing.Optional[str], FieldMetadata(alias="tableName")] = pydantic.Field(
-        default=None
-    )
+    table_name: typing_extensions.Annotated[
+        typing.Optional[str],
+        FieldMetadata(alias="tableName"),
+        pydantic.Field(alias="tableName", description="Name of the table to update data in."),
+    ] = None
     """
     Name of the table to update data in.
     """

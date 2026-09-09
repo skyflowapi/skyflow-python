@@ -11,7 +11,11 @@ from .google_protobuf_value import GoogleProtobufValue
 
 class GetTokensFromValuesRequestObject(UniversalBaseModel):
     value: GoogleProtobufValue
-    token_group_name: typing_extensions.Annotated[str, FieldMetadata(alias="tokenGroupName")] = pydantic.Field()
+    token_group_name: typing_extensions.Annotated[
+        str,
+        FieldMetadata(alias="tokenGroupName"),
+        pydantic.Field(alias="tokenGroupName", description="Name of the deterministic token group."),
+    ]
     """
     Name of the deterministic token group.
     """

@@ -9,9 +9,11 @@ from ..core.serialization import FieldMetadata
 
 
 class TokenGroupRedactions(UniversalBaseModel):
-    token_group_name: typing_extensions.Annotated[typing.Optional[str], FieldMetadata(alias="tokenGroupName")] = (
-        pydantic.Field(default=None)
-    )
+    token_group_name: typing_extensions.Annotated[
+        typing.Optional[str],
+        FieldMetadata(alias="tokenGroupName"),
+        pydantic.Field(alias="tokenGroupName", description="Name of the token group to redact."),
+    ] = None
     """
     Name of the token group to redact.
     """

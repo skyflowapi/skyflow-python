@@ -2,51 +2,123 @@
 
 # isort: skip_file
 
-from .types import (
-    ColumnRedactions,
-    DeleteResponse,
-    DeleteResponseObject,
-    DetokenizeResponse,
-    DetokenizeResponseObject,
-    ErrorResponse,
-    ErrorResponseError,
-    ExecuteQueryRecordResponse,
-    ExecuteQueryResponse,
-    ExecuteQueryResponseMetadata,
-    GetRequestData,
-    GetResponse,
-    GetTokensFromValuesRequestObject,
-    GetTokensFromValuesResponse,
-    GoogleProtobufValue,
-    HttpCode,
-    InsertRecordData,
-    InsertResponse,
-    RecordResponseObject,
-    TokenGroupRedactions,
-    TokenizeResponseObject,
-    UniqueValue,
-    UpdateRecordData,
-    UpdateResponse,
-    Upsert,
-    UpsertUpdateType,
-)
-from .errors import (
-    BadRequestError,
-    ForbiddenError,
-    InternalServerError,
-    NotFoundError,
-    TooManyRequestsError,
-    UnauthorizedError,
-)
-from . import query, records, tokens
-from .client import AsyncSkyflowAuth, SkyflowAuth
-from .environment import SkyflowAuthEnvironment
-from .version import __version__
+import typing
+from importlib import import_module
+
+if typing.TYPE_CHECKING:
+    from .types import (
+        ColumnRedactions,
+        DeleteResponse,
+        DeleteResponseObject,
+        DetokenizeResponse,
+        DetokenizeResponseObject,
+        ErrorResponse,
+        ErrorResponseError,
+        ExecuteQueryRecordResponse,
+        ExecuteQueryResponse,
+        ExecuteQueryResponseMetadata,
+        GetRequestData,
+        GetResponse,
+        GetTokensFromValuesRequestObject,
+        GetTokensFromValuesResponse,
+        GoogleProtobufValue,
+        HttpCode,
+        InsertRecordData,
+        InsertResponse,
+        RecordResponseObject,
+        TokenGroupRedactions,
+        TokenizeResponseObject,
+        UniqueValue,
+        UpdateRecordData,
+        UpdateResponse,
+        Upsert,
+        UpsertUpdateType,
+    )
+    from .errors import (
+        BadRequestError,
+        ForbiddenError,
+        InternalServerError,
+        NotFoundError,
+        TooManyRequestsError,
+        UnauthorizedError,
+    )
+    from . import query, records, tokens
+    from ._default_clients import DefaultAioHttpClient, DefaultAsyncHttpxClient
+    from .client import AsyncSkyflowAuth, SkyflowAuth
+    from .environment import SkyflowAuthEnvironment
+    from .version import __version__
+_dynamic_imports: typing.Dict[str, str] = {
+    "AsyncSkyflowAuth": ".client",
+    "BadRequestError": ".errors",
+    "ColumnRedactions": ".types",
+    "DefaultAioHttpClient": "._default_clients",
+    "DefaultAsyncHttpxClient": "._default_clients",
+    "DeleteResponse": ".types",
+    "DeleteResponseObject": ".types",
+    "DetokenizeResponse": ".types",
+    "DetokenizeResponseObject": ".types",
+    "ErrorResponse": ".types",
+    "ErrorResponseError": ".types",
+    "ExecuteQueryRecordResponse": ".types",
+    "ExecuteQueryResponse": ".types",
+    "ExecuteQueryResponseMetadata": ".types",
+    "ForbiddenError": ".errors",
+    "GetRequestData": ".types",
+    "GetResponse": ".types",
+    "GetTokensFromValuesRequestObject": ".types",
+    "GetTokensFromValuesResponse": ".types",
+    "GoogleProtobufValue": ".types",
+    "HttpCode": ".types",
+    "InsertRecordData": ".types",
+    "InsertResponse": ".types",
+    "InternalServerError": ".errors",
+    "NotFoundError": ".errors",
+    "RecordResponseObject": ".types",
+    "SkyflowAuth": ".client",
+    "SkyflowAuthEnvironment": ".environment",
+    "TokenGroupRedactions": ".types",
+    "TokenizeResponseObject": ".types",
+    "TooManyRequestsError": ".errors",
+    "UnauthorizedError": ".errors",
+    "UniqueValue": ".types",
+    "UpdateRecordData": ".types",
+    "UpdateResponse": ".types",
+    "Upsert": ".types",
+    "UpsertUpdateType": ".types",
+    "__version__": ".version",
+    "query": ".query",
+    "records": ".records",
+    "tokens": ".tokens",
+}
+
+
+def __getattr__(attr_name: str) -> typing.Any:
+    module_name = _dynamic_imports.get(attr_name)
+    if module_name is None:
+        raise AttributeError(f"No {attr_name} found in _dynamic_imports for module name -> {__name__}")
+    try:
+        module = import_module(module_name, __package__)
+        if module_name == f".{attr_name}":
+            return module
+        else:
+            return getattr(module, attr_name)
+    except ImportError as e:
+        raise ImportError(f"Failed to import {attr_name} from {module_name}: {e}") from e
+    except AttributeError as e:
+        raise AttributeError(f"Failed to get {attr_name} from {module_name}: {e}") from e
+
+
+def __dir__():
+    lazy_attrs = list(_dynamic_imports.keys())
+    return sorted(lazy_attrs)
+
 
 __all__ = [
     "AsyncSkyflowAuth",
     "BadRequestError",
     "ColumnRedactions",
+    "DefaultAioHttpClient",
+    "DefaultAsyncHttpxClient",
     "DeleteResponse",
     "DeleteResponseObject",
     "DetokenizeResponse",

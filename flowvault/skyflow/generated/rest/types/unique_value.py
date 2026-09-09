@@ -7,7 +7,7 @@ from ..core.pydantic_utilities import IS_PYDANTIC_V2, UniversalBaseModel
 
 
 class UniqueValue(UniversalBaseModel):
-    data: typing.Dict[str, typing.Optional[typing.Any]] = pydantic.Field()
+    data: typing.Dict[str, typing.Any] = pydantic.Field()
     """
     Columns names and values for the unique value entry.
     """

@@ -2,4 +2,7 @@
 
 import typing
 
-GoogleProtobufValue = typing.Optional[typing.Any]
+GoogleProtobufValue = typing.Any
+"""
+Represents a dynamically typed value which can be either null, a number, a string, a boolean, a recursive struct value, or a list of values.
+"""

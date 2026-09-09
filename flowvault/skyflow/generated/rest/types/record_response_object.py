@@ -9,24 +9,30 @@ from ..core.serialization import FieldMetadata
 
 
 class RecordResponseObject(UniversalBaseModel):
-    skyflow_id: typing_extensions.Annotated[str, FieldMetadata(alias="skyflowID")] = pydantic.Field()
+    skyflow_id: typing_extensions.Annotated[
+        str,
+        FieldMetadata(alias="skyflowID"),
+        pydantic.Field(alias="skyflowID", description="Skyflow ID for the inserted record"),
+    ]
     """
     Skyflow ID for the inserted record
     """
 
-    tokens: typing.Optional[typing.Dict[str, typing.Optional[typing.Any]]] = pydantic.Field(default=None)
+    tokens: typing.Optional[typing.Dict[str, typing.Any]] = pydantic.Field(default=None)
     """
     Columns and tokens for the record.
     """
 
-    data: typing.Optional[typing.Dict[str, typing.Optional[typing.Any]]] = pydantic.Field(default=None)
+    data: typing.Optional[typing.Dict[str, typing.Any]] = pydantic.Field(default=None)
     """
     Columns and values for the record. For file columns, the value is an object containing file metadata: fileName, mimeType, sizeBytes, fileStatus (PENDING | READY | FAILED | SCAN_ERROR), fileFailureReason (populated only when fileStatus is FAILED), url (pre-signed download URL, populated only when fileStatus is READY), and urlExpiresAt (UTC expiry of the URL).
     """
 
     hashed_data: typing_extensions.Annotated[
-        typing.Optional[typing.Dict[str, typing.Optional[typing.Any]]], FieldMetadata(alias="hashedData")
-    ] = pydantic.Field(default=None)
+        typing.Optional[typing.Dict[str, typing.Any]],
+        FieldMetadata(alias="hashedData"),
+        pydantic.Field(alias="hashedData", description="Columns and hashed values for the record."),
+    ] = None
     """
     Columns and hashed values for the record.
     """
@@ -36,14 +42,20 @@ class RecordResponseObject(UniversalBaseModel):
     Error message, if any.
     """
 
-    http_code: typing_extensions.Annotated[int, FieldMetadata(alias="httpCode")] = pydantic.Field()
+    http_code: typing_extensions.Annotated[
+        int,
+        FieldMetadata(alias="httpCode"),
+        pydantic.Field(alias="httpCode", description="HTTP status code of the response."),
+    ]
     """
     HTTP status code of the response.
     """
 
-    table_name: typing_extensions.Annotated[typing.Optional[str], FieldMetadata(alias="tableName")] = pydantic.Field(
-        default=None
-    )
+    table_name: typing_extensions.Annotated[
+        typing.Optional[str],
+        FieldMetadata(alias="tableName"),
+        pydantic.Field(alias="tableName", description="Name of the table that the record belongs to."),
+    ] = None
     """
     Name of the table that the record belongs to.
     """

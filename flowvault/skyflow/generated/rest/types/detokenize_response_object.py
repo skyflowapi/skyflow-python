@@ -16,7 +16,11 @@ class DetokenizeResponseObject(UniversalBaseModel):
     """
 
     value: GoogleProtobufValue
-    token_group_name: typing_extensions.Annotated[str, FieldMetadata(alias="tokenGroupName")] = pydantic.Field()
+    token_group_name: typing_extensions.Annotated[
+        str,
+        FieldMetadata(alias="tokenGroupName"),
+        pydantic.Field(alias="tokenGroupName", description="Name of the token group."),
+    ]
     """
     Name of the token group.
     """
@@ -26,14 +30,16 @@ class DetokenizeResponseObject(UniversalBaseModel):
     Error message, if any.
     """
 
-    http_code: typing_extensions.Annotated[typing.Optional[int], FieldMetadata(alias="httpCode")] = pydantic.Field(
-        default=None
-    )
+    http_code: typing_extensions.Annotated[
+        typing.Optional[int],
+        FieldMetadata(alias="httpCode"),
+        pydantic.Field(alias="httpCode", description="HTTP status code of the response."),
+    ] = None
     """
     HTTP status code of the response.
     """
 
-    metadata: typing.Optional[typing.Dict[str, typing.Optional[typing.Any]]] = pydantic.Field(default=None)
+    metadata: typing.Optional[typing.Dict[str, typing.Any]] = pydantic.Field(default=None)
     """
     Additional metadata associated with the token, such as tableName or skyflowID.
     """

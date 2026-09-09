@@ -7,7 +7,7 @@ from ..core.pydantic_utilities import IS_PYDANTIC_V2, UniversalBaseModel
 
 
 class ExecuteQueryRecordResponse(UniversalBaseModel):
-    data: typing.Optional[typing.Dict[str, typing.Optional[typing.Any]]] = pydantic.Field(default=None)
+    data: typing.Optional[typing.Dict[str, typing.Any]] = pydantic.Field(default=None)
     """
     Fields and values for the record.
     """

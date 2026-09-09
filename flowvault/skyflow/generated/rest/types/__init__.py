@@ -2,32 +2,86 @@
 
 # isort: skip_file
 
-from .column_redactions import ColumnRedactions
-from .delete_response import DeleteResponse
-from .delete_response_object import DeleteResponseObject
-from .detokenize_response import DetokenizeResponse
-from .detokenize_response_object import DetokenizeResponseObject
-from .error_response import ErrorResponse
-from .error_response_error import ErrorResponseError
-from .execute_query_record_response import ExecuteQueryRecordResponse
-from .execute_query_response import ExecuteQueryResponse
-from .execute_query_response_metadata import ExecuteQueryResponseMetadata
-from .get_request_data import GetRequestData
-from .get_response import GetResponse
-from .get_tokens_from_values_request_object import GetTokensFromValuesRequestObject
-from .get_tokens_from_values_response import GetTokensFromValuesResponse
-from .google_protobuf_value import GoogleProtobufValue
-from .http_code import HttpCode
-from .insert_record_data import InsertRecordData
-from .insert_response import InsertResponse
-from .record_response_object import RecordResponseObject
-from .token_group_redactions import TokenGroupRedactions
-from .tokenize_response_object import TokenizeResponseObject
-from .unique_value import UniqueValue
-from .update_record_data import UpdateRecordData
-from .update_response import UpdateResponse
-from .upsert import Upsert
-from .upsert_update_type import UpsertUpdateType
+import typing
+from importlib import import_module
+
+if typing.TYPE_CHECKING:
+    from .column_redactions import ColumnRedactions
+    from .delete_response import DeleteResponse
+    from .delete_response_object import DeleteResponseObject
+    from .detokenize_response import DetokenizeResponse
+    from .detokenize_response_object import DetokenizeResponseObject
+    from .error_response import ErrorResponse
+    from .error_response_error import ErrorResponseError
+    from .execute_query_record_response import ExecuteQueryRecordResponse
+    from .execute_query_response import ExecuteQueryResponse
+    from .execute_query_response_metadata import ExecuteQueryResponseMetadata
+    from .get_request_data import GetRequestData
+    from .get_response import GetResponse
+    from .get_tokens_from_values_request_object import GetTokensFromValuesRequestObject
+    from .get_tokens_from_values_response import GetTokensFromValuesResponse
+    from .google_protobuf_value import GoogleProtobufValue
+    from .http_code import HttpCode
+    from .insert_record_data import InsertRecordData
+    from .insert_response import InsertResponse
+    from .record_response_object import RecordResponseObject
+    from .token_group_redactions import TokenGroupRedactions
+    from .tokenize_response_object import TokenizeResponseObject
+    from .unique_value import UniqueValue
+    from .update_record_data import UpdateRecordData
+    from .update_response import UpdateResponse
+    from .upsert import Upsert
+    from .upsert_update_type import UpsertUpdateType
+_dynamic_imports: typing.Dict[str, str] = {
+    "ColumnRedactions": ".column_redactions",
+    "DeleteResponse": ".delete_response",
+    "DeleteResponseObject": ".delete_response_object",
+    "DetokenizeResponse": ".detokenize_response",
+    "DetokenizeResponseObject": ".detokenize_response_object",
+    "ErrorResponse": ".error_response",
+    "ErrorResponseError": ".error_response_error",
+    "ExecuteQueryRecordResponse": ".execute_query_record_response",
+    "ExecuteQueryResponse": ".execute_query_response",
+    "ExecuteQueryResponseMetadata": ".execute_query_response_metadata",
+    "GetRequestData": ".get_request_data",
+    "GetResponse": ".get_response",
+    "GetTokensFromValuesRequestObject": ".get_tokens_from_values_request_object",
+    "GetTokensFromValuesResponse": ".get_tokens_from_values_response",
+    "GoogleProtobufValue": ".google_protobuf_value",
+    "HttpCode": ".http_code",
+    "InsertRecordData": ".insert_record_data",
+    "InsertResponse": ".insert_response",
+    "RecordResponseObject": ".record_response_object",
+    "TokenGroupRedactions": ".token_group_redactions",
+    "TokenizeResponseObject": ".tokenize_response_object",
+    "UniqueValue": ".unique_value",
+    "UpdateRecordData": ".update_record_data",
+    "UpdateResponse": ".update_response",
+    "Upsert": ".upsert",
+    "UpsertUpdateType": ".upsert_update_type",
+}
+
+
+def __getattr__(attr_name: str) -> typing.Any:
+    module_name = _dynamic_imports.get(attr_name)
+    if module_name is None:
+        raise AttributeError(f"No {attr_name} found in _dynamic_imports for module name -> {__name__}")
+    try:
+        module = import_module(module_name, __package__)
+        if module_name == f".{attr_name}":
+            return module
+        else:
+            return getattr(module, attr_name)
+    except ImportError as e:
+        raise ImportError(f"Failed to import {attr_name} from {module_name}: {e}") from e
+    except AttributeError as e:
+        raise AttributeError(f"Failed to get {attr_name} from {module_name}: {e}") from e
+
+
+def __dir__():
+    lazy_attrs = list(_dynamic_imports.keys())
+    return sorted(lazy_attrs)
+
 
 __all__ = [
     "ColumnRedactions",

@@ -10,14 +10,16 @@ from .upsert import Upsert
 
 
 class InsertRecordData(UniversalBaseModel):
-    data: typing.Dict[str, typing.Optional[typing.Any]] = pydantic.Field()
+    data: typing.Dict[str, typing.Any] = pydantic.Field()
     """
     Columns and values for the record.
     """
 
-    table_name: typing_extensions.Annotated[typing.Optional[str], FieldMetadata(alias="tableName")] = pydantic.Field(
-        default=None
-    )
+    table_name: typing_extensions.Annotated[
+        typing.Optional[str],
+        FieldMetadata(alias="tableName"),
+        pydantic.Field(alias="tableName", description="Name of the table to insert data into."),
+    ] = None
     """
     Name of the table to insert data into.
     """
