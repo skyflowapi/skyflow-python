@@ -6,6 +6,7 @@ import pydantic
 import typing_extensions
 from ..core.pydantic_utilities import IS_PYDANTIC_V2, UniversalBaseModel
 from ..core.serialization import FieldMetadata
+from .update_record_data_update_type import UpdateRecordDataUpdateType
 
 
 class UpdateRecordData(UniversalBaseModel):
@@ -30,6 +31,15 @@ class UpdateRecordData(UniversalBaseModel):
     ] = None
     """
     Name of the table to update data in.
+    """
+
+    update_type: typing_extensions.Annotated[
+        typing.Optional[UpdateRecordDataUpdateType],
+        FieldMetadata(alias="updateType"),
+        pydantic.Field(alias="updateType", description="Type of update operation to perform."),
+    ] = None
+    """
+    Type of update operation to perform.
     """
 
     if IS_PYDANTIC_V2:

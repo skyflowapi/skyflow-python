@@ -15,6 +15,7 @@ from ..types.update_record_data import UpdateRecordData
 from ..types.update_response import UpdateResponse
 from ..types.upsert import Upsert
 from .raw_client import AsyncRawRecordsClient, RawRecordsClient
+from .types.update_request_update_type import UpdateRequestUpdateType
 
 # this is used as the default value for optional parameters
 OMIT = typing.cast(typing.Any, ...)
@@ -264,6 +265,7 @@ class RecordsClient:
         vault_id: str,
         table_name: str,
         records: typing.Sequence[UpdateRecordData],
+        update_type: typing.Optional[UpdateRequestUpdateType] = OMIT,
         request_options: typing.Optional[RequestOptions] = None,
     ) -> UpdateResponse:
         """
@@ -279,6 +281,9 @@ class RecordsClient:
 
         records : typing.Sequence[UpdateRecordData]
             Data to update as a list of records.
+
+        update_type : typing.Optional[UpdateRequestUpdateType]
+            Type of update operation to perform.
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
@@ -323,7 +328,11 @@ class RecordsClient:
         )
         """
         _response = self._raw_client.update_records(
-            vault_id=vault_id, table_name=table_name, records=records, request_options=request_options
+            vault_id=vault_id,
+            table_name=table_name,
+            records=records,
+            update_type=update_type,
+            request_options=request_options,
         )
         return _response.data
 
@@ -596,6 +605,7 @@ class AsyncRecordsClient:
         vault_id: str,
         table_name: str,
         records: typing.Sequence[UpdateRecordData],
+        update_type: typing.Optional[UpdateRequestUpdateType] = OMIT,
         request_options: typing.Optional[RequestOptions] = None,
     ) -> UpdateResponse:
         """
@@ -611,6 +621,9 @@ class AsyncRecordsClient:
 
         records : typing.Sequence[UpdateRecordData]
             Data to update as a list of records.
+
+        update_type : typing.Optional[UpdateRequestUpdateType]
+            Type of update operation to perform.
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
@@ -663,6 +676,10 @@ class AsyncRecordsClient:
         asyncio.run(main())
         """
         _response = await self._raw_client.update_records(
-            vault_id=vault_id, table_name=table_name, records=records, request_options=request_options
+            vault_id=vault_id,
+            table_name=table_name,
+            records=records,
+            update_type=update_type,
+            request_options=request_options,
         )
         return _response.data

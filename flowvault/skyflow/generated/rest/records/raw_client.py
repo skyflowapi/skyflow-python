@@ -25,6 +25,7 @@ from ..types.unique_value import UniqueValue
 from ..types.update_record_data import UpdateRecordData
 from ..types.update_response import UpdateResponse
 from ..types.upsert import Upsert
+from .types.update_request_update_type import UpdateRequestUpdateType
 from pydantic import ValidationError
 
 # this is used as the default value for optional parameters
@@ -400,6 +401,7 @@ class RawRecordsClient:
         vault_id: str,
         table_name: str,
         records: typing.Sequence[UpdateRecordData],
+        update_type: typing.Optional[UpdateRequestUpdateType] = OMIT,
         request_options: typing.Optional[RequestOptions] = None,
     ) -> HttpResponse[UpdateResponse]:
         """
@@ -415,6 +417,9 @@ class RawRecordsClient:
 
         records : typing.Sequence[UpdateRecordData]
             Data to update as a list of records.
+
+        update_type : typing.Optional[UpdateRequestUpdateType]
+            Type of update operation to perform.
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
@@ -433,6 +438,7 @@ class RawRecordsClient:
                 "records": convert_and_respect_annotation_metadata(
                     object_=records, annotation=typing.Sequence[UpdateRecordData], direction="write"
                 ),
+                "updateType": update_type,
             },
             headers={
                 "content-type": "application/json",
@@ -873,6 +879,7 @@ class AsyncRawRecordsClient:
         vault_id: str,
         table_name: str,
         records: typing.Sequence[UpdateRecordData],
+        update_type: typing.Optional[UpdateRequestUpdateType] = OMIT,
         request_options: typing.Optional[RequestOptions] = None,
     ) -> AsyncHttpResponse[UpdateResponse]:
         """
@@ -888,6 +895,9 @@ class AsyncRawRecordsClient:
 
         records : typing.Sequence[UpdateRecordData]
             Data to update as a list of records.
+
+        update_type : typing.Optional[UpdateRequestUpdateType]
+            Type of update operation to perform.
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
@@ -906,6 +916,7 @@ class AsyncRawRecordsClient:
                 "records": convert_and_respect_annotation_metadata(
                     object_=records, annotation=typing.Sequence[UpdateRecordData], direction="write"
                 ),
+                "updateType": update_type,
             },
             headers={
                 "content-type": "application/json",

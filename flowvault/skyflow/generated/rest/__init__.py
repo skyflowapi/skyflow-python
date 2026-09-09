@@ -30,6 +30,7 @@ if typing.TYPE_CHECKING:
         TokenizeResponseObject,
         UniqueValue,
         UpdateRecordData,
+        UpdateRecordDataUpdateType,
         UpdateResponse,
         Upsert,
         UpsertUpdateType,
@@ -46,6 +47,7 @@ if typing.TYPE_CHECKING:
     from ._default_clients import DefaultAioHttpClient, DefaultAsyncHttpxClient
     from .client import AsyncSkyflowAuth, SkyflowAuth
     from .environment import SkyflowAuthEnvironment
+    from .records import UpdateRequestUpdateType
     from .version import __version__
 _dynamic_imports: typing.Dict[str, str] = {
     "AsyncSkyflowAuth": ".client",
@@ -82,6 +84,8 @@ _dynamic_imports: typing.Dict[str, str] = {
     "UnauthorizedError": ".errors",
     "UniqueValue": ".types",
     "UpdateRecordData": ".types",
+    "UpdateRecordDataUpdateType": ".types",
+    "UpdateRequestUpdateType": ".records",
     "UpdateResponse": ".types",
     "Upsert": ".types",
     "UpsertUpdateType": ".types",
@@ -148,6 +152,8 @@ __all__ = [
     "UnauthorizedError",
     "UniqueValue",
     "UpdateRecordData",
+    "UpdateRecordDataUpdateType",
+    "UpdateRequestUpdateType",
     "UpdateResponse",
     "Upsert",
     "UpsertUpdateType",

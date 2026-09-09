@@ -9,7 +9,7 @@ from skyflow.generated.rest.core import ApiError
 from skyflow.vault.controller import VaultController
 from skyflow.vault.data import (
     UpsertOptions,
-    ColumnRedaction,
+    ColumnRedactions,
     InsertRequestRecord,
     InsertRequest,
     GetRequest,
@@ -465,7 +465,7 @@ class TestVaultGet(unittest.TestCase):
         self.get_api.with_raw_response.get_records.return_value = fake_get_raw_response([])
 
         self.vault.get(GetRequest(
-            table_name="t1", ids=["id1"], column_redactions=[ColumnRedaction(column_name="ssn", redaction="mask1")],
+            table_name="t1", ids=["id1"], column_redactions=[ColumnRedactions(column_name="ssn", redaction="mask1")],
         ))
 
         _, kwargs = self.get_api.with_raw_response.get_records.call_args
@@ -641,13 +641,20 @@ class TestVaultUpdate(unittest.TestCase):
         self.assertIsNone(kwargs["table_name"])
         self.assertEqual(kwargs["records"][0].table_name, "t2")
 
-    def test_update_type_is_not_sent_to_the_update_endpoint(self):
+    def test_update_type_is_sent_to_the_update_endpoint(self):
         self.update_api.with_raw_response.update_records.return_value = fake_update_raw_response([])
         request = UpdateRequest(
             records=[{"skyflow_id": "id1", "data": {"a": 1}}], table_name="t1", update_type=UpsertType.REPLACE,
         )
 
         self.vault.update(request)
+
+        _, kwargs = self.update_api.with_raw_response.update_records.call_args
+        self.assertEqual(kwargs["update_type"], "REPLACE")
+
+    def test_update_type_omitted_when_not_set(self):
+        self.update_api.with_raw_response.update_records.return_value = fake_update_raw_response([])
+        self.vault.update(UpdateRequest(records=[{"skyflow_id": "id1", "data": {"a": 1}}], table_name="t1"))
 
         _, kwargs = self.update_api.with_raw_response.update_records.call_args
         self.assertNotIn("update_type", kwargs)
@@ -1001,7 +1008,8 @@ class TestVaultDetokenize(unittest.TestCase):
         self.assertEqual(record["token"], "tok1")
         self.assertEqual(record["value"], "john doe")
         self.assertEqual(record["token_group_name"], "deterministic_string")
-        self.assertEqual(record["metadata"], {"skyflow_id": "sid", "table_name": "t1"})
+        self.assertEqual(record["metadata"].skyflow_id, "sid")
+        self.assertEqual(record["metadata"].table_name, "t1")
         self.assertEqual(record["http_code"], 200)
         self.assertIsNone(record["error"])
 

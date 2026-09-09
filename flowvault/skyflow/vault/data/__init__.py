@@ -1,5 +1,5 @@
 from ._upsert_options import UpsertOptions
-from ._column_redaction import ColumnRedaction
+from ._column_redactions import ColumnRedactions
 from ._insert_request_record import InsertRequestRecord
 from ._insert_request import InsertRequest
 from ._insert_response import InsertResponse
@@ -13,6 +13,7 @@ from ._delete_response import DeleteResponse
 from ._token_group_redactions import TokenGroupRedactions
 from ._detokenize_request import DetokenizeRequest
 from ._detokenize_response import DetokenizeResponse
+from ._detokenize_response_record_metadata import DetokenizeResponseRecordMetadata
 from ._query_request import QueryRequest
 from ._query_response import QueryResponse
 from ._bulk_insert_request_record import BulkInsertRequestRecord

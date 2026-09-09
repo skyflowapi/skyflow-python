@@ -1,11 +1,11 @@
 from typing import List
 
-from ._column_redaction import ColumnRedaction
+from ._column_redactions import ColumnRedactions
 
 
 class GetRequest:
     def __init__(self, table_name: str = None, ids: list = None, unique_values: list = None, columns: list = None,
-                 column_redactions: List[ColumnRedaction] = None, limit: int = None, offset: int = None,
+                 column_redactions: List[ColumnRedactions] = None, limit: int = None, offset: int = None,
                  records: list = None):
         self.table_name = table_name
         self.ids = ids

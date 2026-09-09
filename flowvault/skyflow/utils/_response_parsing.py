@@ -23,10 +23,11 @@ def parse_hashed_data(raw):
 def parse_metadata(raw):
     if raw is None:
         return None
-    return {
-        'skyflow_id': raw.get('skyflowID', raw.get('skyflowId', raw.get('skyflow_id'))),
-        'table_name': raw.get('table', raw.get('tableName', raw.get('table_name'))),
-    }
+    from skyflow.vault.data._detokenize_response_record_metadata import DetokenizeResponseRecordMetadata
+    return DetokenizeResponseRecordMetadata(
+        skyflow_id=raw.get('skyflowID', raw.get('skyflowId', raw.get('skyflow_id'))),
+        table_name=raw.get('table', raw.get('tableName', raw.get('table_name'))),
+    )
 
 
 def _parse_entries(raw_value, to_entry):

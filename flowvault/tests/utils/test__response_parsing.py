@@ -56,10 +56,10 @@ class TestParseHashedData(unittest.TestCase):
 
 class TestParseMetadata(unittest.TestCase):
     def test_reads_both_casings(self):
-        self.assertEqual(parse_metadata({"skyflowID": "id", "tableName": "t1"}),
-                         {"skyflow_id": "id", "table_name": "t1"})
-        self.assertEqual(parse_metadata({"skyflowId": "id", "table": "t1"}),
-                         {"skyflow_id": "id", "table_name": "t1"})
+        m1 = parse_metadata({"skyflowID": "id", "tableName": "t1"})
+        self.assertEqual((m1.skyflow_id, m1.table_name), ("id", "t1"))
+        m2 = parse_metadata({"skyflowId": "id", "table": "t1"})
+        self.assertEqual((m2.skyflow_id, m2.table_name), ("id", "t1"))
 
     def test_none_returns_none(self):
         self.assertIsNone(parse_metadata(None))

@@ -6,7 +6,7 @@ from skyflow.vault.data import (
     BulkInsertOptions,
     BulkDetokenizeOptions,
     UpsertOptions,
-    ColumnRedaction,
+    ColumnRedactions,
     InsertRequestRecord,
     InsertRequest,
     InsertResponse,
@@ -71,9 +71,9 @@ class TestUpsertOptions(unittest.TestCase):
         self.assertIsNone(opts.update_type)
 
 
-class TestColumnRedaction(unittest.TestCase):
+class TestColumnRedactions(unittest.TestCase):
     def test_fields_stored(self):
-        cr = ColumnRedaction(column_name="email", redaction="MASKED")
+        cr = ColumnRedactions(column_name="email", redaction="MASKED")
         self.assertEqual(cr.column_name, "email")
         self.assertEqual(cr.redaction, "MASKED")
 
@@ -108,7 +108,7 @@ class TestGetRequest(unittest.TestCase):
     def test_all_fields_stored(self):
         request = GetRequest(
             table_name="t1", ids=["id1"], unique_values=[{"email": "a@b.com"}], columns=["a", "b"],
-            column_redactions=[ColumnRedaction(column_name="a", redaction="mask1")], limit=10, offset=5,
+            column_redactions=[ColumnRedactions(column_name="a", redaction="mask1")], limit=10, offset=5,
         )
         self.assertEqual(request.unique_values, [{"email": "a@b.com"}])
         self.assertEqual(request.columns, ["a", "b"])
@@ -253,7 +253,7 @@ class TestQueryResponse(unittest.TestCase):
 class TestGetRecordRequest(unittest.TestCase):
     def test_fields_stored(self):
         record = GetRecordRequest(table_name="t1", ids=["id1"], columns=["a"],
-                                  column_redactions=[ColumnRedaction(column_name="a", redaction="MASKED")],
+                                  column_redactions=[ColumnRedactions(column_name="a", redaction="MASKED")],
                                   unique_values=[{"email": "a@b.com"}])
         self.assertEqual(record.table_name, "t1")
         self.assertEqual(record.ids, ["id1"])

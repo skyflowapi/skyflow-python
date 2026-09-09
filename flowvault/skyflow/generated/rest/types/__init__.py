@@ -29,6 +29,7 @@ if typing.TYPE_CHECKING:
     from .tokenize_response_object import TokenizeResponseObject
     from .unique_value import UniqueValue
     from .update_record_data import UpdateRecordData
+    from .update_record_data_update_type import UpdateRecordDataUpdateType
     from .update_response import UpdateResponse
     from .upsert import Upsert
     from .upsert_update_type import UpsertUpdateType
@@ -56,6 +57,7 @@ _dynamic_imports: typing.Dict[str, str] = {
     "TokenizeResponseObject": ".tokenize_response_object",
     "UniqueValue": ".unique_value",
     "UpdateRecordData": ".update_record_data",
+    "UpdateRecordDataUpdateType": ".update_record_data_update_type",
     "UpdateResponse": ".update_response",
     "Upsert": ".upsert",
     "UpsertUpdateType": ".upsert_update_type",
@@ -107,6 +109,7 @@ __all__ = [
     "TokenizeResponseObject",
     "UniqueValue",
     "UpdateRecordData",
+    "UpdateRecordDataUpdateType",
     "UpdateResponse",
     "Upsert",
     "UpsertUpdateType",

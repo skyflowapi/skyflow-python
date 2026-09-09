@@ -19,6 +19,7 @@ from skyflow.generated.rest import (
 )
 from skyflow.generated.rest.core import ApiError
 from skyflow.utils import SkyflowMessages, get_metrics
+from skyflow.utils.enums import UpsertType
 from skyflow.utils._response_parsing import parse_tokens, parse_hashed_data, parse_metadata
 from skyflow.utils._batching import (
     resolve_batch_config,
@@ -176,11 +177,13 @@ class VaultController(BaseVaultController):
             ]
 
             log_info(SkyflowMessages.Info.UPDATE_TRIGGERED.value, self._vault_client.get_logger())
+            update_type_kwargs = self.__omit_none(update_type=self.__to_update_type(request.update_type))
             raw_response = records_api.with_raw_response.update_records(
                 vault_id=self._vault_client.get_vault_id(),
                 table_name=request.table_name,
                 records=wire_records,
                 request_options=self.__request_options(),
+                **update_type_kwargs,
             )
             request_id = self.__extract_request_id(raw_response.headers)
             records, errors = self.__split_success_and_errors(
@@ -548,6 +551,11 @@ class VaultController(BaseVaultController):
 
     def __omit_none(self, **kwargs):
         return {k: v for k, v in kwargs.items() if v is not None}
+
+    def __to_update_type(self, update_type):
+        if update_type is None:
+            return None
+        return update_type.value if isinstance(update_type, UpsertType) else update_type
 
     def __build_headers(self):
         headers = {SKY_META_DATA_HEADER: json.dumps(get_metrics())}

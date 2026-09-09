@@ -21,6 +21,9 @@ from skyflow.utils._http_config import (
     DEFAULT_MAX_RETRIES,
     DEFAULT_INITIAL_RETRY_DELAY_MILLIS,
     DEFAULT_MAX_RETRY_DELAY_MILLIS,
+    DEFAULT_MAX_CONNECTIONS,
+    DEFAULT_MAX_KEEPALIVE_CONNECTIONS,
+    DEFAULT_KEEPALIVE_EXPIRY,
     resolve_setting,
 )
 from skyflow.utils._retry import RetryTransport, AsyncRetryTransport
@@ -62,19 +65,27 @@ class VaultClient(BaseVaultClient):
             self._resolve(TIMEOUT_KEY, DEFAULT_TIMEOUT),
         )
 
+    def _build_limits(self):
+        return httpx.Limits(
+            max_connections=DEFAULT_MAX_CONNECTIONS,
+            max_keepalive_connections=DEFAULT_MAX_KEEPALIVE_CONNECTIONS,
+            keepalive_expiry=DEFAULT_KEEPALIVE_EXPIRY,
+        )
+
     def initialize_api_client(self, vault_url, bearer_token):
         self.__close_httpx_clients()
         timeout = self._build_timeout()
+        limits = self._build_limits()
         max_retries, initial_millis, max_millis, call_timeout = self._retry_params()
         sync_client = httpx.Client(
             timeout=timeout,
             follow_redirects=True,
-            transport=RetryTransport(httpx.HTTPTransport(), max_retries, initial_millis, max_millis, call_timeout),
+            transport=RetryTransport(httpx.HTTPTransport(limits=limits), max_retries, initial_millis, max_millis, call_timeout),
         )
         async_client = httpx.AsyncClient(
             timeout=timeout,
             follow_redirects=True,
-            transport=AsyncRetryTransport(httpx.AsyncHTTPTransport(), max_retries, initial_millis, max_millis, call_timeout),
+            transport=AsyncRetryTransport(httpx.AsyncHTTPTransport(limits=limits), max_retries, initial_millis, max_millis, call_timeout),
         )
         self._sync_httpx_client = sync_client
         self._async_httpx_client = async_client

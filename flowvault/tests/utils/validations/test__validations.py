@@ -16,7 +16,7 @@ from skyflow.utils.validations import (
 )
 from skyflow.vault.data import (
     UpsertOptions,
-    ColumnRedaction,
+    ColumnRedactions,
     InsertRequestRecord,
     InsertRequest,
     GetRequest,
