@@ -53,11 +53,6 @@ class TestVaultClient(unittest.TestCase):
         result = self.vault_client.get_tokens_api()
         self.assertEqual(result, self.vault_client._api_client.tokens)
 
-    def test_get_query_api_returns_query(self):
-        self.vault_client._api_client = MagicMock()
-        result = self.vault_client.get_query_api()
-        self.assertEqual(result, self.vault_client._api_client.query)
-
     def test_get_async_records_api_returns_records(self):
         self.vault_client._async_api_client = MagicMock()
         result = self.vault_client.get_async_records_api()

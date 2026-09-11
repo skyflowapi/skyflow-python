@@ -26,10 +26,6 @@ class IVaultController(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def query(self, request):
-        raise NotImplementedError
-
-    @abstractmethod
     def detokenize(self, request):
         raise NotImplementedError
 

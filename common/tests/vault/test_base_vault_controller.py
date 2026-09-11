@@ -20,9 +20,6 @@ class DummyVaultController(BaseVaultController):
     def delete(self, request):
         raise NotImplementedError
 
-    def query(self, request):
-        raise NotImplementedError
-
     def detokenize(self, request):
         raise NotImplementedError
 
@@ -36,11 +33,11 @@ class TestBaseVaultControllerAbstractContract(unittest.TestCase):
             Incomplete(vault_client=None)
 
     def test_cannot_instantiate_missing_any_single_method(self):
-        """Java-interface-style: every one of the six operations is independently required --
+        """Java-interface-style: every one of the five operations is independently required --
         omitting any single one (not just insert) blocks instantiation."""
-        for missing in ("insert", "get", "update", "delete", "query", "detokenize"):
+        for missing in ("insert", "get", "update", "delete", "detokenize"):
             methods = {name: (lambda self, request: None) for name in
-                       ("insert", "get", "update", "delete", "query", "detokenize") if name != missing}
+                       ("insert", "get", "update", "delete", "detokenize") if name != missing}
             Incomplete = type("Incomplete", (BaseVaultController,), methods)
             with self.assertRaises(TypeError, msg=f"missing only '{missing}' should still fail to instantiate"):
                 Incomplete(vault_client=None)

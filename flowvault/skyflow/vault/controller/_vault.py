@@ -35,7 +35,6 @@ from skyflow.utils.validations import (
     validate_update_request,
     validate_delete_request,
     validate_detokenize_request,
-    validate_query_request,
     validate_bulk_insert_request,
     validate_bulk_detokenize_request,
 )
@@ -55,10 +54,6 @@ from skyflow.vault.data import (
     DetokenizeRequest,
     DetokenizeResponse,
     DetokenizeResponseRecord,
-    QueryRequest,
-    QueryResponse,
-    QueryResponseRecord,
-    QueryResponseMetadata,
     BulkInsertRequest,
     BulkInsertResponse,
     BulkInsertResponseRecord,
@@ -73,7 +68,6 @@ from skyflow.vault.data import (
     GetOptions,
     UpdateOptions,
     DeleteOptions,
-    QueryOptions,
     DetokenizeOptions,
     RequestContext,
 )
@@ -85,7 +79,6 @@ OPERATION_INSERT = "INSERT"
 OPERATION_GET = "GET"
 OPERATION_UPDATE = "UPDATE"
 OPERATION_DELETE = "DELETE"
-OPERATION_QUERY = "QUERY"
 OPERATION_DETOKENIZE = "DETOKENIZE"
 
 
@@ -251,30 +244,6 @@ class VaultController(BaseVaultController):
 
         log_info(SkyflowMessages.Info.DELETE_SUCCESS.value, self._vault_client.get_logger())
         return DeleteResponse(records=records)
-
-    def query(self, request: QueryRequest, options: QueryOptions = None) -> QueryResponse:
-        log_info(SkyflowMessages.Info.VALIDATE_QUERY_REQUEST.value, self._vault_client.get_logger())
-        validate_query_request(self._vault_client.get_logger(), request)
-        log_info(SkyflowMessages.Info.QUERY_REQUEST_RESOLVED.value, self._vault_client.get_logger())
-        self._vault_client.initialize_client_configuration()
-
-        query_api = self._vault_client.get_query_api()
-
-        try:
-            log_info(SkyflowMessages.Info.QUERY_TRIGGERED.value, self._vault_client.get_logger())
-            raw_response = query_api.with_raw_response.execute_query(
-                vault_id=self._vault_client.get_vault_id(),
-                query=request.query,
-                request_options=self.__unary_request_options(OPERATION_QUERY, options),
-            )
-            records = [QueryResponseRecord(data=getattr(record, 'data', None)) for record in (raw_response.data.records or [])]
-            metadata = self.__query_metadata(raw_response.data)
-        except Exception as e:
-            log_error_log(SkyflowMessages.ErrorLogs.QUERY_RECORDS_REJECTED.value, self._vault_client.get_logger())
-            raise self.__to_skyflow_error(e)
-
-        log_info(SkyflowMessages.Info.QUERY_SUCCESS.value, self._vault_client.get_logger())
-        return QueryResponse(records=records, metadata=metadata)
 
     def detokenize(self, request: DetokenizeRequest, options: DetokenizeOptions = None) -> DetokenizeResponse:
         log_info(SkyflowMessages.Info.VALIDATE_DETOKENIZE_REQUEST.value, self._vault_client.get_logger())
@@ -745,10 +714,5 @@ class VaultController(BaseVaultController):
             request_id=request_id if error is not None else None,
         )
 
-    def __query_metadata(self, data):
-        meta = getattr(data, 'metadata', None)
-        if meta is None:
-            return None
-        return QueryResponseMetadata(columns=getattr(meta, 'columns', None))
 
 

@@ -43,7 +43,6 @@ python flowvault/samples/vault_api/bulk_insert_async.py   # async samples run th
 | [update_record.py](vault_api/update_record.py) | Update a record |
 | [delete_records.py](vault_api/delete_records.py) | Delete records |
 | [detokenize_records.py](vault_api/detokenize_records.py) | Detokenize tokens |
-| [query_records.py](vault_api/query_records.py) | Run a SQL `SELECT` query |
 
 ## Bulk operations
 

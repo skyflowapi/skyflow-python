@@ -201,11 +201,6 @@ def validate_detokenize_request(logger, request):
             raise SkyflowError(SkyflowMessages.Error.INVALID_TOKEN_GROUP_REDACTIONS_IN_DETOKENIZE.value, invalid_input_error_code)
 
 
-def validate_query_request(logger, request):
-    if not isinstance(request.query, str) or not request.query.strip():
-        raise SkyflowError(SkyflowMessages.Error.INVALID_QUERY_IN_QUERY.value, invalid_input_error_code)
-
-
 def validate_bulk_insert_request(logger, request):
     if not isinstance(request.records, list) or not all(isinstance(r, BulkInsertRequestRecord) for r in request.records):
         raise SkyflowError(SkyflowMessages.Error.INVALID_RECORDS_TYPE_IN_BULK_INSERT.value, invalid_input_error_code)

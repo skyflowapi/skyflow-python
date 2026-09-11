@@ -18,15 +18,11 @@ from ._insert_response_record import InsertResponseRecord
 from ._get_response_record import GetResponseRecord
 from ._update_response_record import UpdateResponseRecord
 from ._delete_response_record import DeleteResponseRecord
-from ._query_response_record import QueryResponseRecord
-from ._query_response_metadata import QueryResponseMetadata
 from ._detokenize_response import DetokenizeResponse
 from ._detokenize_response_record import DetokenizeResponseRecord
 from ._detokenize_response_record_metadata import DetokenizeResponseRecordMetadata
 from ._bulk_insert_response_record import BulkInsertResponseRecord
 from ._bulk_detokenize_response_record import BulkDetokenizeResponseRecord
-from ._query_request import QueryRequest
-from ._query_response import QueryResponse
 from ._bulk_insert_request_record import BulkInsertRequestRecord
 from ._bulk_insert_request import BulkInsertRequest
 from ._bulk_summary import BulkSummary
@@ -41,6 +37,5 @@ from ._insert_options import InsertOptions
 from ._get_options import GetOptions
 from ._update_options import UpdateOptions
 from ._delete_options import DeleteOptions
-from ._query_options import QueryOptions
 from ._detokenize_options import DetokenizeOptions
 from skyflow.utils.enums import CustomHeaderKey

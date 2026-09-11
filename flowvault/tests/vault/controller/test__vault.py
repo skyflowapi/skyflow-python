@@ -18,7 +18,6 @@ from skyflow.vault.data import (
     UpdateRequestRecord,
     DeleteRequest,
     DetokenizeRequest,
-    QueryRequest,
     BulkInsertRequestRecord,
     BulkInsertRequest,
     BulkDetokenizeRequest,
@@ -40,11 +39,6 @@ def tokens_as_dicts(tokens):
         ]
         for column, entries in tokens.items()
     }
-
-
-class FakeExecuteQueryRecord:
-    def __init__(self, data=None):
-        self.data = data
 
 
 class FakeRecordResponseObject:
@@ -1094,98 +1088,6 @@ class TestVaultDetokenize(unittest.TestCase):
         self.vault.detokenize(DetokenizeRequest(tokens=["tok1"]))
 
         _, kwargs = self.detokenize_api.with_raw_response.detokenize.call_args
-        headers = kwargs["request_options"]["additional_headers"]
-        self.assertEqual(headers.get("Authorization"), "Bearer the-current-token")
-
-
-def fake_query_raw_response(records, headers=None, metadata=None):
-    return SimpleNamespace(data=SimpleNamespace(records=records, metadata=metadata), headers=headers or {})
-
-
-class TestVaultQuery(unittest.TestCase):
-    def setUp(self):
-        self.vault_client = Mock()
-        self.vault_client.get_vault_id.return_value = "vault123"
-        self.vault_client.get_logger.return_value = Mock()
-        self.vault_client.get_current_bearer_token.return_value = None
-        self.query_api = MagicMock()
-        self.vault_client.get_query_api.return_value = self.query_api
-        self.vault = VaultController(self.vault_client)
-
-    @patch("skyflow.vault.controller._vault.validate_query_request")
-    def test_query_validates_before_initializing_client(self, mock_validate):
-        self.query_api.with_raw_response.execute_query.return_value = fake_query_raw_response([])
-        request = QueryRequest(query="SELECT * FROM t1")
-
-        self.vault.query(request)
-
-        mock_validate.assert_called_once_with(self.vault_client.get_logger(), request)
-        self.vault_client.initialize_client_configuration.assert_called_once()
-
-    def test_query_raises_for_invalid_request(self):
-        with self.assertRaises(SkyflowError):
-            self.vault.query(QueryRequest(query="   "))
-        self.vault_client.initialize_client_configuration.assert_not_called()
-
-    def test_maps_query(self):
-        self.query_api.with_raw_response.execute_query.return_value = fake_query_raw_response([])
-
-        self.vault.query(QueryRequest(query="SELECT * FROM t1 WHERE a = 1"))
-
-        _, kwargs = self.query_api.with_raw_response.execute_query.call_args
-        self.assertEqual(kwargs["vault_id"], "vault123")
-        self.assertEqual(kwargs["query"], "SELECT * FROM t1 WHERE a = 1")
-
-    def test_records_carry_data_and_metadata_columns(self):
-        self.query_api.with_raw_response.execute_query.return_value = fake_query_raw_response(
-            [FakeExecuteQueryRecord(data={"a": 1}), FakeExecuteQueryRecord(data={"a": 2})],
-            headers={"x-request-id": "req-1"},
-            metadata=SimpleNamespace(columns=["a"]),
-        )
-
-        response = self.vault.query(QueryRequest(query="SELECT * FROM t1"))
-
-        self.assertEqual(len(response.records), 2)
-        self.assertEqual(response.records[0].data, {"a": 1})
-        self.assertEqual(response.records[1].data, {"a": 2})
-        self.assertEqual(response.metadata.columns, ["a"])
-
-    def test_transport_exception_raises_skyflow_error(self):
-        self.query_api.with_raw_response.execute_query.side_effect = Exception("network blip")
-        with self.assertRaises(SkyflowError) as ctx:
-            self.vault.query(QueryRequest(query="SELECT * FROM t1"))
-        self.assertIn("network blip", ctx.exception.message)
-
-    def test_api_error_raises_skyflow_error_with_details(self):
-        api_error = ApiError(status_code=400, headers={"x-request-id": "req-3"}, body={"error": "bad query"})
-        self.query_api.with_raw_response.execute_query.side_effect = api_error
-
-        with self.assertRaises(SkyflowError) as ctx:
-            self.vault.query(QueryRequest(query="SELECT bad"))
-        self.assertEqual(ctx.exception.message, "bad query")
-        self.assertEqual(ctx.exception.http_code, 400)
-        self.assertEqual(ctx.exception.request_id, "req-3")
-
-    def test_api_error_with_error_response_object_body_raises_clean_message(self):
-        error_obj = SimpleNamespace(grpc_code=3, http_code=400, http_status="Bad Request",
-                                    message="Query service is not enabled for the vault.", details=[])
-        api_error = ApiError(status_code=400, headers={}, body=SimpleNamespace(error=error_obj))
-        self.query_api.with_raw_response.execute_query.side_effect = api_error
-
-        with self.assertRaises(SkyflowError) as ctx:
-            self.vault.query(QueryRequest(query="SELECT * FROM t1"))
-        self.assertEqual(ctx.exception.message, "Query service is not enabled for the vault.")
-        self.assertEqual(ctx.exception.http_code, 400)
-        self.assertEqual(ctx.exception.grpc_code, 3)
-        self.assertEqual(ctx.exception.http_status, "Bad Request")
-
-    def test_injects_authorization_header_from_current_bearer_token(self):
-        self.vault_client.get_current_bearer_token.return_value = "the-current-token"
-        self.query_api.with_raw_response.execute_query.return_value = fake_query_raw_response([])
-
-        self.vault.query(QueryRequest(query="SELECT * FROM t1"))
-
-        _, kwargs = self.query_api.with_raw_response.execute_query.call_args
         headers = kwargs["request_options"]["additional_headers"]
         self.assertEqual(headers.get("Authorization"), "Bearer the-current-token")
 

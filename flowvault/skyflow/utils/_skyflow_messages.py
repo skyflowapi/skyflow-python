@@ -81,8 +81,6 @@ class SkyflowMessages:
         INVALID_TOKENS_TYPE_IN_DETOKENIZE = f"{error_prefix} Detokenize failed. 'tokens' must be a non-empty list of strings."
         INVALID_TOKEN_GROUP_REDACTIONS_IN_DETOKENIZE = f"{error_prefix} Detokenize failed. 'token_group_redactions' must be a list of TokenGroupRedactions objects with a non-empty 'token_group_name'."
 
-        INVALID_QUERY_IN_QUERY = f"{error_prefix} Query failed. 'query' must be a non-empty string."
-
 
         EMPTY_RECORDS_IN_BULK_INSERT = f"{error_prefix} Bulk insert failed. Specify at least one record to insert."
         INVALID_RECORDS_TYPE_IN_BULK_INSERT = f"{error_prefix} Bulk insert failed. 'records' must be a list of BulkInsertRequestRecord objects."
@@ -121,12 +119,6 @@ class SkyflowMessages:
         DETOKENIZE_REQUEST_RESOLVED = f"{INFO}: [{error_prefix}] Detokenize request resolved."
         DETOKENIZE_SUCCESS = f"{INFO}: [{error_prefix}] Tokens detokenized."
 
-        VALIDATE_QUERY_REQUEST = f"{INFO}: [{error_prefix}] Validating query request."
-        QUERY_TRIGGERED = f"{INFO}: [{error_prefix}] Query method triggered."
-        QUERY_REQUEST_RESOLVED = f"{INFO}: [{error_prefix}] Query request resolved."
-        QUERY_SUCCESS = f"{INFO}: [{error_prefix}] Query executed."
-
-
         VALIDATE_BULK_INSERT_REQUEST = f"{INFO}: [{error_prefix}] Validating bulk insert request."
         BULK_INSERT_TRIGGERED = f"{INFO}: [{error_prefix}] Bulk insert method triggered."
         BULK_INSERT_REQUEST_RESOLVED = f"{INFO}: [{error_prefix}] Bulk insert request resolved."
@@ -145,6 +137,5 @@ class SkyflowMessages:
         UPDATE_RECORDS_REJECTED = f"{ERROR}: [{error_prefix}] Update call resulted in failure."
         DELETE_RECORDS_REJECTED = f"{ERROR}: [{error_prefix}] Delete call resulted in failure."
         DETOKENIZE_RECORDS_REJECTED = f"{ERROR}: [{error_prefix}] Detokenize call resulted in failure."
-        QUERY_RECORDS_REJECTED = f"{ERROR}: [{error_prefix}] Query call resulted in failure."
         BULK_INSERT_RECORDS_REJECTED = f"{ERROR}: [{error_prefix}] Bulk insert batch resulted in failure."
         BULK_DETOKENIZE_RECORDS_REJECTED = f"{ERROR}: [{error_prefix}] Bulk detokenize batch resulted in failure."

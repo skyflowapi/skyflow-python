@@ -147,9 +147,6 @@ class VaultClient(BaseVaultClient):
     def get_tokens_api(self):
         return self._api_client.tokens
 
-    def get_query_api(self):
-        return self._api_client.query
-
     def get_async_records_api(self):
         return self._async_api_client.records
 

@@ -20,8 +20,6 @@ from skyflow.vault.data import (
     DetokenizeRequest,
     DetokenizeResponse,
     TokenGroupRedactions,
-    QueryRequest,
-    QueryResponse,
     GetRequestRecord,
     BulkInsertRequestRecord,
     BulkInsertRequest,
@@ -226,30 +224,6 @@ class TestDetokenizeResponse(unittest.TestCase):
         response = DetokenizeResponse(records=[])
         self.assertIn("DetokenizeResponse", repr(response))
         self.assertIn("DetokenizeResponse", str(response))
-
-
-class TestQueryRequest(unittest.TestCase):
-    def test_query_stored(self):
-        request = QueryRequest(query="SELECT * FROM t1")
-        self.assertEqual(request.query, "SELECT * FROM t1")
-
-
-class TestQueryResponse(unittest.TestCase):
-    def test_shape(self):
-        records = [{"data": {"a": 1}}]
-        response = QueryResponse(records=records, metadata={"columns": ["a"]})
-        self.assertIs(response.records, records)
-        self.assertEqual(response.metadata, {"columns": ["a"]})
-
-    def test_defaults(self):
-        response = QueryResponse()
-        self.assertIsNone(response.records)
-        self.assertIsNone(response.metadata)
-
-    def test_repr_and_str_do_not_raise(self):
-        response = QueryResponse(records=[], metadata=None)
-        self.assertIn("QueryResponse", repr(response))
-        self.assertIn("QueryResponse", str(response))
 
 
 class TestGetRequestRecord(unittest.TestCase):

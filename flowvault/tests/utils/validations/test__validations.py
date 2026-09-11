@@ -9,7 +9,6 @@ from skyflow.utils.validations import (
     validate_update_request,
     validate_delete_request,
     validate_detokenize_request,
-    validate_query_request,
     validate_vault_config,
     validate_bulk_insert_request,
     validate_bulk_detokenize_request,
@@ -25,7 +24,6 @@ from skyflow.vault.data import (
     UpdateRequestRecord,
     DeleteRequest,
     DetokenizeRequest,
-    QueryRequest,
     BulkInsertRequestRecord,
     BulkInsertRequest,
     BulkDetokenizeRequest,
@@ -380,19 +378,6 @@ class TestValidateDetokenizeRequest(unittest.TestCase):
         request = DetokenizeRequest(tokens=["tok1"], token_group_redactions=[{"redaction": "mask1"}])
         with self.assertRaises(SkyflowError):
             validate_detokenize_request(None, request)
-
-
-class TestValidateQueryRequest(unittest.TestCase):
-    def test_valid_request(self):
-        validate_query_request(None, QueryRequest(query="SELECT * FROM t1"))  # should not raise
-
-    def test_query_must_be_a_string(self):
-        with self.assertRaises(SkyflowError):
-            validate_query_request(None, QueryRequest(query=123))
-
-    def test_query_must_not_be_empty(self):
-        with self.assertRaises(SkyflowError):
-            validate_query_request(None, QueryRequest(query="   "))
 
 
 class TestValidateGetRequestMultiTable(unittest.TestCase):
