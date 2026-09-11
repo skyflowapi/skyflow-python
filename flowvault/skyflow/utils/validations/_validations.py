@@ -68,7 +68,7 @@ def _validate_upsert(logger, upsert):
         raise SkyflowError(SkyflowMessages.Error.INVALID_UPSERT_UPDATE_TYPE_IN_INSERT.value, invalid_input_error_code)
 
 
-MAX_INSERT_RECORDS = 10000
+MAX_BULK_DATA_SIZE = 100000
 
 
 def validate_insert_request(logger, request):
@@ -77,9 +77,6 @@ def validate_insert_request(logger, request):
 
     if not request.records:
         raise SkyflowError(SkyflowMessages.Error.EMPTY_RECORDS_IN_INSERT.value, invalid_input_error_code)
-
-    if len(request.records) > MAX_INSERT_RECORDS:
-        raise SkyflowError(SkyflowMessages.Error.TOO_MANY_RECORDS_IN_INSERT.value, invalid_input_error_code)
 
     _validate_upsert(logger, request.upsert)
     for record in request.records:
@@ -208,7 +205,7 @@ def validate_bulk_insert_request(logger, request):
     if not request.records:
         raise SkyflowError(SkyflowMessages.Error.EMPTY_RECORDS_IN_BULK_INSERT.value, invalid_input_error_code)
 
-    if len(request.records) > MAX_INSERT_RECORDS:
+    if len(request.records) > MAX_BULK_DATA_SIZE:
         raise SkyflowError(SkyflowMessages.Error.TOO_MANY_RECORDS_IN_BULK_INSERT.value, invalid_input_error_code)
 
     _validate_upsert(logger, request.upsert)
@@ -236,5 +233,5 @@ def validate_bulk_insert_request(logger, request):
 
 def validate_bulk_detokenize_request(logger, request):
     validate_detokenize_request(logger, request)
-    if len(request.tokens) > MAX_INSERT_RECORDS:
+    if len(request.tokens) > MAX_BULK_DATA_SIZE:
         raise SkyflowError(SkyflowMessages.Error.TOO_MANY_TOKENS_IN_BULK_DETOKENIZE.value, invalid_input_error_code)

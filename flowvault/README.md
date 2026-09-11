@@ -387,7 +387,7 @@ Which operations make sense depends on whether the vault is **structured** (has 
 
 Each method also accepts an optional options object (`BulkInsertOptions`, `BulkDetokenizeOptions`) — see [Custom Request Headers](#custom-request-headers).
 
-A single bulk call accepts at most **10,000** records or tokens; anything larger is rejected up front with a `SkyflowError`. Under that ceiling the SDK splits the payload into batches and sends them concurrently, which is why errors from one call can carry different `request_id` values.
+A single bulk call accepts at most **100,000** records or tokens; anything larger is rejected up front with a `SkyflowError`. Under that ceiling the SDK splits the payload into batches and sends them concurrently, which is why errors from one call can carry different `request_id` values.
 
 Every bulk response has the same two-part shape:
 
@@ -422,7 +422,7 @@ INSERT_BATCH_SIZE=100
 INSERT_CONCURRENCY_LIMIT=5
 ```
 
-The 10,000-item ceiling per bulk call is a separate, fixed limit and is not configurable.
+The 100,000-item ceiling per bulk call is a separate, fixed limit and is not configurable.
 
 # VaultController — Unary operations
 
@@ -448,7 +448,7 @@ Everything the bulk machinery adds — batching, concurrency, the summary, the p
 |---|---|---|
 | Async variant | Yes — `bulk_insert_async`, `bulk_detokenize_async` | **No.** Wrap the call yourself if you need one |
 | Batching and concurrency | Configured per operation — see [Batching and concurrency](#batching-and-concurrency) | Not applicable — one payload, one call |
-| Payload ceiling | 10,000 records or tokens per call | 10,000 for `insert`; otherwise the vault's own request limits apply |
+| Payload ceiling | 100,000 records or tokens per call | Not enforced by the SDK; the vault's own request limits apply |
 | Response summary | `response.summary` | None — read the records list |
 | Per-item `index` | Yes | No. Records come back in submitted order |
 | Retry helper | `records_to_retry()` / `tokens_to_retry()` | None — filter the records yourself, see [Retrying the failed records](#retrying-the-failed-records) |
@@ -1001,7 +1001,7 @@ This is the mental model to hold for every operation, bulk or unary:
 
 | Layer | What it covers | How you see it |
 |---|---|---|
-| **Request-level** | The call could not be made or the whole call failed: invalid request shape, missing credentials, auth failure, payload over the 10,000-item limit, or a whole-call API rejection. | A raised `SkyflowError`. No results at all. |
+| **Request-level** | The call could not be made or the whole call failed: invalid request shape, missing credentials, auth failure, a bulk payload over the 100,000-item limit, or a whole-call API rejection. | A raised `SkyflowError`. No results at all. |
 | **Record-level** | The call succeeded, but individual records or tokens inside it did not. | A returned response. **Nothing is raised.** Each entry in `response.records` reports its own `http_code` and `error`. |
 
 The second layer is what distinguishes `flowvault` from an all-or-nothing API: **a call that returns normally can still contain failures, and a call where every single record failed also returns normally rather than raising.** Checking only for a raised exception will silently miss failed records — always read the summary and the per-record results.
@@ -1083,7 +1083,7 @@ except SkyflowError as e:
 | Request ID | `.request_id` | The `x-request-id` header — useful for support escalations. |
 | Details | `.details` | Additional error context from the server. Empty for validation errors, `None` if the server response omitted the field. |
 
-**Validation errors** (table name at the wrong level, empty token list, payload over 10,000 items, and similar) are raised before any network call, with `http_code` `400`. **API errors** are returned by the Skyflow server and have all fields populated from the response body and headers.
+**Validation errors** (table name at the wrong level, empty token list, a bulk payload over 100,000 items, and similar) are raised before any network call, with `http_code` `400`. **API errors** are returned by the Skyflow server and have all fields populated from the response body and headers.
 
 ## Retrying the failed records
 

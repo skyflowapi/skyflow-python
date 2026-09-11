@@ -26,7 +26,6 @@ class SkyflowMessages:
         INVALID_UPSERT_TYPE_IN_INSERT = f"{error_prefix} Insert failed. 'upsert' must be an UpsertOptions object."
         INVALID_UPSERT_UNIQUE_COLUMNS_IN_INSERT = f"{error_prefix} Insert failed. Upsert's 'unique_columns' must be a non-empty list of strings."
         INVALID_UPSERT_UPDATE_TYPE_IN_INSERT = f"{error_prefix} Insert failed. Upsert's 'update_type' must be an UpsertType value."
-        TOO_MANY_RECORDS_IN_INSERT = f"{error_prefix} Insert failed. A single insert request cannot contain more than 10000 records."
         TABLE_NAME_IN_BOTH_PLACES_IN_INSERT = (
             f"{error_prefix} Insert failed. 'table' cannot be set on InsertRequest at the same "
             "time as any record's 'table' -- the vault accepts a table name outside the records "
@@ -85,8 +84,8 @@ class SkyflowMessages:
         EMPTY_RECORDS_IN_BULK_INSERT = f"{error_prefix} Bulk insert failed. Specify at least one record to insert."
         INVALID_RECORDS_TYPE_IN_BULK_INSERT = f"{error_prefix} Bulk insert failed. 'records' must be a list of BulkInsertRequestRecord objects."
         INVALID_RECORD_IN_BULK_INSERT = f"{error_prefix} Bulk insert failed. Each record must be a BulkInsertRequestRecord object."
-        TOO_MANY_RECORDS_IN_BULK_INSERT = f"{error_prefix} Bulk insert failed. A single bulk insert request cannot contain more than 10000 records."
-        TOO_MANY_TOKENS_IN_BULK_DETOKENIZE = f"{error_prefix} Bulk detokenize failed. A single bulk detokenize request cannot contain more than 10000 tokens."
+        TOO_MANY_RECORDS_IN_BULK_INSERT = f"{error_prefix} Bulk insert failed. A single bulk insert request cannot contain more than 100000 records."
+        TOO_MANY_TOKENS_IN_BULK_DETOKENIZE = f"{error_prefix} Bulk detokenize failed. A single bulk detokenize request cannot contain more than 100000 tokens."
 
         INVALID_BATCH_SIZE = f"{error_prefix} Invalid batch size provided. Falling back to the default batch size."
         BATCH_SIZE_EXCEEDS_MAX = f"{error_prefix} Batch size exceeds the maximum allowed. Using the maximum batch size."

@@ -88,15 +88,6 @@ class TestValidateInsertRequest(unittest.TestCase):
         with self.assertRaises(SkyflowError):
             validate_insert_request(None, request)
 
-    def test_too_many_records_raises(self):
-        request = InsertRequest(records=[InsertRequestRecord(data={"a": 1}) for _ in range(10001)], table_name="t1")
-        with self.assertRaises(SkyflowError):
-            validate_insert_request(None, request)
-
-    def test_exactly_max_records_is_valid(self):
-        request = InsertRequest(records=[InsertRequestRecord(data={"a": 1}) for _ in range(10000)], table_name="t1")
-        validate_insert_request(None, request)  # should not raise
-
     def test_table_missing_from_one_record_raises(self):
         """Java parity: when there's no request-level table, EVERY record must set its own --
         a partial mix (some records with a table, some without) is invalid."""
@@ -472,7 +463,7 @@ class TestValidateBulkInsertRequest(unittest.TestCase):
             validate_bulk_insert_request(None, BulkInsertRequest(records=[], table_name="t1"))
 
     def test_too_many_records_raises(self):
-        records = [BulkInsertRequestRecord(data={"a": 1})] * 10001
+        records = [BulkInsertRequestRecord(data={"a": 1})] * 100001
         with self.assertRaises(SkyflowError):
             validate_bulk_insert_request(None, BulkInsertRequest(records=records, table_name="t1"))
 
@@ -508,7 +499,7 @@ class TestValidateBulkDetokenizeRequest(unittest.TestCase):
 
     def test_too_many_tokens_raises(self):
         with self.assertRaises(SkyflowError):
-            validate_bulk_detokenize_request(None, BulkDetokenizeRequest(tokens=["t"] * 10001))
+            validate_bulk_detokenize_request(None, BulkDetokenizeRequest(tokens=["t"] * 100001))
 
     def test_invalid_tokens_raises(self):
         with self.assertRaises(SkyflowError):
