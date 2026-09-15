@@ -1,0 +1,84 @@
+name: PR CI Checks (flowvault)
+
+# flowvault is a folder under main, alongside skyvault - not a branch.
+# This workflow fires for PRs targeting main or a flowvault-release/* branch
+# that actually touch flowvault or its common dependency, and only builds/
+# tests those two modules. skyvault (and the full 3-module suite) is covered
+# by pr.yml, not here.
+
+on:
+  pull_request:
+    branches: [ "main", "flowvault-release/**" ]
+    paths:
+      - "flowvault/**"
+      - "common/**"
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v2
+        with:
+          python-version: '3.9'
+
+      # flowvault depends on common as a local path dependency, so common
+      # must be built and installed first or flowvault's own build/install
+      # will fail to resolve it.
+      - name: Build and install common
+        run: |
+          python -m pip install --upgrade pip setuptools wheel
+          cd common
+          python setup.py sdist bdist_wheel
+          pip install dist/*.whl
+
+      - name: Build flowvault
+        run: |
+          cd flowvault
+          python setup.py sdist bdist_wheel
+
+  test:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v2
+        with:
+          python-version: '3.9'
+
+      - name: create-json
+        id: create-json
+        uses: jsdaniell/create-json@1.1.2
+        with:
+          name: "credentials.json"
+          json: ${{ secrets.VALID_SKYFLOW_CREDS_TEST }}
+
+      - name: Run flowvault unit tests
+        run: |
+          python -m pip install --upgrade pip setuptools wheel coverage
+          cp credentials.json flowvault/credentials.json
+
+          # flowvault depends on common as a local path dependency.
+          cd common
+          python setup.py sdist bdist_wheel
+          pip install dist/*.whl
+          cd ..
+
+          cd flowvault
+          python setup.py sdist bdist_wheel
+          pip install dist/*.whl
+          if [ -f requirements.txt ]; then
+            pip install -r requirements.txt
+          fi
+          python -m coverage run --source=. -m unittest discover
+          coverage xml -o test-coverage.xml
+
+      - name: Codecov
+        uses: codecov/codecov-action@v2.1.0
+        with:
+          token: ${{ secrets.CODECOV_REPO_UPLOAD_TOKEN }}
+          files: flowvault/test-coverage.xml
+          flags: flowvault
+          name: codecov-skyflow-python-flowvault
+          verbose: true

@@ -1,0 +1,73 @@
+import unittest
+
+from skyflow.utils._response_parsing import parse_tokens, parse_hashed_data, parse_metadata
+
+
+class TestParseTokens(unittest.TestCase):
+    def test_list_of_entries_normalized_to_snake_case(self):
+        raw = {"ssn": [
+            {"token": "t1", "tokenGroupName": "g1", "path": "p1"},
+            {"token": "t2", "tokenGroupName": "g2"},
+        ]}
+        parsed = parse_tokens(raw)
+        self.assertEqual(list(parsed.keys()), ["ssn"])
+        self.assertEqual(
+            [(t.token, t.token_group_name, t.path) for t in parsed["ssn"]],
+            [("t1", "g1", "p1"), ("t2", "g2", None)],
+        )
+
+    def test_single_unwrapped_entry_becomes_a_list(self):
+        parsed = parse_tokens({"ssn": {"token": "t1", "tokenGroupName": "g1"}})
+        self.assertEqual(
+            [(t.token, t.token_group_name, t.path) for t in parsed["ssn"]],
+            [("t1", "g1", None)],
+        )
+
+    def test_bare_value_becomes_a_token(self):
+        parsed = parse_tokens({"ssn": "bare"})
+        self.assertEqual(
+            [(t.token, t.token_group_name, t.path) for t in parsed["ssn"]],
+            [("bare", None, None)],
+        )
+
+    def test_none_returns_none(self):
+        self.assertIsNone(parse_tokens(None))
+
+    def test_none_column_value_is_skipped(self):
+        self.assertEqual(parse_tokens({"ssn": None}), {})
+
+    def test_none_entry_in_list_is_dropped(self):
+        self.assertEqual(parse_tokens({"ssn": [None]}), {"ssn": []})
+
+
+class TestParseHashedData(unittest.TestCase):
+    def test_list_of_hash_entries(self):
+        raw = {"ssn": [{"data": "h", "hashName": "hash1"}]}
+        self.assertEqual(parse_hashed_data(raw), {"ssn": [{"data": "h", "hash_name": "hash1"}]})
+
+    def test_bare_value_wrapped(self):
+        self.assertEqual(
+            parse_hashed_data({"email": "abc"}),
+            {"email": [{"data": "abc", "hash_name": None}]},
+        )
+
+    def test_none_returns_none(self):
+        self.assertIsNone(parse_hashed_data(None))
+
+    def test_none_entry_in_list_is_dropped(self):
+        self.assertEqual(parse_hashed_data({"ssn": [None]}), {"ssn": []})
+
+
+class TestParseMetadata(unittest.TestCase):
+    def test_reads_both_casings(self):
+        m1 = parse_metadata({"skyflowID": "id", "tableName": "t1"})
+        self.assertEqual((m1.skyflow_id, m1.table_name), ("id", "t1"))
+        m2 = parse_metadata({"skyflowId": "id", "table": "t1"})
+        self.assertEqual((m2.skyflow_id, m2.table_name), ("id", "t1"))
+
+    def test_none_returns_none(self):
+        self.assertIsNone(parse_metadata(None))
+
+
+if __name__ == "__main__":
+    unittest.main()

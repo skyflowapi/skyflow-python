@@ -1,7 +1,7 @@
 # ruff.toml
 
 exclude = [
-    "skyflow/generated",
+    "generated",
     ".git",
     ".ruff_cache",
     ".venv",
