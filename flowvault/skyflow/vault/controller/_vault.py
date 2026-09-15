@@ -122,7 +122,7 @@ class VaultController(BaseVaultController):
             )
             request_id = self.__extract_request_id(raw_response.headers)
             records = [
-                InsertResponseRecord(**self.__record_kwargs(record, include_data=False, request_id=request_id))
+                InsertResponseRecord(**self.__record_kwargs(record, include_data=True, request_id=request_id))
                 for record in (raw_response.data.records or [])
             ]
         except Exception as e:
@@ -131,7 +131,7 @@ class VaultController(BaseVaultController):
             if error_records is None:
                 raise self.__to_skyflow_error(e)
             records = [
-                InsertResponseRecord(**self.__record_kwargs(record, include_data=False, request_id=request_id))
+                InsertResponseRecord(**self.__record_kwargs(record, include_data=True, request_id=request_id))
                 for record in error_records
             ]
 
@@ -481,6 +481,7 @@ class VaultController(BaseVaultController):
                 table_name=self.__wire_record_value(record, 'tableName', 'table_name'),
                 skyflow_id=self.__wire_record_value(record, 'skyflowID', 'skyflow_id'),
                 tokens=parse_tokens(self.__wire_record_value(record, 'tokens', 'tokens')),
+                data=self.__wire_record_value(record, 'data', 'data'),
                 hashed_data=parse_hashed_data(self.__wire_record_value(record, 'hashedData', 'hashed_data')),
                 http_code=self.__wire_record_value(record, 'httpCode', 'http_code'),
                 error=error,

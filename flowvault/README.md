@@ -580,6 +580,7 @@ Sample response:
       "tokens": {
         "card_number": [ { "token": "5484-7829-1702-9110", "token_group_name": "card_number_cg", "path": null } ]
       },
+      "data": { "card_number": "4111111111111111", "cardholder_name": "john doe" },
       "hashed_data": { "card_number": [ { "data": "b6e6d...c3f9", "hash_name": "hash1" } ] },
       "http_code": 200,
       "error": null
@@ -590,6 +591,7 @@ Sample response:
       "table_name": "table2",
       "skyflow_id": null,
       "tokens": null,
+      "data": null,
       "hashed_data": null,
       "http_code": 400,
       "error": "Insert failed. Column email is invalid."
@@ -598,7 +600,7 @@ Sample response:
 }
 ```
 
-`.tokens` maps each column to a **list** of `Token` objects — one entry per token group configured on that column, so a column with a single token group still comes back as a one-element list, not a bare string. Each `Token` has `.token`, `.token_group_name`, and `.path` (the location within a structured column's value the token came from, e.g. `"phone_numbers[0].type"`; `None` for a flat column). `.tokens` is `None` when the record has no tokens (e.g. a failed record). Insert records omit plaintext `.data`.
+`.tokens` maps each column to a **list** of `Token` objects — one entry per token group configured on that column, so a column with a single token group still comes back as a one-element list, not a bare string. Each `Token` has `.token`, `.token_group_name`, and `.path` (the location within a structured column's value the token came from, e.g. `"phone_numbers[0].type"`; `None` for a flat column). `.tokens` is `None` when the record has no tokens (e.g. a failed record). Insert records also carry `.data` — the record's stored column values, as the vault returns them.
 
 ```python
 for record in response.records:
@@ -608,7 +610,7 @@ for record in response.records:
         print(record.index, 'failed', record.http_code, record.error)
 ```
 
-Accessors on each `BulkInsertResponseRecord`: `.index`, `.table_name`, `.skyflow_id`, `.tokens`, `.hashed_data`, `.http_code`, `.error`, `.request_id`.
+Accessors on each `BulkInsertResponseRecord`: `.index`, `.table_name`, `.skyflow_id`, `.tokens`, `.data`, `.hashed_data`, `.http_code`, `.error`, `.request_id`.
 
 Use `response.records_to_retry()` to get back only the `BulkInsertRequestRecord`s worth resubmitting — see [Retrying the failed records](#retrying-the-failed-records).
 
@@ -732,6 +734,7 @@ Sample response:
       "tokens": {
         "card_number": [ { "token": "5484-7829-1702-9110", "token_group_name": "card_number_cg", "path": null } ]
       },
+      "data": { "card_number": "4111111111111111", "cardholder_name": "john doe" },
       "hashed_data": { "card_number": [ { "data": "b6e6d...c3f9", "hash_name": "hash1" } ] },
       "http_code": 200,
       "error": null,
@@ -743,6 +746,7 @@ Sample response:
       "tokens": {
         "card_number": [ { "token": "6011-3821-4490-7752", "token_group_name": "card_number_cg", "path": null } ]
       },
+      "data": { "card_number": "4222222222222222", "cardholder_name": "jane doe" },
       "hashed_data": { "card_number": [ { "data": "1a2b3...9f0e", "hash_name": "hash1" } ] },
       "http_code": 200,
       "error": null,
@@ -752,7 +756,7 @@ Sample response:
 }
 ```
 
-There is no `summary` and no per-record `index` — the records come back in the order you submitted them. `request_id` behaves exactly as on a bulk record: `None` on success, the failing call's `x-request-id` on error. `.tokens` is the same parsed dict-of-`Token`-lists described under [Bulk Insert](#bulk-insert). Insert records omit plaintext `.data`.
+There is no `summary` and no per-record `index` — the records come back in the order you submitted them. `request_id` behaves exactly as on a bulk record: `None` on success, the failing call's `x-request-id` on error. `.tokens` is the same parsed dict-of-`Token`-lists described under [Bulk Insert](#bulk-insert). Insert records also carry `.data`, the stored column values the vault returns.
 
 ```python
 for record in response.records:
@@ -762,7 +766,7 @@ for record in response.records:
         print('insert failed', record.http_code, record.error)
 ```
 
-Accessors on each `InsertResponseRecord`: `.table_name`, `.skyflow_id`, `.tokens`, `.hashed_data`, `.http_code`, `.error`, `.request_id`.
+Accessors on each `InsertResponseRecord`: `.table_name`, `.skyflow_id`, `.tokens`, `.data`, `.hashed_data`, `.http_code`, `.error`, `.request_id`.
 
 # Detokenize
 
@@ -1066,7 +1070,7 @@ Every bulk response exposes `.summary` and `.records`. The records list has one 
 | `.error` | always | Error message for this item, populated only on failure — `None` means this item succeeded. |
 | `.request_id` | always | The `x-request-id` of the call this item was part of, populated only on failure (`None` on success) — quote it in support escalations. In bulk responses, items from the same batch share one id. Present on both bulk and unary records. |
 
-The success payload sits alongside those attributes on the same object: `.skyflow_id`/`.tokens`/`.hashed_data` (and `.data` for `get`/`update`) for record-shaped operations, `.value`/`.token_group_name`/`.metadata` for detokenize, `.skyflow_id` alone for delete.
+The success payload sits alongside those attributes on the same object: `.skyflow_id`/`.tokens`/`.data`/`.hashed_data` for record-shaped operations (`insert`, `get`, `update`), `.value`/`.token_group_name`/`.metadata` for detokenize, `.skyflow_id` alone for delete.
 
 Summaries per bulk operation:
 
