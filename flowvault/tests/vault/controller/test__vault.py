@@ -282,7 +282,7 @@ class TestVault(unittest.TestCase):
         self.assertEqual(record.skyflow_id, "id1")
         self.assertEqual(record.table_name, "table1")
         self.assertEqual(tokens_as_dicts(record.tokens), {"name": [{"token": "tok1", "token_group_name": "deterministic_string", "path": "p"}]})
-        self.assertIsNone(record.data)  # insert response omits data
+        self.assertEqual(record.data, {"name": "john doe"})
         self.assertEqual(record.hashed_data, {"name": [{"data": "h", "hash_name": "hash1"}]})
         self.assertEqual(record.http_code, 200)
         self.assertIsNone(record.error)
@@ -348,7 +348,7 @@ class TestVault(unittest.TestCase):
             self.vault.insert(InsertRequest(records=[InsertRequestRecord(data={"a": 1})], table_name="t1"))
         self.assertIn("network blip", ctx.exception.message)
 
-    def test_api_error_with_per_record_body_raises_with_that_message(self):
+    def test_api_error_with_per_record_body_returns_error_row(self):
         api_error = ApiError(
             status_code=400,
             headers={"x-request-id": "req-3"},
@@ -359,11 +359,12 @@ class TestVault(unittest.TestCase):
         )
         self.insert_api.with_raw_response.insert_records.side_effect = api_error
 
-        with self.assertRaises(SkyflowError) as ctx:
-            self.vault.insert(InsertRequest(records=[InsertRequestRecord(data={"name": "a"})], table_name="t1"))
-        self.assertIn("notNull", ctx.exception.message)
-        self.assertEqual(ctx.exception.http_code, 400)
-        self.assertEqual(ctx.exception.request_id, "req-3")
+        response = self.vault.insert(InsertRequest(records=[InsertRequestRecord(data={"name": "a"})], table_name="t1"))
+        self.assertEqual(len(response.records), 1)
+        record = response.records[0]
+        self.assertIn("notNull", record.error)
+        self.assertEqual(record.http_code, 400)
+        self.assertEqual(record.request_id, "req-3")
 
     def test_api_error_with_flat_body_raises_with_status_and_message(self):
         api_error = ApiError(status_code=500, headers={}, body={"error": "internal error"})
@@ -560,7 +561,7 @@ class TestVaultGet(unittest.TestCase):
             self.vault.get(GetRequest(table_name="t1", skyflow_ids=["id1", "id2"]))
         self.assertIn("network blip", ctx.exception.message)
 
-    def test_api_error_raises_with_message_and_status(self):
+    def test_api_error_with_per_record_body_returns_error_row(self):
         api_error = ApiError(
             status_code=404,
             headers={"x-request-id": "req-3"},
@@ -568,10 +569,12 @@ class TestVaultGet(unittest.TestCase):
         )
         self.get_api.with_raw_response.get_records.side_effect = api_error
 
-        with self.assertRaises(SkyflowError) as ctx:
-            self.vault.get(GetRequest(table_name="t1", skyflow_ids=["id1"]))
-        self.assertEqual(ctx.exception.message, "not found")
-        self.assertEqual(ctx.exception.http_code, 404)
+        response = self.vault.get(GetRequest(table_name="t1", skyflow_ids=["id1"]))
+        self.assertEqual(len(response.records), 1)
+        record = response.records[0]
+        self.assertEqual(record.error, "not found")
+        self.assertEqual(record.http_code, 404)
+        self.assertEqual(record.request_id, "req-3")
 
     # ------------------------------------------------------------------ #
     # per-call Authorization header injection
@@ -752,7 +755,7 @@ class TestVaultUpdate(unittest.TestCase):
             self.vault.update(UpdateRequest(records=[UpdateRequestRecord(skyflow_id='id1', data={'a': 1})], table_name="t1"))
         self.assertIn("network blip", ctx.exception.message)
 
-    def test_api_error_with_per_record_body_raises(self):
+    def test_api_error_with_per_record_body_returns_error_row(self):
         api_error = ApiError(
             status_code=404,
             headers={"x-request-id": "req-3"},
@@ -760,11 +763,12 @@ class TestVaultUpdate(unittest.TestCase):
         )
         self.update_api.with_raw_response.update_records.side_effect = api_error
 
-        with self.assertRaises(SkyflowError) as ctx:
-            self.vault.update(UpdateRequest(records=[UpdateRequestRecord(skyflow_id='id1', data={'a': 1})], table_name="t1"))
-        self.assertEqual(ctx.exception.message, "not found")
-        self.assertEqual(ctx.exception.http_code, 404)
-        self.assertEqual(ctx.exception.request_id, "req-3")
+        response = self.vault.update(UpdateRequest(records=[UpdateRequestRecord(skyflow_id='id1', data={'a': 1})], table_name="t1"))
+        self.assertEqual(len(response.records), 1)
+        record = response.records[0]
+        self.assertEqual(record.error, "not found")
+        self.assertEqual(record.http_code, 404)
+        self.assertEqual(record.request_id, "req-3")
 
     def test_success_record_with_hashed_data_and_scalar_tokens(self):
         self.update_api.with_raw_response.update_records.return_value = fake_update_raw_response([
@@ -930,7 +934,7 @@ class TestVaultDelete(unittest.TestCase):
             self.vault.delete(DeleteRequest(table_name="t1", ids=["id1", "id2"]))
         self.assertIn("network blip", ctx.exception.message)
 
-    def test_api_error_raises_with_message_and_status(self):
+    def test_api_error_with_per_record_body_returns_error_row(self):
         api_error = ApiError(
             status_code=404,
             headers={"x-request-id": "req-3"},
@@ -938,10 +942,12 @@ class TestVaultDelete(unittest.TestCase):
         )
         self.delete_api.with_raw_response.delete_records.side_effect = api_error
 
-        with self.assertRaises(SkyflowError) as ctx:
-            self.vault.delete(DeleteRequest(table_name="t1", ids=["id1"]))
-        self.assertEqual(ctx.exception.message, "not found")
-        self.assertEqual(ctx.exception.http_code, 404)
+        response = self.vault.delete(DeleteRequest(table_name="t1", ids=["id1"]))
+        self.assertEqual(len(response.records), 1)
+        record = response.records[0]
+        self.assertEqual(record.error, "not found")
+        self.assertEqual(record.http_code, 404)
+        self.assertEqual(record.request_id, "req-3")
 
     # ------------------------------------------------------------------ #
     # per-call Authorization header injection
@@ -1064,7 +1070,7 @@ class TestVaultDetokenize(unittest.TestCase):
             self.vault.detokenize(DetokenizeRequest(tokens=["tok1", "tok2"]))
         self.assertIn("network blip", ctx.exception.message)
 
-    def test_api_error_raises_with_message_and_status(self):
+    def test_api_error_with_per_record_body_returns_error_row(self):
         api_error = ApiError(
             status_code=404,
             headers={"x-request-id": "req-3"},
@@ -1072,10 +1078,12 @@ class TestVaultDetokenize(unittest.TestCase):
         )
         self.detokenize_api.with_raw_response.detokenize.side_effect = api_error
 
-        with self.assertRaises(SkyflowError) as ctx:
-            self.vault.detokenize(DetokenizeRequest(tokens=["tok1"]))
-        self.assertEqual(ctx.exception.message, "invalid token")
-        self.assertEqual(ctx.exception.http_code, 404)
+        response = self.vault.detokenize(DetokenizeRequest(tokens=["tok1"]))
+        self.assertEqual(len(response.records), 1)
+        record = response.records[0]
+        self.assertEqual(record.error, "invalid token")
+        self.assertEqual(record.http_code, 404)
+        self.assertEqual(record.request_id, "req-3")
 
     # ------------------------------------------------------------------ #
     # per-call Authorization header injection
