@@ -7,7 +7,7 @@ Runnable examples for the `skyflow-flowvault-python` SDK — one file per operat
 
 - Python 3.9+
 - `pip install skyflow-flowvault-python`
-- A Flow DB vault and Skyflow credentials (a service-account `credentials.json`, an API key, or a
+- A FlowVault vault and Skyflow credentials (a service-account `credentials.json`, an API key, or a
   bearer token).
 
 ## Configure
