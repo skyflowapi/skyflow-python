@@ -15,12 +15,12 @@ class DetokenizeResponseObject(UniversalBaseModel):
     Token that was detokenized.
     """
 
-    value: GoogleProtobufValue
+    value: typing.Optional[GoogleProtobufValue] = None
     token_group_name: typing_extensions.Annotated[
-        str,
+        typing.Optional[str],
         FieldMetadata(alias="tokenGroupName"),
         pydantic.Field(alias="tokenGroupName", description="Name of the token group."),
-    ]
+    ] = None
     """
     Name of the token group.
     """

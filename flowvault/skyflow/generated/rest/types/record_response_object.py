@@ -10,10 +10,10 @@ from ..core.serialization import FieldMetadata
 
 class RecordResponseObject(UniversalBaseModel):
     skyflow_id: typing_extensions.Annotated[
-        str,
+        typing.Optional[str],
         FieldMetadata(alias="skyflowID"),
         pydantic.Field(alias="skyflowID", description="Skyflow ID for the inserted record"),
-    ]
+    ] = None
     """
     Skyflow ID for the inserted record
     """

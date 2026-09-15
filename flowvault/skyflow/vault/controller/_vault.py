@@ -17,7 +17,7 @@ from skyflow.generated.rest import (
     UpdateRecordData,
     Upsert,
 )
-from skyflow.generated.rest.core import ApiError
+from skyflow.generated.rest.core import ApiError, ParsingError
 from skyflow.utils import SkyflowMessages, get_metrics
 from skyflow.utils.enums import UpsertType
 from skyflow.utils._response_parsing import parse_tokens, parse_hashed_data, parse_metadata
@@ -127,7 +127,13 @@ class VaultController(BaseVaultController):
             ]
         except Exception as e:
             log_error_log(SkyflowMessages.ErrorLogs.INSERT_RECORDS_REJECTED.value, self._vault_client.get_logger())
-            raise self.__to_skyflow_error(e)
+            error_records, request_id = self.__unary_error_records(e)
+            if error_records is None:
+                raise self.__to_skyflow_error(e)
+            records = [
+                InsertResponseRecord(**self.__record_kwargs(record, include_data=False, request_id=request_id))
+                for record in error_records
+            ]
 
         log_info(SkyflowMessages.Info.INSERT_SUCCESS.value, self._vault_client.get_logger())
         return InsertResponse(records=records)
@@ -170,7 +176,13 @@ class VaultController(BaseVaultController):
             ]
         except Exception as e:
             log_error_log(SkyflowMessages.ErrorLogs.GET_RECORDS_REJECTED.value, self._vault_client.get_logger())
-            raise self.__to_skyflow_error(e)
+            error_records, request_id = self.__unary_error_records(e)
+            if error_records is None:
+                raise self.__to_skyflow_error(e)
+            records = [
+                GetResponseRecord(**self.__record_kwargs(record, include_data=True, request_id=request_id))
+                for record in error_records
+            ]
 
         log_info(SkyflowMessages.Info.GET_SUCCESS.value, self._vault_client.get_logger())
         return GetResponse(records=records)
@@ -212,7 +224,13 @@ class VaultController(BaseVaultController):
             ]
         except Exception as e:
             log_error_log(SkyflowMessages.ErrorLogs.UPDATE_RECORDS_REJECTED.value, self._vault_client.get_logger())
-            raise self.__to_skyflow_error(e)
+            error_records, request_id = self.__unary_error_records(e)
+            if error_records is None:
+                raise self.__to_skyflow_error(e)
+            records = [
+                UpdateResponseRecord(**self.__record_kwargs(record, include_data=True, request_id=request_id))
+                for record in error_records
+            ]
 
         log_info(SkyflowMessages.Info.UPDATE_SUCCESS.value, self._vault_client.get_logger())
         return UpdateResponse(records=records)
@@ -240,7 +258,10 @@ class VaultController(BaseVaultController):
             records = [self.__delete_row(record, request_id) for record in (raw_response.data.records or [])]
         except Exception as e:
             log_error_log(SkyflowMessages.ErrorLogs.DELETE_RECORDS_REJECTED.value, self._vault_client.get_logger())
-            raise self.__to_skyflow_error(e)
+            error_records, request_id = self.__unary_error_records(e)
+            if error_records is None:
+                raise self.__to_skyflow_error(e)
+            records = [self.__delete_row(record, request_id) for record in error_records]
 
         log_info(SkyflowMessages.Info.DELETE_SUCCESS.value, self._vault_client.get_logger())
         return DeleteResponse(records=records)
@@ -265,7 +286,10 @@ class VaultController(BaseVaultController):
             records = [self.__detokenize_row(resp, request_id) for resp in (raw_response.data.response or [])]
         except Exception as e:
             log_error_log(SkyflowMessages.ErrorLogs.DETOKENIZE_RECORDS_REJECTED.value, self._vault_client.get_logger())
-            raise self.__to_skyflow_error(e)
+            error_records, request_id = self.__unary_error_records(e)
+            if error_records is None:
+                raise self.__to_skyflow_error(e)
+            records = [self.__detokenize_row(resp, request_id) for resp in error_records]
 
         log_info(SkyflowMessages.Info.DETOKENIZE_SUCCESS.value, self._vault_client.get_logger())
         return DetokenizeResponse(records=records)
@@ -450,15 +474,15 @@ class VaultController(BaseVaultController):
         request_id = self.__extract_request_id(headers)
         rows = []
         for offset, record in enumerate(records):
-            error = getattr(record, 'error', None)
+            error = self.__wire_record_value(record, 'error', 'error')
             rows.append(BulkInsertResponseRecord(
                 index=start_index + offset,
                 request_id=request_id if error is not None else None,
-                table_name=getattr(record, 'table_name', None),
-                skyflow_id=getattr(record, 'skyflow_id', None),
-                tokens=parse_tokens(getattr(record, 'tokens', None)),
-                hashed_data=parse_hashed_data(getattr(record, 'hashed_data', None)),
-                http_code=getattr(record, 'http_code', None),
+                table_name=self.__wire_record_value(record, 'tableName', 'table_name'),
+                skyflow_id=self.__wire_record_value(record, 'skyflowID', 'skyflow_id'),
+                tokens=parse_tokens(self.__wire_record_value(record, 'tokens', 'tokens')),
+                hashed_data=parse_hashed_data(self.__wire_record_value(record, 'hashedData', 'hashed_data')),
+                http_code=self.__wire_record_value(record, 'httpCode', 'http_code'),
                 error=error,
             ))
         return rows
@@ -467,18 +491,43 @@ class VaultController(BaseVaultController):
         request_id = self.__extract_request_id(headers)
         rows = []
         for offset, resp in enumerate(responses):
-            error = getattr(resp, 'error', None)
+            error = self.__wire_record_value(resp, 'error', 'error')
             rows.append(BulkDetokenizeResponseRecord(
                 index=start_index + offset,
                 request_id=request_id if error is not None else None,
-                value=getattr(resp, 'value', None),
-                token_group_name=getattr(resp, 'token_group_name', None),
-                metadata=parse_metadata(getattr(resp, 'metadata', None)),
-                http_code=getattr(resp, 'http_code', None),
-                token=getattr(resp, 'token', None),
+                value=self.__wire_record_value(resp, 'value', 'value'),
+                token_group_name=self.__wire_record_value(resp, 'tokenGroupName', 'token_group_name'),
+                metadata=parse_metadata(self.__wire_record_value(resp, 'metadata', 'metadata')),
+                http_code=self.__wire_record_value(resp, 'httpCode', 'http_code'),
+                token=self.__wire_record_value(resp, 'token', 'token'),
                 error=error,
             ))
         return rows
+
+    def __error_body_records(self, e):
+        body = getattr(e, 'body', None)
+        if isinstance(body, dict):
+            records = body.get('records')
+            if records is None:
+                records = body.get('response')
+        else:
+            records = getattr(body, 'records', None) or getattr(body, 'response', None)
+            if records is None:
+                extra = getattr(body, '__pydantic_extra__', None)
+                if isinstance(extra, dict):
+                    records = extra.get('records') or extra.get('response')
+        return records if isinstance(records, list) and records else None
+
+    def __unary_error_records(self, e):
+        records = self.__error_body_records(e)
+        if not records:
+            return None, None
+        return records, self.__extract_request_id(getattr(e, 'headers', None))
+
+    def __wire_record_value(self, record, wire_key, attr):
+        if isinstance(record, dict):
+            return record.get(wire_key)
+        return getattr(record, attr, None)
 
     def __bulk_batch_error_tuples(self, e, count, start_index):
         if isinstance(e, ApiError):
@@ -500,6 +549,9 @@ class VaultController(BaseVaultController):
         return [(start_index + i, None, message, None) for i in range(count)]
 
     def __bulk_insert_batch_error_rows(self, e, count, start_index):
+        records = self.__error_body_records(e)
+        if records:
+            return self.__format_bulk_insert_batch(records, start_index, getattr(e, 'headers', None))
         return [
             BulkInsertResponseRecord(index=idx, request_id=request_id, table_name=None, skyflow_id=None,
                                      tokens=None, hashed_data=None, http_code=code, error=message)
@@ -507,6 +559,9 @@ class VaultController(BaseVaultController):
         ]
 
     def __bulk_detokenize_batch_error_rows(self, e, count, start_index):
+        records = self.__error_body_records(e)
+        if records:
+            return self.__format_bulk_detokenize_batch(records, start_index, getattr(e, 'headers', None))
         return [
             BulkDetokenizeResponseRecord(index=idx, request_id=request_id, value=None, token_group_name=None,
                                          metadata=None, http_code=code, token=None, error=message)
@@ -620,24 +675,24 @@ class VaultController(BaseVaultController):
         return headers.get(REQUEST_ID_HEADER) if headers else None
 
     def __record_kwargs(self, record, include_data, request_id=None):
-        error = getattr(record, 'error', None)
+        error = self.__wire_record_value(record, 'error', 'error')
         kwargs = {
-            'table_name': getattr(record, 'table_name', None),
-            'skyflow_id': getattr(record, 'skyflow_id', None),
-            'tokens': parse_tokens(getattr(record, 'tokens', None)),
-            'hashed_data': parse_hashed_data(getattr(record, 'hashed_data', None)),
-            'http_code': getattr(record, 'http_code', None),
+            'table_name': self.__wire_record_value(record, 'tableName', 'table_name'),
+            'skyflow_id': self.__wire_record_value(record, 'skyflowID', 'skyflow_id'),
+            'tokens': parse_tokens(self.__wire_record_value(record, 'tokens', 'tokens')),
+            'hashed_data': parse_hashed_data(self.__wire_record_value(record, 'hashedData', 'hashed_data')),
+            'http_code': self.__wire_record_value(record, 'httpCode', 'http_code'),
             'error': error,
             'request_id': request_id if error is not None else None,
         }
         if include_data:
-            kwargs['data'] = getattr(record, 'data', None)
+            kwargs['data'] = self.__wire_record_value(record, 'data', 'data')
         return kwargs
 
     def __to_skyflow_error(self, e):
         if isinstance(e, SkyflowError):
             return e
-        if isinstance(e, ApiError):
+        if isinstance(e, (ApiError, ParsingError)):
             message, grpc_code, http_status, details = self.__parse_api_error_body(e.body)
             return SkyflowError(
                 message=message,
@@ -694,22 +749,22 @@ class VaultController(BaseVaultController):
         ]
 
     def __delete_row(self, record, request_id=None):
-        error = getattr(record, 'error', None)
+        error = self.__wire_record_value(record, 'error', 'error')
         return DeleteResponseRecord(
-            skyflow_id=getattr(record, 'skyflow_id', None),
-            http_code=getattr(record, 'http_code', None),
+            skyflow_id=self.__wire_record_value(record, 'skyflowID', 'skyflow_id'),
+            http_code=self.__wire_record_value(record, 'httpCode', 'http_code'),
             error=error,
             request_id=request_id if error is not None else None,
         )
 
     def __detokenize_row(self, resp, request_id=None):
-        error = getattr(resp, 'error', None)
+        error = self.__wire_record_value(resp, 'error', 'error')
         return DetokenizeResponseRecord(
-            token=getattr(resp, 'token', None),
-            value=getattr(resp, 'value', None),
-            token_group_name=getattr(resp, 'token_group_name', None),
-            metadata=parse_metadata(getattr(resp, 'metadata', None)),
-            http_code=getattr(resp, 'http_code', None),
+            token=self.__wire_record_value(resp, 'token', 'token'),
+            value=self.__wire_record_value(resp, 'value', 'value'),
+            token_group_name=self.__wire_record_value(resp, 'tokenGroupName', 'token_group_name'),
+            metadata=parse_metadata(self.__wire_record_value(resp, 'metadata', 'metadata')),
+            http_code=self.__wire_record_value(resp, 'httpCode', 'http_code'),
             error=error,
             request_id=request_id if error is not None else None,
         )
