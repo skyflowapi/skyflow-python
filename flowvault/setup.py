@@ -89,6 +89,7 @@ setup(
         'PyJWT >= 2.12, < 3',
         'cryptography >= 44.0.2',
         'httpx >= 0.21.2',
+        'python-dotenv >= 1.1.0, < 2',
         # NOTE: 'requests' intentionally omitted -- only used today by v2's Connection
         # controller, which isn't part of v3's scope this round.
     ],

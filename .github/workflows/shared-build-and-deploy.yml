@@ -123,6 +123,28 @@ jobs:
           cd "$MODULE"
           python setup.py sdist bdist_wheel
 
+      # Gate: install each freshly built artifact into its own clean virtualenv
+      # (only the package's DECLARED runtime deps present) and import it from
+      # outside the repo. This runs before either publish step and even on a
+      # dry run, so a missing runtime dependency in setup.py or a
+      # non-self-contained sdist fails here rather than shipping a broken
+      # release (both packages import as `skyflow` and bundle `common`).
+      - name: Smoke test the built package (clean install + import)
+        run: |
+          set -e
+          WHEEL=$(ls "$MODULE"/dist/*.whl)
+          SDIST=$(ls "$MODULE"/dist/*.tar.gz)
+
+          python -m venv /tmp/smoke-wheel
+          /tmp/smoke-wheel/bin/pip install --upgrade pip
+          /tmp/smoke-wheel/bin/pip install "$WHEEL"
+          (cd /tmp && /tmp/smoke-wheel/bin/python -c "import skyflow, common; from skyflow import Skyflow, Env, LogLevel; print('wheel clean-install import OK')")
+
+          python -m venv /tmp/smoke-sdist
+          /tmp/smoke-sdist/bin/pip install --upgrade pip setuptools wheel
+          /tmp/smoke-sdist/bin/pip install "$SDIST"
+          (cd /tmp && /tmp/smoke-sdist/bin/python -c "import skyflow, common; from skyflow import Skyflow, Env, LogLevel; print('sdist clean-install import OK')")
+
       - name: Publish to PyPI
         if: ${{ (inputs.tag == 'beta' || inputs.tag == 'public') && inputs.dry-run != true }}
         env:
