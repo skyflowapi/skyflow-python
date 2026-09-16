@@ -55,8 +55,8 @@ def perform_operation_with_timeout_and_retry():
 
         # Use the client as usual; requests now fail fast at the configured timeouts and retry
         # transient 408/429/5xx responses with exponential backoff + jitter.
-        # response = skyflow_client.vault(vault_config.get('vault_id')).bulk_detokenize(detokenize_request)
-        # print(response.summary)
+        # response = skyflow_client.vault(vault_config.get('vault_id')).detokenize(detokenize_request)
+        # print(response.records)
 
     except SkyflowError as error:
         print('Skyflow Specific Error: ', {

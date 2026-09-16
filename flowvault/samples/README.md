@@ -24,14 +24,10 @@ vault_config = {
 }
 ```
 
-For the bulk samples you can tune batching/concurrency via env vars or a `.env` file in the working
-directory — e.g. `INSERT_BATCH_SIZE=100`, `INSERT_CONCURRENCY_LIMIT=5`.
-
 ## Run
 
 ```bash
 python flowvault/samples/vault_api/insert_records.py
-python flowvault/samples/vault_api/bulk_insert_async.py   # async samples run themselves via asyncio.run(...)
 ```
 
 ## Vault operations
@@ -44,21 +40,11 @@ python flowvault/samples/vault_api/bulk_insert_async.py   # async samples run th
 | [delete_records.py](vault_api/delete_records.py) | Delete records |
 | [detokenize_records.py](vault_api/detokenize_records.py) | Detokenize tokens |
 
-## Bulk operations
-
-Each bulk operation ships a **sync** and an **async** variant.
-
-| Sample | Demonstrates |
-|---|---|
-| [bulk_insert_sync.py](vault_api/bulk_insert_sync.py) / [bulk_insert_async.py](vault_api/bulk_insert_async.py) | Batched, concurrent insert of many records; `summary`, per-record results, `records_to_retry()` |
-| [bulk_multi_table_insert_sync.py](vault_api/bulk_multi_table_insert_sync.py) / [bulk_multi_table_insert_async.py](vault_api/bulk_multi_table_insert_async.py) | Bulk insert across multiple tables (per-record `table_name`) |
-| [bulk_detokenize_sync.py](vault_api/bulk_detokenize_sync.py) / [bulk_detokenize_async.py](vault_api/bulk_detokenize_async.py) | Batched, concurrent detokenize of many tokens; `tokens_to_retry()` |
-
 ## Custom headers & HTTP config
 
 | Sample | Demonstrates |
 |---|---|
-| [custom_header_example.py](vault_api/custom_header_example.py) | Attach custom headers per batch via a `BulkInsertOptions` interceptor (`CustomHeaderKey`) |
+| [custom_header_example.py](vault_api/custom_header_example.py) | Attach custom headers via an `InsertOptions` interceptor (`CustomHeaderKey`) |
 | [timeout_and_retry_config_example.py](vault_api/timeout_and_retry_config_example.py) | Per-vault `timeout` and `max_retries` config keys |
 
 ## Service account (token generation)

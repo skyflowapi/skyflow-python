@@ -15,7 +15,7 @@ from skyflow.utils._http_config import (
     VAULT_URL_KEY,
     VAULT_CONFIG_KEYS,
 )
-from skyflow.vault.data import GetRequestRecord, BulkInsertRequestRecord, InsertRequestRecord, UpdateRequestRecord, UpsertOptions, TokenGroupRedactions
+from skyflow.vault.data import GetRequestRecord, InsertRequestRecord, UpdateRequestRecord, UpsertOptions, TokenGroupRedactions
 
 VALID_UPDATE_RECORD_KEYS = ["skyflow_id", "data", "tokens", "table_name"]
 
@@ -66,9 +66,6 @@ def _validate_upsert(logger, upsert):
         raise SkyflowError(SkyflowMessages.Error.INVALID_UPSERT_UNIQUE_COLUMNS_IN_INSERT.value, invalid_input_error_code)
     if upsert.update_type is not None and not isinstance(upsert.update_type, UpsertType):
         raise SkyflowError(SkyflowMessages.Error.INVALID_UPSERT_UPDATE_TYPE_IN_INSERT.value, invalid_input_error_code)
-
-
-MAX_BULK_DATA_SIZE = 100000
 
 
 def validate_insert_request(logger, request):
@@ -196,42 +193,3 @@ def validate_detokenize_request(logger, request):
         )
         if not valid:
             raise SkyflowError(SkyflowMessages.Error.INVALID_TOKEN_GROUP_REDACTIONS_IN_DETOKENIZE.value, invalid_input_error_code)
-
-
-def validate_bulk_insert_request(logger, request):
-    if not isinstance(request.records, list) or not all(isinstance(r, BulkInsertRequestRecord) for r in request.records):
-        raise SkyflowError(SkyflowMessages.Error.INVALID_RECORDS_TYPE_IN_BULK_INSERT.value, invalid_input_error_code)
-
-    if not request.records:
-        raise SkyflowError(SkyflowMessages.Error.EMPTY_RECORDS_IN_BULK_INSERT.value, invalid_input_error_code)
-
-    if len(request.records) > MAX_BULK_DATA_SIZE:
-        raise SkyflowError(SkyflowMessages.Error.TOO_MANY_RECORDS_IN_BULK_INSERT.value, invalid_input_error_code)
-
-    _validate_upsert(logger, request.upsert)
-    for record in request.records:
-        _validate_upsert(logger, record.upsert)
-
-    table_at_request_level = request.table_name is not None
-
-    if table_at_request_level:
-        for record in request.records:
-            if record.table_name is not None:
-                raise SkyflowError(SkyflowMessages.Error.TABLE_NAME_IN_BOTH_PLACES_IN_INSERT.value, invalid_input_error_code)
-    else:
-        for record in request.records:
-            if record.table_name is None:
-                raise SkyflowError(SkyflowMessages.Error.TABLE_NAME_MISSING_IN_INSERT.value, invalid_input_error_code)
-
-    if table_at_request_level:
-        for record in request.records:
-            if record.upsert is not None:
-                raise SkyflowError(SkyflowMessages.Error.RECORD_LEVEL_UPSERT_NOT_ALLOWED_IN_INSERT.value, invalid_input_error_code)
-    elif request.upsert is not None:
-        raise SkyflowError(SkyflowMessages.Error.REQUEST_LEVEL_UPSERT_NOT_ALLOWED_IN_INSERT.value, invalid_input_error_code)
-
-
-def validate_bulk_detokenize_request(logger, request):
-    validate_detokenize_request(logger, request)
-    if len(request.tokens) > MAX_BULK_DATA_SIZE:
-        raise SkyflowError(SkyflowMessages.Error.TOO_MANY_TOKENS_IN_BULK_DETOKENIZE.value, invalid_input_error_code)

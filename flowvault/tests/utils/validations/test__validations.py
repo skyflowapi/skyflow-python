@@ -10,8 +10,6 @@ from skyflow.utils.validations import (
     validate_delete_request,
     validate_detokenize_request,
     validate_vault_config,
-    validate_bulk_insert_request,
-    validate_bulk_detokenize_request,
 )
 from skyflow.vault.data import (
     UpsertOptions,
@@ -24,9 +22,6 @@ from skyflow.vault.data import (
     UpdateRequestRecord,
     DeleteRequest,
     DetokenizeRequest,
-    BulkInsertRequestRecord,
-    BulkInsertRequest,
-    BulkDetokenizeRequest,
     TokenGroupRedactions,
 )
 
@@ -445,65 +440,6 @@ class TestValidateVaultConfig(unittest.TestCase):
                 validate_vault_config(None, {"vault_id": "v", "cluster_id": "c", "vault_url": bad})
 
 
-class TestValidateBulkInsertRequest(unittest.TestCase):
-    def test_valid_request_level(self):
-        validate_bulk_insert_request(None, BulkInsertRequest(records=[BulkInsertRequestRecord(data={"a": 1})], table_name="t1"))
-
-    def test_valid_per_record(self):
-        validate_bulk_insert_request(None, BulkInsertRequest(records=[BulkInsertRequestRecord(data={"a": 1}, table_name="t1")]))
-
-    def test_invalid_records_type_raises(self):
-        with self.assertRaises(SkyflowError):
-            validate_bulk_insert_request(None, BulkInsertRequest(records="nope", table_name="t1"))
-        with self.assertRaises(SkyflowError):
-            validate_bulk_insert_request(None, BulkInsertRequest(records=[{"a": 1}], table_name="t1"))
-
-    def test_empty_records_raises(self):
-        with self.assertRaises(SkyflowError):
-            validate_bulk_insert_request(None, BulkInsertRequest(records=[], table_name="t1"))
-
-    def test_too_many_records_raises(self):
-        records = [BulkInsertRequestRecord(data={"a": 1})] * 100001
-        with self.assertRaises(SkyflowError):
-            validate_bulk_insert_request(None, BulkInsertRequest(records=records, table_name="t1"))
-
-    def test_table_in_both_places_raises(self):
-        req = BulkInsertRequest(records=[BulkInsertRequestRecord(data={"a": 1}, table_name="t2")], table_name="t1")
-        with self.assertRaises(SkyflowError):
-            validate_bulk_insert_request(None, req)
-
-    def test_table_missing_raises(self):
-        with self.assertRaises(SkyflowError):
-            validate_bulk_insert_request(None, BulkInsertRequest(records=[BulkInsertRequestRecord(data={"a": 1})]))
-
-    def test_record_level_upsert_not_allowed_with_request_table(self):
-        req = BulkInsertRequest(
-            records=[BulkInsertRequestRecord(data={"a": 1}, upsert=UpsertOptions(unique_columns=["a"]))],
-            table_name="t1",
-        )
-        with self.assertRaises(SkyflowError):
-            validate_bulk_insert_request(None, req)
-
-    def test_request_level_upsert_not_allowed_with_per_record_table(self):
-        req = BulkInsertRequest(
-            records=[BulkInsertRequestRecord(data={"a": 1}, table_name="t1")],
-            upsert=UpsertOptions(unique_columns=["a"]),
-        )
-        with self.assertRaises(SkyflowError):
-            validate_bulk_insert_request(None, req)
-
-
-class TestValidateBulkDetokenizeRequest(unittest.TestCase):
-    def test_valid(self):
-        validate_bulk_detokenize_request(None, BulkDetokenizeRequest(tokens=["t1", "t2"]))
-
-    def test_too_many_tokens_raises(self):
-        with self.assertRaises(SkyflowError):
-            validate_bulk_detokenize_request(None, BulkDetokenizeRequest(tokens=["t"] * 100001))
-
-    def test_invalid_tokens_raises(self):
-        with self.assertRaises(SkyflowError):
-            validate_bulk_detokenize_request(None, BulkDetokenizeRequest(tokens=[]))
 
 
 if __name__ == "__main__":

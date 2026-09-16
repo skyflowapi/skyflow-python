@@ -3,8 +3,6 @@ import unittest
 from skyflow.utils.enums import UpsertType, CustomHeaderKey
 from skyflow.vault.data import (
     RequestContext,
-    BulkInsertOptions,
-    BulkDetokenizeOptions,
     UpsertOptions,
     ColumnRedactions,
     InsertRequestRecord,
@@ -21,15 +19,6 @@ from skyflow.vault.data import (
     DetokenizeResponse,
     TokenGroupRedactions,
     GetRequestRecord,
-    BulkInsertRequestRecord,
-    BulkInsertRequest,
-    BulkInsertResponse,
-    BulkSummary,
-    BulkDetokenizeRequest,
-    BulkDetokenizeResponse,
-    BulkInsertResponseRecord,
-    BulkDetokenizeResponseRecord,
-    DetokenizeSummary,
 )
 
 
@@ -246,101 +235,6 @@ class TestGetRequestRecord(unittest.TestCase):
         self.assertIsNone(record.unique_values)
 
 
-class TestBulkInsertRequestRecord(unittest.TestCase):
-    def test_fields_stored(self):
-        record = BulkInsertRequestRecord(data={"a": 1}, table_name="t1", tokens={"a": ["tok"]},
-                                         upsert=UpsertOptions(unique_columns=["a"]))
-        self.assertEqual(record.data, {"a": 1})
-        self.assertEqual(record.table_name, "t1")
-        self.assertEqual(record.tokens, {"a": ["tok"]})
-        self.assertEqual(record.upsert.unique_columns, ["a"])
-
-    def test_optional_defaults(self):
-        record = BulkInsertRequestRecord(data={"a": 1})
-        self.assertIsNone(record.table_name)
-        self.assertIsNone(record.tokens)
-        self.assertIsNone(record.upsert)
-
-
-class TestBulkInsertRequest(unittest.TestCase):
-    def test_fields_stored(self):
-        records = [BulkInsertRequestRecord(data={"a": 1})]
-        request = BulkInsertRequest(records=records, table_name="t1")
-        self.assertIs(request.records, records)
-        self.assertEqual(request.table_name, "t1")
-        self.assertIsNone(request.upsert)
-
-
-class TestBulkSummary(unittest.TestCase):
-    def test_fields_and_repr(self):
-        summary = BulkSummary(total_records=3, total_inserted=2, total_failed=1)
-        self.assertEqual((summary.total_records, summary.total_inserted, summary.total_failed), (3, 2, 1))
-        self.assertIn("BulkSummary", repr(summary))
-
-
-class TestBulkInsertResponse(unittest.TestCase):
-    def test_records_to_retry_only_server_5xx_except_529(self):
-        records = [
-            BulkInsertResponseRecord(index=0, http_code=200),
-            BulkInsertResponseRecord(index=1, http_code=500),
-            BulkInsertResponseRecord(index=2, http_code=529),
-            BulkInsertResponseRecord(index=3, http_code=400),
-            BulkInsertResponseRecord(index=4, http_code=503),
-        ]
-        originals = ["r0", "r1", "r2", "r3", "r4"]
-        response = BulkInsertResponse(summary=None, records=records, _original_records=originals)
-        self.assertEqual(response.records_to_retry(), ["r1", "r4"])
-
-    def test_records_to_retry_empty_without_originals(self):
-        response = BulkInsertResponse(summary=None, records=[BulkInsertResponseRecord(index=0, http_code=500)])
-        self.assertEqual(response.records_to_retry(), [])
-
-    def test_repr_does_not_raise(self):
-        self.assertIn("BulkInsertResponse", repr(BulkInsertResponse(summary=BulkSummary(), records=[])))
-
-    def test_str_matches_repr(self):
-        response = BulkInsertResponse(summary=BulkSummary(), records=[])
-        self.assertEqual(str(response), repr(response))
-
-
-class TestBulkDetokenizeRequest(unittest.TestCase):
-    def test_fields_stored(self):
-        request = BulkDetokenizeRequest(
-            tokens=["t1", "t2"],
-            token_group_redactions=[TokenGroupRedactions(token_group_name="g", redaction="mask1")],
-        )
-        self.assertEqual(request.tokens, ["t1", "t2"])
-        self.assertEqual(request.token_group_redactions[0].token_group_name, "g")
-        self.assertEqual(request.token_group_redactions[0].redaction, "mask1")
-
-
-class TestDetokenizeSummary(unittest.TestCase):
-    def test_fields_and_repr(self):
-        summary = DetokenizeSummary(total_tokens=2, total_detokenized=1, total_failed=1)
-        self.assertEqual((summary.total_tokens, summary.total_detokenized, summary.total_failed), (2, 1, 1))
-        self.assertIn("DetokenizeSummary", repr(summary))
-
-
-class TestBulkDetokenizeResponse(unittest.TestCase):
-    def test_tokens_to_retry_only_server_5xx_except_529(self):
-        records = [
-            BulkDetokenizeResponseRecord(index=0, http_code=200),
-            BulkDetokenizeResponseRecord(index=1, http_code=500),
-            BulkDetokenizeResponseRecord(index=2, http_code=529),
-        ]
-        response = BulkDetokenizeResponse(summary=None, records=records, _original_tokens=["a", "b", "c"])
-        self.assertEqual(response.tokens_to_retry(), ["b"])
-
-    def test_tokens_to_retry_empty_without_originals(self):
-        response = BulkDetokenizeResponse(summary=None, records=[BulkDetokenizeResponseRecord(index=0, http_code=500)])
-        self.assertEqual(response.tokens_to_retry(), [])
-
-    def test_repr_does_not_raise(self):
-        self.assertIn("BulkDetokenizeResponse", repr(BulkDetokenizeResponse(summary=DetokenizeSummary(), records=[])))
-
-    def test_str_matches_repr(self):
-        response = BulkDetokenizeResponse(summary=DetokenizeSummary(), records=[])
-        self.assertEqual(str(response), repr(response))
 
 
 class TestCustomHeaders(unittest.TestCase):
@@ -364,16 +258,6 @@ class TestCustomHeaders(unittest.TestCase):
         self.assertEqual(context.headers, {CustomHeaderKey.REQUEST_ID_HEADER: "abc"})
         context.headers[CustomHeaderKey.SKYFLOW_ACCOUNT_ID] = "leak"
         self.assertNotIn(CustomHeaderKey.SKYFLOW_ACCOUNT_ID, context.headers)
-
-    def test_bulk_options_default_and_explicit_interceptor(self):
-        self.assertIsNone(BulkInsertOptions().interceptor)
-        self.assertIsNone(BulkDetokenizeOptions().interceptor)
-
-        def interceptor(context):
-            return None
-
-        self.assertIs(BulkInsertOptions(interceptor=interceptor).interceptor, interceptor)
-        self.assertIs(BulkDetokenizeOptions(interceptor=interceptor).interceptor, interceptor)
 
 
 if __name__ == "__main__":

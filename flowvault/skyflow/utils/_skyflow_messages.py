@@ -80,18 +80,6 @@ class SkyflowMessages:
         INVALID_TOKENS_TYPE_IN_DETOKENIZE = f"{error_prefix} Detokenize failed. 'tokens' must be a non-empty list of strings."
         INVALID_TOKEN_GROUP_REDACTIONS_IN_DETOKENIZE = f"{error_prefix} Detokenize failed. 'token_group_redactions' must be a list of TokenGroupRedactions objects with a non-empty 'token_group_name'."
 
-
-        EMPTY_RECORDS_IN_BULK_INSERT = f"{error_prefix} Bulk insert failed. Specify at least one record to insert."
-        INVALID_RECORDS_TYPE_IN_BULK_INSERT = f"{error_prefix} Bulk insert failed. 'records' must be a list of BulkInsertRequestRecord objects."
-        INVALID_RECORD_IN_BULK_INSERT = f"{error_prefix} Bulk insert failed. Each record must be a BulkInsertRequestRecord object."
-        TOO_MANY_RECORDS_IN_BULK_INSERT = f"{error_prefix} Bulk insert failed. A single bulk insert request cannot contain more than 100000 records."
-        TOO_MANY_TOKENS_IN_BULK_DETOKENIZE = f"{error_prefix} Bulk detokenize failed. A single bulk detokenize request cannot contain more than 100000 tokens."
-
-        INVALID_BATCH_SIZE = f"{error_prefix} Invalid batch size provided. Falling back to the default batch size."
-        BATCH_SIZE_EXCEEDS_MAX = f"{error_prefix} Batch size exceeds the maximum allowed. Using the maximum batch size."
-        INVALID_CONCURRENCY_LIMIT = f"{error_prefix} Invalid concurrency limit provided. Falling back to the default concurrency limit."
-        CONCURRENCY_EXCEEDS_MAX = f"{error_prefix} Concurrency limit exceeds the maximum allowed. Using the maximum concurrency limit."
-
     class Info(Enum):
         VALIDATE_INSERT_REQUEST = f"{INFO}: [{error_prefix}] Validating insert request."
         INSERT_TRIGGERED = f"{INFO}: [{error_prefix}] Insert method triggered."
@@ -118,23 +106,9 @@ class SkyflowMessages:
         DETOKENIZE_REQUEST_RESOLVED = f"{INFO}: [{error_prefix}] Detokenize request resolved."
         DETOKENIZE_SUCCESS = f"{INFO}: [{error_prefix}] Tokens detokenized."
 
-        VALIDATE_BULK_INSERT_REQUEST = f"{INFO}: [{error_prefix}] Validating bulk insert request."
-        BULK_INSERT_TRIGGERED = f"{INFO}: [{error_prefix}] Bulk insert method triggered."
-        BULK_INSERT_REQUEST_RESOLVED = f"{INFO}: [{error_prefix}] Bulk insert request resolved."
-        BULK_INSERT_SUCCESS = f"{INFO}: [{error_prefix}] Bulk insert completed."
-
-        VALIDATE_BULK_DETOKENIZE_REQUEST = f"{INFO}: [{error_prefix}] Validating bulk detokenize request."
-        BULK_DETOKENIZE_TRIGGERED = f"{INFO}: [{error_prefix}] Bulk detokenize method triggered."
-        BULK_DETOKENIZE_REQUEST_RESOLVED = f"{INFO}: [{error_prefix}] Bulk detokenize request resolved."
-        BULK_DETOKENIZE_SUCCESS = f"{INFO}: [{error_prefix}] Bulk detokenize completed."
-
-        PROCESSING_BATCHES = f"{INFO}: [{error_prefix}] Processing batches."
-
     class ErrorLogs(Enum):
         INSERT_RECORDS_REJECTED = f"{ERROR}: [{error_prefix}] Insert call resulted in failure."
         GET_RECORDS_REJECTED = f"{ERROR}: [{error_prefix}] Get call resulted in failure."
         UPDATE_RECORDS_REJECTED = f"{ERROR}: [{error_prefix}] Update call resulted in failure."
         DELETE_RECORDS_REJECTED = f"{ERROR}: [{error_prefix}] Delete call resulted in failure."
         DETOKENIZE_RECORDS_REJECTED = f"{ERROR}: [{error_prefix}] Detokenize call resulted in failure."
-        BULK_INSERT_RECORDS_REJECTED = f"{ERROR}: [{error_prefix}] Bulk insert batch resulted in failure."
-        BULK_DETOKENIZE_RECORDS_REJECTED = f"{ERROR}: [{error_prefix}] Bulk detokenize batch resulted in failure."

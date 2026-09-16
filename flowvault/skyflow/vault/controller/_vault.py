@@ -1,7 +1,4 @@
-import asyncio
 import json
-from concurrent.futures import ThreadPoolExecutor
-from functools import partial
 
 from common.errors import SkyflowError
 from common.utils import SkyflowMessages as CommonMessages
@@ -21,22 +18,12 @@ from skyflow.generated.rest.core import ApiError, ParsingError
 from skyflow.utils import SkyflowMessages, get_metrics
 from skyflow.utils.enums import UpsertType
 from skyflow.utils._response_parsing import parse_tokens, parse_hashed_data, parse_metadata
-from skyflow.utils._batching import (
-    resolve_batch_config,
-    create_batches,
-    INSERT_BATCH_SIZE_KEY,
-    INSERT_CONCURRENCY_LIMIT_KEY,
-    DETOKENIZE_BATCH_SIZE_KEY,
-    DETOKENIZE_CONCURRENCY_LIMIT_KEY,
-)
 from skyflow.utils.validations import (
     validate_insert_request,
     validate_get_request,
     validate_update_request,
     validate_delete_request,
     validate_detokenize_request,
-    validate_bulk_insert_request,
-    validate_bulk_detokenize_request,
 )
 from skyflow.vault.data import (
     InsertRequest,
@@ -54,16 +41,6 @@ from skyflow.vault.data import (
     DetokenizeRequest,
     DetokenizeResponse,
     DetokenizeResponseRecord,
-    BulkInsertRequest,
-    BulkInsertResponse,
-    BulkInsertResponseRecord,
-    BulkSummary,
-    BulkDetokenizeRequest,
-    BulkDetokenizeResponse,
-    BulkDetokenizeResponseRecord,
-    DetokenizeSummary,
-    BulkInsertOptions,
-    BulkDetokenizeOptions,
     InsertOptions,
     GetOptions,
     UpdateOptions,
@@ -294,217 +271,6 @@ class VaultController(BaseVaultController):
         log_info(SkyflowMessages.Info.DETOKENIZE_SUCCESS.value, self._vault_client.get_logger())
         return DetokenizeResponse(records=records)
 
-    def bulk_insert(self, request: BulkInsertRequest, options: BulkInsertOptions = None) -> BulkInsertResponse:
-        batches, concurrency, top_kwargs = self.__prepare_bulk_insert(request)
-        interceptor = options.interceptor if options is not None else None
-        records_api = self._vault_client.get_records_api()
-        logger = self._vault_client.get_logger()
-        log_info(SkyflowMessages.Info.BULK_INSERT_TRIGGERED.value, logger)
-
-        def call_batch(batch, start_index, batch_index, total_batches):
-            try:
-                raw_response = records_api.with_raw_response.insert_records(
-                    vault_id=self._vault_client.get_vault_id(),
-                    table_name=request.table_name,
-                    records=batch,
-                    request_options=self.__bulk_request_options(OPERATION_INSERT, batch_index, total_batches, interceptor),
-                    **top_kwargs,
-                )
-                return self.__format_bulk_insert_batch(raw_response.data.records or [], start_index, raw_response.headers)
-            except Exception as e:
-                log_error_log(SkyflowMessages.ErrorLogs.BULK_INSERT_RECORDS_REJECTED.value, logger)
-                return self.__bulk_insert_batch_error_rows(e, len(batch), start_index)
-
-        records = self.__run_batches_sync(batches, call_batch, concurrency)
-        log_info(SkyflowMessages.Info.BULK_INSERT_SUCCESS.value, logger)
-        return self.__build_bulk_insert_response(records, request.records)
-
-    async def bulk_insert_async(self, request: BulkInsertRequest, options: BulkInsertOptions = None) -> BulkInsertResponse:
-        batches, concurrency, top_kwargs = self.__prepare_bulk_insert(request)
-        interceptor = options.interceptor if options is not None else None
-        records_api = self._vault_client.get_async_records_api()
-        logger = self._vault_client.get_logger()
-        log_info(SkyflowMessages.Info.BULK_INSERT_TRIGGERED.value, logger)
-
-        async def call_batch(batch, start_index, batch_index, total_batches):
-            try:
-                raw_response = await records_api.with_raw_response.insert_records(
-                    vault_id=self._vault_client.get_vault_id(),
-                    table_name=request.table_name,
-                    records=batch,
-                    request_options=self.__bulk_request_options(OPERATION_INSERT, batch_index, total_batches, interceptor),
-                    **top_kwargs,
-                )
-                return self.__format_bulk_insert_batch(raw_response.data.records or [], start_index, raw_response.headers)
-            except Exception as e:
-                log_error_log(SkyflowMessages.ErrorLogs.BULK_INSERT_RECORDS_REJECTED.value, logger)
-                return self.__bulk_insert_batch_error_rows(e, len(batch), start_index)
-
-        records = await self.__run_batches_async(batches, call_batch, concurrency)
-        log_info(SkyflowMessages.Info.BULK_INSERT_SUCCESS.value, logger)
-        return self.__build_bulk_insert_response(records, request.records)
-
-    def bulk_detokenize(self, request: BulkDetokenizeRequest, options: BulkDetokenizeOptions = None) -> BulkDetokenizeResponse:
-        batches, concurrency, redactions = self.__prepare_bulk_detokenize(request)
-        interceptor = options.interceptor if options is not None else None
-        tokens_api = self._vault_client.get_tokens_api()
-        logger = self._vault_client.get_logger()
-        log_info(SkyflowMessages.Info.BULK_DETOKENIZE_TRIGGERED.value, logger)
-
-        def call_batch(batch, start_index, batch_index, total_batches):
-            try:
-                raw_response = tokens_api.with_raw_response.detokenize(
-                    vault_id=self._vault_client.get_vault_id(),
-                    tokens=batch,
-                    token_group_redactions=redactions,
-                    request_options=self.__bulk_request_options(OPERATION_DETOKENIZE, batch_index, total_batches, interceptor),
-                )
-                return self.__format_bulk_detokenize_batch(raw_response.data.response or [], start_index, raw_response.headers)
-            except Exception as e:
-                log_error_log(SkyflowMessages.ErrorLogs.BULK_DETOKENIZE_RECORDS_REJECTED.value, logger)
-                return self.__bulk_detokenize_batch_error_rows(e, len(batch), start_index)
-
-        records = self.__run_batches_sync(batches, call_batch, concurrency)
-        log_info(SkyflowMessages.Info.BULK_DETOKENIZE_SUCCESS.value, logger)
-        return self.__build_bulk_detokenize_response(records, request.tokens)
-
-    async def bulk_detokenize_async(self, request: BulkDetokenizeRequest, options: BulkDetokenizeOptions = None) -> BulkDetokenizeResponse:
-        batches, concurrency, redactions = self.__prepare_bulk_detokenize(request)
-        interceptor = options.interceptor if options is not None else None
-        tokens_api = self._vault_client.get_async_tokens_api()
-        logger = self._vault_client.get_logger()
-        log_info(SkyflowMessages.Info.BULK_DETOKENIZE_TRIGGERED.value, logger)
-
-        async def call_batch(batch, start_index, batch_index, total_batches):
-            try:
-                raw_response = await tokens_api.with_raw_response.detokenize(
-                    vault_id=self._vault_client.get_vault_id(),
-                    tokens=batch,
-                    token_group_redactions=redactions,
-                    request_options=self.__bulk_request_options(OPERATION_DETOKENIZE, batch_index, total_batches, interceptor),
-                )
-                return self.__format_bulk_detokenize_batch(raw_response.data.response or [], start_index, raw_response.headers)
-            except Exception as e:
-                log_error_log(SkyflowMessages.ErrorLogs.BULK_DETOKENIZE_RECORDS_REJECTED.value, logger)
-                return self.__bulk_detokenize_batch_error_rows(e, len(batch), start_index)
-
-        records = await self.__run_batches_async(batches, call_batch, concurrency)
-        log_info(SkyflowMessages.Info.BULK_DETOKENIZE_SUCCESS.value, logger)
-        return self.__build_bulk_detokenize_response(records, request.tokens)
-
-    def __prepare_bulk_insert(self, request):
-        logger = self._vault_client.get_logger()
-        log_info(SkyflowMessages.Info.VALIDATE_BULK_INSERT_REQUEST.value, logger)
-        validate_bulk_insert_request(logger, request)
-        self._validate_table_name_if_present(request.table_name)
-        for record in request.records:
-            self._validate_table_name_if_present(record.table_name)
-            self._validate_field_values(record.data)
-        log_info(SkyflowMessages.Info.BULK_INSERT_REQUEST_RESOLVED.value, logger)
-        self._vault_client.initialize_client_configuration()
-
-        batch_size, concurrency = resolve_batch_config(
-            INSERT_BATCH_SIZE_KEY, INSERT_CONCURRENCY_LIMIT_KEY, len(request.records), logger,
-        )
-        needs_per_record_table = any(r.table_name is not None for r in request.records)
-        needs_per_record_upsert = any(r.upsert is not None for r in request.records)
-        wire_records = [
-            self.__build_bulk_insert_wire_record(r, request, needs_per_record_table, needs_per_record_upsert)
-            for r in request.records
-        ]
-        batches = self.__index_batches(wire_records, batch_size)
-        top_kwargs = self.__omit_none(
-            upsert=None if needs_per_record_upsert else self.__to_upsert(request.upsert),
-        )
-        log_info(SkyflowMessages.Info.PROCESSING_BATCHES.value, logger)
-        return batches, concurrency, top_kwargs
-
-    def __prepare_bulk_detokenize(self, request):
-        logger = self._vault_client.get_logger()
-        log_info(SkyflowMessages.Info.VALIDATE_BULK_DETOKENIZE_REQUEST.value, logger)
-        validate_bulk_detokenize_request(logger, request)
-        log_info(SkyflowMessages.Info.BULK_DETOKENIZE_REQUEST_RESOLVED.value, logger)
-        self._vault_client.initialize_client_configuration()
-
-        batch_size, concurrency = resolve_batch_config(
-            DETOKENIZE_BATCH_SIZE_KEY, DETOKENIZE_CONCURRENCY_LIMIT_KEY, len(request.tokens), logger,
-        )
-        batches = self.__index_batches(request.tokens, batch_size)
-        redactions = self.__to_token_group_redactions(request.token_group_redactions)
-        log_info(SkyflowMessages.Info.PROCESSING_BATCHES.value, logger)
-        return batches, concurrency, redactions
-
-    def __index_batches(self, items, batch_size):
-        batches = create_batches(items, batch_size)
-        total_batches, start_index, indexed = len(batches), 0, []
-        for batch_index, batch in enumerate(batches):
-            indexed.append((batch, start_index, batch_index, total_batches))
-            start_index += len(batch)
-        return indexed
-
-    def __run_batches_sync(self, batches, call_batch, concurrency):
-        with ThreadPoolExecutor(max_workers=max(1, concurrency)) as executor:
-            futures = [executor.submit(call_batch, *batch) for batch in batches]
-            merged = []
-            for future in futures:
-                merged.extend(future.result())
-        return merged
-
-    async def __run_batches_async(self, batches, call_batch, concurrency):
-        semaphore = asyncio.Semaphore(max(1, concurrency))
-
-        async def guarded(batch):
-            async with semaphore:
-                return await call_batch(*batch)
-
-        results = await asyncio.gather(*(guarded(batch) for batch in batches))
-        merged = []
-        for result in results:
-            merged.extend(result)
-        return merged
-
-    def __build_bulk_insert_wire_record(self, record, request, needs_per_record_table, needs_per_record_upsert):
-        return InsertRecordData(data=record.data, **self.__omit_none(
-            tokens=record.tokens,
-            table_name=(record.table_name or request.table_name) if needs_per_record_table else None,
-            upsert=self.__to_upsert(record.upsert or request.upsert) if needs_per_record_upsert else None,
-        ))
-
-    def __format_bulk_insert_batch(self, records, start_index, headers):
-        request_id = self.__extract_request_id(headers)
-        rows = []
-        for offset, record in enumerate(records):
-            error = self.__wire_record_value(record, 'error', 'error')
-            rows.append(BulkInsertResponseRecord(
-                index=start_index + offset,
-                request_id=request_id if error is not None else None,
-                table_name=self.__wire_record_value(record, 'tableName', 'table_name'),
-                skyflow_id=self.__wire_record_value(record, 'skyflowID', 'skyflow_id'),
-                tokens=parse_tokens(self.__wire_record_value(record, 'tokens', 'tokens')),
-                data=self.__wire_record_value(record, 'data', 'data'),
-                hashed_data=parse_hashed_data(self.__wire_record_value(record, 'hashedData', 'hashed_data')),
-                http_code=self.__wire_record_value(record, 'httpCode', 'http_code'),
-                error=error,
-            ))
-        return rows
-
-    def __format_bulk_detokenize_batch(self, responses, start_index, headers):
-        request_id = self.__extract_request_id(headers)
-        rows = []
-        for offset, resp in enumerate(responses):
-            error = self.__wire_record_value(resp, 'error', 'error')
-            rows.append(BulkDetokenizeResponseRecord(
-                index=start_index + offset,
-                request_id=request_id if error is not None else None,
-                value=self.__wire_record_value(resp, 'value', 'value'),
-                token_group_name=self.__wire_record_value(resp, 'tokenGroupName', 'token_group_name'),
-                metadata=parse_metadata(self.__wire_record_value(resp, 'metadata', 'metadata')),
-                http_code=self.__wire_record_value(resp, 'httpCode', 'http_code'),
-                token=self.__wire_record_value(resp, 'token', 'token'),
-                error=error,
-            ))
-        return rows
-
     def __error_body_records(self, e):
         body = getattr(e, 'body', None)
         if isinstance(body, dict):
@@ -529,63 +295,6 @@ class VaultController(BaseVaultController):
         if isinstance(record, dict):
             return record.get(wire_key)
         return getattr(record, attr, None)
-
-    def __bulk_batch_error_tuples(self, e, count, start_index):
-        if isinstance(e, ApiError):
-            request_id = self.__extract_request_id(e.headers)
-            status = e.status_code
-            body = e.body if isinstance(e.body, dict) else None
-            if body and isinstance(body.get('records'), list) and body['records']:
-                tuples = [
-                    (start_index + offset, request_id,
-                     record.get('error', record.get('message', UNKNOWN_ERROR_MESSAGE)),
-                     record.get('http_code', record.get('httpCode', record.get('statusCode', status))))
-                    for offset, record in enumerate(body['records']) if isinstance(record, dict)
-                ]
-                if tuples:
-                    return tuples
-            message, _, _, _ = self.__parse_api_error_body(e.body)
-            return [(start_index + i, request_id, message, status) for i in range(count)]
-        message = str(e) if e else CommonMessages.Error.GENERIC_API_ERROR.value
-        return [(start_index + i, None, message, None) for i in range(count)]
-
-    def __bulk_insert_batch_error_rows(self, e, count, start_index):
-        records = self.__error_body_records(e)
-        if records:
-            return self.__format_bulk_insert_batch(records, start_index, getattr(e, 'headers', None))
-        return [
-            BulkInsertResponseRecord(index=idx, request_id=request_id, table_name=None, skyflow_id=None,
-                                     tokens=None, hashed_data=None, http_code=code, error=message)
-            for idx, request_id, message, code in self.__bulk_batch_error_tuples(e, count, start_index)
-        ]
-
-    def __bulk_detokenize_batch_error_rows(self, e, count, start_index):
-        records = self.__error_body_records(e)
-        if records:
-            return self.__format_bulk_detokenize_batch(records, start_index, getattr(e, 'headers', None))
-        return [
-            BulkDetokenizeResponseRecord(index=idx, request_id=request_id, value=None, token_group_name=None,
-                                         metadata=None, http_code=code, token=None, error=message)
-            for idx, request_id, message, code in self.__bulk_batch_error_tuples(e, count, start_index)
-        ]
-
-    def __build_bulk_insert_response(self, records, original_records):
-        total_failed = sum(1 for record in records if record.error is not None)
-        summary = BulkSummary(
-            total_records=len(original_records),
-            total_inserted=len(records) - total_failed,
-            total_failed=total_failed,
-        )
-        return BulkInsertResponse(summary=summary, records=records, _original_records=original_records)
-
-    def __build_bulk_detokenize_response(self, records, original_tokens):
-        total_failed = sum(1 for record in records if record.error is not None)
-        summary = DetokenizeSummary(
-            total_tokens=len(original_tokens),
-            total_detokenized=len(records) - total_failed,
-            total_failed=total_failed,
-        )
-        return BulkDetokenizeResponse(summary=summary, records=records, _original_tokens=original_tokens)
 
     def __build_wire_record(self, record, request, needs_per_record_table, needs_per_record_upsert):
         return InsertRecordData(data=record.data, **self.__omit_none(
@@ -624,14 +333,6 @@ class VaultController(BaseVaultController):
         if custom_headers:
             headers.update(custom_headers)
         return {ADDITIONAL_HEADERS_KEY: headers}
-
-    def __bulk_request_options(self, operation, batch_index, total_batches, interceptor):
-        custom_headers = None
-        if interceptor is not None:
-            context = RequestContext(operation, batch_index, total_batches)
-            interceptor(context)
-            custom_headers = {str(key): value for key, value in context.headers.items()}
-        return self.__request_options(custom_headers)
 
     def __unary_request_options(self, operation, options):
         interceptor = options.interceptor if options is not None else None

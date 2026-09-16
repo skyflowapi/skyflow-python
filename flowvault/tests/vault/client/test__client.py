@@ -53,16 +53,6 @@ class TestVaultClient(unittest.TestCase):
         result = self.vault_client.get_tokens_api()
         self.assertEqual(result, self.vault_client._api_client.tokens)
 
-    def test_get_async_records_api_returns_records(self):
-        self.vault_client._async_api_client = MagicMock()
-        result = self.vault_client.get_async_records_api()
-        self.assertEqual(result, self.vault_client._async_api_client.records)
-
-    def test_get_async_tokens_api_returns_tokens(self):
-        self.vault_client._async_api_client = MagicMock()
-        result = self.vault_client.get_async_tokens_api()
-        self.assertEqual(result, self.vault_client._async_api_client.tokens)
-
     # ------------------------------------------------------------------ #
     # HTTP config resolution (vault -> client-wide -> default) + vault_url
     # ------------------------------------------------------------------ #
@@ -104,16 +94,12 @@ class TestVaultClient(unittest.TestCase):
         client = VaultClient({"vault_id": "v"})
         client.initialize_api_client("http://localhost:3015", "t1")
         old_sync = client._sync_httpx_client
-        old_async = client._async_httpx_client
         self.assertFalse(old_sync.is_closed)
-        self.assertFalse(old_async.is_closed)
 
         client.initialize_api_client("http://localhost:3015", "t2")
 
         self.assertTrue(old_sync.is_closed)
-        self.assertTrue(old_async.is_closed)
         self.assertIsNot(client._sync_httpx_client, old_sync)
-        self.assertIsNot(client._async_httpx_client, old_async)
 
     def test_close_releases_clients_and_clears_state(self):
         client = VaultClient({"vault_id": "v"})
@@ -124,9 +110,7 @@ class TestVaultClient(unittest.TestCase):
 
         self.assertTrue(sync_client.is_closed)
         self.assertIsNone(client._sync_httpx_client)
-        self.assertIsNone(client._async_httpx_client)
         self.assertIsNone(client._api_client)
-        self.assertIsNone(client._async_api_client)
 
 
 if __name__ == "__main__":
