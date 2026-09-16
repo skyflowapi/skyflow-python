@@ -82,3 +82,33 @@ jobs:
           flags: flowvault
           name: codecov-skyflow-python-flowvault
           verbose: true
+
+  smoke:
+    name: Clean-install smoke test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v2
+        with:
+          python-version: '3.9'
+
+      # Build the wheel (it bundles the sibling common/ tree via setup.py's
+      # custom build_py), then install ONLY that wheel into a fresh virtualenv
+      # and import it. The venv contains just the wheel's declared runtime
+      # dependencies, so a dependency missing from setup.py fails the import
+      # here -- the unit-test job installs dev deps and would mask it.
+      - name: Build the flowvault wheel
+        run: |
+          python -m pip install --upgrade pip setuptools wheel
+          cd flowvault
+          python setup.py bdist_wheel
+
+      - name: Install the wheel in a clean venv and import
+        run: |
+          python -m venv /tmp/smoke
+          /tmp/smoke/bin/pip install --upgrade pip
+          /tmp/smoke/bin/pip install flowvault/dist/*.whl
+          # Import from outside the repo so the source tree (flowvault/skyflow,
+          # ./common) is not on sys.path -- this exercises the installed wheel.
+          cd /tmp
+          /tmp/smoke/bin/python -c "import skyflow, common; from skyflow import Skyflow, Env, LogLevel; from skyflow.vault.data import InsertRequest, GetRequest, UpdateRequest, DeleteRequest, DetokenizeRequest, InsertOptions, GetOptions, UpdateOptions, DeleteOptions, DetokenizeOptions; from skyflow.vault.controller import VaultController; print('clean-install import OK')"
