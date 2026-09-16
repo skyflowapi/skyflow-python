@@ -12,7 +12,7 @@ from setuptools.command.sdist import sdist as _sdist
 
 if sys.version_info < (3, 9):
     raise RuntimeError("skyflow requires Python 3.9+")
-current_version = '1.0.0'
+current_version = '1.0.1'
 
 HERE = os.path.abspath(os.path.dirname(__file__))
 REPO_ROOT = os.path.dirname(HERE)
