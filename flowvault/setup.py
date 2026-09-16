@@ -1,0 +1,104 @@
+'''
+	Copyright (c) 2022 Skyflow, Inc.
+'''
+import os
+import shutil
+import sys
+
+from setuptools import setup, find_packages
+from setuptools.command.build_py import build_py as _build_py
+from setuptools.command.sdist import sdist as _sdist
+
+
+if sys.version_info < (3, 9):
+    raise RuntimeError("skyflow requires Python 3.9+")
+current_version = '1.0.0.dev0+ae2f5dc'
+
+HERE = os.path.abspath(os.path.dirname(__file__))
+REPO_ROOT = os.path.dirname(HERE)
+VENDORED_COMMON = os.path.join(HERE, 'common')
+COMMON_SRC = os.path.join(REPO_ROOT, 'common')
+if not os.path.isdir(COMMON_SRC):
+    COMMON_SRC = VENDORED_COMMON
+
+with open(os.path.join(HERE, 'README.md'), 'r', encoding='utf-8') as f:
+    long_description = f.read()
+
+_COMMON_EXCLUDE_DIRS = {'__pycache__', '.pytest_cache', 'tests', '.mypy_cache', 'build', 'dist'}
+_COMMON_EXCLUDE_FILES = {'setup.py', 'pyproject.toml', 'requirements.txt', '.gitignore'}
+_COMMON_EXCLUDE_SUFFIXES = ('.egg-info',)
+
+
+def _ignore_common_files(_directory, names):
+    ignored = set()
+    for name in names:
+        if name in _COMMON_EXCLUDE_DIRS or name in _COMMON_EXCLUDE_FILES:
+            ignored.add(name)
+        elif name.endswith(_COMMON_EXCLUDE_SUFFIXES):
+            ignored.add(name)
+    return ignored
+
+
+class CustomBuildPy(_build_py):
+    """SK-2938 Option C bundling mechanism -- see skyvault/setup.py for full rationale. Bundles the
+    common/ source tree into this variant's wheel, from the sibling checkout or, when building from
+    an sdist, from the copy vendored into the tarball by CustomSdist."""
+
+    def run(self):
+        super().run()
+        dest = os.path.join(self.build_lib, 'common')
+        if os.path.exists(dest):
+            shutil.rmtree(dest)
+        shutil.copytree(COMMON_SRC, dest, ignore=_ignore_common_files)
+
+
+class CustomSdist(_sdist):
+    def run(self):
+        copied = False
+        if os.path.isdir(COMMON_SRC) and os.path.abspath(COMMON_SRC) != os.path.abspath(VENDORED_COMMON):
+            if os.path.exists(VENDORED_COMMON):
+                shutil.rmtree(VENDORED_COMMON)
+            shutil.copytree(COMMON_SRC, VENDORED_COMMON, ignore=_ignore_common_files)
+            copied = True
+        try:
+            super().run()
+        finally:
+            if copied:
+                shutil.rmtree(VENDORED_COMMON)
+
+
+setup(
+    name='skyflow-flowvault-python',
+    version=current_version,
+    author='Skyflow',
+    author_email='service-ops@skyflow.com',
+    packages=find_packages(where='.', exclude=['test*', 'samples*', 'common', 'common.*']),
+    package_data={
+        'skyflow': ['py.typed'],
+        'skyflow.generated.rest': ['py.typed'],
+    },
+    cmdclass={'build_py': CustomBuildPy, 'sdist': CustomSdist},
+    url='https://github.com/skyflowapi/skyflow-python/',
+    license='LICENSE',
+    description='Skyflow SDK for the Python programming language (v3 / flowservice API)',
+    long_description=long_description,
+    long_description_content_type='text/markdown',
+    install_requires=[
+        'pydantic >= 2.0.0',
+        'typing-extensions >= 4.0.0',
+        'PyJWT >= 2.12, < 3',
+        'cryptography >= 44.0.2',
+        'httpx >= 0.21.2',
+        # NOTE: 'requests' intentionally omitted -- only used today by v2's Connection
+        # controller, which isn't part of v3's scope this round.
+    ],
+    extras_require={
+        'dev': [
+            'codespell >= 2.4.1',
+            'ruff >= 0.9.0',
+            'pre-commit >= 4.3.0',
+            'griffe == 2.2.0; python_version >= "3.10"',
+        ]
+    },
+    python_requires=">=3.9",
+)

@@ -1,0 +1,48 @@
+from skyflow.error import SkyflowError
+from skyflow import Env
+from skyflow import Skyflow, LogLevel
+from skyflow.vault.data import GetRequest
+
+
+def perform_secure_data_retrieval():
+    try:
+        credentials = {
+            'path': '<PATH_TO_YOUR_CREDENTIALS_JSON>',
+        }
+
+        vault_config = {
+            'vault_id': '<YOUR_VAULT_ID>',
+            'cluster_id': '<YOUR_CLUSTER_ID>',
+            'env': Env.PROD,
+            'credentials': credentials,
+        }
+
+        skyflow_client = (
+            Skyflow.builder()
+            .add_vault_config(vault_config)
+            .set_log_level(LogLevel.ERROR)
+            .build()
+        )
+
+        get_request = GetRequest(
+            table_name='<SENSITIVE_DATA_TABLE>',
+            skyflow_ids=['<SKYFLOW_ID1>', '<SKYFLOW_ID2>'],
+        )
+
+        response = skyflow_client.vault(vault_config.get('vault_id')).get(get_request)
+
+        # response.records: list of GetResponseRecord, one per input, in order.
+        # Each has .skyflow_id, .table_name, .data, .tokens, .hashed_data, .http_code, .error, .request_id.
+        print('Records: ', response.records)
+
+    except SkyflowError as error:
+        print('Skyflow Specific Error: ', {
+            'code': error.http_code,
+            'message': error.message,
+            'details': error.details,
+        })
+    except Exception as error:
+        print('Unexpected Error:', error)
+
+
+perform_secure_data_retrieval()

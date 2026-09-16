@@ -1,18 +1,71 @@
-name: Public Release
+name: Public release
+
+# Triggered by publishing a GitHub Release, not a raw tag push: the Release
+# carries both facts needed here - target_commitish (the branch picked in the
+# UI; a tag records only a commit) and tag_name (module prefix + version).
+#
+# Beta and final share this workflow - 'release' events cannot be filtered by
+# tag pattern, and both behave identically downstream. Kind comes from the tag.
 
 on:
-  push:
-    tags: "*.*.*"
-    paths-ignore:
-      - "setup.py"
-      - "*.yml"
-      - "*.md"
-      - "skyflow/utils/_version.py"
+  release:
+    types: [published]
 
 jobs:
+  resolve-release:
+    runs-on: ubuntu-latest
+    outputs:
+      module: ${{ steps.parse.outputs.module }}
+      version: ${{ steps.parse.outputs.version }}
+      kind: ${{ steps.parse.outputs.kind }}
+    steps:
+      - name: Parse module, version and release kind from the tag
+        id: parse
+        env:
+          TAG: ${{ github.event.release.tag_name }}
+          BRANCH: ${{ github.event.release.target_commitish }}
+        run: |
+          # Expected: <module>/v<semver>[-beta.N]  e.g. flowvault/v1.0.0,
+          # skyvault/v2.1.2, flowvault/v1.0.0-beta.1
+          if [[ ! "$TAG" =~ ^[a-z]+/v[0-9]+\.[0-9]+\.[0-9]+(-beta\.[0-9]+)?$ ]]; then
+            echo "::error::Tag '$TAG' is not <module>/v<semver>[-beta.N]." \
+                 "Examples: flowvault/v1.0.0, skyvault/v2.1.2, flowvault/v1.0.0-beta.1"
+            exit 1
+          fi
+
+          PREFIX="${TAG%%/*}"      # flowvault/v1.0.0 -> flowvault
+          VERSION="${TAG#*/}"      # flowvault/v1.0.0 -> v1.0.0
+          VERSION="${VERSION#v}"   # v1.0.0           -> 1.0.0
+
+          # Tag prefix -> module directory (both match the directory name).
+          case "$PREFIX" in
+            flowvault) MODULE="flowvault" ;;
+            skyvault)  MODULE="skyvault" ;;
+            *)
+              echo "::error::Unknown module prefix '$PREFIX' in tag '$TAG'"
+              exit 1
+              ;;
+          esac
+
+          if [[ "$VERSION" == *-beta.* ]]; then KIND="beta"; else KIND="public"; fi
+
+          if [ -z "$BRANCH" ]; then
+            echo "::error::Release has no target_commitish - cannot determine the release branch."
+            exit 1
+          fi
+
+          echo "Tag '$TAG' -> module='$MODULE' version='$VERSION' kind='$KIND' branch='$BRANCH'"
+          echo "module=$MODULE"   >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "kind=$KIND"       >> "$GITHUB_OUTPUT"
+
   build-and-deploy:
+    needs: resolve-release
     uses: ./.github/workflows/shared-build-and-deploy.yml
     with:
-      ref: main
-      tag: 'public'
+      ref: ${{ github.event.release.tag_name }}
+      tag: ${{ needs.resolve-release.outputs.kind }}
+      module: ${{ needs.resolve-release.outputs.module }}
+      version: ${{ needs.resolve-release.outputs.version }}
+      release-branch: ${{ github.event.release.target_commitish }}
     secrets: inherit

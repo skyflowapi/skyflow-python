@@ -1,0 +1,4 @@
+graft common
+prune samples
+global-exclude *.pyc
+global-exclude __pycache__
