@@ -77,7 +77,7 @@ class AuthenticationClient:
         )
         client.authentication.authentication_service_get_auth_token(
             grant_type="urn:ietf:params:oauth:grant-type:jwt-bearer",
-            assertion="eyLhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaXNzIjoiY29tcGFueSIsImV4cCI6MTYxNTE5MzgwNywiaWF0IjoxNjE1MTY1MDQwLCJhdWQiOiKzb21lYXVkaWVuY2UifQ.4pcPyMDQ9o1PSyXnrXCjTwXyr4BSezdI1AVTmud2fU3",
+            assertion="YOUR_SIGNED_JWT_ASSERTION",
         )
         """
         _response = self._raw_client.authentication_service_get_auth_token(
@@ -163,7 +163,7 @@ class AsyncAuthenticationClient:
         async def main() -> None:
             await client.authentication.authentication_service_get_auth_token(
                 grant_type="urn:ietf:params:oauth:grant-type:jwt-bearer",
-                assertion="eyLhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaXNzIjoiY29tcGFueSIsImV4cCI6MTYxNTE5MzgwNywiaWF0IjoxNjE1MTY1MDQwLCJhdWQiOiKzb21lYXVkaWVuY2UifQ.4pcPyMDQ9o1PSyXnrXCjTwXyr4BSezdI1AVTmud2fU3",
+                assertion="YOUR_SIGNED_JWT_ASSERTION",
             )
 
 

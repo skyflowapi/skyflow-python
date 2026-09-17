@@ -43,6 +43,14 @@ creds_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file
 with open(creds_path, "r") as file:
     credentials = json.load(file)
 
+dummy_api_keys_path = os.path.join(os.path.dirname(__file__), "..", "dummy-non-secret", "api_keys.json")
+with open(dummy_api_keys_path, "r") as dummy_api_keys_file:
+    dummy_api_keys = json.load(dummy_api_keys_file)
+
+DUMMY_VALID_API_KEY = dummy_api_keys["utils_valid_api_key"]
+DUMMY_INVALID_LENGTH_API_KEY = dummy_api_keys["utils_invalid_length_api_key"]
+DUMMY_INVALID_PATTERN_API_KEY = dummy_api_keys["utils_invalid_pattern_api_key"]
+
 TEST_ERROR_MESSAGE = "Test error message."
 VALID_ENV_CREDENTIALS = credentials
 
@@ -556,15 +564,15 @@ class TestUtils(unittest.TestCase):
         )
 
     def test_validate_api_key_valid_key(self):
-        valid_key = "sky-ABCDE-1234567890abcdef1234567890abcdef"
+        valid_key = DUMMY_VALID_API_KEY
         self.assertTrue(validate_api_key(valid_key))
 
     def test_validate_api_key_invalid_length(self):
-        invalid_key = "sky-ABCDE-123"
+        invalid_key = DUMMY_INVALID_LENGTH_API_KEY
         self.assertFalse(validate_api_key(invalid_key))
 
     def test_validate_api_key_invalid_pattern(self):
-        invalid_key = "sky-ABCDE-1234567890GHIJKL7890abcdef"
+        invalid_key = DUMMY_INVALID_PATTERN_API_KEY
         self.assertFalse(validate_api_key(invalid_key))
 
     def test_encode_column_values(self):

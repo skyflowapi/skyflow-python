@@ -1,0 +1,8 @@
+{
+  "validations_valid_api_key": "sky-test-000000000000000000000000000000000",
+  "validations_invalid_prefix_api_key": "invalid-test-000000000000000000000000000000000",
+  "validations_invalid_length_api_key": "sky-test-123456",
+  "utils_valid_api_key": "sky-00000-00000000000000000000000000000000",
+  "utils_invalid_length_api_key": "sky-00000-000",
+  "utils_invalid_pattern_api_key": "sky-00000-0000000000GHIJKL0000000000000000"
+}
