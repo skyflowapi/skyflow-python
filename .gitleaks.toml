@@ -1,0 +1,10 @@
+title = "skyflow-python gitleaks config"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Dummy, non-secret fixture values used only by tests"
+paths = [
+  '''(^|/)dummy-non-secret/.*''',
+]

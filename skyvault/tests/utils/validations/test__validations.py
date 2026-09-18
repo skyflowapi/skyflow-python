@@ -2,6 +2,7 @@ import unittest
 from unittest.mock import Mock, patch, MagicMock
 import tempfile
 import os
+import json
 
 from skyflow.error import SkyflowError
 from skyflow.utils.validations._validations import (
@@ -23,6 +24,16 @@ from skyflow.vault.detect import DeidentifyTextRequest, Transformations, DateTra
 from skyflow.vault.data._file_upload_request import FileUploadRequest
 from skyflow.vault.tokens import DetokenizeRequest
 from skyflow.vault.connection._invoke_connection_request import InvokeConnectionRequest
+
+_dummy_api_keys_path = os.path.join(
+    os.path.dirname(__file__), "..", "..", "dummy-non-secret", "api_keys.json"
+)
+with open(_dummy_api_keys_path, "r") as _dummy_api_keys_file:
+    _dummy_api_keys = json.load(_dummy_api_keys_file)
+
+DUMMY_VALID_API_KEY = _dummy_api_keys["validations_valid_api_key"]
+DUMMY_INVALID_PREFIX_API_KEY = _dummy_api_keys["validations_invalid_prefix_api_key"]
+DUMMY_INVALID_LENGTH_API_KEY = _dummy_api_keys["validations_invalid_length_api_key"]
 
 class TestValidations(unittest.TestCase):
     @classmethod
@@ -94,20 +105,20 @@ class TestValidations(unittest.TestCase):
         self.assertEqual(context.exception.message, "Invalid error")
 
     def test_validate_api_key_valid(self):
-        valid_key = "sky-abc12-1234567890abcdef1234567890abcdef"
+        valid_key = DUMMY_VALID_API_KEY
         self.assertTrue(validate_api_key(valid_key, self.logger))
 
     def test_validate_api_key_invalid_prefix(self):
-        invalid_key = "invalid-abc12-1234567890abcdef1234567890abcdef"
+        invalid_key = DUMMY_INVALID_PREFIX_API_KEY
         self.assertFalse(validate_api_key(invalid_key, self.logger))
 
     def test_validate_api_key_invalid_length(self):
-        invalid_key = "sky-abc12-123456"
+        invalid_key = DUMMY_INVALID_LENGTH_API_KEY
         self.assertFalse(validate_api_key(invalid_key, self.logger))
 
     def test_validate_credentials_with_api_key(self):
         credentials = {
-            "api_key": "sky-abc12-1234567890abcdef1234567890abcdef"
+            "api_key": DUMMY_VALID_API_KEY
         }
         validate_credentials(self.logger, credentials)
 
@@ -129,7 +140,7 @@ class TestValidations(unittest.TestCase):
     def test_validate_credentials_multiple_auth_methods(self):
         credentials = {
             "token": "valid_token",
-            "api_key": "sky-abc12-1234567890abcdef1234567890abcdef"
+            "api_key": DUMMY_VALID_API_KEY
         }
         with self.assertRaises(SkyflowError) as context:
             validate_credentials(self.logger, credentials)
@@ -152,7 +163,7 @@ class TestValidations(unittest.TestCase):
 
     def test_validate_credentials_with_string_context(self):
         credentials = {
-            "api_key": "sky-abc12-1234567890abcdef1234567890abcdef",
+            "api_key": DUMMY_VALID_API_KEY,
             "context": "user_12345"
         }
         validate_credentials(self.logger, credentials)
@@ -160,14 +171,14 @@ class TestValidations(unittest.TestCase):
     def test_validate_credentials_with_dict_context(self):
         """A dict/JSON object context is accepted — the token engine supports it."""
         credentials = {
-            "api_key": "sky-abc12-1234567890abcdef1234567890abcdef",
+            "api_key": DUMMY_VALID_API_KEY,
             "context": {"role": "admin", "department": "finance"}
         }
         validate_credentials(self.logger, credentials)
 
     def test_validate_credentials_with_empty_dict_context(self):
         credentials = {
-            "api_key": "sky-abc12-1234567890abcdef1234567890abcdef",
+            "api_key": DUMMY_VALID_API_KEY,
             "context": {}
         }
         with self.assertRaises(SkyflowError) as context:
@@ -176,7 +187,7 @@ class TestValidations(unittest.TestCase):
 
     def test_validate_credentials_with_invalid_dict_context_key(self):
         credentials = {
-            "api_key": "sky-abc12-1234567890abcdef1234567890abcdef",
+            "api_key": DUMMY_VALID_API_KEY,
             "context": {"invalid key": "value"}
         }
         with self.assertRaises(SkyflowError) as context:
@@ -196,7 +207,7 @@ class TestValidations(unittest.TestCase):
         for scalar_context in [123, 0, 1.5, 0.0, True, False]:
             with self.subTest(context=scalar_context):
                 credentials = {
-                    "api_key": "sky-abc12-1234567890abcdef1234567890abcdef",
+                    "api_key": DUMMY_VALID_API_KEY,
                     "context": scalar_context
                 }
                 validate_credentials(self.logger, credentials)
@@ -205,7 +216,7 @@ class TestValidations(unittest.TestCase):
         for invalid_context in [["user_12345"], ("user_12345",), None, object()]:
             with self.subTest(context=invalid_context):
                 credentials = {
-                    "api_key": "sky-abc12-1234567890abcdef1234567890abcdef",
+                    "api_key": DUMMY_VALID_API_KEY,
                     "context": invalid_context
                 }
                 with self.assertRaises(SkyflowError) as context:
@@ -215,7 +226,7 @@ class TestValidations(unittest.TestCase):
     def test_validate_credentials_with_dict_context_in_config(self):
         """Config-scoped messages are used when a config id is available."""
         credentials = {
-            "api_key": "sky-abc12-1234567890abcdef1234567890abcdef",
+            "api_key": DUMMY_VALID_API_KEY,
             "context": {}
         }
         with self.assertRaises(SkyflowError) as context:
@@ -231,14 +242,14 @@ class TestValidations(unittest.TestCase):
 
     def test_validate_credentials_with_roles(self):
         credentials = {
-            "api_key": "sky-abc12-1234567890abcdef1234567890abcdef",
+            "api_key": DUMMY_VALID_API_KEY,
             "roles": ["role_id_1", "role_id_2"]
         }
         validate_credentials(self.logger, credentials)
 
     def test_validate_credentials_with_invalid_roles_type(self):
         credentials = {
-            "api_key": "sky-abc12-1234567890abcdef1234567890abcdef",
+            "api_key": DUMMY_VALID_API_KEY,
             "roles": "role_id_1"
         }
         with self.assertRaises(SkyflowError) as context:
@@ -247,7 +258,7 @@ class TestValidations(unittest.TestCase):
 
     def test_validate_credentials_with_empty_roles(self):
         credentials = {
-            "api_key": "sky-abc12-1234567890abcdef1234567890abcdef",
+            "api_key": DUMMY_VALID_API_KEY,
             "roles": []
         }
         with self.assertRaises(SkyflowError) as context:
@@ -256,7 +267,7 @@ class TestValidations(unittest.TestCase):
 
     def test_validate_credentials_with_non_string_role_elements(self):
         credentials = {
-            "api_key": "sky-abc12-1234567890abcdef1234567890abcdef",
+            "api_key": DUMMY_VALID_API_KEY,
             "roles": [None, 123, {"id": "x"}]
         }
         with self.assertRaises(SkyflowError) as context:
@@ -312,7 +323,7 @@ class TestValidations(unittest.TestCase):
             "vault_id": "vault123",
             "cluster_id": "cluster123",
             "credentials": {
-                "api_key": "sky-abc12-1234567890abcdef1234567890abcdef"
+                "api_key": DUMMY_VALID_API_KEY
             },
             "env": Env.DEV
         }
@@ -333,7 +344,7 @@ class TestValidations(unittest.TestCase):
             "vault_id": "vault123",
             "cluster_id": "cluster123",
             "credentials": {
-                "api_key": "sky-abc12-1234567890abcdef1234567890abcdef"
+                "api_key": DUMMY_VALID_API_KEY
             },
             "env": Env.DEV
         }
@@ -344,7 +355,7 @@ class TestValidations(unittest.TestCase):
             "vault_id": "vault123",
             "cluster_id": "",
             "credentials": {
-                "api_key": "sky-abc12-1234567890abcdef1234567890abcdef"
+                "api_key": DUMMY_VALID_API_KEY
             }
         }
         with self.assertRaises(SkyflowError) as context:
@@ -368,7 +379,7 @@ class TestValidations(unittest.TestCase):
             "connection_id": "conn123",
             "connection_url": "https://example.com",
             "credentials": {
-                "api_key": "sky-abc12-1234567890abcdef1234567890abcdef"
+                "api_key": DUMMY_VALID_API_KEY
             }
         }
         self.assertTrue(validate_connection_config(self.logger, config))
@@ -377,7 +388,7 @@ class TestValidations(unittest.TestCase):
         config = {
             "connection_id": "conn123",
             "credentials": {
-                "api_key": "sky-abc12-1234567890abcdef1234567890abcdef"
+                "api_key": DUMMY_VALID_API_KEY
             }
         }
         with self.assertRaises(SkyflowError) as context:
@@ -389,7 +400,7 @@ class TestValidations(unittest.TestCase):
             "connection_id": "",
             "connection_url": "https://example.com",
             "credentials": {
-                "api_key": "sky-abc12-1234567890abcdef1234567890abcdef"
+                "api_key": DUMMY_VALID_API_KEY
             }
         }
         with self.assertRaises(SkyflowError) as context:
@@ -413,7 +424,7 @@ class TestValidations(unittest.TestCase):
             "connection_id": "conn123",
             "connection_url": "https://example.com",
             "credentials": {
-                "api_key": "sky-abc12-1234567890abcdef1234567890abcdef"
+                "api_key": DUMMY_VALID_API_KEY
             }
         }
         self.assertTrue(validate_update_connection_config(self.logger, config))
@@ -432,7 +443,7 @@ class TestValidations(unittest.TestCase):
             "connection_id": "conn123",
             "connection_url": "",
             "credentials": {
-                "api_key": "sky-abc12-1234567890abcdef1234567890abcdef"
+                "api_key": DUMMY_VALID_API_KEY
             }
         }
         with self.assertRaises(SkyflowError) as context:
@@ -1344,7 +1355,7 @@ class TestValidations(unittest.TestCase):
         self.assertEqual(context.exception.message, SkyflowMessages.Error.WAIT_TIME_GREATER_THEN_64.value)
     def test_validate_credentials_with_valid_token_uri(self):
         credentials = {
-            "api_key": "sky-abc12-1234567890abcdef1234567890abcdef",
+            "api_key": DUMMY_VALID_API_KEY,
             "token_uri": "https://valid-url.com"
         }
         # Should not raise
@@ -1352,7 +1363,7 @@ class TestValidations(unittest.TestCase):
 
     def test_validate_credentials_with_invalid_token_uri_type(self):
         credentials = {
-            "api_key": "sky-abc12-1234567890abcdef1234567890abcdef",
+            "api_key": DUMMY_VALID_API_KEY,
             "token_uri": 12345  # Not a string
         }
         with self.assertRaises(SkyflowError) as context:
@@ -1361,7 +1372,7 @@ class TestValidations(unittest.TestCase):
 
     def test_validate_credentials_with_invalid_token_uri_url(self):
         credentials = {
-            "api_key": "sky-abc12-1234567890abcdef1234567890abcdef",
+            "api_key": DUMMY_VALID_API_KEY,
             "token_uri": "not_a_url"
         }
         with self.assertRaises(SkyflowError) as context:
@@ -1374,7 +1385,7 @@ class TestValidations(unittest.TestCase):
             "vault_id": "vault123",
             "cluster_id": "cluster123",
             "credentials": {
-                "api_key": "sky-abc12-1234567890abcdef1234567890abcdef",
+                "api_key": DUMMY_VALID_API_KEY,
                 "token_uri": "https://valid-url.com"
             },
             "env": Env.DEV
@@ -1387,7 +1398,7 @@ class TestValidations(unittest.TestCase):
             "vault_id": "vault123",
             "cluster_id": "cluster123",
             "credentials": {
-                "api_key": "sky-abc12-1234567890abcdef1234567890abcdef",
+                "api_key": DUMMY_VALID_API_KEY,
                 "token_uri": 12345
             }
         }
@@ -1400,7 +1411,7 @@ class TestValidations(unittest.TestCase):
             "vault_id": "vault123",
             "cluster_id": "cluster123",
             "credentials": {
-                "api_key": "sky-abc12-1234567890abcdef1234567890abcdef",
+                "api_key": DUMMY_VALID_API_KEY,
                 "token_uri": "not_a_url"
             }
         }

@@ -74,11 +74,11 @@ class TokensClient:
             vault_id="vaultID",
             detokenization_parameters=[
                 V1DetokenizeRecordRequest(
-                    token="afbd1074-51c1-4a16-9eee-e2c0ecb52125",
+                    token="<TOKEN_1>",
                     redaction="PLAIN_TEXT",
                 ),
                 V1DetokenizeRecordRequest(
-                    token="05383487-fcae-42e5-a48e-5bd62a51af12",
+                    token="<TOKEN_2>",
                     redaction="DEFAULT",
                 ),
             ],
@@ -202,11 +202,11 @@ class AsyncTokensClient:
                 vault_id="vaultID",
                 detokenization_parameters=[
                     V1DetokenizeRecordRequest(
-                        token="afbd1074-51c1-4a16-9eee-e2c0ecb52125",
+                        token="<TOKEN_1>",
                         redaction="PLAIN_TEXT",
                     ),
                     V1DetokenizeRecordRequest(
-                        token="05383487-fcae-42e5-a48e-5bd62a51af12",
+                        token="<TOKEN_2>",
                         redaction="DEFAULT",
                     ),
                 ],

@@ -493,7 +493,7 @@ from skyflow.vault.data import DetokenizeRequest, TokenGroupRedactions
 vault = skyflow_client.vault('<VAULT_ID>')  # skyflow_client from Quickstart
 
 request = DetokenizeRequest(
-    tokens=['5479-4229-4622-1393', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890'],
+    tokens=['5479-4229-4622-1393', '<TOKEN_1>'],
     token_group_redactions=[TokenGroupRedactions(token_group_name='card_number_cg', redaction='MASKED')],
 )
 response = vault.detokenize(request)
@@ -516,7 +516,7 @@ Sample response:
       "request_id": null
     },
     {
-      "token": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "token": "<TOKEN_1>",
       "value": null,
       "token_group_name": null,
       "metadata": null,
@@ -650,7 +650,7 @@ Sample response:
       "table_name": "table1",
       "skyflow_id": "9fac9201-7b8a-4446-93f8-5244e1213bd1",
       "tokens": {
-        "cardholder_name": [ { "token": "f1a2b3c4-d5e6-7890-abcd-ef1234567890", "token_group_name": "deterministic_string", "path": null } ]
+        "cardholder_name": [ { "token": "<TOKEN_2>", "token_group_name": "deterministic_string", "path": null } ]
       },
       "data": { "cardholder_name": "Jane Doe" },
       "hashed_data": null,

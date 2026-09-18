@@ -73,11 +73,11 @@ class AuthenticationClient:
         from skyflow import Skyflow
 
         client = Skyflow(
-            token="YOUR_TOKEN",
+            token="<TOKEN_1>",
         )
         client.authentication.authentication_service_get_auth_token(
             grant_type="urn:ietf:params:oauth:grant-type:jwt-bearer",
-            assertion="eyLhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaXNzIjoiY29tcGFueSIsImV4cCI6MTYxNTE5MzgwNywiaWF0IjoxNjE1MTY1MDQwLCJhdWQiOiKzb21lYXVkaWVuY2UifQ.4pcPyMDQ9o1PSyXnrXCjTwXyr4BSezdI1AVTmud2fU3",
+            assertion="<JWT_TOKEN>",
         )
         """
         _response = self._raw_client.authentication_service_get_auth_token(
@@ -156,14 +156,14 @@ class AsyncAuthenticationClient:
         from skyflow import AsyncSkyflow
 
         client = AsyncSkyflow(
-            token="YOUR_TOKEN",
+            token="<TOKEN>",
         )
 
 
         async def main() -> None:
             await client.authentication.authentication_service_get_auth_token(
                 grant_type="urn:ietf:params:oauth:grant-type:jwt-bearer",
-                assertion="eyLhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaXNzIjoiY29tcGFueSIsImV4cCI6MTYxNTE5MzgwNywiaWF0IjoxNjE1MTY1MDQwLCJhdWQiOiKzb21lYXVkaWVuY2UifQ.4pcPyMDQ9o1PSyXnrXCjTwXyr4BSezdI1AVTmud2fU3",
+                assertion="<JWT_TOKEN>",
             )
 
 
