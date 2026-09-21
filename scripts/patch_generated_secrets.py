@@ -53,10 +53,15 @@ GENERATED_DIRS = [
     "flowvault/skyflow/generated",
 ]
 
-# Characters some gitleaks rules pull into the reported "Secret" text as a
-# trailing delimiter instead of stopping right before it. See the
-# boundary_suffix handling in main() below.
-QUOTE_BOUNDARY_CHARS = ('"', "'", "`")
+# Quote characters that can open/close the string literal a flagged value
+# sits in. See _find_quoted_value_span below.
+QUOTE_CHARS = ('"', "'", "`")
+
+# How far _find_quoted_value_span will search outward from gitleaks'
+# reported (line, column) for an actual quote character in the file. Only
+# needs to cover small reporting inaccuracies (a couple of characters), not
+# arbitrary distances - see its docstring.
+QUOTE_SEARCH_WINDOW = 8
 
 
 def gitleaks_available() -> bool:
@@ -158,6 +163,49 @@ def placeholder_for(rule_id: str) -> str:
     return f"<REDACTED_{re.sub(r'[^A-Z0-9]+', '_', rule_id.upper())}>"
 
 
+def _line_start_offsets(text: str) -> list:
+    """Absolute char offset where each 1-indexed line starts in `text`.
+
+    `offsets[line - 1]` is the offset of `line`. Used to turn gitleaks'
+    1-indexed (line, column) position into a plain absolute offset into
+    `text`.
+    """
+    offsets = [0]
+    for line_text in text.split("\n"):
+        offsets.append(offsets[-1] + len(line_text) + 1)
+    return offsets
+
+
+def _find_quoted_value_span(content: str, approx_pos: int):
+    """Finds the (value_start, value_end) span strictly inside the quoted
+    string literal nearest to `approx_pos`, or None if there isn't one.
+
+    Every flagged value in these generated files is a quoted example (e.g.
+    `assertion="..."`), and gitleaks' reported column can be off by a
+    character or two on some builds (observed: an off-by-one on the "jwt"
+    rule), so this never trusts the exact position or reads the flagged
+    value's own text - it searches a small window in `content` around the
+    approximate position for an actual quote character, then finds its
+    matching closing quote. Because this only ever looks at `content` and
+    plain integer offsets, it has no dependency on gitleaks' "Secret" field
+    at all - the redaction below is entirely free of the taint path CodeQL's
+    clear-text-logging/storage-sensitive-data queries were following from
+    that field into print()/write_text().
+    """
+    n = len(content)
+    for delta in range(QUOTE_SEARCH_WINDOW + 1):
+        # Backward first: the one observed real-world case (an off-by-one
+        # StartColumn on the "jwt" rule) landed one character INSIDE the
+        # value, so the nearest quote is behind it, not ahead of it.
+        candidates = (approx_pos - delta, approx_pos + delta) if delta else (approx_pos,)
+        for pos in candidates:
+            if 0 <= pos < n and content[pos] in QUOTE_CHARS:
+                value_start = pos + 1
+                value_end = content.find(content[pos], value_start)
+                return (value_start, value_end) if value_end != -1 else None
+    return None
+
+
 def main() -> int:
     if not gitleaks_available():
         print(
@@ -201,96 +249,72 @@ def main() -> int:
     for finding in findings:
         by_file.setdefault(finding["File"], []).append(finding)
 
-    original_contents = {}
-    redacted_count = 0
-
+    # Redacts by position - gitleaks' own (StartLine, StartColumn), an
+    # approximate anchor used only to locate the surrounding quoted string
+    # literal in each file's content (see _find_quoted_value_span) - and
+    # never reads finding["Secret"] at all. That field is a source
+    # CodeQL's clear-text-logging/storage-sensitive-data queries key off
+    # of via real dataflow, regardless of what any receiving variable is
+    # named or what operations (even a plain .find() call) touch it
+    # afterward; not reading it in the first place is the only way to
+    # structurally avoid those alerts rather than dismissing them as false
+    # positives.
+    #
+    # Resolved in a first pass, across ALL files, before anything is
+    # written: an unresolved finding in a later file must not leave an
+    # earlier file's already-computed redaction written to disk with no
+    # way back.
+    file_contents = {}
+    unique_spans_by_file = {}
+    unresolved = []
     for relative_file, file_findings in by_file.items():
         file_path = REPO_ROOT / relative_file
         content = file_path.read_text(encoding="utf-8")
-        original_contents[file_path] = content
+        file_contents[file_path] = content
 
-        # Assign a distinct placeholder per unique flagged value, numbering
-        # only when the same rule fires more than once in the same file (so
-        # two different example tokens don't collapse into one identical
-        # placeholder). Longest-first ordering avoids a rare but real
-        # hazard: if one finding's flagged text happened to be a substring
-        # of another's, redacting the shorter one first would consume part
-        # of the longer one, and the later `matched_text in content` check
-        # for it would then (correctly) come up empty. That finding would
-        # just be silently skipped here - which is fine, because the
-        # post-redaction gitleaks re-scan below still catches anything that
-        # didn't actually get replaced and fails the run for review.
-        #
-        # Named `matched_text`/`unique_matches` throughout this loop, not
-        # `secret`/`unique_secrets` - CodeQL's clear-text-logging/storage
-        # heuristics key off variable names like "secret", and everything
-        # that flows from this binding into print()/write_text() below is
-        # already-redacted output (the placeholder), never the original
-        # flagged text itself, so those alerts are false positives that a
-        # neutral name for the binding avoids entirely.
-        unique_matches = sorted(
-            {f["Secret"] for f in file_findings}, key=len, reverse=True
-        )
-        by_rule = {}
-        for matched_text in unique_matches:
-            rule_id = next(
-                f["RuleID"] for f in file_findings if f["Secret"] == matched_text
+        line_offsets = _line_start_offsets(content)
+        spans = []
+        for finding in file_findings:
+            approx_pos = line_offsets[finding["StartLine"] - 1] + (
+                finding["StartColumn"] - 1
             )
+            span = _find_quoted_value_span(content, approx_pos)
+            if span is None:
+                unresolved.append((relative_file, finding))
+                continue
+            spans.append((span[0], span[1], finding["RuleID"]))
+
+        # Deduplicate by (start, end): if two rules flag the exact same
+        # span, it must only be redacted once. Applied back-to-front
+        # (highest offset first) so replacing a later span never shifts
+        # the offsets of an earlier one still waiting to be processed.
+        unique_spans_by_file[file_path] = sorted(set(spans), reverse=True)
+
+    if unresolved:
+        print(
+            "Refusing to continue: couldn't locate a quoted value near "
+            f"{len(unresolved)} finding(s) - this script only knows how to "
+            'redact `key="value"`-shaped examples. Manual review needed:\n'
+            + "\n".join(
+                f"  - [{f['RuleID']}] {rel}:{f['StartLine']}" for rel, f in unresolved
+            ),
+            file=sys.stderr,
+        )
+        return 1
+
+    original_contents = dict(file_contents)
+    redacted_count = 0
+    for file_path, content in file_contents.items():
+        by_rule = {}
+        for value_start, value_end, rule_id in unique_spans_by_file[file_path]:
             base = placeholder_for(rule_id)
             seen = by_rule.get(base, 0)
             by_rule[base] = seen + 1
             placeholder = base if seen == 0 else f"{base[:-1]}_{seen + 1}>"
 
-            # Some gitleaks rule regexes (e.g. "jwt") match a trailing
-            # delimiter - the closing quote/backtick right after the
-            # flagged text - as part of the reported "Secret" text instead
-            # of stopping just before it; observed on at least one locally
-            # installed gitleaks build. Blindly replacing that full
-            # reported text would then swallow the delimiter and leave an
-            # unterminated string literal behind it. No real secret
-            # legitimately ends in an unescaped quote/backtick, so that
-            # trailing character is re-appended after the placeholder
-            # rather than discarded.
-            boundary_suffix = ""
-            if matched_text and matched_text[-1] in QUOTE_BOUNDARY_CHARS:
-                boundary_suffix = matched_text[-1]
-
-            # Rebuilds `content` via find()/slicing instead of
-            # `content.replace(matched_text, ...)`. Functionally these are
-            # the same substring search-and-replace, but this form never
-            # passes `matched_text`'s VALUE into an expression whose result
-            # flows into `content`: only its length and its use as a
-            # search pattern (whose result is a position - an int, not the
-            # matched text) touch it. That breaks the dataflow path
-            # CodeQL's clear-text-storage-sensitive-data query was
-            # following from gitleaks' "Secret" field into the write_text
-            # call further down (a false positive either way - this
-            # script's whole purpose is removing `matched_text` and
-            # writing the redacted result - but this form doesn't require
-            # dismissing the alert to prove it).
-            #
-            # A position-based rewrite (redacting by gitleaks' own
-            # StartLine/StartColumn instead of finding the text ourselves)
-            # was tried and reverted for the same underlying goal: the
-            # locally installed gitleaks binary reports an off-by-one
-            # StartColumn for the "jwt" rule, which corrupted output. This
-            # approach avoids that failure mode entirely by relying on our
-            # own exact substring search, not on gitleaks' column numbers.
-            if matched_text in content:
-                replacement = placeholder + boundary_suffix
-                redacted_chunks = []
-                search_from = 0
-                while True:
-                    match_at = content.find(matched_text, search_from)
-                    if match_at == -1:
-                        redacted_chunks.append(content[search_from:])
-                        break
-                    redacted_chunks.append(content[search_from:match_at])
-                    redacted_chunks.append(replacement)
-                    search_from = match_at + len(matched_text)
-                content = "".join(redacted_chunks)
-                redacted_count += 1
-                print(f"[{rule_id}] redacted in {relative_file} -> {placeholder}")
+            content = content[:value_start] + placeholder + content[value_end:]
+            redacted_count += 1
+            print(f"[{rule_id}] redacted in {file_path.relative_to(REPO_ROOT)} -> {placeholder}")
 
         file_path.write_text(content, encoding="utf-8")
 
