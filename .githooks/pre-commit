@@ -1,0 +1,73 @@
+#!/usr/bin/env bash
+# Two-tier secret-leak guard, run on every local commit.
+#   Tier 1: auto-redact gitleaks findings inside the Fern-generated code
+#           trees (driven live by .gitleaks.toml via
+#           scripts/patch_generated_secrets.py, not a hand-maintained list)
+#           and re-stage those directories. Never blocks the commit by
+#           itself - it either fixes generated code or leaves it untouched
+#           for tier 2 to catch.
+#   Tier 2: run the real gitleaks scan against the staged diff and block on
+#           any finding tier 1 didn't (or couldn't) resolve.
+# Install once with: git config core.hooksPath .githooks
+set -uo pipefail
+
+repo_root="$(git rev-parse --show-toplevel)"
+cd "$repo_root"
+
+GENERATED_DIRS=(
+  "common/generated"
+  "skyflow/generated"
+  "skyvault/skyflow/generated"
+  "flowvault/skyflow/generated"
+)
+
+# git invokes hooks with a leaner PATH than your interactive shell, so a
+# Python install managed by pyenv/conda/asdf (rather than a system package)
+# is often invisible here even though `python3` works fine in your
+# terminal. If that's you, run this once and commit again:
+#   git config leakguard.pythonpath "$(dirname "$(command -v python3)")"
+# It's a local git config value (not committed), so it won't affect anyone
+# else's machine.
+if ! command -v python3 >/dev/null 2>&1; then
+  custom_python_dir="$(git config --get leakguard.pythonpath || true)"
+  [ -n "$custom_python_dir" ] && PATH="$custom_python_dir:$PATH" && export PATH
+fi
+
+if ! command -v python3 >/dev/null 2>&1; then
+  echo "[leak-guard] tier 1 skipped: 'python3' not found on PATH inside the git hook environment."
+  echo "[leak-guard] If 'python3' works in your terminal, git hooks are likely just seeing a different PATH."
+  echo "[leak-guard] Fix: git config leakguard.pythonpath \"\$(dirname \"\$(command -v python3)\")\", then commit again."
+  echo "[leak-guard] continuing to tier 2; this alone will not block the commit."
+else
+  echo "[leak-guard] tier 1: auto-redacting gitleaks findings in generated code..."
+  if ! python3 scripts/patch_generated_secrets.py; then
+    echo "[leak-guard] tier 1 couldn't fully resolve generated code - see the message above."
+    echo "[leak-guard] continuing to tier 2; this alone will not block the commit."
+  fi
+fi
+
+# Stages the whole generated-code directories rather than just the files
+# tier 1 touched, since we don't get that list back from the script. Safe
+# in practice: these directories are machine-owned (Fern-generated, never
+# hand edited), so there's no legitimate "leave part of it unstaged" case to
+# worry about disturbing.
+git add -- "${GENERATED_DIRS[@]}"
+
+if ! command -v gitleaks >/dev/null 2>&1; then
+  echo "[leak-guard] tier 2 skipped: 'gitleaks' binary not found locally."
+  echo "[leak-guard] CI will still scan this PR - install gitleaks locally to catch issues before pushing."
+  exit 0
+fi
+
+echo "[leak-guard] tier 2: scanning staged changes with gitleaks..."
+if ! gitleaks protect --staged --config=".gitleaks.toml" --redact; then
+  echo ""
+  echo "[leak-guard] commit blocked - gitleaks found something in your staged changes."
+  echo "[leak-guard] known false positive in generated code -> re-run tier 1 (python3 scripts/patch_generated_secrets.py) and check its output."
+  echo "[leak-guard] false positive elsewhere -> add an allowlist entry to .gitleaks.toml."
+  echo "[leak-guard] real secret -> remove it and rotate the credential before committing."
+  exit 1
+fi
+
+echo "[leak-guard] clean - proceeding with commit."
+exit 0
