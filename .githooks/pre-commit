@@ -3,7 +3,7 @@
 #   Tier 1: auto-redact gitleaks findings inside the Fern-generated code
 #           trees (driven live by .gitleaks.toml via
 #           scripts/patch_generated_secrets.py, not a hand-maintained list)
-#           and re-stage those directories. Never blocks the commit by
+#           and re-stage the files it touched. Never blocks the commit by
 #           itself - it either fixes generated code or leaves it untouched
 #           for tier 2 to catch.
 #   Tier 2: run the real gitleaks scan against the staged diff and block on
@@ -20,6 +20,20 @@ GENERATED_DIRS=(
   "skyvault/skyflow/generated"
   "flowvault/skyflow/generated"
 )
+
+# Snapshot what's already staged in the generated dirs before tier 1 runs,
+# so an intentionally-unstaged, in-progress change there (e.g. mid-way
+# through testing a Fern regen) isn't unconditionally swept into this
+# commit. Tier 1 only edits working-tree files, never the index, so this
+# snapshot stays accurate regardless of what it does next.
+already_staged_in_generated="$(git diff --cached --name-only -- "${GENERATED_DIRS[@]}" || true)"
+
+git_dir="$(git rev-parse --git-dir)"
+touched_file_list="$git_dir/leak-guard-touched-files.txt"
+# A list from a previous commit's tier 1 run must never be reused here - if
+# tier 1 doesn't run this time (python3 missing, below), stale entries from
+# that earlier run would otherwise get staged again.
+rm -f "$touched_file_list"
 
 # git invokes hooks with a leaner PATH than your interactive shell, so a
 # Python install managed by pyenv/conda/asdf (rather than a system package)
@@ -46,12 +60,24 @@ else
   fi
 fi
 
-# Stages the whole generated-code directories rather than just the files
-# tier 1 touched, since we don't get that list back from the script. Safe
-# in practice: these directories are machine-owned (Fern-generated, never
-# hand edited), so there's no legitimate "leave part of it unstaged" case to
-# worry about disturbing.
-git add -- "${GENERATED_DIRS[@]}"
+# Stages only what tier 1 actually touched this run (recorded to
+# $touched_file_list - see record_touched_files in the script) plus
+# whatever was already staged above. A file sitting in one of
+# GENERATED_DIRS that tier 1 didn't touch and the caller hadn't staged is
+# left alone rather than force-added.
+to_stage=()
+if [ -f "$touched_file_list" ]; then
+  while IFS= read -r f; do
+    [ -n "$f" ] && to_stage+=("$f")
+  done < "$touched_file_list"
+fi
+while IFS= read -r f; do
+  [ -n "$f" ] && to_stage+=("$f")
+done <<< "$already_staged_in_generated"
+
+if [ "${#to_stage[@]}" -gt 0 ]; then
+  git add -- "${to_stage[@]}"
+fi
 
 if ! command -v gitleaks >/dev/null 2>&1; then
   echo "[leak-guard] tier 2 skipped: 'gitleaks' binary not found locally."

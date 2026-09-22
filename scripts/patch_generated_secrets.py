@@ -163,6 +163,49 @@ def placeholder_for(rule_id: str) -> str:
     return f"<REDACTED_{re.sub(r'[^A-Z0-9]+', '_', rule_id.upper())}>"
 
 
+def _git_dir() -> Path:
+    output = subprocess.run(
+        ["git", "rev-parse", "--git-dir"],
+        cwd=REPO_ROOT,
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout.strip()
+    return (REPO_ROOT / output).resolve()
+
+
+def record_touched_files(relative_files) -> None:
+    """Records exactly which files this run modified (an empty list if none).
+
+    Lets the pre-commit hook stage only those files - plus whatever was
+    already staged - instead of the entire generated-code directories,
+    which would otherwise sweep in unrelated or intentionally-unstaged
+    in-progress changes sitting in those same directories. Called at every
+    exit point so the hook never reads a stale list left over from a prior
+    run. Best-effort: if this can't be written, the hook simply finds no
+    list and stages nothing beyond what was already staged.
+    """
+    try:
+        list_path = _git_dir() / "leak-guard-touched-files.txt"
+        list_path.write_text(
+            "".join(f"{f}\n" for f in relative_files), encoding="utf-8"
+        )
+    except (OSError, subprocess.CalledProcessError):
+        pass
+
+
+def _rollback(original_contents: dict) -> None:
+    """Restores every file this run has written so far back to what it read
+    at the start. Called from every failure path after files start getting
+    written, so a build break, a final-scan tool failure, or leftover
+    findings after redaction never leaves a partially-redacted, unverified
+    file sitting in the working tree.
+    """
+    for file_path, content in original_contents.items():
+        file_path.write_text(content, encoding="utf-8")
+    record_touched_files([])
+
+
 def _line_start_offsets(text: str) -> list:
     """Absolute char offset where each 1-indexed line starts in `text`.
 
@@ -213,6 +256,7 @@ def main() -> int:
             "generated code. CI will still scan for this.",
             file=sys.stderr,
         )
+        record_touched_files([])
         return 0
 
     if not self_test_allowlist_support():
@@ -225,11 +269,13 @@ def main() -> int:
             "zricethezav/gitleaks:latest) and try again.",
             file=sys.stderr,
         )
+        record_touched_files([])
         return 1
 
     findings = scan_generated_dirs()
     if not findings:
         print("No gitleaks findings in generated code.")
+        record_touched_files([])
         return 0
 
     allowed_prefixes = tuple(GENERATED_DIRS)
@@ -243,6 +289,7 @@ def main() -> int:
             + "\n".join(f"  - {f['File']}" for f in out_of_scope),
             file=sys.stderr,
         )
+        record_touched_files([])
         return 1
 
     by_file = {}
@@ -284,11 +331,21 @@ def main() -> int:
                 continue
             spans.append((span[0], span[1], finding["RuleID"]))
 
-        # Deduplicate by (start, end): if two rules flag the exact same
-        # span, it must only be redacted once. Applied back-to-front
-        # (highest offset first) so replacing a later span never shifts
-        # the offsets of an earlier one still waiting to be processed.
-        unique_spans_by_file[file_path] = sorted(set(spans), reverse=True)
+        # Deduplicate by (start, end) only - not the full (start, end,
+        # rule_id) triple, which wouldn't collapse two different rules
+        # flagging the exact same span; a stale second replacement at an
+        # already-redacted offset would then corrupt the file or eat
+        # adjacent text. Keeps whichever rule_id was seen first for that
+        # span. Applied back-to-front (highest offset first) so replacing
+        # a later span never shifts the offsets of an earlier one still
+        # waiting to be processed.
+        spans_by_range = {}
+        for start, end, rule_id in spans:
+            spans_by_range.setdefault((start, end), rule_id)
+        unique_spans_by_file[file_path] = sorted(
+            ((start, end, rule_id) for (start, end), rule_id in spans_by_range.items()),
+            reverse=True,
+        )
 
     if unresolved:
         print(
@@ -300,9 +357,11 @@ def main() -> int:
             ),
             file=sys.stderr,
         )
+        record_touched_files([])
         return 1
 
     original_contents = dict(file_contents)
+    touched_files = set()
     redacted_count = 0
     for file_path, content in file_contents.items():
         by_rule = {}
@@ -317,6 +376,8 @@ def main() -> int:
             print(f"[{rule_id}] redacted in {file_path.relative_to(REPO_ROOT)} -> {placeholder}")
 
         file_path.write_text(content, encoding="utf-8")
+        if content != original_contents[file_path]:
+            touched_files.add(str(file_path.relative_to(REPO_ROOT)))
 
     build_ok = True
     for file_path in original_contents:
@@ -330,19 +391,35 @@ def main() -> int:
             )
 
     if not build_ok:
-        for file_path, content in original_contents.items():
-            file_path.write_text(content, encoding="utf-8")
+        _rollback(original_contents)
         print(
             "Rolled back all changes from this run - redaction needs manual review.",
             file=sys.stderr,
         )
         return 1
 
-    remaining = scan_generated_dirs()
+    # The final re-scan can itself fail for reasons other than "still
+    # leaks" (e.g. the gitleaks binary crashing mid-run) -
+    # run_gitleaks_detect (via scan_generated_dirs) raises in that case
+    # rather than returning a findings list. Either way, an unverified
+    # redaction must never be left on disk: roll back exactly as the
+    # build-failure path above does.
+    try:
+        remaining = scan_generated_dirs()
+    except RuntimeError as err:
+        _rollback(original_contents)
+        print(
+            f"Final gitleaks re-scan failed to run ({err}) - rolled back all "
+            "changes from this run. Redaction needs manual review.",
+            file=sys.stderr,
+        )
+        return 1
     if remaining:
+        _rollback(original_contents)
         print(
             f"Redacted {redacted_count} secret(s), but {len(remaining)} finding(s) "
-            "remain after re-scanning. Manual review needed:\n"
+            "remain after re-scanning. Rolled back all changes from this run. "
+            "Manual review needed:\n"
             + "\n".join(
                 f"  - [{f['RuleID']}] {f['File']}:{f['StartLine']}" for f in remaining
             ),
@@ -350,6 +427,7 @@ def main() -> int:
         )
         return 1
 
+    record_touched_files(sorted(touched_files))
     print(
         f"\nDone. Redacted {redacted_count} secret(s) across {len(by_file)} file(s). "
         "Build and gitleaks re-scan both clean."
