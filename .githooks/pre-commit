@@ -81,7 +81,7 @@ fi
 
 if ! command -v gitleaks >/dev/null 2>&1; then
   echo "[leak-guard] tier 2 skipped: 'gitleaks' binary not found locally."
-  echo "[leak-guard] CI will still scan this PR - install gitleaks locally to catch issues before pushing."
+  echo "[leak-guard] CI will still block this PR on any finding (see Gitleaks.yml) - install gitleaks locally to catch issues before pushing instead of waiting on CI."
   exit 0
 fi
 
