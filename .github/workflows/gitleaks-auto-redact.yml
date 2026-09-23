@@ -52,14 +52,24 @@ jobs:
         run: python3 scripts/patch_generated_secrets.py
 
       - name: Commit and push redaction, if any
+        # GITHUB_ACTOR and GITHUB_HEAD_REF are used as plain shell
+        # environment variables here rather than ${{ github.actor }}/
+        # ${{ github.head_ref }} template interpolation: a PR's head ref
+        # (its source branch name) is attacker-controlled, and splicing it
+        # as raw text into this script would let a maliciously-named
+        # branch inject arbitrary shell commands into this job. Both are
+        # already provided as env vars by the runner for pull_request
+        # events - no explicit env: mapping needed - so referencing them
+        # as "$VAR" keeps the value as pure data that bash never
+        # re-parses as script.
         run: |
-          git config user.name "${{ github.actor }}"
-          git config user.email "${{ github.actor }}@users.noreply.github.com"
-          git checkout "${{ github.head_ref }}"
+          git config user.name "$GITHUB_ACTOR"
+          git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
+          git checkout "$GITHUB_HEAD_REF"
           if git diff --quiet -- common/generated skyflow/generated skyvault/skyflow/generated flowvault/skyflow/generated; then
             echo "No fake secrets found to redact."
           else
             git add -- common/generated skyflow/generated skyvault/skyflow/generated flowvault/skyflow/generated
             git commit -m "[AUTOMATED] redact fake secrets in generated code"
-            git push origin "HEAD:${{ github.head_ref }}"
+            git push origin "HEAD:$GITHUB_HEAD_REF"
           fi
