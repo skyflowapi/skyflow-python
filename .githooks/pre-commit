@@ -1,0 +1,99 @@
+#!/usr/bin/env bash
+# Two-tier secret-leak guard, run on every local commit.
+#   Tier 1: auto-redact gitleaks findings inside the Fern-generated code
+#           trees (driven live by .gitleaks.toml via
+#           scripts/patch_generated_secrets.py, not a hand-maintained list)
+#           and re-stage the files it touched. Never blocks the commit by
+#           itself - it either fixes generated code or leaves it untouched
+#           for tier 2 to catch.
+#   Tier 2: run the real gitleaks scan against the staged diff and block on
+#           any finding tier 1 didn't (or couldn't) resolve.
+# Install once with: git config core.hooksPath .githooks
+set -uo pipefail
+
+repo_root="$(git rev-parse --show-toplevel)"
+cd "$repo_root"
+
+GENERATED_DIRS=(
+  "common/generated"
+  "skyflow/generated"
+  "skyvault/skyflow/generated"
+  "flowvault/skyflow/generated"
+)
+
+# Snapshot what's already staged in the generated dirs before tier 1 runs,
+# so an intentionally-unstaged, in-progress change there (e.g. mid-way
+# through testing a Fern regen) isn't unconditionally swept into this
+# commit. Tier 1 only edits working-tree files, never the index, so this
+# snapshot stays accurate regardless of what it does next.
+already_staged_in_generated="$(git diff --cached --name-only -- "${GENERATED_DIRS[@]}" || true)"
+
+git_dir="$(git rev-parse --git-dir)"
+touched_file_list="$git_dir/leak-guard-touched-files.txt"
+# A list from a previous commit's tier 1 run must never be reused here - if
+# tier 1 doesn't run this time (python3 missing, below), stale entries from
+# that earlier run would otherwise get staged again.
+rm -f "$touched_file_list"
+
+# git invokes hooks with a leaner PATH than your interactive shell, so a
+# Python install managed by pyenv/conda/asdf (rather than a system package)
+# is often invisible here even though `python3` works fine in your
+# terminal. If that's you, run this once and commit again:
+#   git config leakguard.pythonpath "$(dirname "$(command -v python3)")"
+# It's a local git config value (not committed), so it won't affect anyone
+# else's machine.
+if ! command -v python3 >/dev/null 2>&1; then
+  custom_python_dir="$(git config --get leakguard.pythonpath || true)"
+  [ -n "$custom_python_dir" ] && PATH="$custom_python_dir:$PATH" && export PATH
+fi
+
+if ! command -v python3 >/dev/null 2>&1; then
+  echo "[leak-guard] tier 1 skipped: 'python3' not found on PATH inside the git hook environment."
+  echo "[leak-guard] If 'python3' works in your terminal, git hooks are likely just seeing a different PATH."
+  echo "[leak-guard] Fix: git config leakguard.pythonpath \"\$(dirname \"\$(command -v python3)\")\", then commit again."
+  echo "[leak-guard] continuing to tier 2; this alone will not block the commit."
+else
+  echo "[leak-guard] tier 1: auto-redacting gitleaks findings in generated code..."
+  if ! python3 scripts/patch_generated_secrets.py; then
+    echo "[leak-guard] tier 1 couldn't fully resolve generated code - see the message above."
+    echo "[leak-guard] continuing to tier 2; this alone will not block the commit."
+  fi
+fi
+
+# Stages only what tier 1 actually touched this run (recorded to
+# $touched_file_list - see record_touched_files in the script) plus
+# whatever was already staged above. A file sitting in one of
+# GENERATED_DIRS that tier 1 didn't touch and the caller hadn't staged is
+# left alone rather than force-added.
+to_stage=()
+if [ -f "$touched_file_list" ]; then
+  while IFS= read -r f; do
+    [ -n "$f" ] && to_stage+=("$f")
+  done < "$touched_file_list"
+fi
+while IFS= read -r f; do
+  [ -n "$f" ] && to_stage+=("$f")
+done <<< "$already_staged_in_generated"
+
+if [ "${#to_stage[@]}" -gt 0 ]; then
+  git add -- "${to_stage[@]}"
+fi
+
+if ! command -v gitleaks >/dev/null 2>&1; then
+  echo "[leak-guard] tier 2 skipped: 'gitleaks' binary not found locally."
+  echo "[leak-guard] CI will still block this PR on any finding (see Gitleaks.yml) - install gitleaks locally to catch issues before pushing instead of waiting on CI."
+  exit 0
+fi
+
+echo "[leak-guard] tier 2: scanning staged changes with gitleaks..."
+if ! gitleaks protect --staged --config=".gitleaks.toml" --redact; then
+  echo ""
+  echo "[leak-guard] commit blocked - gitleaks found something in your staged changes."
+  echo "[leak-guard] known false positive in generated code -> re-run tier 1 (python3 scripts/patch_generated_secrets.py) and check its output."
+  echo "[leak-guard] false positive elsewhere -> add an allowlist entry to .gitleaks.toml."
+  echo "[leak-guard] real secret -> remove it and rotate the credential before committing."
+  exit 1
+fi
+
+echo "[leak-guard] clean - proceeding with commit."
+exit 0
