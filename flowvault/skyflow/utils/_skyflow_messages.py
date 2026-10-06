@@ -80,6 +80,27 @@ class SkyflowMessages:
         INVALID_TOKENS_TYPE_IN_DETOKENIZE = f"{error_prefix} Detokenize failed. 'tokens' must be a non-empty list of strings."
         INVALID_TOKEN_GROUP_REDACTIONS_IN_DETOKENIZE = f"{error_prefix} Detokenize failed. 'token_group_redactions' must be a list of TokenGroupRedactions objects with a non-empty 'token_group_name'."
 
+        INVALID_QUERY_IN_QUERY = f"{error_prefix} Query failed. 'query' must be a non-empty string."
+
+        INVALID_RECORDS_TYPE_IN_GET_TOKENS = f"{error_prefix} Get tokens failed. 'records' must be a non-empty list of GetTokensRequestRecord objects."
+        MISSING_VALUE_IN_GET_TOKENS = f"{error_prefix} Get tokens failed. Each record must specify a non-null 'value'."
+        MISSING_TOKEN_GROUP_NAME_IN_GET_TOKENS = f"{error_prefix} Get tokens failed. Each record must specify a non-empty 'token_group_name'."
+
+        INVALID_RECORDS_TYPE_IN_UPLOAD_FILES = f"{error_prefix} Upload files failed. 'records' must be a non-empty list of UploadFilesRequestRecord objects."
+        MISSING_TABLE_NAME_IN_UPLOAD_FILES = f"{error_prefix} Upload files failed. Each record must specify a non-empty 'table_name'."
+        INVALID_COLUMNS_TYPE_IN_UPLOAD_FILES = f"{error_prefix} Upload files failed. Each record's 'columns' must be a non-empty list of UploadFilesRequestColumn objects."
+        MISSING_COLUMN_NAME_IN_UPLOAD_FILES = f"{error_prefix} Upload files failed. Each column must specify a non-empty 'column'."
+        MISSING_FILE_SOURCE_IN_UPLOAD_FILES = f"{error_prefix} Upload files failed. Each column must specify exactly one of 'file_path', 'base64' or 'file_object'."
+        MULTIPLE_FILE_SOURCES_IN_UPLOAD_FILES = f"{error_prefix} Upload files failed. Provide only one of 'file_path', 'base64' or 'file_object' per column."
+        MISSING_FILE_NAME_FOR_BASE64_IN_UPLOAD_FILES = f"{error_prefix} Upload files failed. 'file_name' is required when 'base64' is used."
+        FILE_NOT_FOUND_IN_UPLOAD_FILES = f"{error_prefix} Upload files failed. Could not read file at path '{{}}'."
+        INVALID_BASE64_IN_UPLOAD_FILES = f"{error_prefix} Upload files failed. 'base64' content for column '{{}}' could not be decoded."
+
+        INVALID_RECORDS_TYPE_IN_DELETE_FILES = f"{error_prefix} Delete files failed. 'records' must be a non-empty list of DeleteFilesRequestRecord objects."
+        MISSING_TABLE_NAME_IN_DELETE_FILES = f"{error_prefix} Delete files failed. Each record must specify a non-empty 'table_name'."
+        INVALID_COLUMNS_IN_DELETE_FILES = f"{error_prefix} Delete files failed. Each record's 'columns' must be a non-empty list of strings."
+        INVALID_ID_OR_UNIQUE_VALUES_IN_DELETE_FILES = f"{error_prefix} Delete files failed. Set exactly one of 'skyflow_id' or 'unique_values' per record."
+
     class Info(Enum):
         VALIDATE_INSERT_REQUEST = f"{INFO}: [{error_prefix}] Validating insert request."
         INSERT_TRIGGERED = f"{INFO}: [{error_prefix}] Insert method triggered."
@@ -106,9 +127,33 @@ class SkyflowMessages:
         DETOKENIZE_REQUEST_RESOLVED = f"{INFO}: [{error_prefix}] Detokenize request resolved."
         DETOKENIZE_SUCCESS = f"{INFO}: [{error_prefix}] Tokens detokenized."
 
+        VALIDATE_QUERY_REQUEST = f"{INFO}: [{error_prefix}] Validating query request."
+        QUERY_TRIGGERED = f"{INFO}: [{error_prefix}] Query method triggered."
+        QUERY_REQUEST_RESOLVED = f"{INFO}: [{error_prefix}] Query request resolved."
+        QUERY_SUCCESS = f"{INFO}: [{error_prefix}] Query executed."
+
+        VALIDATE_GET_TOKENS_REQUEST = f"{INFO}: [{error_prefix}] Validating get tokens request."
+        GET_TOKENS_TRIGGERED = f"{INFO}: [{error_prefix}] Get tokens method triggered."
+        GET_TOKENS_REQUEST_RESOLVED = f"{INFO}: [{error_prefix}] Get tokens request resolved."
+        GET_TOKENS_SUCCESS = f"{INFO}: [{error_prefix}] Tokens fetched."
+
+        VALIDATE_UPLOAD_FILES_REQUEST = f"{INFO}: [{error_prefix}] Validating upload files request."
+        UPLOAD_FILES_TRIGGERED = f"{INFO}: [{error_prefix}] Upload files method triggered."
+        UPLOAD_FILES_REQUEST_RESOLVED = f"{INFO}: [{error_prefix}] Upload files request resolved."
+        UPLOAD_FILES_SUCCESS = f"{INFO}: [{error_prefix}] Files uploaded."
+
+        VALIDATE_DELETE_FILES_REQUEST = f"{INFO}: [{error_prefix}] Validating delete files request."
+        DELETE_FILES_TRIGGERED = f"{INFO}: [{error_prefix}] Delete files method triggered."
+        DELETE_FILES_REQUEST_RESOLVED = f"{INFO}: [{error_prefix}] Delete files request resolved."
+        DELETE_FILES_SUCCESS = f"{INFO}: [{error_prefix}] Files deleted."
+
     class ErrorLogs(Enum):
         INSERT_RECORDS_REJECTED = f"{ERROR}: [{error_prefix}] Insert call resulted in failure."
         GET_RECORDS_REJECTED = f"{ERROR}: [{error_prefix}] Get call resulted in failure."
         UPDATE_RECORDS_REJECTED = f"{ERROR}: [{error_prefix}] Update call resulted in failure."
         DELETE_RECORDS_REJECTED = f"{ERROR}: [{error_prefix}] Delete call resulted in failure."
         DETOKENIZE_RECORDS_REJECTED = f"{ERROR}: [{error_prefix}] Detokenize call resulted in failure."
+        QUERY_RECORDS_REJECTED = f"{ERROR}: [{error_prefix}] Query call resulted in failure."
+        GET_TOKENS_RECORDS_REJECTED = f"{ERROR}: [{error_prefix}] Get tokens call resulted in failure."
+        UPLOAD_FILES_RECORDS_REJECTED = f"{ERROR}: [{error_prefix}] Upload files call resulted in failure."
+        DELETE_FILES_RECORDS_REJECTED = f"{ERROR}: [{error_prefix}] Delete files call resulted in failure."

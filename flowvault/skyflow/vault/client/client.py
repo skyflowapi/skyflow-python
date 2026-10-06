@@ -26,6 +26,8 @@ from skyflow.utils._http_config import (
 )
 from skyflow.utils._retry import RetryTransport
 
+CONTENT_TYPE_HEADER = "content-type"
+
 
 class VaultClient(BaseVaultClient):
     def __init__(self, config):
@@ -100,3 +102,15 @@ class VaultClient(BaseVaultClient):
 
     def get_tokens_api(self):
         return self._api_client.tokens
+
+    def get_query_api(self):
+        return self._api_client.query
+
+    def get_files_api(self):
+        return self._api_client.files
+
+    def put_signed_url(self, signed_url, content, content_type=None):
+        headers = {}
+        if content_type:
+            headers[CONTENT_TYPE_HEADER] = content_type
+        return self._sync_httpx_client.put(signed_url, content=content, headers=headers)
