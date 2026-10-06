@@ -94,6 +94,8 @@ OPERATION_DELETE_FILES = "DELETE_FILES"
 FILE_PUT_FAILED_MESSAGE = "PUT failed: {}"
 STATUS_KEY = "status"
 INVALID_INPUT_ERROR_CODE = CommonMessages.ErrorCodes.INVALID_INPUT.value
+HTTP_STATUS_OK = 200
+HTTP_STATUS_MULTIPLE_CHOICES = 300
 
 
 class VaultController(BaseVaultController):
@@ -742,7 +744,7 @@ class VaultController(BaseVaultController):
                 upload_status=FileUploadStatus.FAILED.value,
                 error=str(e),
             )
-        if 200 <= status_code < 300:
+        if HTTP_STATUS_OK <= status_code < HTTP_STATUS_MULTIPLE_CHOICES:
             return UploadFilesColumnResult(
                 column=column_name,
                 file_name=file_name,
