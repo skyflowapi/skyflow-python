@@ -12,6 +12,7 @@ from .environment import SkyflowAuthEnvironment
 from .raw_client import AsyncRawSkyflowAuth, RawSkyflowAuth
 
 if typing.TYPE_CHECKING:
+    from .files.client import AsyncFilesClient, FilesClient
     from .query.client import AsyncQueryClient, QueryClient
     from .records.client import AsyncRecordsClient, RecordsClient
     from .tokens.client import AsyncTokensClient, TokensClient
@@ -115,6 +116,7 @@ class SkyflowAuth:
             logging=logging,
         )
         self._raw_client = RawSkyflowAuth(client_wrapper=self._client_wrapper)
+        self._files: typing.Optional[FilesClient] = None
         self._query: typing.Optional[QueryClient] = None
         self._records: typing.Optional[RecordsClient] = None
         self._tokens: typing.Optional[TokensClient] = None
@@ -156,6 +158,14 @@ class SkyflowAuth:
         """
         _response = self._raw_client.patch_v2vaults_id(vault_id, request_options=request_options)
         return _response.data
+
+    @property
+    def files(self):
+        if self._files is None:
+            from .files.client import FilesClient  # noqa: E402
+
+            self._files = FilesClient(client_wrapper=self._client_wrapper)
+        return self._files
 
     @property
     def query(self):
@@ -301,6 +311,7 @@ class AsyncSkyflowAuth:
             logging=logging,
         )
         self._raw_client = AsyncRawSkyflowAuth(client_wrapper=self._client_wrapper)
+        self._files: typing.Optional[AsyncFilesClient] = None
         self._query: typing.Optional[AsyncQueryClient] = None
         self._records: typing.Optional[AsyncRecordsClient] = None
         self._tokens: typing.Optional[AsyncTokensClient] = None
@@ -350,6 +361,14 @@ class AsyncSkyflowAuth:
         """
         _response = await self._raw_client.patch_v2vaults_id(vault_id, request_options=request_options)
         return _response.data
+
+    @property
+    def files(self):
+        if self._files is None:
+            from .files.client import AsyncFilesClient  # noqa: E402
+
+            self._files = AsyncFilesClient(client_wrapper=self._client_wrapper)
+        return self._files
 
     @property
     def query(self):

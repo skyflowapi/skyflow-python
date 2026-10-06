@@ -1,6 +1,6 @@
 # Skyflow FlowVault Python SDK
 
-The `flowvault` module is a Skyflow Python SDK for vault operations. It shares its client, credentials, and configuration with the [skyvault SDK](../skyvault/README.md) (both depend on the `common` module) but exposes a different, narrower surface: **unary** vault operations — insert, get, update, delete, and detokenize.
+The `flowvault` module is a Skyflow Python SDK for vault operations. It shares its client, credentials, and configuration with the [skyvault SDK](../skyvault/README.md) (both depend on the `common` module) but exposes a different, narrower surface: **unary** vault operations — insert, get, update, delete, detokenize, query, get tokens, upload files, and delete files.
 
 > Meant for **FlowVault** vaults.
 
@@ -38,6 +38,10 @@ The `flowvault` module is a Skyflow Python SDK for vault operations. It shares i
 - [Get](#get)
 - [Update](#update)
 - [Delete](#delete)
+- [Query](#query)
+- [Get Tokens](#get-tokens)
+- [Upload Files](#upload-files)
+- [Delete Files](#delete-files)
 - [Custom Request Headers](#custom-request-headers)
 - [Error Handling](#error-handling)
   - [Two layers of errors](#two-layers-of-errors)
@@ -50,7 +54,7 @@ The `flowvault` module is a Skyflow Python SDK for vault operations. It shares i
 # Overview
 
 - Authenticate using a Skyflow service account, an API key, or a bearer token — see [Authenticate](#authenticate).
-- Perform unary Vault API operations — insert, get, update, delete, and detokenize — a single API call each. See [VaultController — Unary operations](#vaultcontroller--unary-operations).
+- Perform Vault API operations — insert, get, update, delete, detokenize, query, get tokens, upload files, and delete files. See [VaultController — Unary operations](#vaultcontroller--unary-operations).
 - **Per-record reporting, not all-or-nothing.** A call succeeds as a call even when individual records fail; every response reports the outcome of each individual record or token. See [Error Handling](#error-handling).
 
 # Install
@@ -358,11 +362,11 @@ The SDK logs at `LogLevel.ERROR` by default. Levels rank `DEBUG` < `INFO` < `WAR
 
 ## Schema vs. schemaless vaults
 
-Which operations make sense depends on whether the vault is **structured** (has a schema — tables and columns) or **schemaless** (stores standalone tokens with no table structure): the record operations (`insert`, `get`, `update`, `delete`) address a table's columns and so need a structured vault, while `detokenize` needs only the token itself and works against either kind. See [Vault type support](#vault-type-support) for the per-operation breakdown.
+Which operations make sense depends on whether the vault is **structured** (has a schema — tables and columns) or **schemaless** (stores standalone tokens with no table structure): the record and file operations (`insert`, `get`, `update`, `delete`, `query`, `upload_files`, `delete_files`) address a table's columns and so need a structured vault, while the token operations (`detokenize`, `get_tokens`) need only the token and work against either kind. See [Vault type support](#vault-type-support) for the per-operation breakdown.
 
 # VaultController — Unary operations
 
-`VaultController` is returned by `skyflow_client.vault(...)` and exposes these vault operations. Each sends exactly one API call and hands the result straight back:
+`VaultController` is returned by `skyflow_client.vault(...)` and exposes these vault operations. Each is a single method call that hands the result straight back (`upload_files` orchestrates the signed-URL upload across a couple of calls internally):
 
 | Method | Parameters | Returns | Description |
 |--------|-----------|---------|-------------|
@@ -371,12 +375,16 @@ Which operations make sense depends on whether the vault is **structured** (has 
 | `get(request)` | `GetRequest`, optional `GetOptions` | `GetResponse` | Read records by skyflow ID or unique value, optionally with a redaction override per column |
 | `update(request)` | `UpdateRequest`, optional `UpdateOptions` | `UpdateResponse` | Update records by skyflow ID |
 | `delete(request)` | `DeleteRequest`, optional `DeleteOptions` | `DeleteResponse` | Delete records by skyflow ID or unique value |
+| `query(request)` | `QueryRequest`, optional `QueryOptions` | `QueryResponse` | Run a read-only SQL `SELECT`; returns up to 25 rows |
+| `get_tokens(request)` | `GetTokensRequest`, optional `GetTokensOptions` | `GetTokensResponse` | Look up existing tokens for values (deterministic token groups) |
+| `upload_files(request)` | `UploadFilesRequest`, optional `UploadFilesOptions` | `UploadFilesResponse` | Upload files to file columns (the SDK fetches signed URLs and uploads the bytes) |
+| `delete_files(request)` | `DeleteFilesRequest`, optional `DeleteFilesOptions` | `DeleteFilesResponse` | Delete files from file columns by skyflow ID or unique value |
 
-Each method also accepts an optional options object (`InsertOptions`, `DetokenizeOptions`, `GetOptions`, `UpdateOptions`, `DeleteOptions`) — see [Custom Request Headers](#custom-request-headers).
+Each method also accepts an optional options object (`InsertOptions`, `DetokenizeOptions`, `GetOptions`, `UpdateOptions`, `DeleteOptions`, `QueryOptions`, `GetTokensOptions`, `UploadFilesOptions`, `DeleteFilesOptions`) — see [Custom Request Headers](#custom-request-headers).
 
 ## Vault type support
 
-The same distinction as [Schema vs. schemaless vaults](#schema-vs-schemaless-vaults) applies. Four of the five unary operations address records inside a table, so they only make sense against a structured vault:
+The same distinction as [Schema vs. schemaless vaults](#schema-vs-schemaless-vaults) applies. Most operations address records inside a table, so they only make sense against a structured vault; the token-centric ones work against either kind:
 
 | Operation | Supported on |
 |---|---|
@@ -385,6 +393,10 @@ The same distinction as [Schema vs. schemaless vaults](#schema-vs-schemaless-vau
 | `update` | Structured vaults — updates a table's records by skyflow ID. |
 | `delete` | Structured vaults — deletes a table's records. |
 | `detokenize` | Both — detokenizing only needs the token itself, not a table, so it works regardless of which kind of vault the token came from. |
+| `query` | Structured vaults — runs a SQL `SELECT` over a table. |
+| `get_tokens` | Both — looks up a token for a value within a token group, not a table. |
+| `upload_files` | Structured vaults — uploads into a table's file columns. |
+| `delete_files` | Structured vaults — deletes files from a table's file columns. |
 
 # Insert
 
@@ -718,6 +730,213 @@ for record in response.records:
         print(record.skyflow_id, 'failed', record.http_code, record.error)
 ```
 
+# Query
+
+Run a read-only SQL `SELECT` against the vault in a single API call.
+
+> **Vault type supported:** structured (schema) vaults. See [Vault type support](#vault-type-support).
+
+**Note:**
+
+- `query` is required and must be a non-empty string. Only `SELECT` is supported.
+- A call returns at most 25 records; page through more with the SQL `OFFSET` keyword.
+- Returned values may be masked per your vault's policies; they are never tokens or file URLs.
+- Unlike the other operations, `query` has **no per-record results** — any failure is thrown as a `SkyflowError`, and `request_id` is always populated.
+
+```python
+from skyflow.vault.data import QueryRequest
+
+vault = skyflow_client.vault('<VAULT_ID>')  # skyflow_client from Quickstart
+
+request = QueryRequest(query="SELECT name, email FROM table1 WHERE name = 'john doe' LIMIT 25")
+response = vault.query(request)
+```
+
+There is no async variant: `query` returns its `QueryResponse` directly.
+
+Sample response:
+
+```json
+{
+  "records": [
+    { "data": { "skyflow_id": "9fac9201-7b8a-4446-93f8-5244e1213bd1", "name": "john doe", "email": "john@example.com" } }
+  ],
+  "metadata": { "columns": ["skyflow_id", "name", "email"] },
+  "request_id": "a1b2c3d4-..."
+}
+```
+
+`QueryResponse` carries `.records` (a list of `QueryResponseRecord`, each with `.data` — a dict of column to value), `.metadata` (`QueryResponseMetadata` with `.columns`), and `.request_id` (always populated).
+
+```python
+for record in response.records:
+    print(record.data)
+```
+
+# Get Tokens
+
+Look up the existing token for one or more values — one result per value — in a single API call.
+
+> **Vault type supported:** both. See [Vault type support](#vault-type-support).
+
+**Note:**
+
+- `records` is required and must be a non-empty list of `GetTokensRequestRecord`.
+- Each record needs a non-null `value` and a non-blank `token_group_name`. Only **deterministic** token groups are supported.
+- One result is returned per input value, in request order; duplicate inputs are not collapsed.
+
+```python
+from skyflow.vault.data import GetTokensRequest, GetTokensRequestRecord
+
+vault = skyflow_client.vault('<VAULT_ID>')  # skyflow_client from Quickstart
+
+request = GetTokensRequest(records=[
+    GetTokensRequestRecord(value='john@example.com', token_group_name='email_cg'),
+    GetTokensRequestRecord(value='jane@example.com', token_group_name='email_cg'),
+])
+response = vault.get_tokens(request)
+```
+
+There is no async variant: `get_tokens` returns its `GetTokensResponse` directly.
+
+Sample response:
+
+```json
+{
+  "records": [
+    { "value": "john@example.com",    "token_group_name": "email_cg", "token": "1R9kNnLOPM", "http_code": 200, "error": null, "request_id": null },
+    { "value": "unknown@example.com", "token_group_name": "email_cg", "token": null,         "http_code": 404, "error": "Token not found.", "request_id": "a1b2c3d4-..." }
+  ]
+}
+```
+
+Accessors on each `GetTokensResponseRecord`: `.value`, `.token_group_name`, `.token`, `.http_code`, `.error`, `.request_id`.
+
+```python
+for record in response.records:
+    if record.error is None:
+        print(record.value, '->', record.token)
+    else:
+        print(record.value, 'failed', record.http_code, record.error)
+```
+
+# Upload Files
+
+Upload one or more files to file columns. The SDK **orchestrates** this in two steps: it requests a signed upload URL per column, then uploads each file's bytes to its URL — you just supply the files.
+
+> **Vault type supported:** structured (schema) vaults. See [Vault type support](#vault-type-support).
+
+**Note:**
+
+- `records` is required and must be a non-empty list of `UploadFilesRequestRecord`; each needs a `table_name` and a non-empty `columns` list.
+- Each `UploadFilesRequestColumn` needs a `column` name and **exactly one** file source — `file_path`, `base64`, or `file_object`. `base64` additionally requires `file_name`. `content_type` is inferred from the file name when omitted.
+- Omit `skyflow_id` to create a new record (CREATE permission); set it to upload into an existing record (UPDATE permission).
+- `file_name` is derived from `file_path`/`file_object` when omitted; if still unset, the server generates one.
+- Uploads are **sequential**, and the final virus-scan status (`fileStatus`) is asynchronous — read it later with `get()`.
+
+```python
+from skyflow.vault.data import UploadFilesRequest, UploadFilesRequestRecord, UploadFilesRequestColumn
+
+vault = skyflow_client.vault('<VAULT_ID>')  # skyflow_client from Quickstart
+
+request = UploadFilesRequest(records=[
+    UploadFilesRequestRecord(table_name='onboarding', columns=[
+        UploadFilesRequestColumn(column='resumePDF', file_path='/path/to/resume.pdf'),
+        UploadFilesRequestColumn(column='photoID', base64='<BASE64_CONTENT>', file_name='photo.jpg'),
+    ]),
+])
+response = vault.upload_files(request)
+```
+
+Sample response (partial success):
+
+```json
+{
+  "records": [
+    {
+      "skyflow_id": "2a62a1fd-...",
+      "table_name": "onboarding",
+      "columns": [
+        { "column": "resumePDF", "file_name": "resume.pdf", "upload_status": "UPLOADED", "error": null },
+        { "column": "photoID",   "file_name": "photo.jpg",  "upload_status": "FAILED",   "error": "PUT failed: 403" }
+      ],
+      "http_code": 200,
+      "error": null,
+      "request_id": null
+    }
+  ]
+}
+```
+
+Accessors on each `UploadFilesResponseRecord`: `.skyflow_id`, `.table_name`, `.columns`, `.http_code`, `.error`, `.request_id`. Each entry in `.columns` is an `UploadFilesColumnResult` with `.column`, `.file_name`, `.upload_status` (`"UPLOADED"`, `"FAILED"`, or `"SKIPPED"`), and `.error`.
+
+```python
+for record in response.records:
+    for column in (record.columns or []):
+        print(column.column, column.upload_status, column.error)
+```
+
+# Delete Files
+
+Delete files from file columns of existing records — and remove the stored objects — in a single API call.
+
+> **Vault type supported:** structured (schema) vaults. See [Vault type support](#vault-type-support).
+
+**Note:**
+
+- `records` is required and must be a non-empty list of `DeleteFilesRequestRecord`; each needs a `table_name` and a non-empty `columns` list of file-column names.
+- Each record sets **exactly one** of `skyflow_id` or `unique_values` — both, or neither, fails validation.
+- `unique_values` takes the same shape as in [Get](#get): a list of dicts, each holding the unique column-name/value pairs that identify a record; each may resolve to more than one record.
+
+```python
+from skyflow.vault.data import DeleteFilesRequest, DeleteFilesRequestRecord
+
+vault = skyflow_client.vault('<VAULT_ID>')  # skyflow_client from Quickstart
+
+request = DeleteFilesRequest(records=[
+    DeleteFilesRequestRecord(table_name='onboarding', columns=['resumePDF'], skyflow_id='9fac9201-...'),
+    DeleteFilesRequestRecord(table_name='onboarding', columns=['photoID'], unique_values=[{'email': 'jane.doe@example.com'}]),
+])
+response = vault.delete_files(request)
+```
+
+There is no async variant: `delete_files` returns its `DeleteFilesResponse` directly.
+
+Sample response (partial success):
+
+```json
+{
+  "records": [
+    {
+      "skyflow_id": "9fac9201-...",
+      "table_name": "onboarding",
+      "columns": [ { "column": "resumePDF", "status": "DELETED" } ],
+      "http_code": 200,
+      "error": null,
+      "request_id": null
+    },
+    {
+      "skyflow_id": "invalid-id",
+      "table_name": "onboarding",
+      "columns": null,
+      "http_code": 404,
+      "error": "Invalid request. skyflowID invalid-id is invalid.",
+      "request_id": "a1b2c3d4-..."
+    }
+  ]
+}
+```
+
+Accessors on each `DeleteFilesResponseRecord`: `.skyflow_id`, `.table_name`, `.columns`, `.http_code`, `.error`, `.request_id`. On a successful record `.columns` is a list of `DeleteFilesColumnResult` (`.column`, `.status` — `"DELETED"`); on a failed record `.columns` is `None`.
+
+```python
+for record in response.records:
+    if record.error is None:
+        print(record.skyflow_id, 'deleted', [c.column for c in record.columns])
+    else:
+        print(record.skyflow_id, 'failed', record.http_code, record.error)
+```
+
 # Custom Request Headers
 
 To include custom HTTP headers on an outgoing request, pass an **interceptor** via that operation's options object. The interceptor is a callable that receives a `RequestContext` and can add headers to it. The headers available are defined by the `CustomHeaderKey` enum:
@@ -748,6 +967,10 @@ The same pattern applies to every operation, via its corresponding options class
 | `get` | `GetOptions` |
 | `update` | `UpdateOptions` |
 | `delete` | `DeleteOptions` |
+| `query` | `QueryOptions` |
+| `get_tokens` | `GetTokensOptions` |
+| `upload_files` | `UploadFilesOptions` |
+| `delete_files` | `DeleteFilesOptions` |
 
 # Error Handling
 
@@ -774,7 +997,7 @@ Every response exposes `.records`. The records list has one entry per submitted 
 | `.error` | always | Error message for this item, populated only on failure — `None` means this item succeeded. |
 | `.request_id` | always | The `x-request-id` of the call this item was part of, populated only on failure (`None` on success) — quote it in support escalations. |
 
-The success payload sits alongside those attributes on the same object: `.skyflow_id`/`.tokens`/`.data`/`.hashed_data` for record-shaped operations (`insert`, `get`, `update`), `.value`/`.token_group_name`/`.metadata` for detokenize, `.skyflow_id` alone for delete.
+The success payload sits alongside those attributes on the same object: `.skyflow_id`/`.tokens`/`.data`/`.hashed_data` for record-shaped operations (`insert`, `get`, `update`), `.value`/`.token_group_name`/`.metadata` for detokenize, `.value`/`.token_group_name`/`.token` for `get_tokens`, `.skyflow_id`/`.table_name`/`.columns` for `upload_files` and `delete_files`, and `.skyflow_id` alone for delete. (`query` is the exception — it has no per-record results; any failure is raised as a `SkyflowError`.)
 
 A response has just `.records`, in submitted order, with `.http_code`, `.error`, and `.request_id` on each entry alongside that operation's payload.
 

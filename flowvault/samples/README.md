@@ -39,6 +39,10 @@ python flowvault/samples/vault_api/insert_records.py
 | [update_record.py](vault_api/update_record.py) | Update a record |
 | [delete_records.py](vault_api/delete_records.py) | Delete records |
 | [detokenize_records.py](vault_api/detokenize_records.py) | Detokenize tokens |
+| [query_records.py](vault_api/query_records.py) | Run a read-only SQL `SELECT` query |
+| [get_tokens.py](vault_api/get_tokens.py) | Look up existing tokens for values (deterministic token groups) |
+| [upload_files.py](vault_api/upload_files.py) | Upload files to file columns (`file_path` / `base64` / `file_object`) |
+| [delete_files.py](vault_api/delete_files.py) | Delete files from file columns (by `skyflow_id` or `unique_values`) |
 
 ## Custom headers & HTTP config
 

@@ -6,4 +6,8 @@ from ._validations import (
     validate_update_request,
     validate_delete_request,
     validate_detokenize_request,
+    validate_query_request,
+    validate_get_tokens_request,
+    validate_upload_files_request,
+    validate_delete_files_request,
 )

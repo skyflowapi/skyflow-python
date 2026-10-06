@@ -15,7 +15,17 @@ from skyflow.utils._http_config import (
     VAULT_URL_KEY,
     VAULT_CONFIG_KEYS,
 )
-from skyflow.vault.data import GetRequestRecord, InsertRequestRecord, UpdateRequestRecord, UpsertOptions, TokenGroupRedactions
+from skyflow.vault.data import (
+    GetRequestRecord,
+    InsertRequestRecord,
+    UpdateRequestRecord,
+    UpsertOptions,
+    TokenGroupRedactions,
+    GetTokensRequestRecord,
+    UploadFilesRequestRecord,
+    UploadFilesRequestColumn,
+    DeleteFilesRequestRecord,
+)
 
 VALID_UPDATE_RECORD_KEYS = ["skyflow_id", "data", "tokens", "table_name"]
 
@@ -193,3 +203,61 @@ def validate_detokenize_request(logger, request):
         )
         if not valid:
             raise SkyflowError(SkyflowMessages.Error.INVALID_TOKEN_GROUP_REDACTIONS_IN_DETOKENIZE.value, invalid_input_error_code)
+
+
+def validate_query_request(logger, request):
+    if not isinstance(request.query, str) or not request.query.strip():
+        raise SkyflowError(SkyflowMessages.Error.INVALID_QUERY_IN_QUERY.value, invalid_input_error_code)
+
+
+def validate_get_tokens_request(logger, request):
+    if (not isinstance(request.records, list) or not request.records
+            or not all(isinstance(r, GetTokensRequestRecord) for r in request.records)):
+        raise SkyflowError(SkyflowMessages.Error.INVALID_RECORDS_TYPE_IN_GET_TOKENS.value, invalid_input_error_code)
+
+    for record in request.records:
+        if record.value is None:
+            raise SkyflowError(SkyflowMessages.Error.MISSING_VALUE_IN_GET_TOKENS.value, invalid_input_error_code)
+        if not isinstance(record.token_group_name, str) or not record.token_group_name.strip():
+            raise SkyflowError(SkyflowMessages.Error.MISSING_TOKEN_GROUP_NAME_IN_GET_TOKENS.value, invalid_input_error_code)
+
+
+def validate_upload_files_request(logger, request):
+    if (not isinstance(request.records, list) or not request.records
+            or not all(isinstance(r, UploadFilesRequestRecord) for r in request.records)):
+        raise SkyflowError(SkyflowMessages.Error.INVALID_RECORDS_TYPE_IN_UPLOAD_FILES.value, invalid_input_error_code)
+
+    for record in request.records:
+        if not isinstance(record.table_name, str) or not record.table_name.strip():
+            raise SkyflowError(SkyflowMessages.Error.MISSING_TABLE_NAME_IN_UPLOAD_FILES.value, invalid_input_error_code)
+        if (not isinstance(record.columns, list) or not record.columns
+                or not all(isinstance(c, UploadFilesRequestColumn) for c in record.columns)):
+            raise SkyflowError(SkyflowMessages.Error.INVALID_COLUMNS_TYPE_IN_UPLOAD_FILES.value, invalid_input_error_code)
+        for column in record.columns:
+            if not isinstance(column.column, str) or not column.column.strip():
+                raise SkyflowError(SkyflowMessages.Error.MISSING_COLUMN_NAME_IN_UPLOAD_FILES.value, invalid_input_error_code)
+            sources = [column.file_path, column.base64, column.file_object]
+            provided = [source for source in sources if source is not None]
+            if not provided:
+                raise SkyflowError(SkyflowMessages.Error.MISSING_FILE_SOURCE_IN_UPLOAD_FILES.value, invalid_input_error_code)
+            if len(provided) > 1:
+                raise SkyflowError(SkyflowMessages.Error.MULTIPLE_FILE_SOURCES_IN_UPLOAD_FILES.value, invalid_input_error_code)
+            if column.base64 is not None and (not isinstance(column.file_name, str) or not column.file_name.strip()):
+                raise SkyflowError(SkyflowMessages.Error.MISSING_FILE_NAME_FOR_BASE64_IN_UPLOAD_FILES.value, invalid_input_error_code)
+
+
+def validate_delete_files_request(logger, request):
+    if (not isinstance(request.records, list) or not request.records
+            or not all(isinstance(r, DeleteFilesRequestRecord) for r in request.records)):
+        raise SkyflowError(SkyflowMessages.Error.INVALID_RECORDS_TYPE_IN_DELETE_FILES.value, invalid_input_error_code)
+
+    for record in request.records:
+        if not isinstance(record.table_name, str) or not record.table_name.strip():
+            raise SkyflowError(SkyflowMessages.Error.MISSING_TABLE_NAME_IN_DELETE_FILES.value, invalid_input_error_code)
+        if (not isinstance(record.columns, list) or not record.columns
+                or not all(isinstance(c, str) and c.strip() for c in record.columns)):
+            raise SkyflowError(SkyflowMessages.Error.INVALID_COLUMNS_IN_DELETE_FILES.value, invalid_input_error_code)
+        has_skyflow_id = isinstance(record.skyflow_id, str) and bool(record.skyflow_id.strip())
+        has_unique_values = isinstance(record.unique_values, list) and bool(record.unique_values)
+        if has_skyflow_id == has_unique_values:
+            raise SkyflowError(SkyflowMessages.Error.INVALID_ID_OR_UNIQUE_VALUES_IN_DELETE_FILES.value, invalid_input_error_code)

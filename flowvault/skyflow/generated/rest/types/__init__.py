@@ -16,6 +16,13 @@ if typing.TYPE_CHECKING:
     from .execute_query_record_response import ExecuteQueryRecordResponse
     from .execute_query_response import ExecuteQueryResponse
     from .execute_query_response_metadata import ExecuteQueryResponseMetadata
+    from .file_delete_record import FileDeleteRecord
+    from .file_delete_response import FileDeleteResponse
+    from .file_delete_response_object import FileDeleteResponseObject
+    from .file_upload_column import FileUploadColumn
+    from .file_upload_record import FileUploadRecord
+    from .file_upload_response import FileUploadResponse
+    from .file_upload_response_object import FileUploadResponseObject
     from .get_request_data import GetRequestData
     from .get_response import GetResponse
     from .get_tokens_from_values_request_object import GetTokensFromValuesRequestObject
@@ -44,6 +51,13 @@ _dynamic_imports: typing.Dict[str, str] = {
     "ExecuteQueryRecordResponse": ".execute_query_record_response",
     "ExecuteQueryResponse": ".execute_query_response",
     "ExecuteQueryResponseMetadata": ".execute_query_response_metadata",
+    "FileDeleteRecord": ".file_delete_record",
+    "FileDeleteResponse": ".file_delete_response",
+    "FileDeleteResponseObject": ".file_delete_response_object",
+    "FileUploadColumn": ".file_upload_column",
+    "FileUploadRecord": ".file_upload_record",
+    "FileUploadResponse": ".file_upload_response",
+    "FileUploadResponseObject": ".file_upload_response_object",
     "GetRequestData": ".get_request_data",
     "GetResponse": ".get_response",
     "GetTokensFromValuesRequestObject": ".get_tokens_from_values_request_object",
@@ -96,6 +110,13 @@ __all__ = [
     "ExecuteQueryRecordResponse",
     "ExecuteQueryResponse",
     "ExecuteQueryResponseMetadata",
+    "FileDeleteRecord",
+    "FileDeleteResponse",
+    "FileDeleteResponseObject",
+    "FileUploadColumn",
+    "FileUploadRecord",
+    "FileUploadResponse",
+    "FileUploadResponseObject",
     "GetRequestData",
     "GetResponse",
     "GetTokensFromValuesRequestObject",
