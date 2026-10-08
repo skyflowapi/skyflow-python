@@ -95,11 +95,13 @@ class SkyflowMessages:
         MISSING_FILE_NAME_FOR_BASE64_IN_UPLOAD_FILES = f"{error_prefix} Upload files failed. 'file_name' is required when 'base64' is used."
         FILE_NOT_FOUND_IN_UPLOAD_FILES = f"{error_prefix} Upload files failed. Could not read file at path '{{}}'."
         INVALID_BASE64_IN_UPLOAD_FILES = f"{error_prefix} Upload files failed. 'base64' content for column '{{}}' could not be decoded."
+        DUPLICATE_COLUMN_IN_UPLOAD_FILES = f"{error_prefix} Upload files failed. Column '{{}}' is specified more than once in a record. Each column may appear only once per record."
 
         INVALID_RECORDS_TYPE_IN_DELETE_FILES = f"{error_prefix} Delete files failed. 'records' must be a non-empty list of DeleteFilesRequestRecord objects."
         MISSING_TABLE_NAME_IN_DELETE_FILES = f"{error_prefix} Delete files failed. Each record must specify a non-empty 'table_name'."
         INVALID_COLUMNS_IN_DELETE_FILES = f"{error_prefix} Delete files failed. Each record's 'columns' must be a non-empty list of strings."
         INVALID_ID_OR_UNIQUE_VALUES_IN_DELETE_FILES = f"{error_prefix} Delete files failed. Set exactly one of 'skyflow_id' or 'unique_values' per record."
+        DUPLICATE_COLUMN_IN_DELETE_FILES = f"{error_prefix} Delete files failed. Column '{{}}' is specified more than once in a record. Each column may appear only once per record."
 
     class Info(Enum):
         VALIDATE_INSERT_REQUEST = f"{INFO}: [{error_prefix}] Validating insert request."

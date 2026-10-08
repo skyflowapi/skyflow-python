@@ -233,9 +233,13 @@ def validate_upload_files_request(logger, request):
         if (not isinstance(record.columns, list) or not record.columns
                 or not all(isinstance(c, UploadFilesRequestColumn) for c in record.columns)):
             raise SkyflowError(SkyflowMessages.Error.INVALID_COLUMNS_TYPE_IN_UPLOAD_FILES.value, invalid_input_error_code)
+        seen_columns = set()
         for column in record.columns:
             if not isinstance(column.column, str) or not column.column.strip():
                 raise SkyflowError(SkyflowMessages.Error.MISSING_COLUMN_NAME_IN_UPLOAD_FILES.value, invalid_input_error_code)
+            if column.column in seen_columns:
+                raise SkyflowError(SkyflowMessages.Error.DUPLICATE_COLUMN_IN_UPLOAD_FILES.value.format(column.column), invalid_input_error_code)
+            seen_columns.add(column.column)
             sources = [column.file_path, column.base64, column.file_object]
             provided = [source for source in sources if source is not None]
             if not provided:
@@ -257,6 +261,11 @@ def validate_delete_files_request(logger, request):
         if (not isinstance(record.columns, list) or not record.columns
                 or not all(isinstance(c, str) and c.strip() for c in record.columns)):
             raise SkyflowError(SkyflowMessages.Error.INVALID_COLUMNS_IN_DELETE_FILES.value, invalid_input_error_code)
+        seen_columns = set()
+        for column in record.columns:
+            if column in seen_columns:
+                raise SkyflowError(SkyflowMessages.Error.DUPLICATE_COLUMN_IN_DELETE_FILES.value.format(column), invalid_input_error_code)
+            seen_columns.add(column)
         has_skyflow_id = isinstance(record.skyflow_id, str) and bool(record.skyflow_id.strip())
         has_unique_values = isinstance(record.unique_values, list) and bool(record.unique_values)
         if has_skyflow_id == has_unique_values:

@@ -34,6 +34,7 @@ class VaultClient(BaseVaultClient):
         super().__init__(config)
         self._common_http_config = {}
         self._sync_httpx_client = None
+        self._sync_upload_client = None
 
     def set_common_http_config(self, common_http_config):
         self._common_http_config = common_http_config or {}
@@ -82,6 +83,11 @@ class VaultClient(BaseVaultClient):
             transport=RetryTransport(httpx.HTTPTransport(limits=limits), max_retries, initial_millis, max_millis, call_timeout),
         )
         self._sync_httpx_client = sync_client
+        self._sync_upload_client = httpx.Client(
+            timeout=timeout,
+            follow_redirects=True,
+            transport=httpx.HTTPTransport(limits=limits),
+        )
         self._api_client = SkyflowAuth(base_url=vault_url, token=bearer_token or "", httpx_client=sync_client)
 
     def close(self):
@@ -89,13 +95,14 @@ class VaultClient(BaseVaultClient):
         self._api_client = None
 
     def __close_httpx_clients(self):
-        sync_client = self._sync_httpx_client
-        if sync_client is not None:
-            try:
-                sync_client.close()
-            except Exception:
-                pass
-        self._sync_httpx_client = None
+        for attribute in ("_sync_httpx_client", "_sync_upload_client"):
+            client = getattr(self, attribute)
+            if client is not None:
+                try:
+                    client.close()
+                except Exception:
+                    pass
+            setattr(self, attribute, None)
 
     def get_records_api(self):
         return self._api_client.records
@@ -113,4 +120,4 @@ class VaultClient(BaseVaultClient):
         headers = {}
         if content_type:
             headers[CONTENT_TYPE_HEADER] = content_type
-        return self._sync_httpx_client.put(signed_url, content=content, headers=headers)
+        return self._sync_upload_client.put(signed_url, content=content, headers=headers)

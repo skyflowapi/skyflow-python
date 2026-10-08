@@ -127,6 +127,15 @@ class TestValidateUploadFilesRequest(unittest.TestCase):
             ]),
         ]))
 
+    def test_duplicate_column_raises(self):
+        with self.assertRaises(SkyflowError):
+            validate_upload_files_request(None, UploadFilesRequest(records=[
+                UploadFilesRequestRecord(table_name="t1", columns=[
+                    UploadFilesRequestColumn(column="c", file_path="/tmp/a"),
+                    UploadFilesRequestColumn(column="c", file_path="/tmp/b"),
+                ]),
+            ]))
+
 
 class TestValidateDeleteFilesRequest(unittest.TestCase):
     def test_valid_by_skyflow_id(self):
@@ -171,6 +180,12 @@ class TestValidateDeleteFilesRequest(unittest.TestCase):
         with self.assertRaises(SkyflowError):
             validate_delete_files_request(None, DeleteFilesRequest(records=[
                 DeleteFilesRequestRecord(table_name="t1", columns=["c"], skyflow_id="id1", unique_values=[{"email": "a@b.com"}]),
+            ]))
+
+    def test_duplicate_column_raises(self):
+        with self.assertRaises(SkyflowError):
+            validate_delete_files_request(None, DeleteFilesRequest(records=[
+                DeleteFilesRequestRecord(table_name="t1", columns=["c", "c"], skyflow_id="id1"),
             ]))
 
 

@@ -2,6 +2,7 @@ import base64
 import json
 import mimetypes
 import os
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from common.errors import SkyflowError
 from common.utils import SkyflowMessages as CommonMessages
@@ -93,6 +94,10 @@ OPERATION_UPLOAD_FILES = "UPLOAD_FILES"
 OPERATION_DELETE_FILES = "DELETE_FILES"
 FILE_PUT_FAILED_MESSAGE = "PUT failed: {}"
 STATUS_KEY = "status"
+DEFAULT_UPLOAD_CONCURRENCY = 5
+SOURCE_KIND_PATH = "path"
+SOURCE_KIND_BYTES = "bytes"
+SOURCE_KIND_FILE_OBJECT = "file_object"
 INVALID_INPUT_ERROR_CODE = CommonMessages.ErrorCodes.INVALID_INPUT.value
 HTTP_STATUS_OK = 200
 HTTP_STATUS_MULTIPLE_CHOICES = 300
@@ -389,11 +394,12 @@ class VaultController(BaseVaultController):
 
         request_id = self.__extract_request_id(raw_response.headers)
         response_records = raw_response.data.records or []
+        put_results = self.__upload_column_results(request.records, resolved_records, response_records)
         records = []
         for index, response_record in enumerate(response_records):
             request_record = request.records[index] if index < len(request.records) else None
             resolved = resolved_records[index] if index < len(resolved_records) else {}
-            records.append(self.__upload_files_row(request_record, resolved, response_record, request_id))
+            records.append(self.__upload_files_row(request_record, resolved, response_record, request_id, put_results, index))
 
         log_info(SkyflowMessages.Info.UPLOAD_FILES_SUCCESS.value, self._vault_client.get_logger())
         return UploadFilesResponse(records=records)
@@ -656,8 +662,8 @@ class VaultController(BaseVaultController):
         file_name = column.file_name
         if column.file_path is not None:
             try:
-                with open(column.file_path, 'rb') as handle:
-                    content = handle.read()
+                with open(column.file_path, 'rb'):
+                    pass
             except OSError:
                 raise SkyflowError(
                     SkyflowMessages.Error.FILE_NOT_FOUND_IN_UPLOAD_FILES.value.format(column.file_path),
@@ -665,18 +671,17 @@ class VaultController(BaseVaultController):
                 )
             if not file_name:
                 file_name = os.path.basename(column.file_path)
+            source = (SOURCE_KIND_PATH, column.file_path)
         elif column.base64 is not None:
             try:
-                content = base64.b64decode(column.base64, validate=True)
+                source = (SOURCE_KIND_BYTES, base64.b64decode(column.base64, validate=True))
             except (ValueError, TypeError):
                 raise SkyflowError(
                     SkyflowMessages.Error.INVALID_BASE64_IN_UPLOAD_FILES.value.format(column.column),
                     INVALID_INPUT_ERROR_CODE,
                 )
         else:
-            content = column.file_object.read()
-            if isinstance(content, str):
-                content = content.encode('utf-8')
+            source = (SOURCE_KIND_FILE_OBJECT, column.file_object)
             if not file_name:
                 object_name = getattr(column.file_object, 'name', None)
                 if object_name:
@@ -684,7 +689,7 @@ class VaultController(BaseVaultController):
         content_type = column.content_type
         if content_type is None and file_name:
             content_type = mimetypes.guess_type(file_name)[0]
-        return file_name, content_type, content
+        return file_name, content_type, source
 
     def __to_upload_files_request_data(self, records, resolved_records):
         wire_records = []
@@ -701,13 +706,37 @@ class VaultController(BaseVaultController):
             ))
         return wire_records
 
-    def __upload_files_row(self, request_record, resolved, response_record, request_id):
+    def __upload_column_results(self, records, resolved_records, response_records):
+        tasks = []
+        for index, response_record in enumerate(response_records):
+            request_record = records[index] if index < len(records) else None
+            if request_record is None:
+                continue
+            if self.__wire_record_value(response_record, 'error', 'error') is not None:
+                continue
+            resolved = resolved_records[index] if index < len(resolved_records) else {}
+            signed_urls = self.__wire_record_value(response_record, 'data', 'data')
+            for column in request_record.columns:
+                signed_url = signed_urls.get(column.column) if isinstance(signed_urls, dict) else None
+                tasks.append((index, column.column, resolved.get(column.column), signed_url))
+        results = {}
+        if not tasks:
+            return results
+        with ThreadPoolExecutor(max_workers=min(len(tasks), DEFAULT_UPLOAD_CONCURRENCY)) as executor:
+            future_map = {
+                executor.submit(self.__upload_column, column_name, resolved_file, signed_url): (index, column_name)
+                for index, column_name, resolved_file, signed_url in tasks
+            }
+            for future in as_completed(future_map):
+                results[future_map[future]] = future.result()
+        return results
+
+    def __upload_files_row(self, request_record, resolved, response_record, request_id, put_results, record_index):
         error = self.__wire_record_value(response_record, 'error', 'error')
-        signed_urls = self.__wire_record_value(response_record, 'data', 'data')
         columns = []
         for column in (request_record.columns if request_record is not None else []):
-            resolved_file = resolved.get(column.column)
             if error is not None:
+                resolved_file = resolved.get(column.column)
                 columns.append(UploadFilesColumnResult(
                     column=column.column,
                     file_name=resolved_file[0] if resolved_file else None,
@@ -715,8 +744,7 @@ class VaultController(BaseVaultController):
                     error=error,
                 ))
                 continue
-            signed_url = signed_urls.get(column.column) if isinstance(signed_urls, dict) else None
-            columns.append(self.__upload_column(column.column, resolved_file, signed_url))
+            columns.append(put_results[(record_index, column.column)])
         return UploadFilesResponseRecord(
             skyflow_id=self.__wire_record_value(response_record, 'skyflowID', 'skyflow_id'),
             table_name=self.__wire_record_value(response_record, 'tableName', 'table_name'),
@@ -727,7 +755,7 @@ class VaultController(BaseVaultController):
         )
 
     def __upload_column(self, column_name, resolved_file, signed_url):
-        file_name, content_type, content = resolved_file if resolved_file else (None, None, None)
+        file_name, content_type, source = resolved_file if resolved_file else (None, None, None)
         if not signed_url:
             return UploadFilesColumnResult(
                 column=column_name,
@@ -735,8 +763,7 @@ class VaultController(BaseVaultController):
                 upload_status=FileUploadStatus.SKIPPED.value,
             )
         try:
-            put_response = self._vault_client.put_signed_url(signed_url, content, content_type)
-            status_code = put_response.status_code
+            status_code = self.__put_file_source(signed_url, source, content_type)
         except Exception as e:
             return UploadFilesColumnResult(
                 column=column_name,
@@ -756,6 +783,13 @@ class VaultController(BaseVaultController):
             upload_status=FileUploadStatus.FAILED.value,
             error=FILE_PUT_FAILED_MESSAGE.format(status_code),
         )
+
+    def __put_file_source(self, signed_url, source, content_type):
+        kind, payload = source if source else (None, None)
+        if kind == SOURCE_KIND_PATH:
+            with open(payload, 'rb') as handle:
+                return self._vault_client.put_signed_url(signed_url, handle, content_type).status_code
+        return self._vault_client.put_signed_url(signed_url, payload, content_type).status_code
 
     def __to_delete_files_request_data(self, records):
         return [

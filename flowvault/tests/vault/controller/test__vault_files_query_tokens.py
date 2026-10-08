@@ -242,7 +242,15 @@ class TestVaultUploadFiles(unittest.TestCase):
         self.vault_client.get_current_bearer_token.return_value = None
         self.files_api = MagicMock()
         self.vault_client.get_files_api.return_value = self.files_api
-        self.vault_client.put_signed_url.return_value = SimpleNamespace(status_code=200)
+        self.put_status = 200
+        self.put_calls = []
+
+        def _capture_put(signed_url, content, content_type=None):
+            data = content.read() if hasattr(content, "read") else content
+            self.put_calls.append((signed_url, data, content_type))
+            return SimpleNamespace(status_code=self.put_status)
+
+        self.vault_client.put_signed_url.side_effect = _capture_put
         self.vault = VaultController(self.vault_client)
         self._tempfiles = []
 
@@ -299,9 +307,9 @@ class TestVaultUploadFiles(unittest.TestCase):
         self.assertEqual(column.upload_status, FileUploadStatus.UPLOADED.value)
         self.assertEqual(column.file_name, os.path.basename(path))
         self.assertFalse(hasattr(column, "signed_url"))
-        args, _ = self.vault_client.put_signed_url.call_args
-        self.assertEqual(args[0], "https://signed/url")
-        self.assertEqual(args[1], b"filedata")
+        signed_url, data, _ = self.put_calls[0]
+        self.assertEqual(signed_url, "https://signed/url")
+        self.assertEqual(data, b"filedata")
         _, kwargs = self.files_api.with_raw_response.upload_files.call_args
         self.assertEqual(kwargs["records"][0].columns[0].file_name, os.path.basename(path))
 
@@ -313,8 +321,7 @@ class TestVaultUploadFiles(unittest.TestCase):
             table_name="t1", columns=[UploadFilesRequestColumn(column="c", base64=encoded, file_name="doc.pdf")])]))
 
         self.assertEqual(response.records[0].columns[0].upload_status, FileUploadStatus.UPLOADED.value)
-        args, _ = self.vault_client.put_signed_url.call_args
-        self.assertEqual(args[1], b"xyz")
+        self.assertEqual(self.put_calls[0][1], b"xyz")
 
     def test_upload_via_file_object_success(self):
         path = self._make_file(b"objbytes", suffix=".bin")
@@ -324,8 +331,7 @@ class TestVaultUploadFiles(unittest.TestCase):
             response = self.vault.upload_files(UploadFilesRequest(records=[UploadFilesRequestRecord(
                 table_name="t1", columns=[UploadFilesRequestColumn(column="c", file_object=handle)])]))
 
-        args, _ = self.vault_client.put_signed_url.call_args
-        self.assertEqual(args[1], b"objbytes")
+        self.assertEqual(self.put_calls[0][1], b"objbytes")
         self.assertEqual(response.records[0].columns[0].file_name, os.path.basename(path))
 
     def test_content_type_inferred_from_file_name(self):
@@ -365,7 +371,7 @@ class TestVaultUploadFiles(unittest.TestCase):
         self.vault_client.put_signed_url.assert_not_called()
 
     def test_put_failure_marks_column_failed(self):
-        self.vault_client.put_signed_url.return_value = SimpleNamespace(status_code=403)
+        self.put_status = 403
         path = self._make_file()
         self.files_api.with_raw_response.upload_files.return_value = self._ok_response()
 
@@ -425,6 +431,26 @@ class TestVaultUploadFiles(unittest.TestCase):
             self.vault.upload_files(UploadFilesRequest(records=[UploadFilesRequestRecord(
                 table_name="t1", columns=[UploadFilesRequestColumn(column="c", file_path="/no/such/file.xyz")])]))
         self.files_api.with_raw_response.upload_files.assert_not_called()
+
+    def test_multiple_columns_all_uploaded(self):
+        path_a = self._make_file(b"aaa")
+        path_b = self._make_file(b"bbb")
+        self.files_api.with_raw_response.upload_files.return_value = fake_records_raw_response([
+            FakeFileUploadResponseObject(
+                skyflow_id="sid1", table_name="t1",
+                data={"c1": "https://signed/a", "c2": "https://signed/b"}, http_code=200),
+        ])
+
+        response = self.vault.upload_files(UploadFilesRequest(records=[UploadFilesRequestRecord(
+            table_name="t1", columns=[
+                UploadFilesRequestColumn(column="c1", file_path=path_a),
+                UploadFilesRequestColumn(column="c2", file_path=path_b),
+            ])]))
+
+        statuses = {c.column: c.upload_status for c in response.records[0].columns}
+        self.assertEqual(statuses, {"c1": FileUploadStatus.UPLOADED.value, "c2": FileUploadStatus.UPLOADED.value})
+        self.assertEqual(len(self.put_calls), 2)
+        self.assertEqual({data for _, data, _ in self.put_calls}, {b"aaa", b"bbb"})
 
     def test_invalid_base64_raises(self):
         with self.assertRaises(SkyflowError):

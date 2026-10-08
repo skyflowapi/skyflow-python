@@ -19,7 +19,7 @@ class TestVaultClientFileAndQueryApis(unittest.TestCase):
     def test_put_signed_url_sends_content_and_content_type(self):
         http_client = MagicMock()
         http_client.put.return_value = "put-result"
-        self.vault_client._sync_httpx_client = http_client
+        self.vault_client._sync_upload_client = http_client
 
         result = self.vault_client.put_signed_url("https://signed/url", b"bytes", "application/pdf")
 
@@ -32,7 +32,7 @@ class TestVaultClientFileAndQueryApis(unittest.TestCase):
 
     def test_put_signed_url_without_content_type_sends_empty_headers(self):
         http_client = MagicMock()
-        self.vault_client._sync_httpx_client = http_client
+        self.vault_client._sync_upload_client = http_client
 
         self.vault_client.put_signed_url("https://signed/url", b"bytes")
 
