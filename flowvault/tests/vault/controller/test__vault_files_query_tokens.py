@@ -344,16 +344,6 @@ class TestVaultUploadFiles(unittest.TestCase):
         args, _ = self.vault_client.put_signed_url.call_args
         self.assertEqual(args[2], "application/pdf")
 
-    def test_explicit_content_type_used(self):
-        path = self._make_file(suffix=".bin")
-        self.files_api.with_raw_response.upload_files.return_value = self._ok_response()
-
-        self.vault.upload_files(UploadFilesRequest(records=[UploadFilesRequestRecord(
-            table_name="t1", columns=[UploadFilesRequestColumn(column="c", file_path=path, content_type="application/custom")])]))
-
-        args, _ = self.vault_client.put_signed_url.call_args
-        self.assertEqual(args[2], "application/custom")
-
     def test_per_record_error_marks_columns_skipped(self):
         path = self._make_file()
         self.files_api.with_raw_response.upload_files.return_value = fake_records_raw_response([

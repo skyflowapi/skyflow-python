@@ -170,7 +170,6 @@ class VaultController(BaseVaultController):
 
         if request.records is not None:
             call_kwargs = {'records': self.__to_get_request_data(request.records)}
-            error_count = len(request.records)
         else:
             call_kwargs = {
                 'table_name': request.table_name,
@@ -181,7 +180,6 @@ class VaultController(BaseVaultController):
                 'limit': request.limit,
                 'offset': request.offset,
             }
-            error_count = len(request.skyflow_ids or request.unique_values or [])
 
         try:
             log_info(SkyflowMessages.Info.GET_TRIGGERED.value, self._vault_client.get_logger())
@@ -686,9 +684,7 @@ class VaultController(BaseVaultController):
                 object_name = getattr(column.file_object, 'name', None)
                 if object_name:
                     file_name = os.path.basename(object_name)
-        content_type = column.content_type
-        if content_type is None and file_name:
-            content_type = mimetypes.guess_type(file_name)[0]
+        content_type = mimetypes.guess_type(file_name)[0] if file_name else None
         return file_name, content_type, source
 
     def __to_upload_files_request_data(self, records, resolved_records):

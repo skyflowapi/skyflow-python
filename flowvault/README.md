@@ -829,10 +829,10 @@ Upload one or more files to file columns. The SDK **orchestrates** this in two s
 **Note:**
 
 - `records` is required and must be a non-empty list of `UploadFilesRequestRecord`; each needs a `table_name` and a non-empty `columns` list.
-- Each `UploadFilesRequestColumn` needs a `column` name and **exactly one** file source — `file_path`, `base64`, or `file_object`. `base64` additionally requires `file_name`. `content_type` is inferred from the file name when omitted.
+- Each `UploadFilesRequestColumn` needs a `column` name and **exactly one** file source — `file_path`, `base64`, or `file_object`. `base64` additionally requires `file_name`. The upload's content type is inferred from the file name.
 - Omit `skyflow_id` to create a new record (CREATE permission); set it to upload into an existing record (UPDATE permission).
 - `file_name` is derived from `file_path`/`file_object` when omitted; if still unset, the server generates one.
-- Uploads are **sequential**, and the final virus-scan status (`fileStatus`) is asynchronous — read it later with `get()`.
+- Within a call, files are uploaded **concurrently** (a small bounded thread pool) and each file is **streamed** from disk, so large or many-file records stay within the signed-URL window with flat memory. The final virus-scan status (`fileStatus`) is asynchronous — read it later with `get()`.
 
 ```python
 from skyflow.vault.data import UploadFilesRequest, UploadFilesRequestRecord, UploadFilesRequestColumn
