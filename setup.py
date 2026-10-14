@@ -22,7 +22,8 @@ setup(
         'PyJWT',
         'datetime',
         'requests',
-        'aiohttp',
+        'aiohttp>=3.14.3; python_version >= "3.10"',
+        'aiohttp; python_version < "3.10"',
         'asyncio',
         'cryptography>=3.3.1'
     ],
