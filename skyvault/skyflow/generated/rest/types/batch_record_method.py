@@ -2,4 +2,4 @@
 
 import typing
 
-BatchRecordMethod = typing.Union[typing.Literal["NONE", "POST", "PUT", "GET", "DELETE"], typing.Any]
+BatchRecordMethod = typing.Union[typing.Literal["POST", "PUT", "GET", "DELETE"], typing.Any]

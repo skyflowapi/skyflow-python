@@ -3,11 +3,11 @@
 import typing
 from json.decoder import JSONDecodeError
 
-from .. import core
 from ..core.api_error import ApiError
 from ..core.client_wrapper import AsyncClientWrapper, SyncClientWrapper
 from ..core.http_response import AsyncHttpResponse, HttpResponse
-from ..core.jsonable_encoder import jsonable_encoder
+from ..core.jsonable_encoder import encode_path_param
+from ..core.parse_error import ParsingError
 from ..core.pydantic_utilities import parse_obj_as
 from ..core.request_options import RequestOptions
 from ..core.serialization import convert_and_respect_annotation_metadata
@@ -15,22 +15,22 @@ from ..errors.bad_request_error import BadRequestError
 from ..errors.internal_server_error import InternalServerError
 from ..errors.not_found_error import NotFoundError
 from ..errors.unauthorized_error import UnauthorizedError
+from ..types.batch_operation_response import BatchOperationResponse
+from ..types.batch_record import BatchRecord
+from ..types.bulk_delete_record_response import BulkDeleteRecordResponse
+from ..types.bulk_get_record_response import BulkGetRecordResponse
+from ..types.delete_record_response import DeleteRecordResponse
 from ..types.error_response import ErrorResponse
-from ..types.upload_file_v_2_response import UploadFileV2Response
-from ..types.v_1_batch_operation_response import V1BatchOperationResponse
-from ..types.v_1_batch_record import V1BatchRecord
-from ..types.v_1_bulk_delete_record_response import V1BulkDeleteRecordResponse
-from ..types.v_1_bulk_get_record_response import V1BulkGetRecordResponse
-from ..types.v_1_byot import V1Byot
-from ..types.v_1_delete_file_response import V1DeleteFileResponse
-from ..types.v_1_delete_record_response import V1DeleteRecordResponse
-from ..types.v_1_field_records import V1FieldRecords
-from ..types.v_1_get_file_scan_status_response import V1GetFileScanStatusResponse
-from ..types.v_1_insert_record_response import V1InsertRecordResponse
-from ..types.v_1_update_record_response import V1UpdateRecordResponse
-from .types.record_service_bulk_get_record_request_order_by import RecordServiceBulkGetRecordRequestOrderBy
-from .types.record_service_bulk_get_record_request_redaction import RecordServiceBulkGetRecordRequestRedaction
-from .types.record_service_get_record_request_redaction import RecordServiceGetRecordRequestRedaction
+from ..types.field_records import FieldRecords
+from ..types.get_field_records import GetFieldRecords
+from ..types.insert_record_response import InsertRecordResponse
+from ..types.update_record_response import UpdateRecordResponse
+from .types.get_record_by_id_request_redaction import GetRecordByIdRequestRedaction
+from .types.get_records_request_order_by import GetRecordsRequestOrderBy
+from .types.get_records_request_redaction import GetRecordsRequestRedaction
+from .types.insert_record_request_byot import InsertRecordRequestByot
+from .types.update_record_request_byot import UpdateRecordRequestByot
+from pydantic import ValidationError
 
 # this is used as the default value for optional parameters
 OMIT = typing.cast(typing.Any, ...)
@@ -40,15 +40,14 @@ class RawRecordsClient:
     def __init__(self, *, client_wrapper: SyncClientWrapper):
         self._client_wrapper = client_wrapper
 
-    def record_service_batch_operation(
+    def batch_operation(
         self,
         vault_id: str,
         *,
-        records: typing.Optional[typing.Sequence[V1BatchRecord]] = OMIT,
+        records: typing.Sequence[BatchRecord],
         continue_on_error: typing.Optional[bool] = OMIT,
-        byot: typing.Optional[V1Byot] = OMIT,
         request_options: typing.Optional[RequestOptions] = None,
-    ) -> HttpResponse[V1BatchOperationResponse]:
+    ) -> HttpResponse[BatchOperationResponse]:
         """
         Performs multiple record operations in a single transaction.
 
@@ -57,31 +56,28 @@ class RawRecordsClient:
         vault_id : str
             ID of the vault.
 
-        records : typing.Optional[typing.Sequence[V1BatchRecord]]
+        records : typing.Sequence[BatchRecord]
             Record operations to perform.
 
         continue_on_error : typing.Optional[bool]
-            Continue performing operations on partial errors.
-
-        byot : typing.Optional[V1Byot]
+            If `true`, continues processing remaining operations when one operation returns an error. If `false`, stops processing remaining operations when one operation returns an error.
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
 
         Returns
         -------
-        HttpResponse[V1BatchOperationResponse]
-            A successful response.
+        HttpResponse[BatchOperationResponse]
+            OK
         """
         _response = self._client_wrapper.httpx_client.request(
-            f"v1/vaults/{jsonable_encoder(vault_id)}",
+            f"v1/vaults/{encode_path_param(vault_id)}",
             method="POST",
             json={
                 "records": convert_and_respect_annotation_metadata(
-                    object_=records, annotation=typing.Sequence[V1BatchRecord], direction="write"
+                    object_=records, annotation=typing.Sequence[BatchRecord], direction="write"
                 ),
                 "continueOnError": continue_on_error,
-                "byot": byot,
             },
             headers={
                 "content-type": "application/json",
@@ -92,20 +88,53 @@ class RawRecordsClient:
         try:
             if 200 <= _response.status_code < 300:
                 _data = typing.cast(
-                    V1BatchOperationResponse,
+                    BatchOperationResponse,
                     parse_obj_as(
-                        type_=V1BatchOperationResponse,  # type: ignore
+                        type_=BatchOperationResponse,  # type: ignore
                         object_=_response.json(),
                     ),
                 )
                 return HttpResponse(response=_response, data=_data)
+            if _response.status_code == 400:
+                raise BadRequestError(
+                    headers=dict(_response.headers),
+                    body=typing.cast(
+                        ErrorResponse,
+                        parse_obj_as(
+                            type_=ErrorResponse,  # type: ignore
+                            object_=_response.json(),
+                        ),
+                    ),
+                )
+            if _response.status_code == 401:
+                raise UnauthorizedError(
+                    headers=dict(_response.headers),
+                    body=typing.cast(
+                        ErrorResponse,
+                        parse_obj_as(
+                            type_=ErrorResponse,  # type: ignore
+                            object_=_response.json(),
+                        ),
+                    ),
+                )
             if _response.status_code == 404:
                 raise NotFoundError(
                     headers=dict(_response.headers),
                     body=typing.cast(
-                        typing.Optional[typing.Any],
+                        ErrorResponse,
                         parse_obj_as(
-                            type_=typing.Optional[typing.Any],  # type: ignore
+                            type_=ErrorResponse,  # type: ignore
+                            object_=_response.json(),
+                        ),
+                    ),
+                )
+            if _response.status_code == 500:
+                raise InternalServerError(
+                    headers=dict(_response.headers),
+                    body=typing.cast(
+                        ErrorResponse,
+                        parse_obj_as(
+                            type_=ErrorResponse,  # type: ignore
                             object_=_response.json(),
                         ),
                     ),
@@ -113,15 +142,19 @@ class RawRecordsClient:
             _response_json = _response.json()
         except JSONDecodeError:
             raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)
+        except ValidationError as e:
+            raise ParsingError(
+                status_code=_response.status_code, headers=dict(_response.headers), body=_response.json(), cause=e
+            )
         raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
 
-    def record_service_bulk_get_record(
+    def get_records(
         self,
         vault_id: str,
         object_name: str,
         *,
         skyflow_ids: typing.Optional[typing.Union[str, typing.Sequence[str]]] = None,
-        redaction: typing.Optional[RecordServiceBulkGetRecordRequestRedaction] = None,
+        redaction: typing.Optional[GetRecordsRequestRedaction] = None,
         tokenization: typing.Optional[bool] = None,
         fields: typing.Optional[typing.Union[str, typing.Sequence[str]]] = None,
         offset: typing.Optional[str] = None,
@@ -129,60 +162,51 @@ class RawRecordsClient:
         download_url: typing.Optional[bool] = None,
         column_name: typing.Optional[str] = None,
         column_values: typing.Optional[typing.Union[str, typing.Sequence[str]]] = None,
-        order_by: typing.Optional[RecordServiceBulkGetRecordRequestOrderBy] = None,
+        order_by: typing.Optional[GetRecordsRequestOrderBy] = None,
+        return_file_metadata: typing.Optional[bool] = None,
         request_options: typing.Optional[RequestOptions] = None,
-    ) -> HttpResponse[V1BulkGetRecordResponse]:
+    ) -> HttpResponse[BulkGetRecordResponse]:
         """
-        Gets the specified records from a table.
+        Returns the specified records from a table.
 
         Parameters
         ----------
         vault_id : str
-            ID of the vault.
 
         object_name : str
-            Name of the table that contains the records.
 
         skyflow_ids : typing.Optional[typing.Union[str, typing.Sequence[str]]]
-            `skyflow_id` values of the records to return, with one value per `skyflow_ids` URL parameter. For example, `?skyflow_ids=abc&skyflow_ids=123`.<br /><br />If not specified, returns the first 25 records in the table.
 
-        redaction : typing.Optional[RecordServiceBulkGetRecordRequestRedaction]
-            Redaction level to enforce for the returned records. Subject to policies assigned to the API caller.
+        redaction : typing.Optional[GetRecordsRequestRedaction]
 
         tokenization : typing.Optional[bool]
-            If `true`, this operation returns tokens for fields with tokenization enabled. Only applicable if `skyflow_id` values are specified.
 
         fields : typing.Optional[typing.Union[str, typing.Sequence[str]]]
-            Fields to return for the record, with one value per `fields` URL parameter. For example, `?fields=abc&fields=123`.<br /><br />If not specified, returns all fields.
 
         offset : typing.Optional[str]
-            Record position at which to start receiving data.
 
         limit : typing.Optional[str]
-            Number of record to return. Maximum 25.
 
         download_url : typing.Optional[bool]
-            If `true`, returns download URLs for fields with a file data type. URLs are valid for 15 minutes. If virus scanning is enabled, only returns if the file is clean.
 
         column_name : typing.Optional[str]
-            Name of the column. It must be configured as unique in the schema. If you provide both column name or column value, you cannot use `skyflow_ids`. Passing either of these parameters with `skyflow_ids` returns an error.
 
         column_values : typing.Optional[typing.Union[str, typing.Sequence[str]]]
-            Column values of the records to return, with one value per `column_values` URL parameter. For example, `?column_values=abc&column_values=123`.<br /><br />`column_name` is mandatory when providing `column_values`. If you use column name or column value, you cannot use `skyflow_ids`. Passing either of these parameters with `skyflow_ids` returns an error.
 
-        order_by : typing.Optional[RecordServiceBulkGetRecordRequestOrderBy]
-            Order to return records, based on `skyflow_id` values. To disable, set to `NONE`.
+        order_by : typing.Optional[GetRecordsRequestOrderBy]
+
+        return_file_metadata : typing.Optional[bool]
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
 
         Returns
         -------
-        HttpResponse[V1BulkGetRecordResponse]
-            A successful response.
+        HttpResponse[BulkGetRecordResponse]
+            OK
         """
         _response = self._client_wrapper.httpx_client.request(
-            f"v1/vaults/{jsonable_encoder(vault_id)}/{jsonable_encoder(object_name)}",
+            f"v1/vaults/{encode_path_param(vault_id)}/{encode_path_param(object_name)}",
             method="GET",
             params={
                 "skyflow_ids": skyflow_ids,
@@ -195,26 +219,60 @@ class RawRecordsClient:
                 "column_name": column_name,
                 "column_values": column_values,
                 "order_by": order_by,
+                "returnFileMetadata": return_file_metadata,
             },
             request_options=request_options,
         )
         try:
             if 200 <= _response.status_code < 300:
                 _data = typing.cast(
-                    V1BulkGetRecordResponse,
+                    BulkGetRecordResponse,
                     parse_obj_as(
-                        type_=V1BulkGetRecordResponse,  # type: ignore
+                        type_=BulkGetRecordResponse,  # type: ignore
                         object_=_response.json(),
                     ),
                 )
                 return HttpResponse(response=_response, data=_data)
+            if _response.status_code == 400:
+                raise BadRequestError(
+                    headers=dict(_response.headers),
+                    body=typing.cast(
+                        ErrorResponse,
+                        parse_obj_as(
+                            type_=ErrorResponse,  # type: ignore
+                            object_=_response.json(),
+                        ),
+                    ),
+                )
+            if _response.status_code == 401:
+                raise UnauthorizedError(
+                    headers=dict(_response.headers),
+                    body=typing.cast(
+                        ErrorResponse,
+                        parse_obj_as(
+                            type_=ErrorResponse,  # type: ignore
+                            object_=_response.json(),
+                        ),
+                    ),
+                )
             if _response.status_code == 404:
                 raise NotFoundError(
                     headers=dict(_response.headers),
                     body=typing.cast(
-                        typing.Optional[typing.Any],
+                        ErrorResponse,
                         parse_obj_as(
-                            type_=typing.Optional[typing.Any],  # type: ignore
+                            type_=ErrorResponse,  # type: ignore
+                            object_=_response.json(),
+                        ),
+                    ),
+                )
+            if _response.status_code == 500:
+                raise InternalServerError(
+                    headers=dict(_response.headers),
+                    body=typing.cast(
+                        ErrorResponse,
+                        parse_obj_as(
+                            type_=ErrorResponse,  # type: ignore
                             object_=_response.json(),
                         ),
                     ),
@@ -222,32 +280,34 @@ class RawRecordsClient:
             _response_json = _response.json()
         except JSONDecodeError:
             raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)
+        except ValidationError as e:
+            raise ParsingError(
+                status_code=_response.status_code, headers=dict(_response.headers), body=_response.json(), cause=e
+            )
         raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
 
-    def record_service_insert_record(
+    def insert_records(
         self,
         vault_id: str,
         object_name: str,
         *,
-        records: typing.Optional[typing.Sequence[V1FieldRecords]] = OMIT,
+        records: typing.Sequence[FieldRecords],
         tokenization: typing.Optional[bool] = OMIT,
         upsert: typing.Optional[str] = OMIT,
         homogeneous: typing.Optional[bool] = OMIT,
-        byot: typing.Optional[V1Byot] = OMIT,
+        byot: typing.Optional[InsertRecordRequestByot] = OMIT,
         request_options: typing.Optional[RequestOptions] = None,
-    ) -> HttpResponse[V1InsertRecordResponse]:
+    ) -> HttpResponse[InsertRecordResponse]:
         """
         Inserts a record in the specified table.<br /><br />The time-to-live (TTL) for a transient field begins when the field value is set during record insertion.<br /><br />Columns that have a string data type and a uniqueness constraint accept strings up to 2500 characters. If an inserted string exceeds 2500 characters, the call returns a token insertion error.
 
         Parameters
         ----------
         vault_id : str
-            ID of the vault.
 
         object_name : str
-            Name of the table.
 
-        records : typing.Optional[typing.Sequence[V1FieldRecords]]
+        records : typing.Sequence[FieldRecords]
             Record values and tokens.
 
         tokenization : typing.Optional[bool]
@@ -259,22 +319,23 @@ class RawRecordsClient:
         homogeneous : typing.Optional[bool]
             If `true`, this operation mandates that all the records have the same fields. This parameter does not work with upsert.
 
-        byot : typing.Optional[V1Byot]
+        byot : typing.Optional[InsertRecordRequestByot]
+            Token insertion behavior.
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
 
         Returns
         -------
-        HttpResponse[V1InsertRecordResponse]
-            A successful response.
+        HttpResponse[InsertRecordResponse]
+            OK
         """
         _response = self._client_wrapper.httpx_client.request(
-            f"v1/vaults/{jsonable_encoder(vault_id)}/{jsonable_encoder(object_name)}",
+            f"v1/vaults/{encode_path_param(vault_id)}/{encode_path_param(object_name)}",
             method="POST",
             json={
                 "records": convert_and_respect_annotation_metadata(
-                    object_=records, annotation=typing.Sequence[V1FieldRecords], direction="write"
+                    object_=records, annotation=typing.Sequence[FieldRecords], direction="write"
                 ),
                 "tokenization": tokenization,
                 "upsert": upsert,
@@ -290,20 +351,42 @@ class RawRecordsClient:
         try:
             if 200 <= _response.status_code < 300:
                 _data = typing.cast(
-                    V1InsertRecordResponse,
+                    InsertRecordResponse,
                     parse_obj_as(
-                        type_=V1InsertRecordResponse,  # type: ignore
+                        type_=InsertRecordResponse,  # type: ignore
                         object_=_response.json(),
                     ),
                 )
                 return HttpResponse(response=_response, data=_data)
-            if _response.status_code == 404:
-                raise NotFoundError(
+            if _response.status_code == 400:
+                raise BadRequestError(
                     headers=dict(_response.headers),
                     body=typing.cast(
-                        typing.Optional[typing.Any],
+                        ErrorResponse,
                         parse_obj_as(
-                            type_=typing.Optional[typing.Any],  # type: ignore
+                            type_=ErrorResponse,  # type: ignore
+                            object_=_response.json(),
+                        ),
+                    ),
+                )
+            if _response.status_code == 401:
+                raise UnauthorizedError(
+                    headers=dict(_response.headers),
+                    body=typing.cast(
+                        ErrorResponse,
+                        parse_obj_as(
+                            type_=ErrorResponse,  # type: ignore
+                            object_=_response.json(),
+                        ),
+                    ),
+                )
+            if _response.status_code == 500:
+                raise InternalServerError(
+                    headers=dict(_response.headers),
+                    body=typing.cast(
+                        ErrorResponse,
+                        parse_obj_as(
+                            type_=ErrorResponse,  # type: ignore
                             object_=_response.json(),
                         ),
                     ),
@@ -311,16 +394,20 @@ class RawRecordsClient:
             _response_json = _response.json()
         except JSONDecodeError:
             raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)
+        except ValidationError as e:
+            raise ParsingError(
+                status_code=_response.status_code, headers=dict(_response.headers), body=_response.json(), cause=e
+            )
         raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
 
-    def record_service_bulk_delete_record(
+    def delete_records(
         self,
         vault_id: str,
         object_name: str,
         *,
         skyflow_ids: typing.Optional[typing.Sequence[str]] = OMIT,
         request_options: typing.Optional[RequestOptions] = None,
-    ) -> HttpResponse[V1BulkDeleteRecordResponse]:
+    ) -> HttpResponse[BulkDeleteRecordResponse]:
         """
         Deletes the specified records from a table.
 
@@ -340,11 +427,11 @@ class RawRecordsClient:
 
         Returns
         -------
-        HttpResponse[V1BulkDeleteRecordResponse]
-            A successful response.
+        HttpResponse[BulkDeleteRecordResponse]
+            OK
         """
         _response = self._client_wrapper.httpx_client.request(
-            f"v1/vaults/{jsonable_encoder(vault_id)}/{jsonable_encoder(object_name)}",
+            f"v1/vaults/{encode_path_param(vault_id)}/{encode_path_param(object_name)}",
             method="DELETE",
             json={
                 "skyflow_ids": skyflow_ids,
@@ -358,20 +445,53 @@ class RawRecordsClient:
         try:
             if 200 <= _response.status_code < 300:
                 _data = typing.cast(
-                    V1BulkDeleteRecordResponse,
+                    BulkDeleteRecordResponse,
                     parse_obj_as(
-                        type_=V1BulkDeleteRecordResponse,  # type: ignore
+                        type_=BulkDeleteRecordResponse,  # type: ignore
                         object_=_response.json(),
                     ),
                 )
                 return HttpResponse(response=_response, data=_data)
+            if _response.status_code == 400:
+                raise BadRequestError(
+                    headers=dict(_response.headers),
+                    body=typing.cast(
+                        ErrorResponse,
+                        parse_obj_as(
+                            type_=ErrorResponse,  # type: ignore
+                            object_=_response.json(),
+                        ),
+                    ),
+                )
+            if _response.status_code == 401:
+                raise UnauthorizedError(
+                    headers=dict(_response.headers),
+                    body=typing.cast(
+                        ErrorResponse,
+                        parse_obj_as(
+                            type_=ErrorResponse,  # type: ignore
+                            object_=_response.json(),
+                        ),
+                    ),
+                )
             if _response.status_code == 404:
                 raise NotFoundError(
                     headers=dict(_response.headers),
                     body=typing.cast(
-                        typing.Optional[typing.Any],
+                        ErrorResponse,
                         parse_obj_as(
-                            type_=typing.Optional[typing.Any],  # type: ignore
+                            type_=ErrorResponse,  # type: ignore
+                            object_=_response.json(),
+                        ),
+                    ),
+                )
+            if _response.status_code == 500:
+                raise InternalServerError(
+                    headers=dict(_response.headers),
+                    body=typing.cast(
+                        ErrorResponse,
+                        parse_obj_as(
+                            type_=ErrorResponse,  # type: ignore
                             object_=_response.json(),
                         ),
                     ),
@@ -379,82 +499,116 @@ class RawRecordsClient:
             _response_json = _response.json()
         except JSONDecodeError:
             raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)
+        except ValidationError as e:
+            raise ParsingError(
+                status_code=_response.status_code, headers=dict(_response.headers), body=_response.json(), cause=e
+            )
         raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
 
-    def record_service_get_record(
+    def get_record_by_id(
         self,
         vault_id: str,
         object_name: str,
         id: str,
         *,
-        redaction: typing.Optional[RecordServiceGetRecordRequestRedaction] = None,
+        redaction: typing.Optional[GetRecordByIdRequestRedaction] = None,
         tokenization: typing.Optional[bool] = None,
         fields: typing.Optional[typing.Union[str, typing.Sequence[str]]] = None,
         download_url: typing.Optional[bool] = None,
+        return_file_metadata: typing.Optional[bool] = None,
         request_options: typing.Optional[RequestOptions] = None,
-    ) -> HttpResponse[V1FieldRecords]:
+    ) -> HttpResponse[GetFieldRecords]:
         """
         Returns the specified record from a table.
 
         Parameters
         ----------
         vault_id : str
-            ID of the vault.
 
         object_name : str
-            Name of the table.
 
         id : str
-            `skyflow_id` of the record.
 
-        redaction : typing.Optional[RecordServiceGetRecordRequestRedaction]
-            Redaction level to enforce for the returned record. Subject to policies assigned to the API caller.
+        redaction : typing.Optional[GetRecordByIdRequestRedaction]
 
         tokenization : typing.Optional[bool]
-            If `true`, this operation returns tokens for fields with tokenization enabled. Only applicable if `skyflow_id` values are specified.
 
         fields : typing.Optional[typing.Union[str, typing.Sequence[str]]]
-            Fields to return for the record, with one value per `fields` URL parameter. For example, `?fields=abc&fields=123`.<br /><br />If not specified, returns all fields.
 
         download_url : typing.Optional[bool]
-            If `true`, returns download URLs for fields with a file data type. URLs are valid for 15 minutes. If virus scanning is enabled, only returns if the file is clean.
+
+        return_file_metadata : typing.Optional[bool]
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
 
         Returns
         -------
-        HttpResponse[V1FieldRecords]
-            A successful response.
+        HttpResponse[GetFieldRecords]
+            OK
         """
         _response = self._client_wrapper.httpx_client.request(
-            f"v1/vaults/{jsonable_encoder(vault_id)}/{jsonable_encoder(object_name)}/{jsonable_encoder(id)}",
+            f"v1/vaults/{encode_path_param(vault_id)}/{encode_path_param(object_name)}/{encode_path_param(id)}",
             method="GET",
             params={
                 "redaction": redaction,
                 "tokenization": tokenization,
                 "fields": fields,
                 "downloadURL": download_url,
+                "returnFileMetadata": return_file_metadata,
             },
             request_options=request_options,
         )
         try:
             if 200 <= _response.status_code < 300:
                 _data = typing.cast(
-                    V1FieldRecords,
+                    GetFieldRecords,
                     parse_obj_as(
-                        type_=V1FieldRecords,  # type: ignore
+                        type_=GetFieldRecords,  # type: ignore
                         object_=_response.json(),
                     ),
                 )
                 return HttpResponse(response=_response, data=_data)
+            if _response.status_code == 400:
+                raise BadRequestError(
+                    headers=dict(_response.headers),
+                    body=typing.cast(
+                        ErrorResponse,
+                        parse_obj_as(
+                            type_=ErrorResponse,  # type: ignore
+                            object_=_response.json(),
+                        ),
+                    ),
+                )
+            if _response.status_code == 401:
+                raise UnauthorizedError(
+                    headers=dict(_response.headers),
+                    body=typing.cast(
+                        ErrorResponse,
+                        parse_obj_as(
+                            type_=ErrorResponse,  # type: ignore
+                            object_=_response.json(),
+                        ),
+                    ),
+                )
             if _response.status_code == 404:
                 raise NotFoundError(
                     headers=dict(_response.headers),
                     body=typing.cast(
-                        typing.Optional[typing.Any],
+                        ErrorResponse,
                         parse_obj_as(
-                            type_=typing.Optional[typing.Any],  # type: ignore
+                            type_=ErrorResponse,  # type: ignore
+                            object_=_response.json(),
+                        ),
+                    ),
+                )
+            if _response.status_code == 500:
+                raise InternalServerError(
+                    headers=dict(_response.headers),
+                    body=typing.cast(
+                        ErrorResponse,
+                        parse_obj_as(
+                            type_=ErrorResponse,  # type: ignore
                             object_=_response.json(),
                         ),
                     ),
@@ -462,54 +616,56 @@ class RawRecordsClient:
             _response_json = _response.json()
         except JSONDecodeError:
             raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)
+        except ValidationError as e:
+            raise ParsingError(
+                status_code=_response.status_code, headers=dict(_response.headers), body=_response.json(), cause=e
+            )
         raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
 
-    def record_service_update_record(
+    def update_record(
         self,
         vault_id: str,
         object_name: str,
         id: str,
         *,
-        record: typing.Optional[V1FieldRecords] = OMIT,
+        record: typing.Optional[FieldRecords] = OMIT,
         tokenization: typing.Optional[bool] = OMIT,
-        byot: typing.Optional[V1Byot] = OMIT,
+        byot: typing.Optional[UpdateRecordRequestByot] = OMIT,
         request_options: typing.Optional[RequestOptions] = None,
-    ) -> HttpResponse[V1UpdateRecordResponse]:
+    ) -> HttpResponse[UpdateRecordResponse]:
         """
         Updates the specified record in a table.<br /><br />When you update a field, include the entire contents you want the field to store. For JSON fields, include all nested fields and values. If a nested field isn't included, it's removed.<br /><br />The time-to-live (TTL) for a transient field resets when the field value is updated.
 
         Parameters
         ----------
         vault_id : str
-            ID of the vault.
 
         object_name : str
-            Name of the table.
 
         id : str
-            `skyflow_id` of the record.
 
-        record : typing.Optional[V1FieldRecords]
+        record : typing.Optional[FieldRecords]
 
         tokenization : typing.Optional[bool]
             If `true`, this operation returns tokens for fields with tokenization enabled.
 
-        byot : typing.Optional[V1Byot]
+        byot : typing.Optional[UpdateRecordRequestByot]
+            Token insertion behavior.
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
 
         Returns
         -------
-        HttpResponse[V1UpdateRecordResponse]
-            A successful response.
+        HttpResponse[UpdateRecordResponse]
+            OK
         """
         _response = self._client_wrapper.httpx_client.request(
-            f"v1/vaults/{jsonable_encoder(vault_id)}/{jsonable_encoder(object_name)}/{jsonable_encoder(id)}",
+            f"v1/vaults/{encode_path_param(vault_id)}/{encode_path_param(object_name)}/{encode_path_param(id)}",
             method="PUT",
             json={
                 "record": convert_and_respect_annotation_metadata(
-                    object_=record, annotation=V1FieldRecords, direction="write"
+                    object_=record, annotation=FieldRecords, direction="write"
                 ),
                 "tokenization": tokenization,
                 "byot": byot,
@@ -523,20 +679,53 @@ class RawRecordsClient:
         try:
             if 200 <= _response.status_code < 300:
                 _data = typing.cast(
-                    V1UpdateRecordResponse,
+                    UpdateRecordResponse,
                     parse_obj_as(
-                        type_=V1UpdateRecordResponse,  # type: ignore
+                        type_=UpdateRecordResponse,  # type: ignore
                         object_=_response.json(),
                     ),
                 )
                 return HttpResponse(response=_response, data=_data)
+            if _response.status_code == 400:
+                raise BadRequestError(
+                    headers=dict(_response.headers),
+                    body=typing.cast(
+                        ErrorResponse,
+                        parse_obj_as(
+                            type_=ErrorResponse,  # type: ignore
+                            object_=_response.json(),
+                        ),
+                    ),
+                )
+            if _response.status_code == 401:
+                raise UnauthorizedError(
+                    headers=dict(_response.headers),
+                    body=typing.cast(
+                        ErrorResponse,
+                        parse_obj_as(
+                            type_=ErrorResponse,  # type: ignore
+                            object_=_response.json(),
+                        ),
+                    ),
+                )
             if _response.status_code == 404:
                 raise NotFoundError(
                     headers=dict(_response.headers),
                     body=typing.cast(
-                        typing.Optional[typing.Any],
+                        ErrorResponse,
                         parse_obj_as(
-                            type_=typing.Optional[typing.Any],  # type: ignore
+                            type_=ErrorResponse,  # type: ignore
+                            object_=_response.json(),
+                        ),
+                    ),
+                )
+            if _response.status_code == 500:
+                raise InternalServerError(
+                    headers=dict(_response.headers),
+                    body=typing.cast(
+                        ErrorResponse,
+                        parse_obj_as(
+                            type_=ErrorResponse,  # type: ignore
                             object_=_response.json(),
                         ),
                     ),
@@ -544,11 +733,15 @@ class RawRecordsClient:
             _response_json = _response.json()
         except JSONDecodeError:
             raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)
+        except ValidationError as e:
+            raise ParsingError(
+                status_code=_response.status_code, headers=dict(_response.headers), body=_response.json(), cause=e
+            )
         raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
 
-    def record_service_delete_record(
+    def delete_record(
         self, vault_id: str, object_name: str, id: str, *, request_options: typing.Optional[RequestOptions] = None
-    ) -> HttpResponse[V1DeleteRecordResponse]:
+    ) -> HttpResponse[DeleteRecordResponse]:
         """
         Deletes the specified record from a table.<br /><br /><b>Note:</b> This method doesn't delete transient field tokens. Transient field values are available until they expire based on the fields' time-to-live (TTL) setting.
 
@@ -568,311 +761,20 @@ class RawRecordsClient:
 
         Returns
         -------
-        HttpResponse[V1DeleteRecordResponse]
-            A successful response.
+        HttpResponse[DeleteRecordResponse]
+            OK
         """
         _response = self._client_wrapper.httpx_client.request(
-            f"v1/vaults/{jsonable_encoder(vault_id)}/{jsonable_encoder(object_name)}/{jsonable_encoder(id)}",
+            f"v1/vaults/{encode_path_param(vault_id)}/{encode_path_param(object_name)}/{encode_path_param(id)}",
             method="DELETE",
             request_options=request_options,
         )
         try:
             if 200 <= _response.status_code < 300:
                 _data = typing.cast(
-                    V1DeleteRecordResponse,
+                    DeleteRecordResponse,
                     parse_obj_as(
-                        type_=V1DeleteRecordResponse,  # type: ignore
-                        object_=_response.json(),
-                    ),
-                )
-                return HttpResponse(response=_response, data=_data)
-            if _response.status_code == 404:
-                raise NotFoundError(
-                    headers=dict(_response.headers),
-                    body=typing.cast(
-                        typing.Optional[typing.Any],
-                        parse_obj_as(
-                            type_=typing.Optional[typing.Any],  # type: ignore
-                            object_=_response.json(),
-                        ),
-                    ),
-                )
-            _response_json = _response.json()
-        except JSONDecodeError:
-            raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)
-        raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
-
-    def file_service_upload_file(
-        self,
-        vault_id: str,
-        object_name: str,
-        id: str,
-        *,
-        file: typing.Optional[core.File] = OMIT,
-        column_name: typing.Optional[str] = OMIT,
-        request_options: typing.Optional[RequestOptions] = None,
-    ) -> HttpResponse[V1UpdateRecordResponse]:
-        """
-        Uploads a file to the specified record.
-
-        Parameters
-        ----------
-        vault_id : str
-            ID of the vault.
-
-        object_name : str
-            Name of the table.
-
-        id : str
-            `skyflow_id` of the record.
-
-        file : typing.Optional[core.File]
-            See core.File for more documentation
-
-        column_name : typing.Optional[str]
-            Name of the column to store the file in. The column must have a file data type.
-
-        request_options : typing.Optional[RequestOptions]
-            Request-specific configuration.
-
-        Returns
-        -------
-        HttpResponse[V1UpdateRecordResponse]
-            A successful response.
-        """
-        _response = self._client_wrapper.httpx_client.request(
-            f"v1/vaults/{jsonable_encoder(vault_id)}/{jsonable_encoder(object_name)}/{jsonable_encoder(id)}/files",
-            method="POST",
-            data={
-                "columnName": column_name,
-            },
-            files={
-                **({"file": file} if file is not None else {}),
-            },
-            request_options=request_options,
-            omit=OMIT,
-            force_multipart=True,
-        )
-        try:
-            if 200 <= _response.status_code < 300:
-                _data = typing.cast(
-                    V1UpdateRecordResponse,
-                    parse_obj_as(
-                        type_=V1UpdateRecordResponse,  # type: ignore
-                        object_=_response.json(),
-                    ),
-                )
-                return HttpResponse(response=_response, data=_data)
-            if _response.status_code == 404:
-                raise NotFoundError(
-                    headers=dict(_response.headers),
-                    body=typing.cast(
-                        typing.Optional[typing.Any],
-                        parse_obj_as(
-                            type_=typing.Optional[typing.Any],  # type: ignore
-                            object_=_response.json(),
-                        ),
-                    ),
-                )
-            _response_json = _response.json()
-        except JSONDecodeError:
-            raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)
-        raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
-
-    def file_service_delete_file(
-        self,
-        vault_id: str,
-        table_name: str,
-        id: str,
-        column_name: str,
-        *,
-        request_options: typing.Optional[RequestOptions] = None,
-    ) -> HttpResponse[V1DeleteFileResponse]:
-        """
-        Deletes a file from the specified record.
-
-        Parameters
-        ----------
-        vault_id : str
-            ID of the vault.
-
-        table_name : str
-            Name of the table.
-
-        id : str
-            `skyflow_id` of the record.
-
-        column_name : str
-            Name of the column that contains the file.
-
-        request_options : typing.Optional[RequestOptions]
-            Request-specific configuration.
-
-        Returns
-        -------
-        HttpResponse[V1DeleteFileResponse]
-            A successful response.
-        """
-        _response = self._client_wrapper.httpx_client.request(
-            f"v1/vaults/{jsonable_encoder(vault_id)}/{jsonable_encoder(table_name)}/{jsonable_encoder(id)}/files/{jsonable_encoder(column_name)}",
-            method="DELETE",
-            request_options=request_options,
-        )
-        try:
-            if 200 <= _response.status_code < 300:
-                _data = typing.cast(
-                    V1DeleteFileResponse,
-                    parse_obj_as(
-                        type_=V1DeleteFileResponse,  # type: ignore
-                        object_=_response.json(),
-                    ),
-                )
-                return HttpResponse(response=_response, data=_data)
-            if _response.status_code == 404:
-                raise NotFoundError(
-                    headers=dict(_response.headers),
-                    body=typing.cast(
-                        typing.Optional[typing.Any],
-                        parse_obj_as(
-                            type_=typing.Optional[typing.Any],  # type: ignore
-                            object_=_response.json(),
-                        ),
-                    ),
-                )
-            _response_json = _response.json()
-        except JSONDecodeError:
-            raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)
-        raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
-
-    def file_service_get_file_scan_status(
-        self,
-        vault_id: str,
-        table_name: str,
-        id: str,
-        column_name: str,
-        *,
-        request_options: typing.Optional[RequestOptions] = None,
-    ) -> HttpResponse[V1GetFileScanStatusResponse]:
-        """
-        Returns the anti-virus scan status of a file.
-
-        Parameters
-        ----------
-        vault_id : str
-            ID of the vault.
-
-        table_name : str
-            Name of the table.
-
-        id : str
-            `skyflow_id` of the record.
-
-        column_name : str
-            Name of the column that contains the file.
-
-        request_options : typing.Optional[RequestOptions]
-            Request-specific configuration.
-
-        Returns
-        -------
-        HttpResponse[V1GetFileScanStatusResponse]
-            A successful response.
-        """
-        _response = self._client_wrapper.httpx_client.request(
-            f"v1/vaults/{jsonable_encoder(vault_id)}/{jsonable_encoder(table_name)}/{jsonable_encoder(id)}/files/{jsonable_encoder(column_name)}/scan-status",
-            method="GET",
-            request_options=request_options,
-        )
-        try:
-            if 200 <= _response.status_code < 300:
-                _data = typing.cast(
-                    V1GetFileScanStatusResponse,
-                    parse_obj_as(
-                        type_=V1GetFileScanStatusResponse,  # type: ignore
-                        object_=_response.json(),
-                    ),
-                )
-                return HttpResponse(response=_response, data=_data)
-            if _response.status_code == 404:
-                raise NotFoundError(
-                    headers=dict(_response.headers),
-                    body=typing.cast(
-                        typing.Optional[typing.Any],
-                        parse_obj_as(
-                            type_=typing.Optional[typing.Any],  # type: ignore
-                            object_=_response.json(),
-                        ),
-                    ),
-                )
-            _response_json = _response.json()
-        except JSONDecodeError:
-            raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)
-        raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
-
-    def upload_file_v_2(
-        self,
-        vault_id: str,
-        *,
-        table_name: str,
-        column_name: str,
-        file: core.File,
-        skyflow_id: typing.Optional[str] = OMIT,
-        return_file_metadata: typing.Optional[bool] = OMIT,
-        request_options: typing.Optional[RequestOptions] = None,
-    ) -> HttpResponse[UploadFileV2Response]:
-        """
-        Uploads the specified file to a record. If an existing record isn't specified, creates a new record and uploads the file to that record.
-
-        Parameters
-        ----------
-        vault_id : str
-            ID of the vault.
-
-        table_name : str
-            Name of the table to upload the file to.
-
-        column_name : str
-            Name of the column to upload the file to. The column must have a `file` data type.
-
-        file : core.File
-            See core.File for more documentation
-
-        skyflow_id : typing.Optional[str]
-            Skyflow ID of the record to upload the file to. If `skyflowID` isn't specified, a new record will be created.
-
-        return_file_metadata : typing.Optional[bool]
-            If `true`, returns metadata about the uploaded file.
-
-        request_options : typing.Optional[RequestOptions]
-            Request-specific configuration.
-
-        Returns
-        -------
-        HttpResponse[UploadFileV2Response]
-            File uploaded successfully.
-        """
-        _response = self._client_wrapper.httpx_client.request(
-            f"v2/vaults/{jsonable_encoder(vault_id)}/files/upload",
-            method="POST",
-            data={
-                "tableName": table_name,
-                "columnName": column_name,
-                "skyflowID": skyflow_id,
-                "returnFileMetadata": return_file_metadata,
-            },
-            files={
-                "file": file,
-            },
-            request_options=request_options,
-            omit=OMIT,
-            force_multipart=True,
-        )
-        try:
-            if 200 <= _response.status_code < 300:
-                _data = typing.cast(
-                    UploadFileV2Response,
-                    parse_obj_as(
-                        type_=UploadFileV2Response,  # type: ignore
+                        type_=DeleteRecordResponse,  # type: ignore
                         object_=_response.json(),
                     ),
                 )
@@ -881,9 +783,9 @@ class RawRecordsClient:
                 raise BadRequestError(
                     headers=dict(_response.headers),
                     body=typing.cast(
-                        typing.Optional[typing.Any],
+                        ErrorResponse,
                         parse_obj_as(
-                            type_=typing.Optional[typing.Any],  # type: ignore
+                            type_=ErrorResponse,  # type: ignore
                             object_=_response.json(),
                         ),
                     ),
@@ -892,9 +794,9 @@ class RawRecordsClient:
                 raise UnauthorizedError(
                     headers=dict(_response.headers),
                     body=typing.cast(
-                        typing.Optional[typing.Any],
+                        ErrorResponse,
                         parse_obj_as(
-                            type_=typing.Optional[typing.Any],  # type: ignore
+                            type_=ErrorResponse,  # type: ignore
                             object_=_response.json(),
                         ),
                     ),
@@ -903,9 +805,9 @@ class RawRecordsClient:
                 raise NotFoundError(
                     headers=dict(_response.headers),
                     body=typing.cast(
-                        typing.Optional[typing.Any],
+                        ErrorResponse,
                         parse_obj_as(
-                            type_=typing.Optional[typing.Any],  # type: ignore
+                            type_=ErrorResponse,  # type: ignore
                             object_=_response.json(),
                         ),
                     ),
@@ -924,6 +826,10 @@ class RawRecordsClient:
             _response_json = _response.json()
         except JSONDecodeError:
             raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)
+        except ValidationError as e:
+            raise ParsingError(
+                status_code=_response.status_code, headers=dict(_response.headers), body=_response.json(), cause=e
+            )
         raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
 
 
@@ -931,15 +837,14 @@ class AsyncRawRecordsClient:
     def __init__(self, *, client_wrapper: AsyncClientWrapper):
         self._client_wrapper = client_wrapper
 
-    async def record_service_batch_operation(
+    async def batch_operation(
         self,
         vault_id: str,
         *,
-        records: typing.Optional[typing.Sequence[V1BatchRecord]] = OMIT,
+        records: typing.Sequence[BatchRecord],
         continue_on_error: typing.Optional[bool] = OMIT,
-        byot: typing.Optional[V1Byot] = OMIT,
         request_options: typing.Optional[RequestOptions] = None,
-    ) -> AsyncHttpResponse[V1BatchOperationResponse]:
+    ) -> AsyncHttpResponse[BatchOperationResponse]:
         """
         Performs multiple record operations in a single transaction.
 
@@ -948,31 +853,28 @@ class AsyncRawRecordsClient:
         vault_id : str
             ID of the vault.
 
-        records : typing.Optional[typing.Sequence[V1BatchRecord]]
+        records : typing.Sequence[BatchRecord]
             Record operations to perform.
 
         continue_on_error : typing.Optional[bool]
-            Continue performing operations on partial errors.
-
-        byot : typing.Optional[V1Byot]
+            If `true`, continues processing remaining operations when one operation returns an error. If `false`, stops processing remaining operations when one operation returns an error.
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
 
         Returns
         -------
-        AsyncHttpResponse[V1BatchOperationResponse]
-            A successful response.
+        AsyncHttpResponse[BatchOperationResponse]
+            OK
         """
         _response = await self._client_wrapper.httpx_client.request(
-            f"v1/vaults/{jsonable_encoder(vault_id)}",
+            f"v1/vaults/{encode_path_param(vault_id)}",
             method="POST",
             json={
                 "records": convert_and_respect_annotation_metadata(
-                    object_=records, annotation=typing.Sequence[V1BatchRecord], direction="write"
+                    object_=records, annotation=typing.Sequence[BatchRecord], direction="write"
                 ),
                 "continueOnError": continue_on_error,
-                "byot": byot,
             },
             headers={
                 "content-type": "application/json",
@@ -983,20 +885,53 @@ class AsyncRawRecordsClient:
         try:
             if 200 <= _response.status_code < 300:
                 _data = typing.cast(
-                    V1BatchOperationResponse,
+                    BatchOperationResponse,
                     parse_obj_as(
-                        type_=V1BatchOperationResponse,  # type: ignore
+                        type_=BatchOperationResponse,  # type: ignore
                         object_=_response.json(),
                     ),
                 )
                 return AsyncHttpResponse(response=_response, data=_data)
+            if _response.status_code == 400:
+                raise BadRequestError(
+                    headers=dict(_response.headers),
+                    body=typing.cast(
+                        ErrorResponse,
+                        parse_obj_as(
+                            type_=ErrorResponse,  # type: ignore
+                            object_=_response.json(),
+                        ),
+                    ),
+                )
+            if _response.status_code == 401:
+                raise UnauthorizedError(
+                    headers=dict(_response.headers),
+                    body=typing.cast(
+                        ErrorResponse,
+                        parse_obj_as(
+                            type_=ErrorResponse,  # type: ignore
+                            object_=_response.json(),
+                        ),
+                    ),
+                )
             if _response.status_code == 404:
                 raise NotFoundError(
                     headers=dict(_response.headers),
                     body=typing.cast(
-                        typing.Optional[typing.Any],
+                        ErrorResponse,
                         parse_obj_as(
-                            type_=typing.Optional[typing.Any],  # type: ignore
+                            type_=ErrorResponse,  # type: ignore
+                            object_=_response.json(),
+                        ),
+                    ),
+                )
+            if _response.status_code == 500:
+                raise InternalServerError(
+                    headers=dict(_response.headers),
+                    body=typing.cast(
+                        ErrorResponse,
+                        parse_obj_as(
+                            type_=ErrorResponse,  # type: ignore
                             object_=_response.json(),
                         ),
                     ),
@@ -1004,15 +939,19 @@ class AsyncRawRecordsClient:
             _response_json = _response.json()
         except JSONDecodeError:
             raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)
+        except ValidationError as e:
+            raise ParsingError(
+                status_code=_response.status_code, headers=dict(_response.headers), body=_response.json(), cause=e
+            )
         raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
 
-    async def record_service_bulk_get_record(
+    async def get_records(
         self,
         vault_id: str,
         object_name: str,
         *,
         skyflow_ids: typing.Optional[typing.Union[str, typing.Sequence[str]]] = None,
-        redaction: typing.Optional[RecordServiceBulkGetRecordRequestRedaction] = None,
+        redaction: typing.Optional[GetRecordsRequestRedaction] = None,
         tokenization: typing.Optional[bool] = None,
         fields: typing.Optional[typing.Union[str, typing.Sequence[str]]] = None,
         offset: typing.Optional[str] = None,
@@ -1020,60 +959,51 @@ class AsyncRawRecordsClient:
         download_url: typing.Optional[bool] = None,
         column_name: typing.Optional[str] = None,
         column_values: typing.Optional[typing.Union[str, typing.Sequence[str]]] = None,
-        order_by: typing.Optional[RecordServiceBulkGetRecordRequestOrderBy] = None,
+        order_by: typing.Optional[GetRecordsRequestOrderBy] = None,
+        return_file_metadata: typing.Optional[bool] = None,
         request_options: typing.Optional[RequestOptions] = None,
-    ) -> AsyncHttpResponse[V1BulkGetRecordResponse]:
+    ) -> AsyncHttpResponse[BulkGetRecordResponse]:
         """
-        Gets the specified records from a table.
+        Returns the specified records from a table.
 
         Parameters
         ----------
         vault_id : str
-            ID of the vault.
 
         object_name : str
-            Name of the table that contains the records.
 
         skyflow_ids : typing.Optional[typing.Union[str, typing.Sequence[str]]]
-            `skyflow_id` values of the records to return, with one value per `skyflow_ids` URL parameter. For example, `?skyflow_ids=abc&skyflow_ids=123`.<br /><br />If not specified, returns the first 25 records in the table.
 
-        redaction : typing.Optional[RecordServiceBulkGetRecordRequestRedaction]
-            Redaction level to enforce for the returned records. Subject to policies assigned to the API caller.
+        redaction : typing.Optional[GetRecordsRequestRedaction]
 
         tokenization : typing.Optional[bool]
-            If `true`, this operation returns tokens for fields with tokenization enabled. Only applicable if `skyflow_id` values are specified.
 
         fields : typing.Optional[typing.Union[str, typing.Sequence[str]]]
-            Fields to return for the record, with one value per `fields` URL parameter. For example, `?fields=abc&fields=123`.<br /><br />If not specified, returns all fields.
 
         offset : typing.Optional[str]
-            Record position at which to start receiving data.
 
         limit : typing.Optional[str]
-            Number of record to return. Maximum 25.
 
         download_url : typing.Optional[bool]
-            If `true`, returns download URLs for fields with a file data type. URLs are valid for 15 minutes. If virus scanning is enabled, only returns if the file is clean.
 
         column_name : typing.Optional[str]
-            Name of the column. It must be configured as unique in the schema. If you provide both column name or column value, you cannot use `skyflow_ids`. Passing either of these parameters with `skyflow_ids` returns an error.
 
         column_values : typing.Optional[typing.Union[str, typing.Sequence[str]]]
-            Column values of the records to return, with one value per `column_values` URL parameter. For example, `?column_values=abc&column_values=123`.<br /><br />`column_name` is mandatory when providing `column_values`. If you use column name or column value, you cannot use `skyflow_ids`. Passing either of these parameters with `skyflow_ids` returns an error.
 
-        order_by : typing.Optional[RecordServiceBulkGetRecordRequestOrderBy]
-            Order to return records, based on `skyflow_id` values. To disable, set to `NONE`.
+        order_by : typing.Optional[GetRecordsRequestOrderBy]
+
+        return_file_metadata : typing.Optional[bool]
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
 
         Returns
         -------
-        AsyncHttpResponse[V1BulkGetRecordResponse]
-            A successful response.
+        AsyncHttpResponse[BulkGetRecordResponse]
+            OK
         """
         _response = await self._client_wrapper.httpx_client.request(
-            f"v1/vaults/{jsonable_encoder(vault_id)}/{jsonable_encoder(object_name)}",
+            f"v1/vaults/{encode_path_param(vault_id)}/{encode_path_param(object_name)}",
             method="GET",
             params={
                 "skyflow_ids": skyflow_ids,
@@ -1086,26 +1016,60 @@ class AsyncRawRecordsClient:
                 "column_name": column_name,
                 "column_values": column_values,
                 "order_by": order_by,
+                "returnFileMetadata": return_file_metadata,
             },
             request_options=request_options,
         )
         try:
             if 200 <= _response.status_code < 300:
                 _data = typing.cast(
-                    V1BulkGetRecordResponse,
+                    BulkGetRecordResponse,
                     parse_obj_as(
-                        type_=V1BulkGetRecordResponse,  # type: ignore
+                        type_=BulkGetRecordResponse,  # type: ignore
                         object_=_response.json(),
                     ),
                 )
                 return AsyncHttpResponse(response=_response, data=_data)
+            if _response.status_code == 400:
+                raise BadRequestError(
+                    headers=dict(_response.headers),
+                    body=typing.cast(
+                        ErrorResponse,
+                        parse_obj_as(
+                            type_=ErrorResponse,  # type: ignore
+                            object_=_response.json(),
+                        ),
+                    ),
+                )
+            if _response.status_code == 401:
+                raise UnauthorizedError(
+                    headers=dict(_response.headers),
+                    body=typing.cast(
+                        ErrorResponse,
+                        parse_obj_as(
+                            type_=ErrorResponse,  # type: ignore
+                            object_=_response.json(),
+                        ),
+                    ),
+                )
             if _response.status_code == 404:
                 raise NotFoundError(
                     headers=dict(_response.headers),
                     body=typing.cast(
-                        typing.Optional[typing.Any],
+                        ErrorResponse,
                         parse_obj_as(
-                            type_=typing.Optional[typing.Any],  # type: ignore
+                            type_=ErrorResponse,  # type: ignore
+                            object_=_response.json(),
+                        ),
+                    ),
+                )
+            if _response.status_code == 500:
+                raise InternalServerError(
+                    headers=dict(_response.headers),
+                    body=typing.cast(
+                        ErrorResponse,
+                        parse_obj_as(
+                            type_=ErrorResponse,  # type: ignore
                             object_=_response.json(),
                         ),
                     ),
@@ -1113,32 +1077,34 @@ class AsyncRawRecordsClient:
             _response_json = _response.json()
         except JSONDecodeError:
             raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)
+        except ValidationError as e:
+            raise ParsingError(
+                status_code=_response.status_code, headers=dict(_response.headers), body=_response.json(), cause=e
+            )
         raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
 
-    async def record_service_insert_record(
+    async def insert_records(
         self,
         vault_id: str,
         object_name: str,
         *,
-        records: typing.Optional[typing.Sequence[V1FieldRecords]] = OMIT,
+        records: typing.Sequence[FieldRecords],
         tokenization: typing.Optional[bool] = OMIT,
         upsert: typing.Optional[str] = OMIT,
         homogeneous: typing.Optional[bool] = OMIT,
-        byot: typing.Optional[V1Byot] = OMIT,
+        byot: typing.Optional[InsertRecordRequestByot] = OMIT,
         request_options: typing.Optional[RequestOptions] = None,
-    ) -> AsyncHttpResponse[V1InsertRecordResponse]:
+    ) -> AsyncHttpResponse[InsertRecordResponse]:
         """
         Inserts a record in the specified table.<br /><br />The time-to-live (TTL) for a transient field begins when the field value is set during record insertion.<br /><br />Columns that have a string data type and a uniqueness constraint accept strings up to 2500 characters. If an inserted string exceeds 2500 characters, the call returns a token insertion error.
 
         Parameters
         ----------
         vault_id : str
-            ID of the vault.
 
         object_name : str
-            Name of the table.
 
-        records : typing.Optional[typing.Sequence[V1FieldRecords]]
+        records : typing.Sequence[FieldRecords]
             Record values and tokens.
 
         tokenization : typing.Optional[bool]
@@ -1150,22 +1116,23 @@ class AsyncRawRecordsClient:
         homogeneous : typing.Optional[bool]
             If `true`, this operation mandates that all the records have the same fields. This parameter does not work with upsert.
 
-        byot : typing.Optional[V1Byot]
+        byot : typing.Optional[InsertRecordRequestByot]
+            Token insertion behavior.
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
 
         Returns
         -------
-        AsyncHttpResponse[V1InsertRecordResponse]
-            A successful response.
+        AsyncHttpResponse[InsertRecordResponse]
+            OK
         """
         _response = await self._client_wrapper.httpx_client.request(
-            f"v1/vaults/{jsonable_encoder(vault_id)}/{jsonable_encoder(object_name)}",
+            f"v1/vaults/{encode_path_param(vault_id)}/{encode_path_param(object_name)}",
             method="POST",
             json={
                 "records": convert_and_respect_annotation_metadata(
-                    object_=records, annotation=typing.Sequence[V1FieldRecords], direction="write"
+                    object_=records, annotation=typing.Sequence[FieldRecords], direction="write"
                 ),
                 "tokenization": tokenization,
                 "upsert": upsert,
@@ -1181,20 +1148,42 @@ class AsyncRawRecordsClient:
         try:
             if 200 <= _response.status_code < 300:
                 _data = typing.cast(
-                    V1InsertRecordResponse,
+                    InsertRecordResponse,
                     parse_obj_as(
-                        type_=V1InsertRecordResponse,  # type: ignore
+                        type_=InsertRecordResponse,  # type: ignore
                         object_=_response.json(),
                     ),
                 )
                 return AsyncHttpResponse(response=_response, data=_data)
-            if _response.status_code == 404:
-                raise NotFoundError(
+            if _response.status_code == 400:
+                raise BadRequestError(
                     headers=dict(_response.headers),
                     body=typing.cast(
-                        typing.Optional[typing.Any],
+                        ErrorResponse,
                         parse_obj_as(
-                            type_=typing.Optional[typing.Any],  # type: ignore
+                            type_=ErrorResponse,  # type: ignore
+                            object_=_response.json(),
+                        ),
+                    ),
+                )
+            if _response.status_code == 401:
+                raise UnauthorizedError(
+                    headers=dict(_response.headers),
+                    body=typing.cast(
+                        ErrorResponse,
+                        parse_obj_as(
+                            type_=ErrorResponse,  # type: ignore
+                            object_=_response.json(),
+                        ),
+                    ),
+                )
+            if _response.status_code == 500:
+                raise InternalServerError(
+                    headers=dict(_response.headers),
+                    body=typing.cast(
+                        ErrorResponse,
+                        parse_obj_as(
+                            type_=ErrorResponse,  # type: ignore
                             object_=_response.json(),
                         ),
                     ),
@@ -1202,16 +1191,20 @@ class AsyncRawRecordsClient:
             _response_json = _response.json()
         except JSONDecodeError:
             raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)
+        except ValidationError as e:
+            raise ParsingError(
+                status_code=_response.status_code, headers=dict(_response.headers), body=_response.json(), cause=e
+            )
         raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
 
-    async def record_service_bulk_delete_record(
+    async def delete_records(
         self,
         vault_id: str,
         object_name: str,
         *,
         skyflow_ids: typing.Optional[typing.Sequence[str]] = OMIT,
         request_options: typing.Optional[RequestOptions] = None,
-    ) -> AsyncHttpResponse[V1BulkDeleteRecordResponse]:
+    ) -> AsyncHttpResponse[BulkDeleteRecordResponse]:
         """
         Deletes the specified records from a table.
 
@@ -1231,11 +1224,11 @@ class AsyncRawRecordsClient:
 
         Returns
         -------
-        AsyncHttpResponse[V1BulkDeleteRecordResponse]
-            A successful response.
+        AsyncHttpResponse[BulkDeleteRecordResponse]
+            OK
         """
         _response = await self._client_wrapper.httpx_client.request(
-            f"v1/vaults/{jsonable_encoder(vault_id)}/{jsonable_encoder(object_name)}",
+            f"v1/vaults/{encode_path_param(vault_id)}/{encode_path_param(object_name)}",
             method="DELETE",
             json={
                 "skyflow_ids": skyflow_ids,
@@ -1249,20 +1242,53 @@ class AsyncRawRecordsClient:
         try:
             if 200 <= _response.status_code < 300:
                 _data = typing.cast(
-                    V1BulkDeleteRecordResponse,
+                    BulkDeleteRecordResponse,
                     parse_obj_as(
-                        type_=V1BulkDeleteRecordResponse,  # type: ignore
+                        type_=BulkDeleteRecordResponse,  # type: ignore
                         object_=_response.json(),
                     ),
                 )
                 return AsyncHttpResponse(response=_response, data=_data)
+            if _response.status_code == 400:
+                raise BadRequestError(
+                    headers=dict(_response.headers),
+                    body=typing.cast(
+                        ErrorResponse,
+                        parse_obj_as(
+                            type_=ErrorResponse,  # type: ignore
+                            object_=_response.json(),
+                        ),
+                    ),
+                )
+            if _response.status_code == 401:
+                raise UnauthorizedError(
+                    headers=dict(_response.headers),
+                    body=typing.cast(
+                        ErrorResponse,
+                        parse_obj_as(
+                            type_=ErrorResponse,  # type: ignore
+                            object_=_response.json(),
+                        ),
+                    ),
+                )
             if _response.status_code == 404:
                 raise NotFoundError(
                     headers=dict(_response.headers),
                     body=typing.cast(
-                        typing.Optional[typing.Any],
+                        ErrorResponse,
                         parse_obj_as(
-                            type_=typing.Optional[typing.Any],  # type: ignore
+                            type_=ErrorResponse,  # type: ignore
+                            object_=_response.json(),
+                        ),
+                    ),
+                )
+            if _response.status_code == 500:
+                raise InternalServerError(
+                    headers=dict(_response.headers),
+                    body=typing.cast(
+                        ErrorResponse,
+                        parse_obj_as(
+                            type_=ErrorResponse,  # type: ignore
                             object_=_response.json(),
                         ),
                     ),
@@ -1270,82 +1296,116 @@ class AsyncRawRecordsClient:
             _response_json = _response.json()
         except JSONDecodeError:
             raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)
+        except ValidationError as e:
+            raise ParsingError(
+                status_code=_response.status_code, headers=dict(_response.headers), body=_response.json(), cause=e
+            )
         raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
 
-    async def record_service_get_record(
+    async def get_record_by_id(
         self,
         vault_id: str,
         object_name: str,
         id: str,
         *,
-        redaction: typing.Optional[RecordServiceGetRecordRequestRedaction] = None,
+        redaction: typing.Optional[GetRecordByIdRequestRedaction] = None,
         tokenization: typing.Optional[bool] = None,
         fields: typing.Optional[typing.Union[str, typing.Sequence[str]]] = None,
         download_url: typing.Optional[bool] = None,
+        return_file_metadata: typing.Optional[bool] = None,
         request_options: typing.Optional[RequestOptions] = None,
-    ) -> AsyncHttpResponse[V1FieldRecords]:
+    ) -> AsyncHttpResponse[GetFieldRecords]:
         """
         Returns the specified record from a table.
 
         Parameters
         ----------
         vault_id : str
-            ID of the vault.
 
         object_name : str
-            Name of the table.
 
         id : str
-            `skyflow_id` of the record.
 
-        redaction : typing.Optional[RecordServiceGetRecordRequestRedaction]
-            Redaction level to enforce for the returned record. Subject to policies assigned to the API caller.
+        redaction : typing.Optional[GetRecordByIdRequestRedaction]
 
         tokenization : typing.Optional[bool]
-            If `true`, this operation returns tokens for fields with tokenization enabled. Only applicable if `skyflow_id` values are specified.
 
         fields : typing.Optional[typing.Union[str, typing.Sequence[str]]]
-            Fields to return for the record, with one value per `fields` URL parameter. For example, `?fields=abc&fields=123`.<br /><br />If not specified, returns all fields.
 
         download_url : typing.Optional[bool]
-            If `true`, returns download URLs for fields with a file data type. URLs are valid for 15 minutes. If virus scanning is enabled, only returns if the file is clean.
+
+        return_file_metadata : typing.Optional[bool]
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
 
         Returns
         -------
-        AsyncHttpResponse[V1FieldRecords]
-            A successful response.
+        AsyncHttpResponse[GetFieldRecords]
+            OK
         """
         _response = await self._client_wrapper.httpx_client.request(
-            f"v1/vaults/{jsonable_encoder(vault_id)}/{jsonable_encoder(object_name)}/{jsonable_encoder(id)}",
+            f"v1/vaults/{encode_path_param(vault_id)}/{encode_path_param(object_name)}/{encode_path_param(id)}",
             method="GET",
             params={
                 "redaction": redaction,
                 "tokenization": tokenization,
                 "fields": fields,
                 "downloadURL": download_url,
+                "returnFileMetadata": return_file_metadata,
             },
             request_options=request_options,
         )
         try:
             if 200 <= _response.status_code < 300:
                 _data = typing.cast(
-                    V1FieldRecords,
+                    GetFieldRecords,
                     parse_obj_as(
-                        type_=V1FieldRecords,  # type: ignore
+                        type_=GetFieldRecords,  # type: ignore
                         object_=_response.json(),
                     ),
                 )
                 return AsyncHttpResponse(response=_response, data=_data)
+            if _response.status_code == 400:
+                raise BadRequestError(
+                    headers=dict(_response.headers),
+                    body=typing.cast(
+                        ErrorResponse,
+                        parse_obj_as(
+                            type_=ErrorResponse,  # type: ignore
+                            object_=_response.json(),
+                        ),
+                    ),
+                )
+            if _response.status_code == 401:
+                raise UnauthorizedError(
+                    headers=dict(_response.headers),
+                    body=typing.cast(
+                        ErrorResponse,
+                        parse_obj_as(
+                            type_=ErrorResponse,  # type: ignore
+                            object_=_response.json(),
+                        ),
+                    ),
+                )
             if _response.status_code == 404:
                 raise NotFoundError(
                     headers=dict(_response.headers),
                     body=typing.cast(
-                        typing.Optional[typing.Any],
+                        ErrorResponse,
                         parse_obj_as(
-                            type_=typing.Optional[typing.Any],  # type: ignore
+                            type_=ErrorResponse,  # type: ignore
+                            object_=_response.json(),
+                        ),
+                    ),
+                )
+            if _response.status_code == 500:
+                raise InternalServerError(
+                    headers=dict(_response.headers),
+                    body=typing.cast(
+                        ErrorResponse,
+                        parse_obj_as(
+                            type_=ErrorResponse,  # type: ignore
                             object_=_response.json(),
                         ),
                     ),
@@ -1353,54 +1413,56 @@ class AsyncRawRecordsClient:
             _response_json = _response.json()
         except JSONDecodeError:
             raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)
+        except ValidationError as e:
+            raise ParsingError(
+                status_code=_response.status_code, headers=dict(_response.headers), body=_response.json(), cause=e
+            )
         raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
 
-    async def record_service_update_record(
+    async def update_record(
         self,
         vault_id: str,
         object_name: str,
         id: str,
         *,
-        record: typing.Optional[V1FieldRecords] = OMIT,
+        record: typing.Optional[FieldRecords] = OMIT,
         tokenization: typing.Optional[bool] = OMIT,
-        byot: typing.Optional[V1Byot] = OMIT,
+        byot: typing.Optional[UpdateRecordRequestByot] = OMIT,
         request_options: typing.Optional[RequestOptions] = None,
-    ) -> AsyncHttpResponse[V1UpdateRecordResponse]:
+    ) -> AsyncHttpResponse[UpdateRecordResponse]:
         """
         Updates the specified record in a table.<br /><br />When you update a field, include the entire contents you want the field to store. For JSON fields, include all nested fields and values. If a nested field isn't included, it's removed.<br /><br />The time-to-live (TTL) for a transient field resets when the field value is updated.
 
         Parameters
         ----------
         vault_id : str
-            ID of the vault.
 
         object_name : str
-            Name of the table.
 
         id : str
-            `skyflow_id` of the record.
 
-        record : typing.Optional[V1FieldRecords]
+        record : typing.Optional[FieldRecords]
 
         tokenization : typing.Optional[bool]
             If `true`, this operation returns tokens for fields with tokenization enabled.
 
-        byot : typing.Optional[V1Byot]
+        byot : typing.Optional[UpdateRecordRequestByot]
+            Token insertion behavior.
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
 
         Returns
         -------
-        AsyncHttpResponse[V1UpdateRecordResponse]
-            A successful response.
+        AsyncHttpResponse[UpdateRecordResponse]
+            OK
         """
         _response = await self._client_wrapper.httpx_client.request(
-            f"v1/vaults/{jsonable_encoder(vault_id)}/{jsonable_encoder(object_name)}/{jsonable_encoder(id)}",
+            f"v1/vaults/{encode_path_param(vault_id)}/{encode_path_param(object_name)}/{encode_path_param(id)}",
             method="PUT",
             json={
                 "record": convert_and_respect_annotation_metadata(
-                    object_=record, annotation=V1FieldRecords, direction="write"
+                    object_=record, annotation=FieldRecords, direction="write"
                 ),
                 "tokenization": tokenization,
                 "byot": byot,
@@ -1414,20 +1476,53 @@ class AsyncRawRecordsClient:
         try:
             if 200 <= _response.status_code < 300:
                 _data = typing.cast(
-                    V1UpdateRecordResponse,
+                    UpdateRecordResponse,
                     parse_obj_as(
-                        type_=V1UpdateRecordResponse,  # type: ignore
+                        type_=UpdateRecordResponse,  # type: ignore
                         object_=_response.json(),
                     ),
                 )
                 return AsyncHttpResponse(response=_response, data=_data)
+            if _response.status_code == 400:
+                raise BadRequestError(
+                    headers=dict(_response.headers),
+                    body=typing.cast(
+                        ErrorResponse,
+                        parse_obj_as(
+                            type_=ErrorResponse,  # type: ignore
+                            object_=_response.json(),
+                        ),
+                    ),
+                )
+            if _response.status_code == 401:
+                raise UnauthorizedError(
+                    headers=dict(_response.headers),
+                    body=typing.cast(
+                        ErrorResponse,
+                        parse_obj_as(
+                            type_=ErrorResponse,  # type: ignore
+                            object_=_response.json(),
+                        ),
+                    ),
+                )
             if _response.status_code == 404:
                 raise NotFoundError(
                     headers=dict(_response.headers),
                     body=typing.cast(
-                        typing.Optional[typing.Any],
+                        ErrorResponse,
                         parse_obj_as(
-                            type_=typing.Optional[typing.Any],  # type: ignore
+                            type_=ErrorResponse,  # type: ignore
+                            object_=_response.json(),
+                        ),
+                    ),
+                )
+            if _response.status_code == 500:
+                raise InternalServerError(
+                    headers=dict(_response.headers),
+                    body=typing.cast(
+                        ErrorResponse,
+                        parse_obj_as(
+                            type_=ErrorResponse,  # type: ignore
                             object_=_response.json(),
                         ),
                     ),
@@ -1435,11 +1530,15 @@ class AsyncRawRecordsClient:
             _response_json = _response.json()
         except JSONDecodeError:
             raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)
+        except ValidationError as e:
+            raise ParsingError(
+                status_code=_response.status_code, headers=dict(_response.headers), body=_response.json(), cause=e
+            )
         raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
 
-    async def record_service_delete_record(
+    async def delete_record(
         self, vault_id: str, object_name: str, id: str, *, request_options: typing.Optional[RequestOptions] = None
-    ) -> AsyncHttpResponse[V1DeleteRecordResponse]:
+    ) -> AsyncHttpResponse[DeleteRecordResponse]:
         """
         Deletes the specified record from a table.<br /><br /><b>Note:</b> This method doesn't delete transient field tokens. Transient field values are available until they expire based on the fields' time-to-live (TTL) setting.
 
@@ -1459,311 +1558,20 @@ class AsyncRawRecordsClient:
 
         Returns
         -------
-        AsyncHttpResponse[V1DeleteRecordResponse]
-            A successful response.
+        AsyncHttpResponse[DeleteRecordResponse]
+            OK
         """
         _response = await self._client_wrapper.httpx_client.request(
-            f"v1/vaults/{jsonable_encoder(vault_id)}/{jsonable_encoder(object_name)}/{jsonable_encoder(id)}",
+            f"v1/vaults/{encode_path_param(vault_id)}/{encode_path_param(object_name)}/{encode_path_param(id)}",
             method="DELETE",
             request_options=request_options,
         )
         try:
             if 200 <= _response.status_code < 300:
                 _data = typing.cast(
-                    V1DeleteRecordResponse,
+                    DeleteRecordResponse,
                     parse_obj_as(
-                        type_=V1DeleteRecordResponse,  # type: ignore
-                        object_=_response.json(),
-                    ),
-                )
-                return AsyncHttpResponse(response=_response, data=_data)
-            if _response.status_code == 404:
-                raise NotFoundError(
-                    headers=dict(_response.headers),
-                    body=typing.cast(
-                        typing.Optional[typing.Any],
-                        parse_obj_as(
-                            type_=typing.Optional[typing.Any],  # type: ignore
-                            object_=_response.json(),
-                        ),
-                    ),
-                )
-            _response_json = _response.json()
-        except JSONDecodeError:
-            raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)
-        raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
-
-    async def file_service_upload_file(
-        self,
-        vault_id: str,
-        object_name: str,
-        id: str,
-        *,
-        file: typing.Optional[core.File] = OMIT,
-        column_name: typing.Optional[str] = OMIT,
-        request_options: typing.Optional[RequestOptions] = None,
-    ) -> AsyncHttpResponse[V1UpdateRecordResponse]:
-        """
-        Uploads a file to the specified record.
-
-        Parameters
-        ----------
-        vault_id : str
-            ID of the vault.
-
-        object_name : str
-            Name of the table.
-
-        id : str
-            `skyflow_id` of the record.
-
-        file : typing.Optional[core.File]
-            See core.File for more documentation
-
-        column_name : typing.Optional[str]
-            Name of the column to store the file in. The column must have a file data type.
-
-        request_options : typing.Optional[RequestOptions]
-            Request-specific configuration.
-
-        Returns
-        -------
-        AsyncHttpResponse[V1UpdateRecordResponse]
-            A successful response.
-        """
-        _response = await self._client_wrapper.httpx_client.request(
-            f"v1/vaults/{jsonable_encoder(vault_id)}/{jsonable_encoder(object_name)}/{jsonable_encoder(id)}/files",
-            method="POST",
-            data={
-                "columnName": column_name,
-            },
-            files={
-                **({"file": file} if file is not None else {}),
-            },
-            request_options=request_options,
-            omit=OMIT,
-            force_multipart=True,
-        )
-        try:
-            if 200 <= _response.status_code < 300:
-                _data = typing.cast(
-                    V1UpdateRecordResponse,
-                    parse_obj_as(
-                        type_=V1UpdateRecordResponse,  # type: ignore
-                        object_=_response.json(),
-                    ),
-                )
-                return AsyncHttpResponse(response=_response, data=_data)
-            if _response.status_code == 404:
-                raise NotFoundError(
-                    headers=dict(_response.headers),
-                    body=typing.cast(
-                        typing.Optional[typing.Any],
-                        parse_obj_as(
-                            type_=typing.Optional[typing.Any],  # type: ignore
-                            object_=_response.json(),
-                        ),
-                    ),
-                )
-            _response_json = _response.json()
-        except JSONDecodeError:
-            raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)
-        raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
-
-    async def file_service_delete_file(
-        self,
-        vault_id: str,
-        table_name: str,
-        id: str,
-        column_name: str,
-        *,
-        request_options: typing.Optional[RequestOptions] = None,
-    ) -> AsyncHttpResponse[V1DeleteFileResponse]:
-        """
-        Deletes a file from the specified record.
-
-        Parameters
-        ----------
-        vault_id : str
-            ID of the vault.
-
-        table_name : str
-            Name of the table.
-
-        id : str
-            `skyflow_id` of the record.
-
-        column_name : str
-            Name of the column that contains the file.
-
-        request_options : typing.Optional[RequestOptions]
-            Request-specific configuration.
-
-        Returns
-        -------
-        AsyncHttpResponse[V1DeleteFileResponse]
-            A successful response.
-        """
-        _response = await self._client_wrapper.httpx_client.request(
-            f"v1/vaults/{jsonable_encoder(vault_id)}/{jsonable_encoder(table_name)}/{jsonable_encoder(id)}/files/{jsonable_encoder(column_name)}",
-            method="DELETE",
-            request_options=request_options,
-        )
-        try:
-            if 200 <= _response.status_code < 300:
-                _data = typing.cast(
-                    V1DeleteFileResponse,
-                    parse_obj_as(
-                        type_=V1DeleteFileResponse,  # type: ignore
-                        object_=_response.json(),
-                    ),
-                )
-                return AsyncHttpResponse(response=_response, data=_data)
-            if _response.status_code == 404:
-                raise NotFoundError(
-                    headers=dict(_response.headers),
-                    body=typing.cast(
-                        typing.Optional[typing.Any],
-                        parse_obj_as(
-                            type_=typing.Optional[typing.Any],  # type: ignore
-                            object_=_response.json(),
-                        ),
-                    ),
-                )
-            _response_json = _response.json()
-        except JSONDecodeError:
-            raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)
-        raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
-
-    async def file_service_get_file_scan_status(
-        self,
-        vault_id: str,
-        table_name: str,
-        id: str,
-        column_name: str,
-        *,
-        request_options: typing.Optional[RequestOptions] = None,
-    ) -> AsyncHttpResponse[V1GetFileScanStatusResponse]:
-        """
-        Returns the anti-virus scan status of a file.
-
-        Parameters
-        ----------
-        vault_id : str
-            ID of the vault.
-
-        table_name : str
-            Name of the table.
-
-        id : str
-            `skyflow_id` of the record.
-
-        column_name : str
-            Name of the column that contains the file.
-
-        request_options : typing.Optional[RequestOptions]
-            Request-specific configuration.
-
-        Returns
-        -------
-        AsyncHttpResponse[V1GetFileScanStatusResponse]
-            A successful response.
-        """
-        _response = await self._client_wrapper.httpx_client.request(
-            f"v1/vaults/{jsonable_encoder(vault_id)}/{jsonable_encoder(table_name)}/{jsonable_encoder(id)}/files/{jsonable_encoder(column_name)}/scan-status",
-            method="GET",
-            request_options=request_options,
-        )
-        try:
-            if 200 <= _response.status_code < 300:
-                _data = typing.cast(
-                    V1GetFileScanStatusResponse,
-                    parse_obj_as(
-                        type_=V1GetFileScanStatusResponse,  # type: ignore
-                        object_=_response.json(),
-                    ),
-                )
-                return AsyncHttpResponse(response=_response, data=_data)
-            if _response.status_code == 404:
-                raise NotFoundError(
-                    headers=dict(_response.headers),
-                    body=typing.cast(
-                        typing.Optional[typing.Any],
-                        parse_obj_as(
-                            type_=typing.Optional[typing.Any],  # type: ignore
-                            object_=_response.json(),
-                        ),
-                    ),
-                )
-            _response_json = _response.json()
-        except JSONDecodeError:
-            raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)
-        raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
-
-    async def upload_file_v_2(
-        self,
-        vault_id: str,
-        *,
-        table_name: str,
-        column_name: str,
-        file: core.File,
-        skyflow_id: typing.Optional[str] = OMIT,
-        return_file_metadata: typing.Optional[bool] = OMIT,
-        request_options: typing.Optional[RequestOptions] = None,
-    ) -> AsyncHttpResponse[UploadFileV2Response]:
-        """
-        Uploads the specified file to a record. If an existing record isn't specified, creates a new record and uploads the file to that record.
-
-        Parameters
-        ----------
-        vault_id : str
-            ID of the vault.
-
-        table_name : str
-            Name of the table to upload the file to.
-
-        column_name : str
-            Name of the column to upload the file to. The column must have a `file` data type.
-
-        file : core.File
-            See core.File for more documentation
-
-        skyflow_id : typing.Optional[str]
-            Skyflow ID of the record to upload the file to. If `skyflowID` isn't specified, a new record will be created.
-
-        return_file_metadata : typing.Optional[bool]
-            If `true`, returns metadata about the uploaded file.
-
-        request_options : typing.Optional[RequestOptions]
-            Request-specific configuration.
-
-        Returns
-        -------
-        AsyncHttpResponse[UploadFileV2Response]
-            File uploaded successfully.
-        """
-        _response = await self._client_wrapper.httpx_client.request(
-            f"v2/vaults/{jsonable_encoder(vault_id)}/files/upload",
-            method="POST",
-            data={
-                "tableName": table_name,
-                "columnName": column_name,
-                "skyflowID": skyflow_id,
-                "returnFileMetadata": return_file_metadata,
-            },
-            files={
-                "file": file,
-            },
-            request_options=request_options,
-            omit=OMIT,
-            force_multipart=True,
-        )
-        try:
-            if 200 <= _response.status_code < 300:
-                _data = typing.cast(
-                    UploadFileV2Response,
-                    parse_obj_as(
-                        type_=UploadFileV2Response,  # type: ignore
+                        type_=DeleteRecordResponse,  # type: ignore
                         object_=_response.json(),
                     ),
                 )
@@ -1772,9 +1580,9 @@ class AsyncRawRecordsClient:
                 raise BadRequestError(
                     headers=dict(_response.headers),
                     body=typing.cast(
-                        typing.Optional[typing.Any],
+                        ErrorResponse,
                         parse_obj_as(
-                            type_=typing.Optional[typing.Any],  # type: ignore
+                            type_=ErrorResponse,  # type: ignore
                             object_=_response.json(),
                         ),
                     ),
@@ -1783,9 +1591,9 @@ class AsyncRawRecordsClient:
                 raise UnauthorizedError(
                     headers=dict(_response.headers),
                     body=typing.cast(
-                        typing.Optional[typing.Any],
+                        ErrorResponse,
                         parse_obj_as(
-                            type_=typing.Optional[typing.Any],  # type: ignore
+                            type_=ErrorResponse,  # type: ignore
                             object_=_response.json(),
                         ),
                     ),
@@ -1794,9 +1602,9 @@ class AsyncRawRecordsClient:
                 raise NotFoundError(
                     headers=dict(_response.headers),
                     body=typing.cast(
-                        typing.Optional[typing.Any],
+                        ErrorResponse,
                         parse_obj_as(
-                            type_=typing.Optional[typing.Any],  # type: ignore
+                            type_=ErrorResponse,  # type: ignore
                             object_=_response.json(),
                         ),
                     ),
@@ -1815,4 +1623,8 @@ class AsyncRawRecordsClient:
             _response_json = _response.json()
         except JSONDecodeError:
             raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)
+        except ValidationError as e:
+            raise ParsingError(
+                status_code=_response.status_code, headers=dict(_response.headers), body=_response.json(), cause=e
+            )
         raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)

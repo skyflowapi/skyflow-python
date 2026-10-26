@@ -3,5 +3,5 @@
 import typing
 
 DetokenizeRecordResponseValueType = typing.Union[
-    typing.Literal["NONE", "STRING", "INTEGER", "FLOAT", "BOOL", "DATETIME", "JSON", "ARRAY", "DATE"], typing.Any
+    typing.Literal["STRING", "INTEGER", "FLOAT", "BOOL", "DATETIME", "JSON", "ARRAY", "DATE", "TIME"], typing.Any
 ]

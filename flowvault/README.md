@@ -43,6 +43,13 @@ The `flowvault` module is a Skyflow Python SDK for vault operations. It shares i
 - [Upload Files](#upload-files)
 - [Delete Files](#delete-files)
 - [Custom Request Headers](#custom-request-headers)
+- [DetectController — Detect V2](#detectcontroller--detect-v2)
+  - [deidentify_string](#deidentify_string)
+  - [deidentify_file](#deidentify_file)
+  - [get_run](#get_run)
+  - [reidentify_string](#reidentify_string)
+  - [reidentify_file](#reidentify_file)
+  - [check_guardrails](#check_guardrails)
 - [Error Handling](#error-handling)
   - [Two layers of errors](#two-layers-of-errors)
   - [Per-record success and failure](#per-record-success-and-failure)
@@ -971,6 +978,179 @@ The same pattern applies to every operation, via its corresponding options class
 | `get_tokens` | `GetTokensOptions` |
 | `upload_files` | `UploadFilesOptions` |
 | `delete_files` | `DeleteFilesOptions` |
+
+# DetectController — Detect V2
+
+Detect V2 detects and de-identifies sensitive data in strings and files, re-identifies tokens, and screens text against guardrails. Get the controller with `skyflow_client.detect()` (or `skyflow_client.detect('<VAULT_ID>')` to select one of several configured vaults). The `vault_id` is filled in from the vault config for every method.
+
+Detect configurations are created in Studio or through the REST API — the SDK does not create or manage them. Import request/response models from `skyflow.vault.detect` and enums from `skyflow.utils.enums`.
+
+```python
+detect = skyflow_client.detect()
+```
+
+## deidentify_string
+
+Synchronous. Detects and de-identifies sensitive data in a string. Pass exactly one configuration source: a stored `configuration_id`, or an inline `configuration`.
+
+```python
+from skyflow.vault.detect import DeidentifyStringRequest
+
+response = skyflow_client.detect().deidentify_string(
+    DeidentifyStringRequest(
+        text='My name is John Doe, and my email is johndoe@acme.com.',
+        configuration_id='<CONFIGURATION_ID>',
+    )
+)
+
+print(response.processed_text)
+for entity in response.entities:
+    print(entity.entity_type, entity.token, entity.location.start_index, entity.entity_scores)
+```
+
+An inline configuration is built from `DetectConfiguration` / `Detect` / `Entity`:
+
+```python
+from skyflow.vault.detect import DeidentifyStringRequest, DetectConfiguration, Detect, Entity
+from skyflow.utils.enums import EntityType, DeidentificationType
+
+response = skyflow_client.detect().deidentify_string(
+    DeidentifyStringRequest(
+        text='My name is John Doe.',
+        configuration=DetectConfiguration(
+            detect=Detect(entities=[
+                Entity(entity_type=EntityType.NAME, deidentification_type=DeidentificationType.VAULT_TOKEN, destination='persons.name'),
+            ]),
+        ),
+    )
+)
+```
+
+Returns a `DeidentifyStringResponse` with `processed_text`, `entities` (each a `DetectedEntity` with `token`, `value`, `location`, `entity_type`, `entity_scores`), and `metrics`.
+
+## deidentify_file
+
+De-identifies a file. The API is asynchronous. By default the SDK submits the run and returns a `DeidentifyFileResponse` with `run_id` set and `status` as `None` — retrieve the result later with `get_run`. Supply exactly one of `value` (with `data_source`), `file`, or `file_path`; a local `file`/`file_path` is read, base64-encoded, and its format inferred from the extension.
+
+```python
+from skyflow.vault.detect import DeidentifyFileRequest
+
+response = skyflow_client.detect().deidentify_file(
+    DeidentifyFileRequest(file_path='/data/intake/patient-notes.pdf', configuration_id='<CONFIGURATION_ID>')
+)
+print(response.run_id)   # status is None; nothing written to disk
+```
+
+Pass `poll_options` to submit and poll with exponential backoff (1, 2, 4, 8, 16, then 32 seconds), bounded by `wait_time` (default 60, max 300 seconds) and `max_attempts` (default and max 23). On `SUCCESS`, outputs for a local `file`/`file_path` request are written to `output_directory` (only valid with `poll_options`).
+
+```python
+from skyflow.vault.detect import DeidentifyFileRequest, PollOptions
+from skyflow.utils.enums import DetectRunStatus
+
+response = skyflow_client.detect().deidentify_file(
+    DeidentifyFileRequest(
+        file_path='/data/intake/patient-notes.pdf',
+        configuration_id='<CONFIGURATION_ID>',
+        poll_options=PollOptions(wait_time=64),
+        output_directory='/data/out',
+    )
+)
+
+if response.status == DetectRunStatus.SUCCESS:
+    print(response.metrics.pages)       # /data/out/processed-patient-notes.pdf written
+elif response.status in (DetectRunStatus.IN_PROGRESS, DetectRunStatus.QUEUED):
+    pass                                # budget ran out — poll later with get_run(run_id)
+```
+
+A file already in the vault or at a presigned URL is referenced through `data_source` + `value` (no local-file auto-write applies in that case):
+
+```python
+from skyflow.vault.detect import DeidentifyFileRequest
+from skyflow.utils.enums import DataSourceType, FileDataFormat
+
+skyflow_client.detect().deidentify_file(
+    DeidentifyFileRequest(
+        data_source=DataSourceType.SKYFLOW_ID,
+        value='<SKYFLOW_ID>',
+        data_format=FileDataFormat.PDF,
+        configuration_id='<CONFIGURATION_ID>',
+    )
+)
+```
+
+## get_run
+
+Retrieves the status and, once complete, the outputs of a Detect file run.
+
+```python
+from skyflow.vault.detect import GetRunRequest
+from skyflow.utils.enums import DetectRunStatus
+
+run = skyflow_client.detect().get_run(GetRunRequest(run_id='<RUN_ID>'))
+if run.status == DetectRunStatus.SUCCESS:
+    for output in run.output:
+        print(output.processed_file_type, output.processed_file_extension)
+```
+
+## reidentify_string
+
+Synchronous. Replaces tokens in a string with their original values or a redacted rendering. Each `RedactionLevel` targets a token group (`token_group_name`, flowvault) or entity (`entity_name`, skyvault) and sets a replacement (`redaction_pattern` or `redaction_type`); vault-specific validation is performed server-side.
+
+```python
+from skyflow.vault.detect import ReidentifyStringRequest, RedactionLevel
+
+response = skyflow_client.detect().reidentify_string(
+    ReidentifyStringRequest(
+        text='My name is [NAME_1].',
+        redaction_level=[RedactionLevel(token_group_name='personTokenGroup', redaction_pattern='personMaskPattern')],
+    )
+)
+print(response.processed_text)
+```
+
+## reidentify_file
+
+Synchronous — the re-identified file is returned in the response. Supply the file through `data_source` + `value` (base64, skyflow id, or presigned URL); decode and write any output files yourself.
+
+```python
+import base64
+from skyflow.vault.detect import ReidentifyFileRequest, RedactionLevel
+from skyflow.utils.enums import DataSourceType, FileDataFormat, DetectRunStatus
+
+with open('/data/redacted/notes.txt', 'rb') as handle:
+    encoded = base64.b64encode(handle.read()).decode('utf-8')
+
+response = skyflow_client.detect().reidentify_file(
+    ReidentifyFileRequest(
+        data_source=DataSourceType.BASE64,
+        value=encoded,
+        data_format=FileDataFormat.TXT,
+        redaction_level=[RedactionLevel(token_group_name='<TOKEN_GROUP_NAME>', redaction_pattern='<REDACTION_PATTERN>')],
+    )
+)
+
+if response.status == DetectRunStatus.SUCCESS:
+    for index, output in enumerate(response.output):
+        with open(f'reidentified-{index}', 'wb') as out:
+            out.write(base64.b64decode(output.processed_file))
+```
+
+## check_guardrails
+
+Synchronous. Screens text for toxicity and denied topics.
+
+```python
+from skyflow.vault.detect import CheckGuardrailsRequest
+from skyflow.utils.enums import GuardrailsValidation
+
+response = skyflow_client.detect().check_guardrails(
+    CheckGuardrailsRequest(text='<USER_PROMPT>', check_toxicity=True, deny_topics=['politics', 'medical advice'])
+)
+if response.validation == GuardrailsValidation.FAILED:
+    print('blocked', response.toxic, response.denied_topic)
+```
+
+Every method raises `skyflow.error.SkyflowError` on validation failure, credential failure, or an API error — see [Error Handling](#error-handling).
 
 # Error Handling
 

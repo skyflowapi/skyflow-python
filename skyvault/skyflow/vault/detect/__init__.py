@@ -1,14 +1,35 @@
-from ._date_transformation import DateTransformation
-from ._deidentify_text_request import DeidentifyTextRequest
-from ._deidentify_text_response import DeidentifyTextResponse
-from ._entity_info import EntityInfo
-from ._reidentify_text_request import ReidentifyTextRequest
-from ._reidentify_text_response import ReidentifyTextResponse
-from ._text_index import TextIndex
-from ._token_format import TokenFormat
-from ._transformations import Transformations
-from ._deidentify_file_request import DeidentifyFileRequest
-from ._audio_bleep import Bleep
-from ._deidentify_file_response import DeidentifyFileResponse
-from ._get_detect_run_request import GetDetectRunRequest
-from ._file_input import FileInput
+from common.vault.detect import (
+    DetectController,
+    Audio,
+    Bleep,
+    CheckGuardrailsRequest,
+    CheckGuardrailsResponse,
+    CustomType,
+    DeidentifyFileRequest,
+    DeidentifyFileResponse,
+    DeidentifyStringRequest,
+    DeidentifyStringResponse,
+    Detect,
+    DetectConfiguration,
+    DetectedEntity,
+    Document,
+    Entity,
+    EntityLocation,
+    FileMapping,
+    FileOutput,
+    GetRunRequest,
+    GetRunResponse,
+    Image,
+    Media,
+    Metrics,
+    ObjectEntity,
+    Pdf,
+    PollOptions,
+    RedactionLevel,
+    ReidentifyFileRequest,
+    ReidentifyFileResponse,
+    ReidentifyStringRequest,
+    ReidentifyStringResponse,
+    ShiftDates,
+    Transformation,
+)

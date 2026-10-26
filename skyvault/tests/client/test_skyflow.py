@@ -365,15 +365,15 @@ class TestSkyflow(unittest.TestCase):
 
     def test_detect_returns_detect_controller(self):
         skyflow_client = self.builder.add_vault_config(VALID_VAULT_CONFIG).build()
-        from skyflow.vault.controller import Detect
+        from skyflow.vault.detect import DetectController
         result = skyflow_client.detect()
-        self.assertIsInstance(result, Detect)
+        self.assertIsInstance(result, DetectController)
 
     def test_detect_with_explicit_vault_id(self):
         skyflow_client = self.builder.add_vault_config(VALID_VAULT_CONFIG).build()
-        from skyflow.vault.controller import Detect
+        from skyflow.vault.detect import DetectController
         result = skyflow_client.detect(VALID_VAULT_CONFIG["vault_id"])
-        self.assertIsInstance(result, Detect)
+        self.assertIsInstance(result, DetectController)
 
     def test_detect_with_invalid_vault_id_raises_error(self):
         skyflow_client = self.builder.add_vault_config(VALID_VAULT_CONFIG).build()
@@ -413,17 +413,23 @@ class TestVaultClient(unittest.TestCase):
     def _make_client(self):
         client = VaultClient({"vault_id": "test_vault"})
         client._api_client = Mock()
+        client._detect_api_client = Mock()
         return client
 
-    def test_get_detect_text_api_returns_strings(self):
+    def test_get_strings_v2_api_returns_strings_v2(self):
         client = self._make_client()
-        result = client.get_detect_text_api()
-        self.assertEqual(result, client._api_client.strings)
+        result = client.get_strings_v2_api()
+        self.assertEqual(result, client._detect_api_client.strings_v2)
 
-    def test_get_detect_file_api_returns_files(self):
+    def test_get_files_v2_api_returns_files_v2(self):
         client = self._make_client()
-        result = client.get_detect_file_api()
-        self.assertEqual(result, client._api_client.files)
+        result = client.get_files_v2_api()
+        self.assertEqual(result, client._detect_api_client.files_v2)
+
+    def test_get_guardrails_v2_api_returns_guardrails_v2(self):
+        client = self._make_client()
+        result = client.get_guardrails_v2_api()
+        self.assertEqual(result, client._detect_api_client.guardrails_v2)
 
     @patch("common.vault.base_vault_client.generate_bearer_token_from_creds")
     @patch("common.vault.base_vault_client.is_expired", return_value=True)

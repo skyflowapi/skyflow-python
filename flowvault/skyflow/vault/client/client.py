@@ -1,8 +1,9 @@
 import httpx
 
 from common.vault.base_vault_client import BaseVaultClient
+from common.generated.rest.client import SkyflowAuth as DetectSkyflowAuth
 from skyflow.generated.rest.client import SkyflowAuth
-from skyflow.utils import get_vault_url
+from skyflow.utils import get_vault_url, get_metrics
 from skyflow.utils._http_config import (
     TIMEOUT_KEY,
     CONNECT_TIMEOUT_KEY,
@@ -35,6 +36,7 @@ class VaultClient(BaseVaultClient):
         self._common_http_config = {}
         self._sync_httpx_client = None
         self._sync_upload_client = None
+        self._detect_api_client = None
 
     def set_common_http_config(self, common_http_config):
         self._common_http_config = common_http_config or {}
@@ -89,6 +91,7 @@ class VaultClient(BaseVaultClient):
             transport=httpx.HTTPTransport(limits=limits),
         )
         self._api_client = SkyflowAuth(base_url=vault_url, token=bearer_token or "", httpx_client=sync_client)
+        self._detect_api_client = DetectSkyflowAuth(base_url=vault_url, token=bearer_token or "", httpx_client=sync_client)
 
     def close(self):
         self.__close_httpx_clients()
@@ -103,6 +106,7 @@ class VaultClient(BaseVaultClient):
                 except Exception:
                     pass
             setattr(self, attribute, None)
+        self._detect_api_client = None
 
     def get_records_api(self):
         return self._api_client.records
@@ -115,6 +119,18 @@ class VaultClient(BaseVaultClient):
 
     def get_files_api(self):
         return self._api_client.files
+
+    def get_strings_v2_api(self):
+        return self._detect_api_client.strings_v2
+
+    def get_files_v2_api(self):
+        return self._detect_api_client.files_v2
+
+    def get_guardrails_v2_api(self):
+        return self._detect_api_client.guardrails_v2
+
+    def get_sdk_metrics(self):
+        return get_metrics()
 
     def put_signed_url(self, signed_url, content, content_type=None):
         headers = {}

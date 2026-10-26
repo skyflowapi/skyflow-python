@@ -3,8 +3,8 @@ import json
 import os
 from typing import Optional
 from common.vault.base_vault_controller import BaseVaultController
-from skyflow.generated.rest import V1FieldRecords, V1BatchRecord, V1TokenizeRecordRequest, \
-    V1DetokenizeRecordRequest
+from skyflow.generated.rest import FieldRecords, BatchRecord, TokenizeRecordRequest, \
+    DetokenizeRecordRequest
 from skyflow.generated.rest.core.file import File
 from skyflow.utils import SkyflowMessages, parse_insert_response, \
     handle_exception, parse_update_record_response, parse_delete_response, parse_detokenize_response, \
@@ -29,12 +29,12 @@ class VaultController(BaseVaultController):
 
     def __build_bulk_field_records(self, values, tokens=None):
         if tokens is None:
-            return [V1FieldRecords(fields=record) for record in values]
+            return [FieldRecords(fields=record) for record in values]
         else:
             bulk_record_list = []
             for i, value in enumerate(values):
                 token = tokens[i] if tokens is not None and i < len(tokens) else None
-                bulk_record = V1FieldRecords(
+                bulk_record = FieldRecords(
                     fields=value,
                     tokens=token
                 )
@@ -45,7 +45,7 @@ class VaultController(BaseVaultController):
         batch_record_list = []
         for i, value in enumerate(values):
             token = tokens[i] if tokens is not None and i < len(tokens) else None
-            batch_record = V1BatchRecord(
+            batch_record = BatchRecord(
                 fields=value,
                 table_name=table_name,
                 method=RequestMethod.POST.value,
@@ -128,7 +128,7 @@ class VaultController(BaseVaultController):
         log_info(SkyflowMessages.Info.UPDATE_REQUEST_RESOLVED.value, self.__vault_client.get_logger())
         self.__initialize()
         field = {key: value for key, value in request.data.items() if key != ResponseField.SKYFLOW_ID}
-        record = V1FieldRecords(fields=field, tokens = request.tokens)
+        record = FieldRecords(fields=field, tokens = request.tokens)
 
         records_api = self.__vault_client.get_records_api()
         try:
@@ -226,7 +226,7 @@ class VaultController(BaseVaultController):
         log_info(SkyflowMessages.Info.DETOKENIZE_REQUEST_RESOLVED.value, self.__vault_client.get_logger())
         self.__initialize()
         tokens_list = [
-            V1DetokenizeRecordRequest(
+            DetokenizeRecordRequest(
                 token=item.get(ResponseField.TOKEN),
                 redaction=item.get(RequestParameter.REDACTION_TYPE) or item.get(RequestParameter.REDACTION, RedactionType.DEFAULT)
             )
@@ -255,7 +255,7 @@ class VaultController(BaseVaultController):
         self.__initialize()
 
         records_list = [
-            V1TokenizeRecordRequest(value=item[RequestParameter.VALUE], column_group=item[RequestParameter.COLUMN_GROUP])
+            TokenizeRecordRequest(value=item[RequestParameter.VALUE], column_group=item[RequestParameter.COLUMN_GROUP])
             for item in request.values
         ]
         tokens_api = self.__vault_client.get_tokens_api()

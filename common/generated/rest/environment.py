@@ -4,5 +4,5 @@ import enum
 
 
 class SkyflowAuthEnvironment(enum.Enum):
-    PRODUCTION = "https://manage.skyflowapis.com"
-    SANDBOX = "https://manage.skyflowapis-preview.com"
+    PRODUCTION = "https://%7B%7Bvault_url%7D%7D"
+    SANDBOX = "https://%7B%7Bvault_url%7D%7D"

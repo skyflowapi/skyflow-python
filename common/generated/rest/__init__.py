@@ -2,23 +2,239 @@
 
 # isort: skip_file
 
-from .types import GooglerpcStatus, ProtobufAny, V1GetAuthTokenResponse
-from .errors import BadRequestError, NotFoundError, UnauthorizedError
-from . import authentication
-from .client import AsyncSkyflowAuth, SkyflowAuth
-from .environment import SkyflowAuthEnvironment
-from .version import __version__
+import typing
+from importlib import import_module
+
+if typing.TYPE_CHECKING:
+    from .types import (
+        AudioV2,
+        AudioV2Bleep,
+        AudioV2OutputTranscription,
+        DeidentifyFileResponseV2,
+        DeidentifyStringResponseV2,
+        DeidentifyStringResponseV2DetectedEntity,
+        DeidentifyStringResponseV2EntityLocation,
+        Detect,
+        DetectConfigV2,
+        DetectConfigV2VaultType,
+        DetectCustomTypes,
+        DetectCustomTypesDeidentificationType,
+        DetectCustomTypesIncludePrefix,
+        DetectEntity,
+        DetectEntityDeidentificationType,
+        DetectEntityEntityType,
+        DetectEntityIncludePrefix,
+        DetectGuardrailsResponseV2,
+        DetectGuardrailsResponseV2Validation,
+        DetectObjectEntity,
+        DetectObjectEntityDeidentificationType,
+        DetectObjectEntityEntityType,
+        DetectReturnEntities,
+        DetectRunsResponseV2,
+        DetectRunsResponseV2OutputType,
+        DetectRunsResponseV2Status,
+        DocumentV2,
+        DocumentV2Pdf,
+        DocumentV2PdfProcessingMode,
+        EntityTransformation,
+        ErrorResponse,
+        ErrorResponseError,
+        FileMapping,
+        FileOutput,
+        FileOutputProcessedFileExtension,
+        FileOutputProcessedFileType,
+        GetAuthTokenResponse,
+        GetStsTokenResponse,
+        HttpCode,
+        ImageV2,
+        ImageV2MaskingMethod,
+        Media,
+        Metrics,
+        RedactionLevel,
+        RedactionLevelEntityName,
+        RedactionLevelRedactionType,
+        ReidentifyFileResponseV2,
+        ReidentifyFileResponseV2OutputType,
+        ReidentifyFileResponseV2Status,
+        ReidentifyStringResponseV2,
+        TransformationShiftDates,
+    )
+    from .errors import BadRequestError, InternalServerError, NotFoundError, UnauthorizedError
+    from . import authentication, files_v2, guardrails_v2, strings_v2, token_exchange
+    from ._default_clients import DefaultAioHttpClient, DefaultAsyncHttpxClient
+    from .client import AsyncSkyflowAuth, SkyflowAuth
+    from .environment import SkyflowAuthEnvironment
+    from .files_v2 import (
+        DeidentifyFileRequestV2DataFormat,
+        DeidentifyFileRequestV2DataSource,
+        ReidentifyFileRequestV2DataFormat,
+        ReidentifyFileRequestV2DataSource,
+    )
+    from .version import __version__
+_dynamic_imports: typing.Dict[str, str] = {
+    "AsyncSkyflowAuth": ".client",
+    "AudioV2": ".types",
+    "AudioV2Bleep": ".types",
+    "AudioV2OutputTranscription": ".types",
+    "BadRequestError": ".errors",
+    "DefaultAioHttpClient": "._default_clients",
+    "DefaultAsyncHttpxClient": "._default_clients",
+    "DeidentifyFileRequestV2DataFormat": ".files_v2",
+    "DeidentifyFileRequestV2DataSource": ".files_v2",
+    "DeidentifyFileResponseV2": ".types",
+    "DeidentifyStringResponseV2": ".types",
+    "DeidentifyStringResponseV2DetectedEntity": ".types",
+    "DeidentifyStringResponseV2EntityLocation": ".types",
+    "Detect": ".types",
+    "DetectConfigV2": ".types",
+    "DetectConfigV2VaultType": ".types",
+    "DetectCustomTypes": ".types",
+    "DetectCustomTypesDeidentificationType": ".types",
+    "DetectCustomTypesIncludePrefix": ".types",
+    "DetectEntity": ".types",
+    "DetectEntityDeidentificationType": ".types",
+    "DetectEntityEntityType": ".types",
+    "DetectEntityIncludePrefix": ".types",
+    "DetectGuardrailsResponseV2": ".types",
+    "DetectGuardrailsResponseV2Validation": ".types",
+    "DetectObjectEntity": ".types",
+    "DetectObjectEntityDeidentificationType": ".types",
+    "DetectObjectEntityEntityType": ".types",
+    "DetectReturnEntities": ".types",
+    "DetectRunsResponseV2": ".types",
+    "DetectRunsResponseV2OutputType": ".types",
+    "DetectRunsResponseV2Status": ".types",
+    "DocumentV2": ".types",
+    "DocumentV2Pdf": ".types",
+    "DocumentV2PdfProcessingMode": ".types",
+    "EntityTransformation": ".types",
+    "ErrorResponse": ".types",
+    "ErrorResponseError": ".types",
+    "FileMapping": ".types",
+    "FileOutput": ".types",
+    "FileOutputProcessedFileExtension": ".types",
+    "FileOutputProcessedFileType": ".types",
+    "GetAuthTokenResponse": ".types",
+    "GetStsTokenResponse": ".types",
+    "HttpCode": ".types",
+    "ImageV2": ".types",
+    "ImageV2MaskingMethod": ".types",
+    "InternalServerError": ".errors",
+    "Media": ".types",
+    "Metrics": ".types",
+    "NotFoundError": ".errors",
+    "RedactionLevel": ".types",
+    "RedactionLevelEntityName": ".types",
+    "RedactionLevelRedactionType": ".types",
+    "ReidentifyFileRequestV2DataFormat": ".files_v2",
+    "ReidentifyFileRequestV2DataSource": ".files_v2",
+    "ReidentifyFileResponseV2": ".types",
+    "ReidentifyFileResponseV2OutputType": ".types",
+    "ReidentifyFileResponseV2Status": ".types",
+    "ReidentifyStringResponseV2": ".types",
+    "SkyflowAuth": ".client",
+    "SkyflowAuthEnvironment": ".environment",
+    "TransformationShiftDates": ".types",
+    "UnauthorizedError": ".errors",
+    "__version__": ".version",
+    "authentication": ".authentication",
+    "files_v2": ".files_v2",
+    "guardrails_v2": ".guardrails_v2",
+    "strings_v2": ".strings_v2",
+    "token_exchange": ".token_exchange",
+}
+
+
+def __getattr__(attr_name: str) -> typing.Any:
+    module_name = _dynamic_imports.get(attr_name)
+    if module_name is None:
+        raise AttributeError(f"No {attr_name} found in _dynamic_imports for module name -> {__name__}")
+    try:
+        module = import_module(module_name, __package__)
+        if module_name == f".{attr_name}":
+            return module
+        else:
+            return getattr(module, attr_name)
+    except ImportError as e:
+        raise ImportError(f"Failed to import {attr_name} from {module_name}: {e}") from e
+    except AttributeError as e:
+        raise AttributeError(f"Failed to get {attr_name} from {module_name}: {e}") from e
+
+
+def __dir__():
+    lazy_attrs = list(_dynamic_imports.keys())
+    return sorted(lazy_attrs)
+
 
 __all__ = [
     "AsyncSkyflowAuth",
+    "AudioV2",
+    "AudioV2Bleep",
+    "AudioV2OutputTranscription",
     "BadRequestError",
-    "GooglerpcStatus",
+    "DefaultAioHttpClient",
+    "DefaultAsyncHttpxClient",
+    "DeidentifyFileRequestV2DataFormat",
+    "DeidentifyFileRequestV2DataSource",
+    "DeidentifyFileResponseV2",
+    "DeidentifyStringResponseV2",
+    "DeidentifyStringResponseV2DetectedEntity",
+    "DeidentifyStringResponseV2EntityLocation",
+    "Detect",
+    "DetectConfigV2",
+    "DetectConfigV2VaultType",
+    "DetectCustomTypes",
+    "DetectCustomTypesDeidentificationType",
+    "DetectCustomTypesIncludePrefix",
+    "DetectEntity",
+    "DetectEntityDeidentificationType",
+    "DetectEntityEntityType",
+    "DetectEntityIncludePrefix",
+    "DetectGuardrailsResponseV2",
+    "DetectGuardrailsResponseV2Validation",
+    "DetectObjectEntity",
+    "DetectObjectEntityDeidentificationType",
+    "DetectObjectEntityEntityType",
+    "DetectReturnEntities",
+    "DetectRunsResponseV2",
+    "DetectRunsResponseV2OutputType",
+    "DetectRunsResponseV2Status",
+    "DocumentV2",
+    "DocumentV2Pdf",
+    "DocumentV2PdfProcessingMode",
+    "EntityTransformation",
+    "ErrorResponse",
+    "ErrorResponseError",
+    "FileMapping",
+    "FileOutput",
+    "FileOutputProcessedFileExtension",
+    "FileOutputProcessedFileType",
+    "GetAuthTokenResponse",
+    "GetStsTokenResponse",
+    "HttpCode",
+    "ImageV2",
+    "ImageV2MaskingMethod",
+    "InternalServerError",
+    "Media",
+    "Metrics",
     "NotFoundError",
-    "ProtobufAny",
+    "RedactionLevel",
+    "RedactionLevelEntityName",
+    "RedactionLevelRedactionType",
+    "ReidentifyFileRequestV2DataFormat",
+    "ReidentifyFileRequestV2DataSource",
+    "ReidentifyFileResponseV2",
+    "ReidentifyFileResponseV2OutputType",
+    "ReidentifyFileResponseV2Status",
+    "ReidentifyStringResponseV2",
     "SkyflowAuth",
     "SkyflowAuthEnvironment",
+    "TransformationShiftDates",
     "UnauthorizedError",
-    "V1GetAuthTokenResponse",
     "__version__",
     "authentication",
+    "files_v2",
+    "guardrails_v2",
+    "strings_v2",
+    "token_exchange",
 ]

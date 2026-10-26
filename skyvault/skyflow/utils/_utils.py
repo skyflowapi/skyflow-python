@@ -12,13 +12,11 @@ import sys
 import re
 from urllib.parse import quote
 from skyflow.error import SkyflowError
-from skyflow.generated.rest import V1UpdateRecordResponse, V1BulkDeleteRecordResponse, \
-    V1DetokenizeResponse, V1TokenizeResponse, V1GetQueryResponse, V1BulkGetRecordResponse, \
-    DeidentifyStringResponse, ErrorResponse, IdentifyResponse
+from skyflow.generated.rest import UpdateRecordResponse, BulkDeleteRecordResponse, \
+    DetokenizeResponse as GeneratedDetokenizeResponse, TokenizeResponse as GeneratedTokenizeResponse, \
+    GetQueryResponse, BulkGetRecordResponse, ErrorResponse
 from skyflow.generated.rest.core.http_response import HttpResponse
 from skyflow.utils.logger import log_error_log
-from skyflow.vault.detect import DeidentifyTextResponse, ReidentifyTextResponse
-from skyflow.vault.detect import EntityInfo, TextIndex
 from . import SkyflowMessages, SDK_VERSION
 from .constants import (PROTOCOL, HttpHeader, ApiKey, ContentType as ContentTypeConstants, 
                         EncodingType, BooleanString, ResponseField, CredentialField, SdkPrefix, 
@@ -78,22 +76,6 @@ def to_lowercase_keys(data):
         result[key.lower()] = value
 
     return result
-
-def convert_detected_entity_to_entity_info(detected_entity):
-    return EntityInfo(
-        token=detected_entity.token,
-        value=detected_entity.value,
-        text_index=TextIndex(
-            start=detected_entity.location.start_index,
-            end=detected_entity.location.end_index
-        ),
-        processed_index=TextIndex(
-            start=detected_entity.location.start_index_processed,
-            end=detected_entity.location.end_index_processed
-        ),
-        entity=detected_entity.entity_type,
-        scores=detected_entity.entity_scores
-    )
 
 def construct_invoke_connection_request(request, connection_url, logger) -> PreparedRequest:
     url = parse_path_params(connection_url.rstrip('/'), request.path_params)
@@ -310,7 +292,7 @@ def parse_insert_response(api_response, continue_on_error):
 
     return insert_response
 
-def parse_update_record_response(api_response: V1UpdateRecordResponse):
+def parse_update_record_response(api_response: UpdateRecordResponse):
     update_response = UpdateResponse()
     updated_field = dict()
     updated_field[ResponseField.SKYFLOW_ID] = api_response.skyflow_id
@@ -321,14 +303,14 @@ def parse_update_record_response(api_response: V1UpdateRecordResponse):
 
     return update_response
 
-def parse_delete_response(api_response: V1BulkDeleteRecordResponse):
+def parse_delete_response(api_response: BulkDeleteRecordResponse):
     delete_response = DeleteResponse()
     deleted_ids = api_response.record_id_response
     delete_response.deleted_ids = deleted_ids
     delete_response.errors = None
     return delete_response
 
-def parse_get_response(api_response: V1BulkGetRecordResponse):
+def parse_get_response(api_response: BulkGetRecordResponse):
     get_response = GetResponse()
     data = []
     for record in api_response.records:
@@ -338,7 +320,7 @@ def parse_get_response(api_response: V1BulkGetRecordResponse):
     get_response.data = data
     return get_response
 
-def parse_detokenize_response(api_response: HttpResponse[V1DetokenizeResponse]):
+def parse_detokenize_response(api_response: HttpResponse[GeneratedDetokenizeResponse]):
     # Retrieve the headers and data from the API response
     api_response_headers = api_response.headers
     api_response_data = api_response.data
@@ -370,7 +352,7 @@ def parse_detokenize_response(api_response: HttpResponse[V1DetokenizeResponse]):
 
     return detokenize_response
 
-def parse_tokenize_response(api_response: V1TokenizeResponse):
+def parse_tokenize_response(api_response: GeneratedTokenizeResponse):
     tokenize_response = TokenizeResponse()
     tokenized_fields = [{ResponseField.TOKEN: record.token} for record in api_response.records]
 
@@ -378,7 +360,7 @@ def parse_tokenize_response(api_response: V1TokenizeResponse):
 
     return tokenize_response
 
-def parse_query_response(api_response: V1GetQueryResponse):
+def parse_query_response(api_response: GetQueryResponse):
     query_response = QueryResponse()
     fields = []
     for record in api_response.records:
@@ -447,18 +429,6 @@ def parse_invoke_connection_response(api_response: requests.Response):
 
         except json.JSONDecodeError:
             raise SkyflowError(message, status_code, request_id)
-
-def parse_deidentify_text_response(api_response: DeidentifyStringResponse):
-    entities = [convert_detected_entity_to_entity_info(entity) for entity in api_response.entities]
-    return DeidentifyTextResponse(
-        processed_text=api_response.processed_text,
-        entities=entities,
-        word_count=api_response.word_count,
-        char_count=api_response.character_count
-    )
-
-def parse_reidentify_text_response(api_response: IdentifyResponse):
-    return ReidentifyTextResponse(api_response.text)
 
 def log_and_reject_error(description, status_code, request_id, http_status=None, grpc_code=None, details=None, logger = None):
     raise SkyflowError(description, status_code, request_id, grpc_code, http_status, details)

@@ -2,12 +2,49 @@
 
 # isort: skip_file
 
-from .record_service_bulk_get_record_request_order_by import RecordServiceBulkGetRecordRequestOrderBy
-from .record_service_bulk_get_record_request_redaction import RecordServiceBulkGetRecordRequestRedaction
-from .record_service_get_record_request_redaction import RecordServiceGetRecordRequestRedaction
+import typing
+from importlib import import_module
+
+if typing.TYPE_CHECKING:
+    from .get_record_by_id_request_redaction import GetRecordByIdRequestRedaction
+    from .get_records_request_order_by import GetRecordsRequestOrderBy
+    from .get_records_request_redaction import GetRecordsRequestRedaction
+    from .insert_record_request_byot import InsertRecordRequestByot
+    from .update_record_request_byot import UpdateRecordRequestByot
+_dynamic_imports: typing.Dict[str, str] = {
+    "GetRecordByIdRequestRedaction": ".get_record_by_id_request_redaction",
+    "GetRecordsRequestOrderBy": ".get_records_request_order_by",
+    "GetRecordsRequestRedaction": ".get_records_request_redaction",
+    "InsertRecordRequestByot": ".insert_record_request_byot",
+    "UpdateRecordRequestByot": ".update_record_request_byot",
+}
+
+
+def __getattr__(attr_name: str) -> typing.Any:
+    module_name = _dynamic_imports.get(attr_name)
+    if module_name is None:
+        raise AttributeError(f"No {attr_name} found in _dynamic_imports for module name -> {__name__}")
+    try:
+        module = import_module(module_name, __package__)
+        if module_name == f".{attr_name}":
+            return module
+        else:
+            return getattr(module, attr_name)
+    except ImportError as e:
+        raise ImportError(f"Failed to import {attr_name} from {module_name}: {e}") from e
+    except AttributeError as e:
+        raise AttributeError(f"Failed to get {attr_name} from {module_name}: {e}") from e
+
+
+def __dir__():
+    lazy_attrs = list(_dynamic_imports.keys())
+    return sorted(lazy_attrs)
+
 
 __all__ = [
-    "RecordServiceBulkGetRecordRequestOrderBy",
-    "RecordServiceBulkGetRecordRequestRedaction",
-    "RecordServiceGetRecordRequestRedaction",
+    "GetRecordByIdRequestRedaction",
+    "GetRecordsRequestOrderBy",
+    "GetRecordsRequestRedaction",
+    "InsertRecordRequestByot",
+    "UpdateRecordRequestByot",
 ]

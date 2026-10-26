@@ -1,6 +1,6 @@
 import unittest
 from unittest.mock import Mock, patch, mock_open as mock_open_func, mock_open
-from skyflow.generated.rest import V1BatchRecord, V1FieldRecords, V1DetokenizeRecordRequest, V1TokenizeRecordRequest
+from skyflow.generated.rest import BatchRecord, FieldRecords, DetokenizeRecordRequest, TokenizeRecordRequest
 from skyflow.utils._skyflow_messages import SkyflowMessages
 from skyflow.utils.enums import RedactionType, TokenMode
 from skyflow.vault.controller import Vault
@@ -40,7 +40,7 @@ class TestVault(unittest.TestCase):
         )
 
         expected_body = [
-            V1BatchRecord(
+            BatchRecord(
                 fields={"field": "value"},
                 table_name=TABLE_NAME,
                 method="POST",
@@ -113,7 +113,7 @@ class TestVault(unittest.TestCase):
 
         # Expected API request body based on InsertRequest parameters
         expected_body = [
-            V1FieldRecords(fields={"field": "value"})
+            FieldRecords(fields={"field": "value"})
         ]
 
         # Mock API response for a successful insert
@@ -210,7 +210,7 @@ class TestVault(unittest.TestCase):
 
         # Expected API request body based on InsertRequest parameters
         expected_body = [
-            V1FieldRecords(fields={"field": "value"}, tokens={"token_field": "token_val1"})
+            FieldRecords(fields={"field": "value"}, tokens={"token_field": "token_val1"})
         ]
 
         # Mock API response for a successful insert
@@ -266,7 +266,7 @@ class TestVault(unittest.TestCase):
         )
 
         # Expected payload
-        expected_record = V1FieldRecords(fields={"field": "new_value"}, tokens=None)
+        expected_record = FieldRecords(fields={"field": "new_value"}, tokens=None)
 
         # Mock API response
         mock_api_response = Mock()
@@ -605,8 +605,8 @@ class TestVault(unittest.TestCase):
         )
 
         expected_tokens_list = [
-            V1DetokenizeRecordRequest(token="token1", redaction="PLAIN_TEXT"),
-            V1DetokenizeRecordRequest(token="token2", redaction="PLAIN_TEXT")
+            DetokenizeRecordRequest(token="token1", redaction="PLAIN_TEXT"),
+            DetokenizeRecordRequest(token="token2", redaction="PLAIN_TEXT")
         ]
 
         # Mock API response
@@ -689,8 +689,8 @@ class TestVault(unittest.TestCase):
         )
 
         expected_records_list = [
-            V1TokenizeRecordRequest(value="value1", column_group="group1"),
-            V1TokenizeRecordRequest(value="value2", column_group="group2")
+            TokenizeRecordRequest(value="value1", column_group="group1"),
+            TokenizeRecordRequest(value="value2", column_group="group2")
         ]
 
         # Mock API response

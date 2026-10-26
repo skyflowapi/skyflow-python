@@ -2,30 +2,3 @@
 
 # isort: skip_file
 
-from .types import (
-    DeidentifyFileAudioRequestDeidentifyAudioEntityTypesItem,
-    DeidentifyFileAudioRequestDeidentifyAudioOutputTranscription,
-    DeidentifyFileDocumentPdfRequestDeidentifyPdfEntityTypesItem,
-    DeidentifyFileImageRequestDeidentifyImageEntityTypesItem,
-    DeidentifyFileImageRequestDeidentifyImageMaskingMethod,
-    DeidentifyFileRequestDeidentifyDocumentEntityTypesItem,
-    DeidentifyFileRequestDeidentifyPresentationEntityTypesItem,
-    DeidentifyFileRequestDeidentifySpreadsheetEntityTypesItem,
-    DeidentifyFileRequestDeidentifyStructuredTextEntityTypesItem,
-    DeidentifyFileRequestDeidentifyTextEntityTypesItem,
-    DeidentifyFileRequestEntityTypesItem,
-)
-
-__all__ = [
-    "DeidentifyFileAudioRequestDeidentifyAudioEntityTypesItem",
-    "DeidentifyFileAudioRequestDeidentifyAudioOutputTranscription",
-    "DeidentifyFileDocumentPdfRequestDeidentifyPdfEntityTypesItem",
-    "DeidentifyFileImageRequestDeidentifyImageEntityTypesItem",
-    "DeidentifyFileImageRequestDeidentifyImageMaskingMethod",
-    "DeidentifyFileRequestDeidentifyDocumentEntityTypesItem",
-    "DeidentifyFileRequestDeidentifyPresentationEntityTypesItem",
-    "DeidentifyFileRequestDeidentifySpreadsheetEntityTypesItem",
-    "DeidentifyFileRequestDeidentifyStructuredTextEntityTypesItem",
-    "DeidentifyFileRequestDeidentifyTextEntityTypesItem",
-    "DeidentifyFileRequestEntityTypesItem",
-]
