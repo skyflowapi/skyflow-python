@@ -3,6 +3,6 @@
 import enum
 
 
-class SkyflowEnvironment(enum.Enum):
-    PRODUCTION = "https://identifier.vault.skyflowapis.com"
-    SANDBOX = "https://identifier.vault.skyflowapis-preview.com"
+class SkyflowAuthEnvironment(enum.Enum):
+    PRODUCTION = "https://%7B%7Bvault_uri%7D%7D.vault.skyflowapis.com"
+    SANDBOX = "https://%7B%7Bvault_uri%7D%7D.vault.skyflowapis-preview.com"

@@ -2,25 +2,23 @@
 
 import typing
 
-from .. import core
 from ..core.client_wrapper import AsyncClientWrapper, SyncClientWrapper
 from ..core.request_options import RequestOptions
-from ..types.upload_file_v_2_response import UploadFileV2Response
-from ..types.v_1_batch_operation_response import V1BatchOperationResponse
-from ..types.v_1_batch_record import V1BatchRecord
-from ..types.v_1_bulk_delete_record_response import V1BulkDeleteRecordResponse
-from ..types.v_1_bulk_get_record_response import V1BulkGetRecordResponse
-from ..types.v_1_byot import V1Byot
-from ..types.v_1_delete_file_response import V1DeleteFileResponse
-from ..types.v_1_delete_record_response import V1DeleteRecordResponse
-from ..types.v_1_field_records import V1FieldRecords
-from ..types.v_1_get_file_scan_status_response import V1GetFileScanStatusResponse
-from ..types.v_1_insert_record_response import V1InsertRecordResponse
-from ..types.v_1_update_record_response import V1UpdateRecordResponse
+from ..types.batch_operation_response import BatchOperationResponse
+from ..types.batch_record import BatchRecord
+from ..types.bulk_delete_record_response import BulkDeleteRecordResponse
+from ..types.bulk_get_record_response import BulkGetRecordResponse
+from ..types.delete_record_response import DeleteRecordResponse
+from ..types.field_records import FieldRecords
+from ..types.get_field_records import GetFieldRecords
+from ..types.insert_record_response import InsertRecordResponse
+from ..types.update_record_response import UpdateRecordResponse
 from .raw_client import AsyncRawRecordsClient, RawRecordsClient
-from .types.record_service_bulk_get_record_request_order_by import RecordServiceBulkGetRecordRequestOrderBy
-from .types.record_service_bulk_get_record_request_redaction import RecordServiceBulkGetRecordRequestRedaction
-from .types.record_service_get_record_request_redaction import RecordServiceGetRecordRequestRedaction
+from .types.get_record_by_id_request_redaction import GetRecordByIdRequestRedaction
+from .types.get_records_request_order_by import GetRecordsRequestOrderBy
+from .types.get_records_request_redaction import GetRecordsRequestRedaction
+from .types.insert_record_request_byot import InsertRecordRequestByot
+from .types.update_record_request_byot import UpdateRecordRequestByot
 
 # this is used as the default value for optional parameters
 OMIT = typing.cast(typing.Any, ...)
@@ -41,15 +39,14 @@ class RecordsClient:
         """
         return self._raw_client
 
-    def record_service_batch_operation(
+    def batch_operation(
         self,
         vault_id: str,
         *,
-        records: typing.Optional[typing.Sequence[V1BatchRecord]] = OMIT,
+        records: typing.Sequence[BatchRecord],
         continue_on_error: typing.Optional[bool] = OMIT,
-        byot: typing.Optional[V1Byot] = OMIT,
         request_options: typing.Optional[RequestOptions] = None,
-    ) -> V1BatchOperationResponse:
+    ) -> BatchOperationResponse:
         """
         Performs multiple record operations in a single transaction.
 
@@ -58,33 +55,31 @@ class RecordsClient:
         vault_id : str
             ID of the vault.
 
-        records : typing.Optional[typing.Sequence[V1BatchRecord]]
+        records : typing.Sequence[BatchRecord]
             Record operations to perform.
 
         continue_on_error : typing.Optional[bool]
-            Continue performing operations on partial errors.
-
-        byot : typing.Optional[V1Byot]
+            If `true`, continues processing remaining operations when one operation returns an error. If `false`, stops processing remaining operations when one operation returns an error.
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
 
         Returns
         -------
-        V1BatchOperationResponse
-            A successful response.
+        BatchOperationResponse
+            OK
 
         Examples
         --------
-        from skyflow import Skyflow, V1BatchRecord
+        from skyflow import BatchRecord, SkyflowAuth
 
-        client = Skyflow(
+        client = SkyflowAuth(
             token="YOUR_TOKEN",
         )
-        client.records.record_service_batch_operation(
+        client.records.batch_operation(
             vault_id="vaultID",
             records=[
-                V1BatchRecord(
+                BatchRecord(
                     fields={
                         "drivers_license_number": "89867453",
                         "name": "Connor",
@@ -99,7 +94,8 @@ class RecordsClient:
                     download_url=False,
                     upsert="drivers_license_number",
                 ),
-                V1BatchRecord(
+                BatchRecord(
+                    fields={"key": "value"},
                     table_name="persons",
                     method="GET",
                     batch_id="persons-12345",
@@ -111,18 +107,18 @@ class RecordsClient:
             ],
         )
         """
-        _response = self._raw_client.record_service_batch_operation(
-            vault_id, records=records, continue_on_error=continue_on_error, byot=byot, request_options=request_options
+        _response = self._raw_client.batch_operation(
+            vault_id, records=records, continue_on_error=continue_on_error, request_options=request_options
         )
         return _response.data
 
-    def record_service_bulk_get_record(
+    def get_records(
         self,
         vault_id: str,
         object_name: str,
         *,
         skyflow_ids: typing.Optional[typing.Union[str, typing.Sequence[str]]] = None,
-        redaction: typing.Optional[RecordServiceBulkGetRecordRequestRedaction] = None,
+        redaction: typing.Optional[GetRecordsRequestRedaction] = None,
         tokenization: typing.Optional[bool] = None,
         fields: typing.Optional[typing.Union[str, typing.Sequence[str]]] = None,
         offset: typing.Optional[str] = None,
@@ -130,78 +126,62 @@ class RecordsClient:
         download_url: typing.Optional[bool] = None,
         column_name: typing.Optional[str] = None,
         column_values: typing.Optional[typing.Union[str, typing.Sequence[str]]] = None,
-        order_by: typing.Optional[RecordServiceBulkGetRecordRequestOrderBy] = None,
+        order_by: typing.Optional[GetRecordsRequestOrderBy] = None,
+        return_file_metadata: typing.Optional[bool] = None,
         request_options: typing.Optional[RequestOptions] = None,
-    ) -> V1BulkGetRecordResponse:
+    ) -> BulkGetRecordResponse:
         """
-        Gets the specified records from a table.
+        Returns the specified records from a table.
 
         Parameters
         ----------
         vault_id : str
-            ID of the vault.
 
         object_name : str
-            Name of the table that contains the records.
 
         skyflow_ids : typing.Optional[typing.Union[str, typing.Sequence[str]]]
-            `skyflow_id` values of the records to return, with one value per `skyflow_ids` URL parameter. For example, `?skyflow_ids=abc&skyflow_ids=123`.<br /><br />If not specified, returns the first 25 records in the table.
 
-        redaction : typing.Optional[RecordServiceBulkGetRecordRequestRedaction]
-            Redaction level to enforce for the returned records. Subject to policies assigned to the API caller.
+        redaction : typing.Optional[GetRecordsRequestRedaction]
 
         tokenization : typing.Optional[bool]
-            If `true`, this operation returns tokens for fields with tokenization enabled. Only applicable if `skyflow_id` values are specified.
 
         fields : typing.Optional[typing.Union[str, typing.Sequence[str]]]
-            Fields to return for the record, with one value per `fields` URL parameter. For example, `?fields=abc&fields=123`.<br /><br />If not specified, returns all fields.
 
         offset : typing.Optional[str]
-            Record position at which to start receiving data.
 
         limit : typing.Optional[str]
-            Number of record to return. Maximum 25.
 
         download_url : typing.Optional[bool]
-            If `true`, returns download URLs for fields with a file data type. URLs are valid for 15 minutes. If virus scanning is enabled, only returns if the file is clean.
 
         column_name : typing.Optional[str]
-            Name of the column. It must be configured as unique in the schema. If you provide both column name or column value, you cannot use `skyflow_ids`. Passing either of these parameters with `skyflow_ids` returns an error.
 
         column_values : typing.Optional[typing.Union[str, typing.Sequence[str]]]
-            Column values of the records to return, with one value per `column_values` URL parameter. For example, `?column_values=abc&column_values=123`.<br /><br />`column_name` is mandatory when providing `column_values`. If you use column name or column value, you cannot use `skyflow_ids`. Passing either of these parameters with `skyflow_ids` returns an error.
 
-        order_by : typing.Optional[RecordServiceBulkGetRecordRequestOrderBy]
-            Order to return records, based on `skyflow_id` values. To disable, set to `NONE`.
+        order_by : typing.Optional[GetRecordsRequestOrderBy]
+
+        return_file_metadata : typing.Optional[bool]
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
 
         Returns
         -------
-        V1BulkGetRecordResponse
-            A successful response.
+        BulkGetRecordResponse
+            OK
 
         Examples
         --------
-        from skyflow import Skyflow
+        from skyflow import SkyflowAuth
 
-        client = Skyflow(
+        client = SkyflowAuth(
             token="YOUR_TOKEN",
         )
-        client.records.record_service_bulk_get_record(
+        client.records.get_records(
             vault_id="vaultID",
             object_name="objectName",
-            redaction="DEFAULT",
-            tokenization=True,
-            offset="offset",
-            limit="limit",
-            download_url=True,
-            column_name="column_name",
-            order_by="ASCENDING",
         )
         """
-        _response = self._raw_client.record_service_bulk_get_record(
+        _response = self._raw_client.get_records(
             vault_id,
             object_name,
             skyflow_ids=skyflow_ids,
@@ -214,34 +194,33 @@ class RecordsClient:
             column_name=column_name,
             column_values=column_values,
             order_by=order_by,
+            return_file_metadata=return_file_metadata,
             request_options=request_options,
         )
         return _response.data
 
-    def record_service_insert_record(
+    def insert_records(
         self,
         vault_id: str,
         object_name: str,
         *,
-        records: typing.Optional[typing.Sequence[V1FieldRecords]] = OMIT,
+        records: typing.Sequence[FieldRecords],
         tokenization: typing.Optional[bool] = OMIT,
         upsert: typing.Optional[str] = OMIT,
         homogeneous: typing.Optional[bool] = OMIT,
-        byot: typing.Optional[V1Byot] = OMIT,
+        byot: typing.Optional[InsertRecordRequestByot] = OMIT,
         request_options: typing.Optional[RequestOptions] = None,
-    ) -> V1InsertRecordResponse:
+    ) -> InsertRecordResponse:
         """
         Inserts a record in the specified table.<br /><br />The time-to-live (TTL) for a transient field begins when the field value is set during record insertion.<br /><br />Columns that have a string data type and a uniqueness constraint accept strings up to 2500 characters. If an inserted string exceeds 2500 characters, the call returns a token insertion error.
 
         Parameters
         ----------
         vault_id : str
-            ID of the vault.
 
         object_name : str
-            Name of the table.
 
-        records : typing.Optional[typing.Sequence[V1FieldRecords]]
+        records : typing.Sequence[FieldRecords]
             Record values and tokens.
 
         tokenization : typing.Optional[bool]
@@ -253,28 +232,29 @@ class RecordsClient:
         homogeneous : typing.Optional[bool]
             If `true`, this operation mandates that all the records have the same fields. This parameter does not work with upsert.
 
-        byot : typing.Optional[V1Byot]
+        byot : typing.Optional[InsertRecordRequestByot]
+            Token insertion behavior.
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
 
         Returns
         -------
-        V1InsertRecordResponse
-            A successful response.
+        InsertRecordResponse
+            OK
 
         Examples
         --------
-        from skyflow import Skyflow, V1FieldRecords
+        from skyflow import FieldRecords, SkyflowAuth
 
-        client = Skyflow(
+        client = SkyflowAuth(
             token="YOUR_TOKEN",
         )
-        client.records.record_service_insert_record(
+        client.records.insert_records(
             vault_id="vaultID",
             object_name="objectName",
             records=[
-                V1FieldRecords(
+                FieldRecords(
                     fields={
                         "drivers_license_number": "13456789",
                         "name": "John",
@@ -282,7 +262,7 @@ class RecordsClient:
                         "ssn": "123-45-6789",
                     },
                 ),
-                V1FieldRecords(
+                FieldRecords(
                     fields={
                         "drivers_license_number": "98765432",
                         "name": "James",
@@ -296,7 +276,7 @@ class RecordsClient:
             homogeneous=False,
         )
         """
-        _response = self._raw_client.record_service_insert_record(
+        _response = self._raw_client.insert_records(
             vault_id,
             object_name,
             records=records,
@@ -308,14 +288,14 @@ class RecordsClient:
         )
         return _response.data
 
-    def record_service_bulk_delete_record(
+    def delete_records(
         self,
         vault_id: str,
         object_name: str,
         *,
         skyflow_ids: typing.Optional[typing.Sequence[str]] = OMIT,
         request_options: typing.Optional[RequestOptions] = None,
-    ) -> V1BulkDeleteRecordResponse:
+    ) -> BulkDeleteRecordResponse:
         """
         Deletes the specified records from a table.
 
@@ -335,17 +315,17 @@ class RecordsClient:
 
         Returns
         -------
-        V1BulkDeleteRecordResponse
-            A successful response.
+        BulkDeleteRecordResponse
+            OK
 
         Examples
         --------
-        from skyflow import Skyflow
+        from skyflow import SkyflowAuth
 
-        client = Skyflow(
+        client = SkyflowAuth(
             token="YOUR_TOKEN",
         )
-        client.records.record_service_bulk_delete_record(
+        client.records.delete_records(
             vault_id="vaultID",
             object_name="objectName",
             skyflow_ids=[
@@ -354,74 +334,67 @@ class RecordsClient:
             ],
         )
         """
-        _response = self._raw_client.record_service_bulk_delete_record(
+        _response = self._raw_client.delete_records(
             vault_id, object_name, skyflow_ids=skyflow_ids, request_options=request_options
         )
         return _response.data
 
-    def record_service_get_record(
+    def get_record_by_id(
         self,
         vault_id: str,
         object_name: str,
         id: str,
         *,
-        redaction: typing.Optional[RecordServiceGetRecordRequestRedaction] = None,
+        redaction: typing.Optional[GetRecordByIdRequestRedaction] = None,
         tokenization: typing.Optional[bool] = None,
         fields: typing.Optional[typing.Union[str, typing.Sequence[str]]] = None,
         download_url: typing.Optional[bool] = None,
+        return_file_metadata: typing.Optional[bool] = None,
         request_options: typing.Optional[RequestOptions] = None,
-    ) -> V1FieldRecords:
+    ) -> GetFieldRecords:
         """
         Returns the specified record from a table.
 
         Parameters
         ----------
         vault_id : str
-            ID of the vault.
 
         object_name : str
-            Name of the table.
 
         id : str
-            `skyflow_id` of the record.
 
-        redaction : typing.Optional[RecordServiceGetRecordRequestRedaction]
-            Redaction level to enforce for the returned record. Subject to policies assigned to the API caller.
+        redaction : typing.Optional[GetRecordByIdRequestRedaction]
 
         tokenization : typing.Optional[bool]
-            If `true`, this operation returns tokens for fields with tokenization enabled. Only applicable if `skyflow_id` values are specified.
 
         fields : typing.Optional[typing.Union[str, typing.Sequence[str]]]
-            Fields to return for the record, with one value per `fields` URL parameter. For example, `?fields=abc&fields=123`.<br /><br />If not specified, returns all fields.
 
         download_url : typing.Optional[bool]
-            If `true`, returns download URLs for fields with a file data type. URLs are valid for 15 minutes. If virus scanning is enabled, only returns if the file is clean.
+
+        return_file_metadata : typing.Optional[bool]
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
 
         Returns
         -------
-        V1FieldRecords
-            A successful response.
+        GetFieldRecords
+            OK
 
         Examples
         --------
-        from skyflow import Skyflow
+        from skyflow import SkyflowAuth
 
-        client = Skyflow(
+        client = SkyflowAuth(
             token="YOUR_TOKEN",
         )
-        client.records.record_service_get_record(
+        client.records.get_record_by_id(
             vault_id="vaultID",
             object_name="objectName",
             id="ID",
-            redaction="DEFAULT",
-            tokenization=True,
-            download_url=True,
         )
         """
-        _response = self._raw_client.record_service_get_record(
+        _response = self._raw_client.get_record_by_id(
             vault_id,
             object_name,
             id,
@@ -429,62 +402,61 @@ class RecordsClient:
             tokenization=tokenization,
             fields=fields,
             download_url=download_url,
+            return_file_metadata=return_file_metadata,
             request_options=request_options,
         )
         return _response.data
 
-    def record_service_update_record(
+    def update_record(
         self,
         vault_id: str,
         object_name: str,
         id: str,
         *,
-        record: typing.Optional[V1FieldRecords] = OMIT,
+        record: typing.Optional[FieldRecords] = OMIT,
         tokenization: typing.Optional[bool] = OMIT,
-        byot: typing.Optional[V1Byot] = OMIT,
+        byot: typing.Optional[UpdateRecordRequestByot] = OMIT,
         request_options: typing.Optional[RequestOptions] = None,
-    ) -> V1UpdateRecordResponse:
+    ) -> UpdateRecordResponse:
         """
         Updates the specified record in a table.<br /><br />When you update a field, include the entire contents you want the field to store. For JSON fields, include all nested fields and values. If a nested field isn't included, it's removed.<br /><br />The time-to-live (TTL) for a transient field resets when the field value is updated.
 
         Parameters
         ----------
         vault_id : str
-            ID of the vault.
 
         object_name : str
-            Name of the table.
 
         id : str
-            `skyflow_id` of the record.
 
-        record : typing.Optional[V1FieldRecords]
+        record : typing.Optional[FieldRecords]
 
         tokenization : typing.Optional[bool]
             If `true`, this operation returns tokens for fields with tokenization enabled.
 
-        byot : typing.Optional[V1Byot]
+        byot : typing.Optional[UpdateRecordRequestByot]
+            Token insertion behavior.
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
 
         Returns
         -------
-        V1UpdateRecordResponse
-            A successful response.
+        UpdateRecordResponse
+            OK
 
         Examples
         --------
-        from skyflow import Skyflow, V1FieldRecords
+        from skyflow import FieldRecords, SkyflowAuth
 
-        client = Skyflow(
+        client = SkyflowAuth(
             token="YOUR_TOKEN",
         )
-        client.records.record_service_update_record(
+        client.records.update_record(
             vault_id="vaultID",
             object_name="objectName",
             id="ID",
-            record=V1FieldRecords(
+            record=FieldRecords(
                 fields={
                     "drivers_license_number": "89867453",
                     "name": "Steve Smith",
@@ -495,7 +467,7 @@ class RecordsClient:
             tokenization=True,
         )
         """
-        _response = self._raw_client.record_service_update_record(
+        _response = self._raw_client.update_record(
             vault_id,
             object_name,
             id,
@@ -506,9 +478,9 @@ class RecordsClient:
         )
         return _response.data
 
-    def record_service_delete_record(
+    def delete_record(
         self, vault_id: str, object_name: str, id: str, *, request_options: typing.Optional[RequestOptions] = None
-    ) -> V1DeleteRecordResponse:
+    ) -> DeleteRecordResponse:
         """
         Deletes the specified record from a table.<br /><br /><b>Note:</b> This method doesn't delete transient field tokens. Transient field values are available until they expire based on the fields' time-to-live (TTL) setting.
 
@@ -528,253 +500,23 @@ class RecordsClient:
 
         Returns
         -------
-        V1DeleteRecordResponse
-            A successful response.
+        DeleteRecordResponse
+            OK
 
         Examples
         --------
-        from skyflow import Skyflow
+        from skyflow import SkyflowAuth
 
-        client = Skyflow(
+        client = SkyflowAuth(
             token="YOUR_TOKEN",
         )
-        client.records.record_service_delete_record(
+        client.records.delete_record(
             vault_id="vaultID",
             object_name="objectName",
             id="ID",
         )
         """
-        _response = self._raw_client.record_service_delete_record(
-            vault_id, object_name, id, request_options=request_options
-        )
-        return _response.data
-
-    def file_service_upload_file(
-        self,
-        vault_id: str,
-        object_name: str,
-        id: str,
-        *,
-        file: typing.Optional[core.File] = OMIT,
-        column_name: typing.Optional[str] = OMIT,
-        request_options: typing.Optional[RequestOptions] = None,
-    ) -> V1UpdateRecordResponse:
-        """
-        Uploads a file to the specified record.
-
-        Parameters
-        ----------
-        vault_id : str
-            ID of the vault.
-
-        object_name : str
-            Name of the table.
-
-        id : str
-            `skyflow_id` of the record.
-
-        file : typing.Optional[core.File]
-            See core.File for more documentation
-
-        column_name : typing.Optional[str]
-            Name of the column to store the file in. The column must have a file data type.
-
-        request_options : typing.Optional[RequestOptions]
-            Request-specific configuration.
-
-        Returns
-        -------
-        V1UpdateRecordResponse
-            A successful response.
-
-        Examples
-        --------
-        from skyflow import Skyflow
-
-        client = Skyflow(
-            token="YOUR_TOKEN",
-        )
-        client.records.file_service_upload_file(
-            vault_id="vaultID",
-            object_name="objectName",
-            id="ID",
-        )
-        """
-        _response = self._raw_client.file_service_upload_file(
-            vault_id, object_name, id, file=file, column_name=column_name, request_options=request_options
-        )
-        return _response.data
-
-    def file_service_delete_file(
-        self,
-        vault_id: str,
-        table_name: str,
-        id: str,
-        column_name: str,
-        *,
-        request_options: typing.Optional[RequestOptions] = None,
-    ) -> V1DeleteFileResponse:
-        """
-        Deletes a file from the specified record.
-
-        Parameters
-        ----------
-        vault_id : str
-            ID of the vault.
-
-        table_name : str
-            Name of the table.
-
-        id : str
-            `skyflow_id` of the record.
-
-        column_name : str
-            Name of the column that contains the file.
-
-        request_options : typing.Optional[RequestOptions]
-            Request-specific configuration.
-
-        Returns
-        -------
-        V1DeleteFileResponse
-            A successful response.
-
-        Examples
-        --------
-        from skyflow import Skyflow
-
-        client = Skyflow(
-            token="YOUR_TOKEN",
-        )
-        client.records.file_service_delete_file(
-            vault_id="vaultID",
-            table_name="tableName",
-            id="ID",
-            column_name="columnName",
-        )
-        """
-        _response = self._raw_client.file_service_delete_file(
-            vault_id, table_name, id, column_name, request_options=request_options
-        )
-        return _response.data
-
-    def file_service_get_file_scan_status(
-        self,
-        vault_id: str,
-        table_name: str,
-        id: str,
-        column_name: str,
-        *,
-        request_options: typing.Optional[RequestOptions] = None,
-    ) -> V1GetFileScanStatusResponse:
-        """
-        Returns the anti-virus scan status of a file.
-
-        Parameters
-        ----------
-        vault_id : str
-            ID of the vault.
-
-        table_name : str
-            Name of the table.
-
-        id : str
-            `skyflow_id` of the record.
-
-        column_name : str
-            Name of the column that contains the file.
-
-        request_options : typing.Optional[RequestOptions]
-            Request-specific configuration.
-
-        Returns
-        -------
-        V1GetFileScanStatusResponse
-            A successful response.
-
-        Examples
-        --------
-        from skyflow import Skyflow
-
-        client = Skyflow(
-            token="YOUR_TOKEN",
-        )
-        client.records.file_service_get_file_scan_status(
-            vault_id="vaultID",
-            table_name="tableName",
-            id="ID",
-            column_name="columnName",
-        )
-        """
-        _response = self._raw_client.file_service_get_file_scan_status(
-            vault_id, table_name, id, column_name, request_options=request_options
-        )
-        return _response.data
-
-    def upload_file_v_2(
-        self,
-        vault_id: str,
-        *,
-        table_name: str,
-        column_name: str,
-        file: core.File,
-        skyflow_id: typing.Optional[str] = OMIT,
-        return_file_metadata: typing.Optional[bool] = OMIT,
-        request_options: typing.Optional[RequestOptions] = None,
-    ) -> UploadFileV2Response:
-        """
-        Uploads the specified file to a record. If an existing record isn't specified, creates a new record and uploads the file to that record.
-
-        Parameters
-        ----------
-        vault_id : str
-            ID of the vault.
-
-        table_name : str
-            Name of the table to upload the file to.
-
-        column_name : str
-            Name of the column to upload the file to. The column must have a `file` data type.
-
-        file : core.File
-            See core.File for more documentation
-
-        skyflow_id : typing.Optional[str]
-            Skyflow ID of the record to upload the file to. If `skyflowID` isn't specified, a new record will be created.
-
-        return_file_metadata : typing.Optional[bool]
-            If `true`, returns metadata about the uploaded file.
-
-        request_options : typing.Optional[RequestOptions]
-            Request-specific configuration.
-
-        Returns
-        -------
-        UploadFileV2Response
-            File uploaded successfully.
-
-        Examples
-        --------
-        from skyflow import Skyflow
-
-        client = Skyflow(
-            token="YOUR_TOKEN",
-        )
-        client.records.upload_file_v_2(
-            vault_id="d4410ea01d83473ca09a24c6b03096d4",
-            table_name="tableName",
-            column_name="columnName",
-        )
-        """
-        _response = self._raw_client.upload_file_v_2(
-            vault_id,
-            table_name=table_name,
-            column_name=column_name,
-            file=file,
-            skyflow_id=skyflow_id,
-            return_file_metadata=return_file_metadata,
-            request_options=request_options,
-        )
+        _response = self._raw_client.delete_record(vault_id, object_name, id, request_options=request_options)
         return _response.data
 
 
@@ -793,15 +535,14 @@ class AsyncRecordsClient:
         """
         return self._raw_client
 
-    async def record_service_batch_operation(
+    async def batch_operation(
         self,
         vault_id: str,
         *,
-        records: typing.Optional[typing.Sequence[V1BatchRecord]] = OMIT,
+        records: typing.Sequence[BatchRecord],
         continue_on_error: typing.Optional[bool] = OMIT,
-        byot: typing.Optional[V1Byot] = OMIT,
         request_options: typing.Optional[RequestOptions] = None,
-    ) -> V1BatchOperationResponse:
+    ) -> BatchOperationResponse:
         """
         Performs multiple record operations in a single transaction.
 
@@ -810,38 +551,36 @@ class AsyncRecordsClient:
         vault_id : str
             ID of the vault.
 
-        records : typing.Optional[typing.Sequence[V1BatchRecord]]
+        records : typing.Sequence[BatchRecord]
             Record operations to perform.
 
         continue_on_error : typing.Optional[bool]
-            Continue performing operations on partial errors.
-
-        byot : typing.Optional[V1Byot]
+            If `true`, continues processing remaining operations when one operation returns an error. If `false`, stops processing remaining operations when one operation returns an error.
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
 
         Returns
         -------
-        V1BatchOperationResponse
-            A successful response.
+        BatchOperationResponse
+            OK
 
         Examples
         --------
         import asyncio
 
-        from skyflow import AsyncSkyflow, V1BatchRecord
+        from skyflow import AsyncSkyflowAuth, BatchRecord
 
-        client = AsyncSkyflow(
+        client = AsyncSkyflowAuth(
             token="YOUR_TOKEN",
         )
 
 
         async def main() -> None:
-            await client.records.record_service_batch_operation(
+            await client.records.batch_operation(
                 vault_id="vaultID",
                 records=[
-                    V1BatchRecord(
+                    BatchRecord(
                         fields={
                             "drivers_license_number": "89867453",
                             "name": "Connor",
@@ -856,7 +595,8 @@ class AsyncRecordsClient:
                         download_url=False,
                         upsert="drivers_license_number",
                     ),
-                    V1BatchRecord(
+                    BatchRecord(
+                        fields={"key": "value"},
                         table_name="persons",
                         method="GET",
                         batch_id="persons-12345",
@@ -871,18 +611,18 @@ class AsyncRecordsClient:
 
         asyncio.run(main())
         """
-        _response = await self._raw_client.record_service_batch_operation(
-            vault_id, records=records, continue_on_error=continue_on_error, byot=byot, request_options=request_options
+        _response = await self._raw_client.batch_operation(
+            vault_id, records=records, continue_on_error=continue_on_error, request_options=request_options
         )
         return _response.data
 
-    async def record_service_bulk_get_record(
+    async def get_records(
         self,
         vault_id: str,
         object_name: str,
         *,
         skyflow_ids: typing.Optional[typing.Union[str, typing.Sequence[str]]] = None,
-        redaction: typing.Optional[RecordServiceBulkGetRecordRequestRedaction] = None,
+        redaction: typing.Optional[GetRecordsRequestRedaction] = None,
         tokenization: typing.Optional[bool] = None,
         fields: typing.Optional[typing.Union[str, typing.Sequence[str]]] = None,
         offset: typing.Optional[str] = None,
@@ -890,86 +630,70 @@ class AsyncRecordsClient:
         download_url: typing.Optional[bool] = None,
         column_name: typing.Optional[str] = None,
         column_values: typing.Optional[typing.Union[str, typing.Sequence[str]]] = None,
-        order_by: typing.Optional[RecordServiceBulkGetRecordRequestOrderBy] = None,
+        order_by: typing.Optional[GetRecordsRequestOrderBy] = None,
+        return_file_metadata: typing.Optional[bool] = None,
         request_options: typing.Optional[RequestOptions] = None,
-    ) -> V1BulkGetRecordResponse:
+    ) -> BulkGetRecordResponse:
         """
-        Gets the specified records from a table.
+        Returns the specified records from a table.
 
         Parameters
         ----------
         vault_id : str
-            ID of the vault.
 
         object_name : str
-            Name of the table that contains the records.
 
         skyflow_ids : typing.Optional[typing.Union[str, typing.Sequence[str]]]
-            `skyflow_id` values of the records to return, with one value per `skyflow_ids` URL parameter. For example, `?skyflow_ids=abc&skyflow_ids=123`.<br /><br />If not specified, returns the first 25 records in the table.
 
-        redaction : typing.Optional[RecordServiceBulkGetRecordRequestRedaction]
-            Redaction level to enforce for the returned records. Subject to policies assigned to the API caller.
+        redaction : typing.Optional[GetRecordsRequestRedaction]
 
         tokenization : typing.Optional[bool]
-            If `true`, this operation returns tokens for fields with tokenization enabled. Only applicable if `skyflow_id` values are specified.
 
         fields : typing.Optional[typing.Union[str, typing.Sequence[str]]]
-            Fields to return for the record, with one value per `fields` URL parameter. For example, `?fields=abc&fields=123`.<br /><br />If not specified, returns all fields.
 
         offset : typing.Optional[str]
-            Record position at which to start receiving data.
 
         limit : typing.Optional[str]
-            Number of record to return. Maximum 25.
 
         download_url : typing.Optional[bool]
-            If `true`, returns download URLs for fields with a file data type. URLs are valid for 15 minutes. If virus scanning is enabled, only returns if the file is clean.
 
         column_name : typing.Optional[str]
-            Name of the column. It must be configured as unique in the schema. If you provide both column name or column value, you cannot use `skyflow_ids`. Passing either of these parameters with `skyflow_ids` returns an error.
 
         column_values : typing.Optional[typing.Union[str, typing.Sequence[str]]]
-            Column values of the records to return, with one value per `column_values` URL parameter. For example, `?column_values=abc&column_values=123`.<br /><br />`column_name` is mandatory when providing `column_values`. If you use column name or column value, you cannot use `skyflow_ids`. Passing either of these parameters with `skyflow_ids` returns an error.
 
-        order_by : typing.Optional[RecordServiceBulkGetRecordRequestOrderBy]
-            Order to return records, based on `skyflow_id` values. To disable, set to `NONE`.
+        order_by : typing.Optional[GetRecordsRequestOrderBy]
+
+        return_file_metadata : typing.Optional[bool]
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
 
         Returns
         -------
-        V1BulkGetRecordResponse
-            A successful response.
+        BulkGetRecordResponse
+            OK
 
         Examples
         --------
         import asyncio
 
-        from skyflow import AsyncSkyflow
+        from skyflow import AsyncSkyflowAuth
 
-        client = AsyncSkyflow(
+        client = AsyncSkyflowAuth(
             token="YOUR_TOKEN",
         )
 
 
         async def main() -> None:
-            await client.records.record_service_bulk_get_record(
+            await client.records.get_records(
                 vault_id="vaultID",
                 object_name="objectName",
-                redaction="DEFAULT",
-                tokenization=True,
-                offset="offset",
-                limit="limit",
-                download_url=True,
-                column_name="column_name",
-                order_by="ASCENDING",
             )
 
 
         asyncio.run(main())
         """
-        _response = await self._raw_client.record_service_bulk_get_record(
+        _response = await self._raw_client.get_records(
             vault_id,
             object_name,
             skyflow_ids=skyflow_ids,
@@ -982,34 +706,33 @@ class AsyncRecordsClient:
             column_name=column_name,
             column_values=column_values,
             order_by=order_by,
+            return_file_metadata=return_file_metadata,
             request_options=request_options,
         )
         return _response.data
 
-    async def record_service_insert_record(
+    async def insert_records(
         self,
         vault_id: str,
         object_name: str,
         *,
-        records: typing.Optional[typing.Sequence[V1FieldRecords]] = OMIT,
+        records: typing.Sequence[FieldRecords],
         tokenization: typing.Optional[bool] = OMIT,
         upsert: typing.Optional[str] = OMIT,
         homogeneous: typing.Optional[bool] = OMIT,
-        byot: typing.Optional[V1Byot] = OMIT,
+        byot: typing.Optional[InsertRecordRequestByot] = OMIT,
         request_options: typing.Optional[RequestOptions] = None,
-    ) -> V1InsertRecordResponse:
+    ) -> InsertRecordResponse:
         """
         Inserts a record in the specified table.<br /><br />The time-to-live (TTL) for a transient field begins when the field value is set during record insertion.<br /><br />Columns that have a string data type and a uniqueness constraint accept strings up to 2500 characters. If an inserted string exceeds 2500 characters, the call returns a token insertion error.
 
         Parameters
         ----------
         vault_id : str
-            ID of the vault.
 
         object_name : str
-            Name of the table.
 
-        records : typing.Optional[typing.Sequence[V1FieldRecords]]
+        records : typing.Sequence[FieldRecords]
             Record values and tokens.
 
         tokenization : typing.Optional[bool]
@@ -1021,33 +744,34 @@ class AsyncRecordsClient:
         homogeneous : typing.Optional[bool]
             If `true`, this operation mandates that all the records have the same fields. This parameter does not work with upsert.
 
-        byot : typing.Optional[V1Byot]
+        byot : typing.Optional[InsertRecordRequestByot]
+            Token insertion behavior.
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
 
         Returns
         -------
-        V1InsertRecordResponse
-            A successful response.
+        InsertRecordResponse
+            OK
 
         Examples
         --------
         import asyncio
 
-        from skyflow import AsyncSkyflow, V1FieldRecords
+        from skyflow import AsyncSkyflowAuth, FieldRecords
 
-        client = AsyncSkyflow(
+        client = AsyncSkyflowAuth(
             token="YOUR_TOKEN",
         )
 
 
         async def main() -> None:
-            await client.records.record_service_insert_record(
+            await client.records.insert_records(
                 vault_id="vaultID",
                 object_name="objectName",
                 records=[
-                    V1FieldRecords(
+                    FieldRecords(
                         fields={
                             "drivers_license_number": "13456789",
                             "name": "John",
@@ -1055,7 +779,7 @@ class AsyncRecordsClient:
                             "ssn": "123-45-6789",
                         },
                     ),
-                    V1FieldRecords(
+                    FieldRecords(
                         fields={
                             "drivers_license_number": "98765432",
                             "name": "James",
@@ -1072,7 +796,7 @@ class AsyncRecordsClient:
 
         asyncio.run(main())
         """
-        _response = await self._raw_client.record_service_insert_record(
+        _response = await self._raw_client.insert_records(
             vault_id,
             object_name,
             records=records,
@@ -1084,14 +808,14 @@ class AsyncRecordsClient:
         )
         return _response.data
 
-    async def record_service_bulk_delete_record(
+    async def delete_records(
         self,
         vault_id: str,
         object_name: str,
         *,
         skyflow_ids: typing.Optional[typing.Sequence[str]] = OMIT,
         request_options: typing.Optional[RequestOptions] = None,
-    ) -> V1BulkDeleteRecordResponse:
+    ) -> BulkDeleteRecordResponse:
         """
         Deletes the specified records from a table.
 
@@ -1111,22 +835,22 @@ class AsyncRecordsClient:
 
         Returns
         -------
-        V1BulkDeleteRecordResponse
-            A successful response.
+        BulkDeleteRecordResponse
+            OK
 
         Examples
         --------
         import asyncio
 
-        from skyflow import AsyncSkyflow
+        from skyflow import AsyncSkyflowAuth
 
-        client = AsyncSkyflow(
+        client = AsyncSkyflowAuth(
             token="YOUR_TOKEN",
         )
 
 
         async def main() -> None:
-            await client.records.record_service_bulk_delete_record(
+            await client.records.delete_records(
                 vault_id="vaultID",
                 object_name="objectName",
                 skyflow_ids=[
@@ -1138,82 +862,75 @@ class AsyncRecordsClient:
 
         asyncio.run(main())
         """
-        _response = await self._raw_client.record_service_bulk_delete_record(
+        _response = await self._raw_client.delete_records(
             vault_id, object_name, skyflow_ids=skyflow_ids, request_options=request_options
         )
         return _response.data
 
-    async def record_service_get_record(
+    async def get_record_by_id(
         self,
         vault_id: str,
         object_name: str,
         id: str,
         *,
-        redaction: typing.Optional[RecordServiceGetRecordRequestRedaction] = None,
+        redaction: typing.Optional[GetRecordByIdRequestRedaction] = None,
         tokenization: typing.Optional[bool] = None,
         fields: typing.Optional[typing.Union[str, typing.Sequence[str]]] = None,
         download_url: typing.Optional[bool] = None,
+        return_file_metadata: typing.Optional[bool] = None,
         request_options: typing.Optional[RequestOptions] = None,
-    ) -> V1FieldRecords:
+    ) -> GetFieldRecords:
         """
         Returns the specified record from a table.
 
         Parameters
         ----------
         vault_id : str
-            ID of the vault.
 
         object_name : str
-            Name of the table.
 
         id : str
-            `skyflow_id` of the record.
 
-        redaction : typing.Optional[RecordServiceGetRecordRequestRedaction]
-            Redaction level to enforce for the returned record. Subject to policies assigned to the API caller.
+        redaction : typing.Optional[GetRecordByIdRequestRedaction]
 
         tokenization : typing.Optional[bool]
-            If `true`, this operation returns tokens for fields with tokenization enabled. Only applicable if `skyflow_id` values are specified.
 
         fields : typing.Optional[typing.Union[str, typing.Sequence[str]]]
-            Fields to return for the record, with one value per `fields` URL parameter. For example, `?fields=abc&fields=123`.<br /><br />If not specified, returns all fields.
 
         download_url : typing.Optional[bool]
-            If `true`, returns download URLs for fields with a file data type. URLs are valid for 15 minutes. If virus scanning is enabled, only returns if the file is clean.
+
+        return_file_metadata : typing.Optional[bool]
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
 
         Returns
         -------
-        V1FieldRecords
-            A successful response.
+        GetFieldRecords
+            OK
 
         Examples
         --------
         import asyncio
 
-        from skyflow import AsyncSkyflow
+        from skyflow import AsyncSkyflowAuth
 
-        client = AsyncSkyflow(
+        client = AsyncSkyflowAuth(
             token="YOUR_TOKEN",
         )
 
 
         async def main() -> None:
-            await client.records.record_service_get_record(
+            await client.records.get_record_by_id(
                 vault_id="vaultID",
                 object_name="objectName",
                 id="ID",
-                redaction="DEFAULT",
-                tokenization=True,
-                download_url=True,
             )
 
 
         asyncio.run(main())
         """
-        _response = await self._raw_client.record_service_get_record(
+        _response = await self._raw_client.get_record_by_id(
             vault_id,
             object_name,
             id,
@@ -1221,67 +938,66 @@ class AsyncRecordsClient:
             tokenization=tokenization,
             fields=fields,
             download_url=download_url,
+            return_file_metadata=return_file_metadata,
             request_options=request_options,
         )
         return _response.data
 
-    async def record_service_update_record(
+    async def update_record(
         self,
         vault_id: str,
         object_name: str,
         id: str,
         *,
-        record: typing.Optional[V1FieldRecords] = OMIT,
+        record: typing.Optional[FieldRecords] = OMIT,
         tokenization: typing.Optional[bool] = OMIT,
-        byot: typing.Optional[V1Byot] = OMIT,
+        byot: typing.Optional[UpdateRecordRequestByot] = OMIT,
         request_options: typing.Optional[RequestOptions] = None,
-    ) -> V1UpdateRecordResponse:
+    ) -> UpdateRecordResponse:
         """
         Updates the specified record in a table.<br /><br />When you update a field, include the entire contents you want the field to store. For JSON fields, include all nested fields and values. If a nested field isn't included, it's removed.<br /><br />The time-to-live (TTL) for a transient field resets when the field value is updated.
 
         Parameters
         ----------
         vault_id : str
-            ID of the vault.
 
         object_name : str
-            Name of the table.
 
         id : str
-            `skyflow_id` of the record.
 
-        record : typing.Optional[V1FieldRecords]
+        record : typing.Optional[FieldRecords]
 
         tokenization : typing.Optional[bool]
             If `true`, this operation returns tokens for fields with tokenization enabled.
 
-        byot : typing.Optional[V1Byot]
+        byot : typing.Optional[UpdateRecordRequestByot]
+            Token insertion behavior.
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
 
         Returns
         -------
-        V1UpdateRecordResponse
-            A successful response.
+        UpdateRecordResponse
+            OK
 
         Examples
         --------
         import asyncio
 
-        from skyflow import AsyncSkyflow, V1FieldRecords
+        from skyflow import AsyncSkyflowAuth, FieldRecords
 
-        client = AsyncSkyflow(
+        client = AsyncSkyflowAuth(
             token="YOUR_TOKEN",
         )
 
 
         async def main() -> None:
-            await client.records.record_service_update_record(
+            await client.records.update_record(
                 vault_id="vaultID",
                 object_name="objectName",
                 id="ID",
-                record=V1FieldRecords(
+                record=FieldRecords(
                     fields={
                         "drivers_license_number": "89867453",
                         "name": "Steve Smith",
@@ -1295,7 +1011,7 @@ class AsyncRecordsClient:
 
         asyncio.run(main())
         """
-        _response = await self._raw_client.record_service_update_record(
+        _response = await self._raw_client.update_record(
             vault_id,
             object_name,
             id,
@@ -1306,9 +1022,9 @@ class AsyncRecordsClient:
         )
         return _response.data
 
-    async def record_service_delete_record(
+    async def delete_record(
         self, vault_id: str, object_name: str, id: str, *, request_options: typing.Optional[RequestOptions] = None
-    ) -> V1DeleteRecordResponse:
+    ) -> DeleteRecordResponse:
         """
         Deletes the specified record from a table.<br /><br /><b>Note:</b> This method doesn't delete transient field tokens. Transient field values are available until they expire based on the fields' time-to-live (TTL) setting.
 
@@ -1328,22 +1044,22 @@ class AsyncRecordsClient:
 
         Returns
         -------
-        V1DeleteRecordResponse
-            A successful response.
+        DeleteRecordResponse
+            OK
 
         Examples
         --------
         import asyncio
 
-        from skyflow import AsyncSkyflow
+        from skyflow import AsyncSkyflowAuth
 
-        client = AsyncSkyflow(
+        client = AsyncSkyflowAuth(
             token="YOUR_TOKEN",
         )
 
 
         async def main() -> None:
-            await client.records.record_service_delete_record(
+            await client.records.delete_record(
                 vault_id="vaultID",
                 object_name="objectName",
                 id="ID",
@@ -1352,267 +1068,5 @@ class AsyncRecordsClient:
 
         asyncio.run(main())
         """
-        _response = await self._raw_client.record_service_delete_record(
-            vault_id, object_name, id, request_options=request_options
-        )
-        return _response.data
-
-    async def file_service_upload_file(
-        self,
-        vault_id: str,
-        object_name: str,
-        id: str,
-        *,
-        file: typing.Optional[core.File] = OMIT,
-        column_name: typing.Optional[str] = OMIT,
-        request_options: typing.Optional[RequestOptions] = None,
-    ) -> V1UpdateRecordResponse:
-        """
-        Uploads a file to the specified record.
-
-        Parameters
-        ----------
-        vault_id : str
-            ID of the vault.
-
-        object_name : str
-            Name of the table.
-
-        id : str
-            `skyflow_id` of the record.
-
-        file : typing.Optional[core.File]
-            See core.File for more documentation
-
-        column_name : typing.Optional[str]
-            Name of the column to store the file in. The column must have a file data type.
-
-        request_options : typing.Optional[RequestOptions]
-            Request-specific configuration.
-
-        Returns
-        -------
-        V1UpdateRecordResponse
-            A successful response.
-
-        Examples
-        --------
-        import asyncio
-
-        from skyflow import AsyncSkyflow
-
-        client = AsyncSkyflow(
-            token="YOUR_TOKEN",
-        )
-
-
-        async def main() -> None:
-            await client.records.file_service_upload_file(
-                vault_id="vaultID",
-                object_name="objectName",
-                id="ID",
-            )
-
-
-        asyncio.run(main())
-        """
-        _response = await self._raw_client.file_service_upload_file(
-            vault_id, object_name, id, file=file, column_name=column_name, request_options=request_options
-        )
-        return _response.data
-
-    async def file_service_delete_file(
-        self,
-        vault_id: str,
-        table_name: str,
-        id: str,
-        column_name: str,
-        *,
-        request_options: typing.Optional[RequestOptions] = None,
-    ) -> V1DeleteFileResponse:
-        """
-        Deletes a file from the specified record.
-
-        Parameters
-        ----------
-        vault_id : str
-            ID of the vault.
-
-        table_name : str
-            Name of the table.
-
-        id : str
-            `skyflow_id` of the record.
-
-        column_name : str
-            Name of the column that contains the file.
-
-        request_options : typing.Optional[RequestOptions]
-            Request-specific configuration.
-
-        Returns
-        -------
-        V1DeleteFileResponse
-            A successful response.
-
-        Examples
-        --------
-        import asyncio
-
-        from skyflow import AsyncSkyflow
-
-        client = AsyncSkyflow(
-            token="YOUR_TOKEN",
-        )
-
-
-        async def main() -> None:
-            await client.records.file_service_delete_file(
-                vault_id="vaultID",
-                table_name="tableName",
-                id="ID",
-                column_name="columnName",
-            )
-
-
-        asyncio.run(main())
-        """
-        _response = await self._raw_client.file_service_delete_file(
-            vault_id, table_name, id, column_name, request_options=request_options
-        )
-        return _response.data
-
-    async def file_service_get_file_scan_status(
-        self,
-        vault_id: str,
-        table_name: str,
-        id: str,
-        column_name: str,
-        *,
-        request_options: typing.Optional[RequestOptions] = None,
-    ) -> V1GetFileScanStatusResponse:
-        """
-        Returns the anti-virus scan status of a file.
-
-        Parameters
-        ----------
-        vault_id : str
-            ID of the vault.
-
-        table_name : str
-            Name of the table.
-
-        id : str
-            `skyflow_id` of the record.
-
-        column_name : str
-            Name of the column that contains the file.
-
-        request_options : typing.Optional[RequestOptions]
-            Request-specific configuration.
-
-        Returns
-        -------
-        V1GetFileScanStatusResponse
-            A successful response.
-
-        Examples
-        --------
-        import asyncio
-
-        from skyflow import AsyncSkyflow
-
-        client = AsyncSkyflow(
-            token="YOUR_TOKEN",
-        )
-
-
-        async def main() -> None:
-            await client.records.file_service_get_file_scan_status(
-                vault_id="vaultID",
-                table_name="tableName",
-                id="ID",
-                column_name="columnName",
-            )
-
-
-        asyncio.run(main())
-        """
-        _response = await self._raw_client.file_service_get_file_scan_status(
-            vault_id, table_name, id, column_name, request_options=request_options
-        )
-        return _response.data
-
-    async def upload_file_v_2(
-        self,
-        vault_id: str,
-        *,
-        table_name: str,
-        column_name: str,
-        file: core.File,
-        skyflow_id: typing.Optional[str] = OMIT,
-        return_file_metadata: typing.Optional[bool] = OMIT,
-        request_options: typing.Optional[RequestOptions] = None,
-    ) -> UploadFileV2Response:
-        """
-        Uploads the specified file to a record. If an existing record isn't specified, creates a new record and uploads the file to that record.
-
-        Parameters
-        ----------
-        vault_id : str
-            ID of the vault.
-
-        table_name : str
-            Name of the table to upload the file to.
-
-        column_name : str
-            Name of the column to upload the file to. The column must have a `file` data type.
-
-        file : core.File
-            See core.File for more documentation
-
-        skyflow_id : typing.Optional[str]
-            Skyflow ID of the record to upload the file to. If `skyflowID` isn't specified, a new record will be created.
-
-        return_file_metadata : typing.Optional[bool]
-            If `true`, returns metadata about the uploaded file.
-
-        request_options : typing.Optional[RequestOptions]
-            Request-specific configuration.
-
-        Returns
-        -------
-        UploadFileV2Response
-            File uploaded successfully.
-
-        Examples
-        --------
-        import asyncio
-
-        from skyflow import AsyncSkyflow
-
-        client = AsyncSkyflow(
-            token="YOUR_TOKEN",
-        )
-
-
-        async def main() -> None:
-            await client.records.upload_file_v_2(
-                vault_id="d4410ea01d83473ca09a24c6b03096d4",
-                table_name="tableName",
-                column_name="columnName",
-            )
-
-
-        asyncio.run(main())
-        """
-        _response = await self._raw_client.upload_file_v_2(
-            vault_id,
-            table_name=table_name,
-            column_name=column_name,
-            file=file,
-            skyflow_id=skyflow_id,
-            return_file_metadata=return_file_metadata,
-            request_options=request_options,
-        )
+        _response = await self._raw_client.delete_record(vault_id, object_name, id, request_options=request_options)
         return _response.data

@@ -1,3 +1,3 @@
 from importlib import metadata
 
-__version__ = metadata.version("skyflow")
+__version__ = metadata.version("skyflow.generated.rest")

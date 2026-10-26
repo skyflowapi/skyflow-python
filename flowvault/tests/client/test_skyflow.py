@@ -92,11 +92,16 @@ class TestSkyflowVaultConfig(unittest.TestCase):
         vault = client.vault("VAULT_ID")
         self.assertTrue(hasattr(vault, "insert"))
 
+    def test_detect_returns_detect_controller(self):
+        client = self.builder.add_vault_config(VALID_VAULT_CONFIG).build()
+        detect = client.detect("VAULT_ID")
+        self.assertTrue(hasattr(detect, "deidentify_string"))
 
-class TestConnectionAndDetectNotSupported(unittest.TestCase):
-    """flowvault has no Connection/Detect concept this round -- ConnectionMixin/DetectMixin are
-    only added to a variant's produced Skyflow class when connection_cls/detect_cls are supplied,
-    so these methods are genuinely absent here (AttributeError), unlike v2 where they work."""
+
+class TestConnectionNotSupported(unittest.TestCase):
+    """flowvault has no Connection concept this round -- ConnectionMixin is only added to a
+    variant's produced Skyflow class when connection_cls is supplied, so these methods are
+    genuinely absent here (AttributeError)."""
 
     def setUp(self):
         self.client = Skyflow.builder().add_vault_config(VALID_VAULT_CONFIG).build()
@@ -104,10 +109,6 @@ class TestConnectionAndDetectNotSupported(unittest.TestCase):
     def test_connection_raises(self):
         with self.assertRaises(AttributeError):
             self.client.connection()
-
-    def test_detect_raises(self):
-        with self.assertRaises(AttributeError):
-            self.client.detect()
 
     def test_add_connection_config_raises(self):
         with self.assertRaises(AttributeError):

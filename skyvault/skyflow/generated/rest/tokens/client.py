@@ -4,10 +4,10 @@ import typing
 
 from ..core.client_wrapper import AsyncClientWrapper, SyncClientWrapper
 from ..core.request_options import RequestOptions
-from ..types.v_1_detokenize_record_request import V1DetokenizeRecordRequest
-from ..types.v_1_detokenize_response import V1DetokenizeResponse
-from ..types.v_1_tokenize_record_request import V1TokenizeRecordRequest
-from ..types.v_1_tokenize_response import V1TokenizeResponse
+from ..types.detokenize_record_request import DetokenizeRecordRequest
+from ..types.detokenize_response import DetokenizeResponse
+from ..types.tokenize_record_request import TokenizeRecordRequest
+from ..types.tokenize_response import TokenizeResponse
 from .raw_client import AsyncRawTokensClient, RawTokensClient
 
 # this is used as the default value for optional parameters
@@ -29,24 +29,23 @@ class TokensClient:
         """
         return self._raw_client
 
-    def record_service_detokenize(
+    def detokenize(
         self,
         vault_id: str,
         *,
-        detokenization_parameters: typing.Optional[typing.Sequence[V1DetokenizeRecordRequest]] = OMIT,
+        detokenization_parameters: typing.Sequence[DetokenizeRecordRequest],
         download_url: typing.Optional[bool] = OMIT,
         continue_on_error: typing.Optional[bool] = OMIT,
         request_options: typing.Optional[RequestOptions] = None,
-    ) -> V1DetokenizeResponse:
+    ) -> DetokenizeResponse:
         """
         Returns records that correspond to the specified tokens.
 
         Parameters
         ----------
         vault_id : str
-            ID of the vault.
 
-        detokenization_parameters : typing.Optional[typing.Sequence[V1DetokenizeRecordRequest]]
+        detokenization_parameters : typing.Sequence[DetokenizeRecordRequest]
             Detokenization details.
 
         download_url : typing.Optional[bool]
@@ -60,32 +59,32 @@ class TokensClient:
 
         Returns
         -------
-        V1DetokenizeResponse
-            A successful response.
+        DetokenizeResponse
+            OK
 
         Examples
         --------
-        from skyflow import Skyflow, V1DetokenizeRecordRequest
+        from skyflow import DetokenizeRecordRequest, SkyflowAuth
 
-        client = Skyflow(
+        client = SkyflowAuth(
             token="YOUR_TOKEN",
         )
-        client.tokens.record_service_detokenize(
+        client.tokens.detokenize(
             vault_id="vaultID",
             detokenization_parameters=[
-                V1DetokenizeRecordRequest(
-                    token="<TOKEN_1>",
+                DetokenizeRecordRequest(
+                    token="afbd1074-51c1-4a16-9eee-e2c0ecb52125",
                     redaction="PLAIN_TEXT",
                 ),
-                V1DetokenizeRecordRequest(
-                    token="<TOKEN_2>",
+                DetokenizeRecordRequest(
+                    token="05383487-fcae-42e5-a48e-5bd62a51af12",
                     redaction="DEFAULT",
                 ),
             ],
             download_url=False,
         )
         """
-        _response = self._raw_client.record_service_detokenize(
+        _response = self._raw_client.detokenize(
             vault_id,
             detokenization_parameters=detokenization_parameters,
             download_url=download_url,
@@ -94,22 +93,22 @@ class TokensClient:
         )
         return _response.data
 
-    def record_service_tokenize(
+    def tokenize(
         self,
         vault_id: str,
         *,
-        tokenization_parameters: typing.Optional[typing.Sequence[V1TokenizeRecordRequest]] = OMIT,
+        tokenization_parameters: typing.Sequence[TokenizeRecordRequest],
         request_options: typing.Optional[RequestOptions] = None,
-    ) -> V1TokenizeResponse:
+    ) -> TokenizeResponse:
         """
-        Returns tokens that correspond to the specified records. Only applicable for fields with deterministic tokenization.<br /><br /><b>Note:</b> This endpoint doesn't insert records—it returns tokens for existing values. To insert records and tokenize that new record's values, see <a href='#RecordService_InsertRecord'>Insert Record</a> and the tokenization parameter.
+        Returns tokens that correspond to the specified records. Only applicable for fields with deterministic tokenization.<br /><br /><b>Note:</b> This endpoint doesn't insert records—it returns tokens for existing values. To insert records and return tokens for that new record's values, see Insert Records' `tokenization` parameter.
 
         Parameters
         ----------
         vault_id : str
             ID of the vault.
 
-        tokenization_parameters : typing.Optional[typing.Sequence[V1TokenizeRecordRequest]]
+        tokenization_parameters : typing.Sequence[TokenizeRecordRequest]
             Tokenization details.
 
         request_options : typing.Optional[RequestOptions]
@@ -117,21 +116,27 @@ class TokensClient:
 
         Returns
         -------
-        V1TokenizeResponse
-            A successful response.
+        TokenizeResponse
+            OK
 
         Examples
         --------
-        from skyflow import Skyflow
+        from skyflow import SkyflowAuth, TokenizeRecordRequest
 
-        client = Skyflow(
+        client = SkyflowAuth(
             token="YOUR_TOKEN",
         )
-        client.tokens.record_service_tokenize(
+        client.tokens.tokenize(
             vault_id="vaultID",
+            tokenization_parameters=[
+                TokenizeRecordRequest(
+                    value="26/02/2001",
+                    column_group="persons_cg",
+                )
+            ],
         )
         """
-        _response = self._raw_client.record_service_tokenize(
+        _response = self._raw_client.tokenize(
             vault_id, tokenization_parameters=tokenization_parameters, request_options=request_options
         )
         return _response.data
@@ -152,24 +157,23 @@ class AsyncTokensClient:
         """
         return self._raw_client
 
-    async def record_service_detokenize(
+    async def detokenize(
         self,
         vault_id: str,
         *,
-        detokenization_parameters: typing.Optional[typing.Sequence[V1DetokenizeRecordRequest]] = OMIT,
+        detokenization_parameters: typing.Sequence[DetokenizeRecordRequest],
         download_url: typing.Optional[bool] = OMIT,
         continue_on_error: typing.Optional[bool] = OMIT,
         request_options: typing.Optional[RequestOptions] = None,
-    ) -> V1DetokenizeResponse:
+    ) -> DetokenizeResponse:
         """
         Returns records that correspond to the specified tokens.
 
         Parameters
         ----------
         vault_id : str
-            ID of the vault.
 
-        detokenization_parameters : typing.Optional[typing.Sequence[V1DetokenizeRecordRequest]]
+        detokenization_parameters : typing.Sequence[DetokenizeRecordRequest]
             Detokenization details.
 
         download_url : typing.Optional[bool]
@@ -183,30 +187,30 @@ class AsyncTokensClient:
 
         Returns
         -------
-        V1DetokenizeResponse
-            A successful response.
+        DetokenizeResponse
+            OK
 
         Examples
         --------
         import asyncio
 
-        from skyflow import AsyncSkyflow, V1DetokenizeRecordRequest
+        from skyflow import AsyncSkyflowAuth, DetokenizeRecordRequest
 
-        client = AsyncSkyflow(
+        client = AsyncSkyflowAuth(
             token="YOUR_TOKEN",
         )
 
 
         async def main() -> None:
-            await client.tokens.record_service_detokenize(
+            await client.tokens.detokenize(
                 vault_id="vaultID",
                 detokenization_parameters=[
-                    V1DetokenizeRecordRequest(
-                        token="<TOKEN_1>",
+                    DetokenizeRecordRequest(
+                        token="afbd1074-51c1-4a16-9eee-e2c0ecb52125",
                         redaction="PLAIN_TEXT",
                     ),
-                    V1DetokenizeRecordRequest(
-                        token="<TOKEN_2>",
+                    DetokenizeRecordRequest(
+                        token="05383487-fcae-42e5-a48e-5bd62a51af12",
                         redaction="DEFAULT",
                     ),
                 ],
@@ -216,7 +220,7 @@ class AsyncTokensClient:
 
         asyncio.run(main())
         """
-        _response = await self._raw_client.record_service_detokenize(
+        _response = await self._raw_client.detokenize(
             vault_id,
             detokenization_parameters=detokenization_parameters,
             download_url=download_url,
@@ -225,22 +229,22 @@ class AsyncTokensClient:
         )
         return _response.data
 
-    async def record_service_tokenize(
+    async def tokenize(
         self,
         vault_id: str,
         *,
-        tokenization_parameters: typing.Optional[typing.Sequence[V1TokenizeRecordRequest]] = OMIT,
+        tokenization_parameters: typing.Sequence[TokenizeRecordRequest],
         request_options: typing.Optional[RequestOptions] = None,
-    ) -> V1TokenizeResponse:
+    ) -> TokenizeResponse:
         """
-        Returns tokens that correspond to the specified records. Only applicable for fields with deterministic tokenization.<br /><br /><b>Note:</b> This endpoint doesn't insert records—it returns tokens for existing values. To insert records and tokenize that new record's values, see <a href='#RecordService_InsertRecord'>Insert Record</a> and the tokenization parameter.
+        Returns tokens that correspond to the specified records. Only applicable for fields with deterministic tokenization.<br /><br /><b>Note:</b> This endpoint doesn't insert records—it returns tokens for existing values. To insert records and return tokens for that new record's values, see Insert Records' `tokenization` parameter.
 
         Parameters
         ----------
         vault_id : str
             ID of the vault.
 
-        tokenization_parameters : typing.Optional[typing.Sequence[V1TokenizeRecordRequest]]
+        tokenization_parameters : typing.Sequence[TokenizeRecordRequest]
             Tokenization details.
 
         request_options : typing.Optional[RequestOptions]
@@ -248,29 +252,35 @@ class AsyncTokensClient:
 
         Returns
         -------
-        V1TokenizeResponse
-            A successful response.
+        TokenizeResponse
+            OK
 
         Examples
         --------
         import asyncio
 
-        from skyflow import AsyncSkyflow
+        from skyflow import AsyncSkyflowAuth, TokenizeRecordRequest
 
-        client = AsyncSkyflow(
+        client = AsyncSkyflowAuth(
             token="YOUR_TOKEN",
         )
 
 
         async def main() -> None:
-            await client.tokens.record_service_tokenize(
+            await client.tokens.tokenize(
                 vault_id="vaultID",
+                tokenization_parameters=[
+                    TokenizeRecordRequest(
+                        value="26/02/2001",
+                        column_group="persons_cg",
+                    )
+                ],
             )
 
 
         asyncio.run(main())
         """
-        _response = await self._raw_client.record_service_tokenize(
+        _response = await self._raw_client.tokenize(
             vault_id, tokenization_parameters=tokenization_parameters, request_options=request_options
         )
         return _response.data

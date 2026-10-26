@@ -1,6 +1,8 @@
 from common.utils import get_vault_url
 from common.vault.base_vault_client import BaseVaultClient
-from skyflow.generated.rest.client import Skyflow
+from common.generated.rest.client import SkyflowAuth as DetectSkyflowAuth
+from skyflow.generated.rest.client import SkyflowAuth
+from skyflow.utils._utils import get_metrics
 
 
 class VaultClient(BaseVaultClient):
@@ -9,7 +11,8 @@ class VaultClient(BaseVaultClient):
 
     def initialize_api_client(self, vault_url, bearer_token):
         token_provider = lambda: self._bearer_token if self._bearer_token is not None else bearer_token  # noqa: E731
-        self._api_client = Skyflow(base_url=vault_url, token=token_provider)
+        self._api_client = SkyflowAuth(base_url=vault_url, token=token_provider)
+        self._detect_api_client = DetectSkyflowAuth(base_url=vault_url, token=token_provider)
 
     def get_records_api(self):
         return self._api_client.records
@@ -20,8 +23,14 @@ class VaultClient(BaseVaultClient):
     def get_query_api(self):
         return self._api_client.query
 
-    def get_detect_text_api(self):
-        return self._api_client.strings
+    def get_strings_v2_api(self):
+        return self._detect_api_client.strings_v2
 
-    def get_detect_file_api(self):
-        return self._api_client.files
+    def get_files_v2_api(self):
+        return self._detect_api_client.files_v2
+
+    def get_guardrails_v2_api(self):
+        return self._detect_api_client.guardrails_v2
+
+    def get_sdk_metrics(self):
+        return get_metrics()

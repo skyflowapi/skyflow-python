@@ -44,6 +44,17 @@ python flowvault/samples/vault_api/insert_records.py
 | [upload_files.py](vault_api/upload_files.py) | Upload files to file columns (`file_path` / `base64` / `file_object`) |
 | [delete_files.py](vault_api/delete_files.py) | Delete files from file columns (by `skyflow_id` or `unique_values`) |
 
+## Detect V2
+
+| Sample | Demonstrates |
+|---|---|
+| [deidentify_string.py](detect_api/deidentify_string.py) | De-identify sensitive data in a string |
+| [deidentify_file.py](detect_api/deidentify_file.py) | De-identify a file; submit-only and submit-and-poll with `PollOptions` |
+| [get_run.py](detect_api/get_run.py) | Retrieve the status and outputs of a detect file run |
+| [reidentify_string.py](detect_api/reidentify_string.py) | Re-identify tokens in a string |
+| [reidentify_file.py](detect_api/reidentify_file.py) | Re-identify tokens in a file (synchronous) |
+| [check_guardrails.py](detect_api/check_guardrails.py) | Screen text for toxicity and denied topics |
+
 ## Custom headers & HTTP config
 
 | Sample | Demonstrates |
