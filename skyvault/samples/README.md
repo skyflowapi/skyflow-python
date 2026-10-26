@@ -43,15 +43,16 @@ Core vault data operations.
 | `invoke_connection.py` | Invoking a Skyflow Connection |
 
 ### `detect_api/`
-Skyflow Detect (de-identification / re-identification).
+Skyflow Detect V2 de-identification, re-identification, and guardrail checks.
 
 | Sample | Demonstrates |
 |--------|--------------|
-| `deidentify_text.py` | De-identifying text |
-| `reidentify_text.py` | Re-identifying text |
-| `deidentify_file.py` | De-identifying a file |
-| `deidentify_file_async.py` | Running a file de-identification on a background thread (thread-based concurrency, not asyncio) |
-| `get_detect_run.py` | Polling a file de-identification run by `run_id` |
+| `deidentify_string.py` | De-identifying a string with a stored or inline Detect configuration |
+| `deidentify_file.py` | De-identifying a local file, polling for the result, and writing the processed files |
+| `get_run.py` | Retrieving a file de-identification run by `run_id` and saving its outputs |
+| `reidentify_string.py` | Re-identifying a string with per-entity redaction types |
+| `reidentify_file.py` | Re-identifying a base64-encoded file and saving the result |
+| `check_guardrails.py` | Checking text for toxicity and denied topics |
 
 ### `service_account/`
 Bearer-token and signed-data-token generation.

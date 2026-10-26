@@ -1,29 +1,24 @@
 from skyflow.error import SkyflowError
 from skyflow import Env, Skyflow, LogLevel
-from skyflow.utils.enums import DetectEntities, MaskingMethod, DetectOutputTranscriptions
-from skyflow.vault.detect import (
-    DeidentifyFileRequest,
-    TokenFormat,
-    Transformations,
-    DateTransformation,
-    Bleep,
-    FileInput,
-)
+from skyflow.utils.enums import DetectRunStatus
+from skyflow.vault.detect import DeidentifyFileRequest, PollOptions
 
 """
- * Skyflow Deidentify File Example
- * 
- * This sample demonstrates how to use all available options for deidentifying files.
- * Supported file types: images (jpg, png, etc.), pdf, audio (mp3, wav), documents, 
- * spreadsheets, presentations, structured text.
+ * Skyflow De-identify File Example
+ *
+ * This example demonstrates how to:
+ * 1. Configure Skyflow client credentials
+ * 2. Set up vault configuration
+ * 3. Submit a local file for de-identification and poll for the result
+ * 4. Write the processed files to an output directory
+ * 5. Handle response and errors
 """
 
-
-def perform_file_deidentification():
+def perform_deidentify_file():
     try:
         # Step 1: Configure Credentials
         credentials = {
-            'path': '/path/to/credentials.json'  # Path to credentials file
+            'path': '<PATH_TO_CREDENTIALS_JSON>'  # Path to your service account credentials file
         }
 
         # Step 2: Configure Vault
@@ -31,79 +26,53 @@ def perform_file_deidentification():
             'vault_id': '<YOUR_VAULT_ID>',  # Replace with your vault ID
             'cluster_id': '<YOUR_CLUSTER_ID>',  # Replace with your cluster ID
             'env': Env.PROD,  # Deployment environment
-            'credentials': credentials,
+            'credentials': credentials
         }
 
         # Step 3: Configure & Initialize Skyflow Client
         skyflow_client = (
             Skyflow.builder()
             .add_vault_config(vault_config)
-            .set_log_level(LogLevel.INFO)  # Use LogLevel.ERROR in production
+            .set_log_level(LogLevel.ERROR)
             .build()
         )
 
-        # Step 4: Create File Object
-        file_path = '<FILE_PATH>'  # Replace with your file path
+        # Step 4: Create the request
+        # Without poll_options, deidentify_file only submits the run and returns its run_id.
+        # With poll_options, the SDK polls until the run finishes or a polling limit is reached.
+        request = DeidentifyFileRequest(
+            file_path='<PATH_TO_FILE>',  # Local file to de-identify
+            configuration_id='<CONFIGURATION_ID>',  # ID of an existing Detect configuration
+            poll_options=PollOptions(
+                wait_time=120,  # Maximum total wait in seconds (1-300, default 60)
+                max_attempts=10  # Maximum status checks (1-23, default 23)
+            ),
+            output_directory='<OUTPUT_DIRECTORY>'  # Where processed files are written; requires poll_options
+        )
 
-        # Step 5: Configure Deidentify File Request and call API
-        with open(file_path, 'rb') as file:
-            deidentify_request = DeidentifyFileRequest(
-                file=FileInput(file),  # File to de-identify (can also provide a file path)
-                entities=[DetectEntities.SSN, DetectEntities.CREDIT_CARD],  # Entities to detect
-                allow_regex_list=['<YOUR_REGEX_PATTERN>'],  # Optional: Patterns to allow
-                restrict_regex_list=['<YOUR_REGEX_PATTERN>'],  # Optional: Patterns to restrict
-                # Token format configuration
-                token_format=TokenFormat(
-                    vault_token=[DetectEntities.SSN],  # Use vault tokens for these entities
-                ),
-                # Optional: Custom transformations
-                # transformations=Transformations(
-                #     shift_dates=DateTransformation(
-                #         max_days=30,
-                #         min_days=10,
-                #         entities=[DetectEntities.DOB]
-                #     )
-                # ),
-                # Output configuration
-                output_directory='<OUTPUT_DIRECTORY_PATH>',  # Where to save processed file
-                wait_time=15,  # Max wait time in seconds (max 64)
-                # Image-specific options
-                output_processed_image=True,  # Include processed image in output
-                output_ocr_text=True,  # Include OCR text in response
-                masking_method=MaskingMethod.BLACKBOX,  # Masking method for images
-                # PDF-specific options
-                pixel_density=15,  # Pixel density for PDF processing
-                max_resolution=2000,  # Max resolution for PDF
-                # Audio-specific options
-                output_processed_audio=True,  # Include processed audio
-                output_transcription=DetectOutputTranscriptions.PLAINTEXT_TRANSCRIPTION,  # Transcription type
-                # Audio bleep configuration
-                # bleep=Bleep(
-                #     gain=5,  # Loudness in dB
-                #     frequency=1000,  # Pitch in Hz
-                #     start_padding=0.1,  # Padding at start (seconds)
-                #     stop_padding=0.2  # Padding at end (seconds)
-                # )
-            )
+        # Step 5: De-identify the file
+        response = skyflow_client.detect(vault_config.get('vault_id')).deidentify_file(request)
 
-            # Step 6: Call deidentifyFile API
-            response = skyflow_client.detect().deidentify_file(deidentify_request)
-
-        # Handle Successful Response
-        print('\nDeidentify File Response:', response)
+        print('Run ID:', response.run_id, 'Status:', response.status)
+        if response.status == DetectRunStatus.SUCCESS:
+            # The SDK has written each output to output_directory with a 'processed-' prefix
+            for output in response.output:
+                print(output.processed_file_type, output.processed_file_extension)
+        elif response.status in (DetectRunStatus.QUEUED, DetectRunStatus.IN_PROGRESS):
+            print('Still running. Call get_run later with run ID:', response.run_id)
+        else:
+            print('Run ended with status:', response.status, response.message)
 
     except SkyflowError as error:
         # Handle Skyflow-specific errors
-        print(
-            '\nSkyflow Error:',
-            {
-                'http_code': error.http_code,
-                'grpc_code': error.grpc_code,
-                'http_status': error.http_status,
-                'message': error.message,
-                'details': error.details,
-            },
-        )
+        print('Skyflow Specific Error: ', {
+            'code': error.http_code,
+            'message': error.message,
+            'details': error.details
+        })
     except Exception as error:
         # Handle unexpected errors
         print('Unexpected Error:', error)
+
+# Invoke the de-identify file function
+perform_deidentify_file()
