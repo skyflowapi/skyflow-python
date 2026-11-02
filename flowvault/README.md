@@ -1062,16 +1062,16 @@ elif response.status in (DetectRunStatus.IN_PROGRESS, DetectRunStatus.QUEUED):
     pass                                # budget ran out — poll later with get_run(run_id)
 ```
 
-A file already in the vault or at a presigned URL is referenced through `data_source` + `value` (no local-file auto-write applies in that case):
+A file at a presigned URL is referenced through `data_source` + `value` (no local-file auto-write applies in that case):
 
 ```python
 from skyflow.vault.detect import DeidentifyFileRequest
-from skyflow.utils.enums import DataSourceType, FileDataFormat
+from skyflow.utils.enums import DeidentifySourceType, FileDataFormat
 
 skyflow_client.detect().deidentify_file(
     DeidentifyFileRequest(
-        data_source=DataSourceType.SKYFLOW_ID,
-        value='<SKYFLOW_ID>',
+        data_source=DeidentifySourceType.PRESIGNED_URL,
+        value='<PRESIGNED_URL>',
         data_format=FileDataFormat.PDF,
         configuration_id='<CONFIGURATION_ID>',
     )
@@ -1110,19 +1110,19 @@ print(response.processed_text)
 
 ## reidentify_file
 
-Synchronous — the re-identified file is returned in the response. Supply the file through `data_source` + `value` (base64, skyflow id, or presigned URL); decode and write any output files yourself.
+Synchronous — the re-identified file is returned in the response. Supply the file through `data_source` + `value` (base64 or presigned URL); decode and write any output files yourself.
 
 ```python
 import base64
 from skyflow.vault.detect import ReidentifyFileRequest, RedactionLevel
-from skyflow.utils.enums import DataSourceType, FileDataFormat, DetectRunStatus
+from skyflow.utils.enums import ReidentifySourceType, FileDataFormat, DetectRunStatus
 
 with open('/data/redacted/notes.txt', 'rb') as handle:
     encoded = base64.b64encode(handle.read()).decode('utf-8')
 
 response = skyflow_client.detect().reidentify_file(
     ReidentifyFileRequest(
-        data_source=DataSourceType.BASE64,
+        data_source=ReidentifySourceType.BASE64,
         value=encoded,
         data_format=FileDataFormat.TXT,
         redaction_level=[RedactionLevel(token_group_name='<TOKEN_GROUP_NAME>', redaction_pattern='<REDACTION_PATTERN>')],

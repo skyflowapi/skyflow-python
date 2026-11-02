@@ -89,12 +89,6 @@ class ReturnEntitiesType(Enum):
     NONE = "NONE"
 
 
-class DataSourceType(Enum):
-    BASE64 = "BASE64"
-    SKYFLOW_ID = "SKYFLOW_ID"
-    PRESIGNED_URL = "PRESIGNED_URL"
-
-
 class FileDataFormat(Enum):
     BMP = "bmp"
     CSV = "csv"

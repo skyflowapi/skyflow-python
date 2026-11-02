@@ -3,17 +3,28 @@ import os
 import shutil
 import tempfile
 import unittest
+from enum import Enum
 from types import SimpleNamespace
 
 from common.errors import SkyflowError
 from common.utils.enums.detect import (
-    DataSourceType,
     DeidentificationType,
     DetectRunStatus,
     EntityType,
     FileDataFormat,
     GuardrailsValidation,
 )
+
+
+class DeidentifySourceType(Enum):
+    BASE64 = "BASE64"
+    SKYFLOW_ID = "SKYFLOW_ID"
+    PRESIGNED_URL = "PRESIGNED_URL"
+
+
+class ReidentifySourceType(Enum):
+    BASE64 = "BASE64"
+    PRESIGNED_URL = "PRESIGNED_URL"
 from common.utils.enums.redaction_type import RedactionType
 from common.vault.detect import (
     CheckGuardrailsRequest,
@@ -88,6 +99,8 @@ def _vault_client(strings=None, files=None, guardrails=None):
         get_strings_v2_api=lambda: _api(strings),
         get_files_v2_api=lambda: _api(files),
         get_guardrails_v2_api=lambda: _api(guardrails),
+        get_deidentify_source_type=lambda: DeidentifySourceType,
+        get_reidentify_source_type=lambda: ReidentifySourceType,
     )
 
 
@@ -158,7 +171,7 @@ class TestDetectController(unittest.TestCase):
         controller = DetectController(_vault_client(files=files))
 
         response = controller.deidentify_file(DeidentifyFileRequest(
-            data_source=DataSourceType.SKYFLOW_ID, value="sid", configuration_id="cfg",
+            data_source=DeidentifySourceType.SKYFLOW_ID, value="sid", configuration_id="cfg",
         ))
 
         self.assertEqual(response.run_id, "run-1")
@@ -235,7 +248,7 @@ class TestDetectController(unittest.TestCase):
         controller = DetectController(_vault_client(files=files))
 
         response = controller.reidentify_file(ReidentifyFileRequest(
-            data_source=DataSourceType.BASE64, value="b64", data_format=FileDataFormat.TXT,
+            data_source=ReidentifySourceType.BASE64, value="b64", data_format=FileDataFormat.TXT,
         ))
 
         _name, _args, kwargs = files.calls[0]
@@ -248,7 +261,7 @@ class TestDetectController(unittest.TestCase):
     def test_poll_run_backoff_and_budget(self):
         sleeps = []
         responses = [mappers.to_get_run_response("r", SimpleNamespace(
-            status="QUEUED", output_type=None, output=None, metrics=None, message=None)) for _ in range(20)]
+            status="QUEUED", output_type=None, output=None, metrics=None, message=None), DeidentifySourceType) for _ in range(20)]
 
         def fetcher(_run_id):
             return responses.pop(0)
@@ -266,7 +279,7 @@ class TestDetectController(unittest.TestCase):
             calls["n"] += 1
             status = "SUCCESS" if calls["n"] == 2 else "IN_PROGRESS"
             return mappers.to_get_run_response("r", SimpleNamespace(
-                status=status, output_type=None, output=None, metrics=None, message=None))
+                status=status, output_type=None, output=None, metrics=None, message=None), DeidentifySourceType)
 
         sleeps = []
         run = polling.poll_run("r", PollOptions(), fetcher, sleeper=sleeps.append)
@@ -292,28 +305,28 @@ class TestDetectController(unittest.TestCase):
             mappers.FileOutput(processed_file=base64.b64encode(b"a").decode(), processed_file_type="REDACTED_FILE", processed_file_extension=FileDataFormat.PDF),
             mappers.FileOutput(processed_file=base64.b64encode(b"b").decode(), processed_file_type="ENTITIES", processed_file_extension=None),
         ]
-        written = writer.write_outputs(outputs, DataSourceType.BASE64, "invoice.pdf", tmp)
+        written = writer.write_outputs(outputs, DeidentifySourceType.BASE64, "invoice.pdf", tmp)
         names = sorted(os.path.basename(path) for path in written)
         self.assertEqual(names, ["processed-entities-invoice.json", "processed-invoice.pdf"])
 
     def test_file_output_writer_skips_presigned(self):
         outputs = [mappers.FileOutput(processed_file="http://x", processed_file_type="REDACTED_FILE", processed_file_extension=FileDataFormat.PDF)]
-        self.assertEqual(writer.write_outputs(outputs, DataSourceType.PRESIGNED_URL, "a.pdf", None), [])
+        self.assertEqual(writer.write_outputs(outputs, DeidentifySourceType.PRESIGNED_URL, "a.pdf", None), [])
 
     def test_validations(self):
         with self.assertRaises(SkyflowError):
             validations.validate_deidentify_string_request(DeidentifyStringRequest(text="  "))
         with self.assertRaises(SkyflowError):
-            validations.validate_deidentify_file_request(DeidentifyFileRequest(data_source=DataSourceType.BASE64, value="x", file_path="y"))
+            validations.validate_deidentify_file_request(DeidentifyFileRequest(data_source=DeidentifySourceType.BASE64, value="x", file_path="y"))
         with self.assertRaises(SkyflowError):
-            validations.validate_deidentify_file_request(DeidentifyFileRequest(value="x", data_source=DataSourceType.BASE64, poll_options=None, output_directory="d"))
+            validations.validate_deidentify_file_request(DeidentifyFileRequest(value="x", data_source=DeidentifySourceType.BASE64, poll_options=None, output_directory="d"))
         with self.assertRaises(SkyflowError):
-            validations.validate_deidentify_file_request(DeidentifyFileRequest(value="x", data_source=DataSourceType.BASE64, poll_options=PollOptions(wait_time=301)))
+            validations.validate_deidentify_file_request(DeidentifyFileRequest(value="x", data_source=DeidentifySourceType.BASE64, poll_options=PollOptions(wait_time=301)))
         with self.assertRaises(SkyflowError):
             validations.validate_reidentify_file_request(ReidentifyFileRequest(value="x"))
         with self.assertRaises(SkyflowError):
             validations.validate_get_run_request(GetRunRequest(run_id=" "))
-        validations.validate_deidentify_file_request(DeidentifyFileRequest(data_source=DataSourceType.BASE64, value="x"))
+        validations.validate_deidentify_file_request(DeidentifyFileRequest(data_source=DeidentifySourceType.BASE64, value="x"))
 
 
 if __name__ == "__main__":

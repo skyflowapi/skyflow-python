@@ -203,7 +203,7 @@ class DeidentifyStringResponse:
 
 
 class DeidentifyFileRequest:
-    def __init__(self, data_source: "DataSourceType" = None,
+    def __init__(self, data_source: "DeidentifySourceType" = None,
                  value: str = None,
                  data_format: "FileDataFormat" = None,
                  configuration_id: str = None,
@@ -225,7 +225,7 @@ class DeidentifyFileRequest:
 class DeidentifyFileResponse:
     def __init__(self, run_id: str = None,
                  status: "DetectRunStatus" = None,
-                 output_type: "DataSourceType" = None,
+                 output_type: "DeidentifySourceType" = None,
                  output: List[FileOutput] = None,
                  metrics: Metrics = None,
                  message: str = None):
@@ -245,7 +245,7 @@ class GetRunRequest:
 class GetRunResponse:
     def __init__(self, run_id: str = None,
                  status: "DetectRunStatus" = None,
-                 output_type: "DataSourceType" = None,
+                 output_type: "DeidentifySourceType" = None,
                  output: List[FileOutput] = None,
                  metrics: Metrics = None,
                  message: str = None):
@@ -271,7 +271,7 @@ class ReidentifyStringResponse:
 
 
 class ReidentifyFileRequest:
-    def __init__(self, data_source: "DataSourceType" = None,
+    def __init__(self, data_source: "ReidentifySourceType" = None,
                  value: str = None,
                  data_format: "FileDataFormat" = None,
                  redaction_level: List[RedactionLevel] = None):
@@ -283,7 +283,7 @@ class ReidentifyFileRequest:
 
 class ReidentifyFileResponse:
     def __init__(self, status: "DetectRunStatus" = None,
-                 output_type: "DataSourceType" = None,
+                 output_type: "ReidentifySourceType" = None,
                  output: List[FileOutput] = None,
                  metrics: Metrics = None):
         self.status = status

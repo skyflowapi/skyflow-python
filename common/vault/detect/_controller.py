@@ -11,6 +11,7 @@ from ._constants import (
     ADDITIONAL_HEADERS_KEY,
     AUTHORIZATION_HEADER,
     BEARER_PREFIX,
+    DATA_SOURCE_BASE64,
     ENCODING_UTF_8,
     VAULT_ID_PARAM,
 )
@@ -25,9 +26,6 @@ from ._validations import (
     validate_reidentify_file_request,
     validate_reidentify_string_request,
 )
-from common.utils.enums.detect import DataSourceType
-
-_DATA_SOURCE_BASE64 = DataSourceType.BASE64.value
 
 
 class DetectController:
@@ -127,7 +125,7 @@ class DetectController:
                 **kwargs,
             )
             log_info(SkyflowMessages.Info.REIDENTIFY_FILE_REQUEST_RESOLVED.value, self._vault_client.get_logger())
-            response = mappers.to_reidentify_file_response(raw.data)
+            response = mappers.to_reidentify_file_response(raw.data, self._vault_client.get_reidentify_source_type())
             log_info(SkyflowMessages.Info.REIDENTIFY_FILE_SUCCESS.value, self._vault_client.get_logger())
             return response
         except Exception as e:
@@ -147,7 +145,7 @@ class DetectController:
                 request_options=self.__request_options(),
             )
             log_info(SkyflowMessages.Info.GET_RUN_REQUEST_RESOLVED.value, self._vault_client.get_logger())
-            response = mappers.to_get_run_response(run_id, raw.data)
+            response = mappers.to_get_run_response(run_id, raw.data, self._vault_client.get_deidentify_source_type())
             log_info(SkyflowMessages.Info.GET_RUN_SUCCESS.value, self._vault_client.get_logger())
             return response
         except Exception as e:
@@ -195,7 +193,7 @@ class DetectController:
         if request.file_path is not None or request.file is not None:
             content, name = self.__read_file(request)
             value = base64.b64encode(content).decode(ENCODING_UTF_8)
-            data_source = _DATA_SOURCE_BASE64
+            data_source = DATA_SOURCE_BASE64
             data_format = request.data_format if request.data_format is not None else mappers.infer_format(name)
             return data_source, value, data_format.value if data_format is not None else None
         data_source = request.data_source.value if request.data_source is not None else None
