@@ -36,7 +36,7 @@ from common.vault.detect import (
     Entity,
     GetRunRequest,
     PollOptions,
-    RedactionLevel,
+    RedactionRule,
     ReidentifyFileRequest,
     ReidentifyStringRequest,
 )
@@ -47,6 +47,18 @@ from common.vault.detect import _validations as validations
 
 VAULT_ID = "vault123"
 TOKEN = "bearer-token"
+
+
+class _EntityRedactionRule(RedactionRule):
+    def __init__(self, entity_name=None, redaction_type=None):
+        self.entity_name = entity_name
+        self.redaction_type = redaction_type
+
+    def _api_entity_name(self):
+        return self.entity_name
+
+    def _api_redaction_type(self):
+        return self.redaction_type
 
 
 class _Raw:
@@ -157,7 +169,7 @@ class TestDetectController(unittest.TestCase):
 
         controller.reidentify_string(ReidentifyStringRequest(
             text="My name is [NAME_1]",
-            redaction_level=[RedactionLevel(entity_name=EntityType.NAME, redaction_type=RedactionType.PLAIN_TEXT)],
+            redaction_level=[_EntityRedactionRule(entity_name=EntityType.NAME, redaction_type=RedactionType.PLAIN_TEXT)],
         ))
 
         _name, _args, kwargs = raw.calls[0]
