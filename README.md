@@ -19,7 +19,7 @@ This repository hosts Skyflow's Python SDKs for integrating Skyflow into a Pytho
 
 > **Install one per environment.** Both artifacts install under the same top-level `skyflow` import, so they cannot coexist in the same Python environment.
 
-> Migrating from v1? See skyvault's **[Migration Guide](docs/migrate_to_v2.md)**. V1 is in maintenance mode and will reach End of Life on October 31, 2026.
+> :warning: **skyflow-python v1 reached End of Life on October 31, 2026 and is no longer supported.** It will not receive any further security patches, bug fixes, or updates. Please upgrade to the latest skyflow-python v2 ([2.1.3](https://github.com/skyflowapi/skyflow-python/releases/tag/2.1.3)) using the **[Migration Guide](docs/migrate_to_v2.md)**.
 
 ## Repository layout
 
