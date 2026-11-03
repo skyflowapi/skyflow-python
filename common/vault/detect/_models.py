@@ -24,15 +24,18 @@ class FileOutput:
         self.processed_file_extension = processed_file_extension
 
 
-class RedactionLevel:
-    def __init__(self, entity_name: "EntityType" = None,
-                 redaction_type: "RedactionType" = None,
-                 token_group_name: str = None,
-                 redaction_pattern: str = None):
-        self.entity_name = entity_name
-        self.redaction_type = redaction_type
-        self.token_group_name = token_group_name
-        self.redaction_pattern = redaction_pattern
+class RedactionRule:
+    def _api_entity_name(self):
+        return None
+
+    def _api_redaction_type(self):
+        return None
+
+    def _api_token_group_name(self):
+        return None
+
+    def _api_redaction_pattern(self):
+        return None
 
 
 class ShiftDates:
@@ -259,7 +262,7 @@ class GetRunResponse:
 
 class ReidentifyStringRequest:
     def __init__(self, text: str,
-                 redaction_level: List[RedactionLevel] = None):
+                 redaction_level: List[RedactionRule] = None):
         self.text = text
         self.redaction_level = redaction_level
 
@@ -274,7 +277,7 @@ class ReidentifyFileRequest:
     def __init__(self, data_source: "ReidentifySourceType" = None,
                  value: str = None,
                  data_format: "FileDataFormat" = None,
-                 redaction_level: List[RedactionLevel] = None):
+                 redaction_level: List[RedactionRule] = None):
         self.data_source = data_source
         self.value = value
         self.data_format = data_format

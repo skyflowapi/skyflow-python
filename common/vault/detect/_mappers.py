@@ -184,10 +184,10 @@ def to_redaction_levels(levels):
         if level is None:
             continue
         result.append(WireRedactionLevel(**_omit_none(
-            entity_name=_enum_value(level.entity_name),
-            redaction_type=_enum_value(level.redaction_type),
-            token_group_name=level.token_group_name,
-            redaction_pattern=level.redaction_pattern,
+            entity_name=_enum_value(level._api_entity_name()),
+            redaction_type=_enum_value(level._api_redaction_type()),
+            token_group_name=level._api_token_group_name(),
+            redaction_pattern=level._api_redaction_pattern(),
         )))
     return result
 
