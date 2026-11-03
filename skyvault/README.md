@@ -2,7 +2,7 @@
 
 > **This is the current, recommended version of the Skyflow SDK.** V2.1.0 brings flexible auth, multi-vault support, native data types, and rich error diagnostics.
 >
-> Migrating from v1? See the **[Migration Guide](https://github.com/skyflowapi/skyflow-python/blob/main/docs/migrate_to_v2.md)** for step-by-step instructions. V1 is in maintenance mode and will reach End of Life on October 31, 2026.
+> **V1 reached End of Life on October 31, 2026, and is no longer supported.** It no longer receives security patches, bug fixes, or updates. To upgrade from v1, follow the step-by-step **[Migration Guide](https://github.com/skyflowapi/skyflow-python/blob/main/docs/migrate_to_v2.md)**.
 
 The Skyflow Python SDK is designed to help with integrating Skyflow into a Python backend.
 
