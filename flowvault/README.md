@@ -979,7 +979,7 @@ The same pattern applies to every operation, via its corresponding options class
 | `upload_files` | `UploadFilesOptions` |
 | `delete_files` | `DeleteFilesOptions` |
 
-# DetectController — Detect V2
+# Detect
 
 Detect V2 detects and de-identifies sensitive data in strings and files, re-identifies tokens, and screens text against guardrails. Get the controller with `skyflow_client.detect()` (or `skyflow_client.detect('<VAULT_ID>')` to select one of several configured vaults). The `vault_id` is filled in from the vault config for every method.
 
