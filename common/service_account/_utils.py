@@ -149,8 +149,8 @@ def get_service_account_token(credentials, options, logger):
         formatted_scope = format_scope(options.get(OptionField.ROLE_IDS))
 
     try:
-        response = auth_api.authentication_service_get_auth_token(assertion = signed_token,
-                                    grant_type=JWT.GRANT_TYPE_JWT_BEARER,
+        response = auth_api.get_bearer_token(grant_type=JWT.GRANT_TYPE_JWT_BEARER,
+                                    assertion=signed_token,
                                     scope=formatted_scope)
         log_info(SkyflowMessages.Info.GET_BEARER_TOKEN_SUCCESS.value, logger)
     except UnauthorizedError:

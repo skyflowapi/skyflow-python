@@ -23,6 +23,9 @@ class VaultClient(BaseVaultClient):
     def get_query_api(self):
         return self._api_client.query
 
+    def get_files_api(self):
+        return self._api_client.files
+
     def get_strings_v2_api(self):
         return self._detect_api_client.strings_v2
 
