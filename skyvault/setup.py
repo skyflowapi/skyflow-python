@@ -7,6 +7,7 @@ import sys
 
 from setuptools import setup, find_packages
 from setuptools.command.build_py import build_py as _build_py
+from setuptools.command.sdist import sdist as _sdist
 
 
 if sys.version_info < (3, 9):
@@ -15,13 +16,16 @@ current_version = '2.1.3'
 
 HERE = os.path.abspath(os.path.dirname(__file__))
 REPO_ROOT = os.path.dirname(HERE)
+VENDORED_COMMON = os.path.join(HERE, 'common')
 COMMON_SRC = os.path.join(REPO_ROOT, 'common')
+if not os.path.isdir(COMMON_SRC):
+    COMMON_SRC = VENDORED_COMMON
 
 with open(os.path.join(HERE, 'README.md'), 'r', encoding='utf-8') as f:
     long_description = f.read()
 
 # Anything under common/ that must never ride along into a built wheel.
-_COMMON_EXCLUDE_DIRS = {'__pycache__', '.pytest_cache', 'tests', '.mypy_cache'}
+_COMMON_EXCLUDE_DIRS = {'__pycache__', '.pytest_cache', 'tests', '.mypy_cache', 'build', 'dist'}
 _COMMON_EXCLUDE_FILES = {'setup.py', 'pyproject.toml', 'requirements.txt', '.gitignore'}
 _COMMON_EXCLUDE_SUFFIXES = ('.egg-info',)
 
@@ -37,8 +41,8 @@ def _ignore_common_files(_directory, names):
 
 
 class CustomBuildPy(_build_py):
-    """SK-2938 Option C: bundles the sibling common/ source tree into this variant's wheel
-    (bdist_wheel/build --wheel only -- sdist doesn't invoke this and isn't supported here)."""
+    """Bundles the common/ source tree into this variant's wheel, from the sibling checkout or,
+    when building from an sdist, from the copy vendored into the tarball by CustomSdist."""
 
     def run(self):
         super().run()
@@ -48,18 +52,33 @@ class CustomBuildPy(_build_py):
         shutil.copytree(COMMON_SRC, dest, ignore=_ignore_common_files)
 
 
+class CustomSdist(_sdist):
+    def run(self):
+        copied = False
+        if os.path.isdir(COMMON_SRC) and os.path.abspath(COMMON_SRC) != os.path.abspath(VENDORED_COMMON):
+            if os.path.exists(VENDORED_COMMON):
+                shutil.rmtree(VENDORED_COMMON)
+            shutil.copytree(COMMON_SRC, VENDORED_COMMON, ignore=_ignore_common_files)
+            copied = True
+        try:
+            super().run()
+        finally:
+            if copied:
+                shutil.rmtree(VENDORED_COMMON)
+
+
 setup(
     name='skyflow',
     version=current_version,
     author='Skyflow',
     author_email='service-ops@skyflow.com',
-    packages=find_packages(where='.', exclude=['test*', 'samples*']),
+    packages=find_packages(where='.', exclude=['test*', 'samples*', 'common', 'common.*']),
     # Ship PEP 561 markers so type checkers (mypy/pyright) see the SDK's types.
     package_data={
         'skyflow': ['py.typed'],
         'skyflow.generated.rest': ['py.typed'],
     },
-    cmdclass={'build_py': CustomBuildPy},
+    cmdclass={'build_py': CustomBuildPy, 'sdist': CustomSdist},
     url='https://github.com/skyflowapi/skyflow-python/',
     license='LICENSE',
     description='Skyflow SDK for the Python programming language',
