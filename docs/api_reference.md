@@ -1,6 +1,6 @@
 # API Reference
 
-A reference for the public Skyflow Python SDK surface: client-management methods, request and response objects, enums, Detect helper classes, and service-account functions. For task-oriented usage and examples, see the [README](../README.md).
+A reference for the public Skyflow Python SDK surface: client-management methods, request and response objects, enums, Detect helper classes, and service-account functions. For task-oriented usage and examples, see the [skyvault README](../skyvault/README.md).
 
 All attributes, parameters, and enum values below are taken directly from the SDK source.
 
@@ -380,11 +380,11 @@ Vault hostnames per environment (used internally; exported for reference).
 
 ### `LogLevel`
 
-`DEBUG`, `INFO`, `WARN`, `ERROR`, `OFF`. See [Logging](../README.md#logging).
+`DEBUG`, `INFO`, `WARN`, `ERROR`, `OFF`. See [Logging](../skyvault/README.md#logging).
 
 ### `RedactionType`
 
-How retrieved data is displayed. Values: `PLAIN_TEXT`, `MASKED`, `DEFAULT`, `REDACTED`. See [Redaction Types](../README.md#redaction-types).
+How retrieved data is displayed. Values: `PLAIN_TEXT`, `MASKED`, `DEFAULT`, `REDACTED`. See [Redaction Types](../skyvault/README.md#redaction-types).
 
 ### `TokenMode`
 
@@ -476,7 +476,7 @@ Wrapper around the processed file returned in `DeidentifyFileResponse.file`.
 
 ## Service account functions
 
-Importable from `skyflow.service_account`. See [Authentication & authorization](../README.md#authentication--authorization) for `generate_bearer_token`, `generate_bearer_token_from_creds`, and `generate_signed_data_tokens`.
+Importable from `skyflow.service_account`. See [Authentication & authorization](../skyvault/README.md#authentication--authorization) for `generate_bearer_token`, `generate_bearer_token_from_creds`, and `generate_signed_data_tokens`.
 
 ### `is_expired(token, logger=None)`
 

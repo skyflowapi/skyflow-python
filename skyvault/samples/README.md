@@ -1,6 +1,6 @@
 # Skyflow Python SDK — Samples
 
-Runnable examples for the Skyflow Python SDK, grouped by area. Start with the [README](../README.md) and [API Reference](../docs/api_reference.md) for full documentation.
+Runnable examples for the Skyflow Python SDK, grouped by area. Start with the [README](../README.md) and [API Reference](../../docs/api_reference.md) for full documentation.
 
 ## Prerequisites
 
@@ -18,7 +18,7 @@ The samples ship with inline `<PLACEHOLDER>` strings (for example `<YOUR_VAULT_I
 ## Run a sample
 
 ```bash
-python samples/vault_api/insert_records.py
+python skyvault/samples/vault_api/insert_records.py
 ```
 
 ## What's here

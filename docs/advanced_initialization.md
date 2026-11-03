@@ -64,9 +64,11 @@ skyflow_credentials = {
     'privateKey': '<YOUR_PRIVATE_KEY>'    # Replace with your Private Key.
 }
 
-# Step 4: Convert the JSON object to a string and use it as credentials.
+# Step 4: Convert the JSON object to a string and wrap it as a `credentials_string` credentials dict.
 # This approach allows the use of dynamically generated or pre-configured credentials.
-credentials_string = json.dumps(skyflow_credentials)  # Converts JSON object to string for use as credentials.
+common_credentials = {
+    'credentials_string': json.dumps(skyflow_credentials)  # Converts JSON object to string for use as credentials.
+}
 
 # Step 5: Define secondary credentials (API key-based authentication as an example).
 # Demonstrates a different type of authentication mechanism for Skyflow vaults.
@@ -104,7 +106,7 @@ skyflow_client = (
     .add_vault_config(primary_vault_config)   # Add the primary vault configuration.
     .add_vault_config(secondary_vault_config) # Add the secondary vault configuration.
     .add_vault_config(tertiary_vault_config)  # Add the tertiary vault configuration.
-    .add_skyflow_credentials(skyflow_credentials)  # Add JSON-formatted credentials if applicable.
+    .add_skyflow_credentials(common_credentials)  # Add JSON-formatted credentials if applicable.
     .set_log_level(LogLevel.ERROR)  # Set log level for debugging or monitoring purposes.
     .build()
 )

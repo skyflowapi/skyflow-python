@@ -1,6 +1,6 @@
 # Authentication credentials options
 
-> **Note:** Only one type of credential can be used at a time. If multiple credentials are provided, the last one added takes precedence.
+> **Note:** Only one type of credential can be used at a time. If the `credentials` dict has more than one of `api_key`, `token`, `path`, or `credentials_string`, the SDK raises a `SkyflowError`.
 
 1. **API keys**
 
@@ -40,9 +40,11 @@
 
    ```python
    credentials = {
-    "credentials_string": os.getenv("SKYFLOW_CREDENTIALS_JSON_STRING") 
+    "credentials_string": os.getenv("MY_APP_CREDENTIALS_JSON")
     }
    ```
+
+   `MY_APP_CREDENTIALS_JSON` is an example name for a variable you choose yourself; it's unrelated to the `SKYFLOW_CREDENTIALS` variable the SDK reads automatically, described next.
 
 5. **Environment variables**
 

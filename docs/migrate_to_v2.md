@@ -85,7 +85,7 @@ client = (
     .add_vault_config({
            'vault_id': '<VAULT_ID>', # Primary vault
            'cluster_id': '<CLUSTER_ID>', # ID from your vault URL e.g., https://{clusterId}.vault.skyflowapis.com
-           'env': Env.PROD, # Env by default it is set to PROD
+           'env': Env.PROD, # Set the environment (DEV, SANDBOX, PROD, or STAGE)
            'credentials': credentials # Individual credentials
     })
     .add_skyflow_credentials(credentials) # Skyflow credentials will be used if no individual credentials are passed
@@ -102,11 +102,11 @@ client = (
 ### Request & Response Structure
 
 In v2, with the introduction of constructor parameters, you can now pass parameters to `InsertRequest`. This request needs 
-- **`table_name`**: The name of the table.
+- **`table`**: The name of the table.
 - **`values`**: An array of objects containing the data to be inserted.
 The response will be of type `InsertResponse` class, which contains `inserted_fields` and errors.
 
-**Note:** Similar patterns apply to other operations like Get, Update, Delete. See the [README](../README.md) for complete examples.
+**Note:** Similar patterns apply to other operations like Get, Update, Delete. See the [skyvault README](../skyvault/README.md) for complete examples.
 
 #### v1 (Old): Request Building
 
