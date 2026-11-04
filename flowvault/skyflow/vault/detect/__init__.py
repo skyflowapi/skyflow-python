@@ -25,7 +25,6 @@ from common.vault.detect import (
     ObjectEntity,
     Pdf,
     PollOptions,
-    RedactionLevel,
     ReidentifyFileRequest,
     ReidentifyFileResponse,
     ReidentifyStringRequest,
@@ -33,3 +32,5 @@ from common.vault.detect import (
     ShiftDates,
     Transformation,
 )
+
+from ._redaction_level import RedactionLevel

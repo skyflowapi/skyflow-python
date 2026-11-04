@@ -1,11 +1,27 @@
 import sys
 from enum import Enum
 
-# `common` has no SDK_VERSION of its own -- picks up whichever variant is installed. Reads
-# sys.modules (never forces a fresh import) to avoid triggering a circular import back into
-# common.* mid-init.
-_version_module = sys.modules.get("skyflow.utils._version")
-SDK_VERSION = getattr(_version_module, "SDK_VERSION", "0.0.0")
+from importlib import metadata
+
+UNKNOWN_SDK_VERSION = "0.0.0"
+HOST_SDK_VERSION_MODULE = "skyflow.utils._version"
+HOST_SDK_DISTRIBUTIONS = ("skyflow", "skyflow-flowvault-python")
+
+
+def _resolve_sdk_version():
+    version_module = sys.modules.get(HOST_SDK_VERSION_MODULE)
+    version = getattr(version_module, "SDK_VERSION", None)
+    if version:
+        return version
+    for distribution in HOST_SDK_DISTRIBUTIONS:
+        try:
+            return metadata.version(distribution)
+        except metadata.PackageNotFoundError:
+            continue
+    return UNKNOWN_SDK_VERSION
+
+
+SDK_VERSION = _resolve_sdk_version()
 
 error_prefix = f"Skyflow Python SDK {SDK_VERSION}"
 INFO = "INFO"

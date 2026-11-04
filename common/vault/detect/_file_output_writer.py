@@ -3,9 +3,9 @@ import os
 
 from common.errors import SkyflowError
 from common.utils import SkyflowMessages
-from common.utils.enums.detect import DataSourceType
 
 from ._constants import (
+    DATA_SOURCE_BASE64,
     PROCESSED_FILE_PREFIX,
     ENTITIES_TYPE_TOKEN,
     ENTITIES_EXTENSION,
@@ -20,7 +20,7 @@ from ._constants import (
 def write_outputs(outputs, output_type, input_file_name, output_directory):
     if not outputs:
         return []
-    if output_type != DataSourceType.BASE64:
+    if output_type is None or output_type.value != DATA_SOURCE_BASE64:
         return []
 
     directory = None

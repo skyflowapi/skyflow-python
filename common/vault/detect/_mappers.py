@@ -16,7 +16,6 @@ from common.generated.rest.types import (
     RedactionLevel as WireRedactionLevel,
 )
 from common.utils.enums.detect import (
-    DataSourceType,
     DetectRunStatus,
     FileDataFormat,
     GuardrailsValidation,
@@ -185,10 +184,10 @@ def to_redaction_levels(levels):
         if level is None:
             continue
         result.append(WireRedactionLevel(**_omit_none(
-            entity_name=_enum_value(level.entity_name),
-            redaction_type=_enum_value(level.redaction_type),
-            token_group_name=level.token_group_name,
-            redaction_pattern=level.redaction_pattern,
+            entity_name=_enum_value(level._api_entity_name()),
+            redaction_type=_enum_value(level._api_redaction_type()),
+            token_group_name=level._api_token_group_name(),
+            redaction_pattern=level._api_redaction_pattern(),
         )))
     return result
 
@@ -257,12 +256,12 @@ def to_check_guardrails_response(response):
     )
 
 
-def to_get_run_response(run_id, response):
+def to_get_run_response(run_id, response, source_type_cls):
     outputs = [to_file_output(output) for output in (response.output or []) if output is not None]
     return GetRunResponse(
         run_id=run_id,
         status=_enum_or_default(DetectRunStatus, response.status, DetectRunStatus.UNKNOWN),
-        output_type=_enum_or_default(DataSourceType, response.output_type, None),
+        output_type=_enum_or_default(source_type_cls, response.output_type, None),
         output=outputs,
         metrics=to_metrics(response.metrics) if response.metrics is not None else None,
         message=response.message,
@@ -284,11 +283,11 @@ def to_deidentify_file_response(run_id, run):
     )
 
 
-def to_reidentify_file_response(response):
+def to_reidentify_file_response(response, source_type_cls):
     outputs = [to_file_output(output) for output in (response.output or []) if output is not None]
     return ReidentifyFileResponse(
         status=_enum_or_default(DetectRunStatus, response.status, DetectRunStatus.UNKNOWN),
-        output_type=_enum_or_default(DataSourceType, response.output_type, None),
+        output_type=_enum_or_default(source_type_cls, response.output_type, None),
         output=outputs,
         metrics=to_metrics(response.metrics) if response.metrics is not None else None,
     )

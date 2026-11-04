@@ -23,6 +23,9 @@ class VaultClient(BaseVaultClient):
     def get_query_api(self):
         return self._api_client.query
 
+    def get_files_api(self):
+        return self._api_client.files
+
     def get_strings_v2_api(self):
         return self._detect_api_client.strings_v2
 
@@ -31,6 +34,14 @@ class VaultClient(BaseVaultClient):
 
     def get_guardrails_v2_api(self):
         return self._detect_api_client.guardrails_v2
+
+    def get_deidentify_source_type(self):
+        from skyflow.utils.enums import DeidentifySourceType
+        return DeidentifySourceType
+
+    def get_reidentify_source_type(self):
+        from skyflow.utils.enums import ReidentifySourceType
+        return ReidentifySourceType
 
     def get_sdk_metrics(self):
         return get_metrics()

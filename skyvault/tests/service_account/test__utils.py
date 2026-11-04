@@ -90,7 +90,7 @@ class TestServiceAccountUtils(unittest.TestCase):
             generate_bearer_token(creds_path)
         self.assertEqual(context.exception.message, SkyflowMessages.Error.FILE_INVALID_JSON.value.format(creds_path))
 
-    @patch("skyflow.service_account._utils.get_service_account_token")
+    @patch("common.service_account._utils.get_service_account_token")
     def test_generate_bearer_token_valid_file_path(self, mock_generate_bearer_token):
         creds_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "credentials.json")
         generate_bearer_token(creds_path)
@@ -98,7 +98,7 @@ class TestServiceAccountUtils(unittest.TestCase):
 
     # ── generate_bearer_token_from_creds ──────────────────────────────────────
 
-    @patch("skyflow.service_account._utils.get_service_account_token")
+    @patch("common.service_account._utils.get_service_account_token")
     def test_generate_bearer_token_from_creds_with_valid_json_string(self, mock_generate_bearer_token):
         generate_bearer_token_from_creds(VALID_CREDENTIALS_STRING)
         mock_generate_bearer_token.assert_called_once()

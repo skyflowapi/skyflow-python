@@ -23,7 +23,7 @@ permissions:
 
 jobs:
   auto-redact:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     # A fork PR's checkout token can't push back to someone else's fork -
     # GitHub blocks that regardless of what token this job holds - so skip
     # cleanly rather than fail noisily. This job only ever adds a

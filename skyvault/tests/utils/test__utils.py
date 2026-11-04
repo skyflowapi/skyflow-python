@@ -1391,11 +1391,11 @@ class TestUtils(unittest.TestCase):
             json.dump(creds, tmp)
             tmp.flush()
             # Patch AuthClient and jwt.encode to avoid real HTTP and signing
-            with patch("skyflow.service_account._utils.get_signed_jwt") as mock_get_signed_jwt:
+            with patch("common.service_account._utils.get_signed_jwt") as mock_get_signed_jwt:
                 mock_get_signed_jwt.return_value = "signed"
-                with patch("skyflow.service_account._utils.AuthClient") as mock_auth_client:
+                with patch("common.service_account._utils.AuthClient") as mock_auth_client:
                     mock_auth_api = mock_auth_client.return_value.get_auth_api.return_value
-                    mock_auth_api.authentication_service_get_auth_token.return_value = type(
+                    mock_auth_api.get_bearer_token.return_value = type(
                         "obj", (), {"access_token": "token", "token_type": "bearer"}
                     )
                     generate_bearer_token(tmp.name, options)
@@ -1425,11 +1425,11 @@ class TestUtils(unittest.TestCase):
         }
         options = {"token_uri": "https://another-valid-url.com"}
         creds_str = json.dumps(creds)
-        with patch("skyflow.service_account._utils.get_signed_jwt") as mock_get_signed_jwt:
+        with patch("common.service_account._utils.get_signed_jwt") as mock_get_signed_jwt:
             mock_get_signed_jwt.return_value = "signed"
-            with patch("skyflow.service_account._utils.AuthClient") as mock_auth_client:
+            with patch("common.service_account._utils.AuthClient") as mock_auth_client:
                 mock_auth_api = mock_auth_client.return_value.get_auth_api.return_value
-                mock_auth_api.authentication_service_get_auth_token.return_value = type(
+                mock_auth_api.get_bearer_token.return_value = type(
                     "obj", (), {"access_token": "token", "token_type": "bearer"}
                 )
                 generate_bearer_token_from_creds(creds_str, options)
