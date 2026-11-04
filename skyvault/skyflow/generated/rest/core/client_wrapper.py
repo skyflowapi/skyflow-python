@@ -37,7 +37,7 @@ class BaseClientWrapper:
             "X-Fern-Runtime": f"python/{platform.python_version()}",
             "X-Fern-Platform": f"{platform.system().lower()}/{platform.release()}",
             "X-Fern-SDK-Name": "skyflow.generated.rest",
-            "X-Fern-SDK-Version": "0.0.48",
+            "X-Fern-SDK-Version": "0.0.49",
             **(self.get_custom_headers() or {}),
         }
         token = self._get_token()

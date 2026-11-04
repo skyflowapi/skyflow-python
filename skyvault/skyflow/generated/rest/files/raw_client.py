@@ -3,6 +3,7 @@
 import typing
 from json.decoder import JSONDecodeError
 
+from .. import core
 from ..core.api_error import ApiError
 from ..core.client_wrapper import AsyncClientWrapper, SyncClientWrapper
 from ..core.http_response import AsyncHttpResponse, HttpResponse
@@ -32,7 +33,7 @@ class RawFilesClient:
         *,
         table_name: str,
         column_name: str,
-        file: str,
+        file: core.File,
         skyflow_id: typing.Optional[str] = OMIT,
         return_file_metadata: typing.Optional[bool] = OMIT,
         request_options: typing.Optional[RequestOptions] = None,
@@ -50,8 +51,8 @@ class RawFilesClient:
         column_name : str
             Name of the column that contains the file.
 
-        file : str
-            Path of the file to upload. Each request only supports one file.
+        file : core.File
+            See core.File for more documentation
 
         skyflow_id : typing.Optional[str]
             ID of the record to update.
@@ -74,10 +75,11 @@ class RawFilesClient:
                 "tableName": table_name,
                 "columnName": column_name,
                 "skyflowID": skyflow_id,
-                "file": file,
                 "returnFileMetadata": return_file_metadata,
             },
-            files={},
+            files={
+                "file": file,
+            },
             request_options=request_options,
             omit=OMIT,
             force_multipart=True,
@@ -156,7 +158,7 @@ class AsyncRawFilesClient:
         *,
         table_name: str,
         column_name: str,
-        file: str,
+        file: core.File,
         skyflow_id: typing.Optional[str] = OMIT,
         return_file_metadata: typing.Optional[bool] = OMIT,
         request_options: typing.Optional[RequestOptions] = None,
@@ -174,8 +176,8 @@ class AsyncRawFilesClient:
         column_name : str
             Name of the column that contains the file.
 
-        file : str
-            Path of the file to upload. Each request only supports one file.
+        file : core.File
+            See core.File for more documentation
 
         skyflow_id : typing.Optional[str]
             ID of the record to update.
@@ -198,10 +200,11 @@ class AsyncRawFilesClient:
                 "tableName": table_name,
                 "columnName": column_name,
                 "skyflowID": skyflow_id,
-                "file": file,
                 "returnFileMetadata": return_file_metadata,
             },
-            files={},
+            files={
+                "file": file,
+            },
             request_options=request_options,
             omit=OMIT,
             force_multipart=True,

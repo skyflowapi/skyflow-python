@@ -2,6 +2,7 @@
 
 import typing
 
+from .. import core
 from ..core.client_wrapper import AsyncClientWrapper, SyncClientWrapper
 from ..core.request_options import RequestOptions
 from ..types.upload_file_response_v2 import UploadFileResponseV2
@@ -32,7 +33,7 @@ class FilesClient:
         *,
         table_name: str,
         column_name: str,
-        file: str,
+        file: core.File,
         skyflow_id: typing.Optional[str] = OMIT,
         return_file_metadata: typing.Optional[bool] = OMIT,
         request_options: typing.Optional[RequestOptions] = None,
@@ -50,8 +51,8 @@ class FilesClient:
         column_name : str
             Name of the column that contains the file.
 
-        file : str
-            Path of the file to upload. Each request only supports one file.
+        file : core.File
+            See core.File for more documentation
 
         skyflow_id : typing.Optional[str]
             ID of the record to update.
@@ -78,7 +79,6 @@ class FilesClient:
             vault_id="vaultID",
             table_name="tableName",
             column_name="columnName",
-            file="file",
         )
         """
         _response = self._raw_client.upload_file_v2(
@@ -114,7 +114,7 @@ class AsyncFilesClient:
         *,
         table_name: str,
         column_name: str,
-        file: str,
+        file: core.File,
         skyflow_id: typing.Optional[str] = OMIT,
         return_file_metadata: typing.Optional[bool] = OMIT,
         request_options: typing.Optional[RequestOptions] = None,
@@ -132,8 +132,8 @@ class AsyncFilesClient:
         column_name : str
             Name of the column that contains the file.
 
-        file : str
-            Path of the file to upload. Each request only supports one file.
+        file : core.File
+            See core.File for more documentation
 
         skyflow_id : typing.Optional[str]
             ID of the record to update.
@@ -165,7 +165,6 @@ class AsyncFilesClient:
                 vault_id="vaultID",
                 table_name="tableName",
                 column_name="columnName",
-                file="file",
             )
 
 
