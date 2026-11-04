@@ -2,7 +2,7 @@ import base64
 
 from skyflow.error import SkyflowError
 from skyflow import Env, Skyflow, LogLevel
-from skyflow.utils.enums import DataSourceType, DetectRunStatus
+from skyflow.utils.enums import DeidentifySourceType, DetectRunStatus
 from skyflow.vault.detect import GetRunRequest
 
 """
@@ -46,7 +46,7 @@ def perform_get_run():
         response = skyflow_client.detect(vault_config.get('vault_id')).get_run(request)
 
         print('Run ID:', response.run_id, 'Status:', response.status)
-        if response.status == DetectRunStatus.SUCCESS and response.output_type == DataSourceType.BASE64:
+        if response.status == DetectRunStatus.SUCCESS and response.output_type == DeidentifySourceType.BASE64:
             # get_run doesn't write files, so decode and save each output here
             for index, output in enumerate(response.output):
                 extension = output.processed_file_extension.value if output.processed_file_extension else 'bin'

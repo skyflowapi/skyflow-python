@@ -161,7 +161,7 @@ Parameters are listed with their defaults as defined in the constructors.
 |-----------|---------|-------------|
 | `file_path` | `None` | Path to a local file. The SDK base64-encodes it. |
 | `file` | `None` | A local file opened in binary mode. The SDK base64-encodes it. If you also set `file_path`, the SDK reads `file_path`. |
-| `data_source` | `None` | Source of `value`. See [`DataSourceType`](#datasourcetype). Required when you don't pass `file` or `file_path`. |
+| `data_source` | `None` | Source of `value`. See [`DeidentifySourceType`](#deidentifysourcetype). Required when you don't pass `file` or `file_path`. |
 | `value` | `None` | Base64 content, Skyflow ID, or presigned URL, matching `data_source`. |
 | `data_format` | `None` | Format of the input file. See [`FileDataFormat`](#filedataformat). Inferred from the file extension for a local file when not set. |
 | `configuration_id` | `None` | ID of an existing Detect configuration. |
@@ -192,8 +192,8 @@ Parameters are listed with their defaults as defined in the constructors.
 
 | Parameter | Default | Description |
 |-----------|---------|-------------|
-| `data_source` | `None` | Source of `value`. See [`DataSourceType`](#datasourcetype). Required. |
-| `value` | `None` | Base64 content, Skyflow ID, or presigned URL, matching `data_source`. Required. |
+| `data_source` | `None` | Source of `value`. See [`ReidentifySourceType`](#reidentifysourcetype). Required. |
+| `value` | `None` | Base64 content or presigned URL, matching `data_source`. Required. |
 | `data_format` | `None` | Format of the input file: `txt`, `csv`, `json`, `xlsx`, `docx`, `pptx`, `xml`, or `jsonl`. See [`FileDataFormat`](#filedataformat). |
 | `redaction_level` | `None` | List of [`RedactionLevel`](#redactionlevel) objects that set how each entity type displays. |
 
@@ -333,7 +333,7 @@ print(response.errors)           # None unless there was a partial failure
 |-----------|------|-------------|
 | `run_id` | `str \| None` | Run identifier. Pass it to `get_run`. |
 | `status` | `DetectRunStatus \| None` | Status of the run. See [`DetectRunStatus`](#detectrunstatus). |
-| `output_type` | `DataSourceType \| None` | Form of the outputs. See [`DataSourceType`](#datasourcetype). |
+| `output_type` | `DeidentifySourceType \| None` | Form of the outputs. See [`DeidentifySourceType`](#deidentifysourcetype). |
 | `output` | `list[FileOutput]` | Processed outputs. See [`FileOutput`](#fileoutput). |
 | `metrics` | `Metrics \| None` | Processing metrics. See [`Metrics`](#metrics). |
 | `message` | `str \| None` | Message returned for the run. |
@@ -358,7 +358,7 @@ print(response.errors)           # None unless there was a partial failure
 | Attribute | Type | Description |
 |-----------|------|-------------|
 | `status` | `DetectRunStatus` | Status of the operation. See [`DetectRunStatus`](#detectrunstatus). |
-| `output_type` | `DataSourceType \| None` | Form of the outputs. See [`DataSourceType`](#datasourcetype). |
+| `output_type` | `ReidentifySourceType \| None` | Form of the outputs. See [`ReidentifySourceType`](#reidentifysourcetype). |
 | `output` | `list[FileOutput]` | Re-identified outputs. See [`FileOutput`](#fileoutput). |
 | `metrics` | `Metrics \| None` | Processing metrics. See [`Metrics`](#metrics). |
 
@@ -440,9 +440,13 @@ Which detected entities a de-identify response includes.
 | `ALL` | Each entity's metadata and the original value. |
 | `NONE` | No entities. |
 
-### `DataSourceType`
+### `DeidentifySourceType`
 
-Source of a file `value`, and form of file outputs. Values: `BASE64`, `SKYFLOW_ID`, `PRESIGNED_URL`.
+Source of a file `value` in `DeidentifyFileRequest`, and form of the outputs in `DeidentifyFileResponse` and `GetRunResponse`. Values: `BASE64`, `SKYFLOW_ID`, `PRESIGNED_URL`.
+
+### `ReidentifySourceType`
+
+Source of a file `value` in `ReidentifyFileRequest`, and form of the outputs in `ReidentifyFileResponse`. Values: `BASE64`, `PRESIGNED_URL`.
 
 ### `FileDataFormat`
 
@@ -615,8 +619,6 @@ How one entity type displays in `reidentify_string` and `reidentify_file`.
 |-----------|------|-------------|
 | `entity_name` | `EntityType` | Entity type to apply the setting to. See [`EntityType`](#entitytype). |
 | `redaction_type` | `RedactionType` | How the value displays. See [`RedactionType`](#redactiontype). |
-
-The class also accepts `token_group_name` and `redaction_pattern`, which apply to FlowVault vaults.
 
 ### `DetectedEntity`
 

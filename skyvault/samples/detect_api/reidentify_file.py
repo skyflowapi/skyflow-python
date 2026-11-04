@@ -2,7 +2,7 @@ import base64
 
 from skyflow.error import SkyflowError
 from skyflow import Env, Skyflow, LogLevel
-from skyflow.utils.enums import DataSourceType, DetectRunStatus, EntityType, FileDataFormat, RedactionType
+from skyflow.utils.enums import ReidentifySourceType, DetectRunStatus, EntityType, FileDataFormat, RedactionType
 from skyflow.vault.detect import ReidentifyFileRequest, RedactionLevel
 
 """
@@ -44,7 +44,7 @@ def perform_reidentify_file():
             encoded_file = base64.b64encode(file_obj.read()).decode('utf-8')
 
         request = ReidentifyFileRequest(
-            data_source=DataSourceType.BASE64,
+            data_source=ReidentifySourceType.BASE64,
             value=encoded_file,
             data_format=FileDataFormat.TXT,  # txt, csv, json, xlsx, docx, pptx, xml, or jsonl
             redaction_level=[
@@ -56,7 +56,7 @@ def perform_reidentify_file():
         response = skyflow_client.detect(vault_config.get('vault_id')).reidentify_file(request)
 
         print('Status:', response.status)
-        if response.status == DetectRunStatus.SUCCESS and response.output_type == DataSourceType.BASE64:
+        if response.status == DetectRunStatus.SUCCESS and response.output_type == ReidentifySourceType.BASE64:
             # The SDK doesn't write the output, so decode and save it here
             for index, output in enumerate(response.output):
                 extension = output.processed_file_extension.value if output.processed_file_extension else 'txt'

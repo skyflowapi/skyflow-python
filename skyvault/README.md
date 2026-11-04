@@ -619,7 +619,7 @@ De-identify a file using the `deidentify_file` method. Build the request with th
 
 - `file_path`: the path to a local file.
 - `file`: a local file opened in binary mode.
-- `data_source` and `value`: base64-encoded content (`DataSourceType.BASE64`), a file stored in the vault (`DataSourceType.SKYFLOW_ID`), or a presigned URL (`DataSourceType.PRESIGNED_URL`).
+- `data_source` and `value`: base64-encoded content (`DeidentifySourceType.BASE64`), a file stored in the vault (`DeidentifySourceType.SKYFLOW_ID`), or a presigned URL (`DeidentifySourceType.PRESIGNED_URL`).
 
 For a local file, the SDK base64-encodes the content and infers `data_format` from the file extension unless you set it.
 
@@ -673,10 +673,10 @@ To de-identify a file that's stored in the vault or available at a presigned URL
 
 ```python
 from skyflow.vault.detect import DeidentifyFileRequest
-from skyflow.utils.enums import DataSourceType, FileDataFormat
+from skyflow.utils.enums import DeidentifySourceType, FileDataFormat
 
 request = DeidentifyFileRequest(
-    data_source=DataSourceType.PRESIGNED_URL,
+    data_source=DeidentifySourceType.PRESIGNED_URL,
     value='<PRESIGNED_URL>',
     data_format=FileDataFormat.PDF,
     configuration_id='<CONFIGURATION_ID>'
@@ -744,20 +744,20 @@ Returns a [`ReidentifyStringResponse`](../docs/api_reference.md#reidentifystring
 
 ### Re-identify File: `.reidentify_file(request)`
 
-Re-identify the tokens in a file using the `reidentify_file` method. Build the request with the [`ReidentifyFileRequest`](../docs/api_reference.md#reidentifyfilerequest) class. Supply the file with `data_source` and `value`, set `data_format`, and set `redaction_level` as you would for a string. The method doesn't accept `file` or `file_path`, so base64-encode a local file yourself. Supported formats are `txt`, `csv`, `json`, `xlsx`, `docx`, `pptx`, `xml`, and `jsonl`.
+Re-identify the tokens in a file using the `reidentify_file` method. Build the request with the [`ReidentifyFileRequest`](../docs/api_reference.md#reidentifyfilerequest) class. Supply the file with `data_source` and `value`, where `data_source` is `ReidentifySourceType.BASE64` or `ReidentifySourceType.PRESIGNED_URL`. Set `data_format`, and set `redaction_level` as you would for a string. The method doesn't accept `file` or `file_path`, so base64-encode a local file yourself. Supported formats are `txt`, `csv`, `json`, `xlsx`, `docx`, `pptx`, `xml`, and `jsonl`.
 
 `reidentify_file` is synchronous: the response contains the re-identified file. It needs the same roles as `reidentify_string`.
 
 ```python
 import base64
 from skyflow.vault.detect import ReidentifyFileRequest, RedactionLevel
-from skyflow.utils.enums import DataSourceType, FileDataFormat, DetectRunStatus, EntityType, RedactionType
+from skyflow.utils.enums import ReidentifySourceType, FileDataFormat, DetectRunStatus, EntityType, RedactionType
 
 with open('<PATH_TO_DEIDENTIFIED_FILE>', 'rb') as file_obj:
     encoded_file = base64.b64encode(file_obj.read()).decode('utf-8')
 
 request = ReidentifyFileRequest(
-    data_source=DataSourceType.BASE64,
+    data_source=ReidentifySourceType.BASE64,
     value=encoded_file,
     data_format=FileDataFormat.TXT,
     redaction_level=[
@@ -766,7 +766,7 @@ request = ReidentifyFileRequest(
 )
 
 response = skyflow_client.detect('<VAULT_ID>').reidentify_file(request)
-if response.status == DetectRunStatus.SUCCESS and response.output_type == DataSourceType.BASE64:
+if response.status == DetectRunStatus.SUCCESS and response.output_type == ReidentifySourceType.BASE64:
     for index, output in enumerate(response.output):
         with open(f'reidentified-{index}.txt', 'wb') as out_file:
             out_file.write(base64.b64decode(output.processed_file))
