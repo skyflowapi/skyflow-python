@@ -48,10 +48,10 @@ python flowvault/samples/vault_api/insert_records.py
 
 | Sample | Demonstrates |
 |---|---|
-| [deidentify_string.py](detect_api/deidentify_string.py) | De-identify sensitive data in a string |
-| [deidentify_file.py](detect_api/deidentify_file.py) | De-identify a file; submit-only and submit-and-poll with `PollOptions` |
-| [get_run.py](detect_api/get_run.py) | Retrieve the status and outputs of a detect file run |
-| [reidentify_string.py](detect_api/reidentify_string.py) | Re-identify tokens in a string |
+| [deidentify_string.py](detect_api/deidentify_string.py) | De-identify sensitive data in a string with a `configuration_id` or an inline `DetectConfiguration` |
+| [deidentify_file.py](detect_api/deidentify_file.py) | De-identify a file; submit-only, submit-and-poll with `PollOptions`, and presigned URL source |
+| [get_run.py](detect_api/get_run.py) | Retrieve the status and outputs of a detect file run, branching on `DetectRunStatus` |
+| [reidentify_string.py](detect_api/reidentify_string.py) | De-identify to a vault token group, then re-identify the tokens in the string |
 | [reidentify_file.py](detect_api/reidentify_file.py) | Re-identify tokens in a file (synchronous) |
 | [check_guardrails.py](detect_api/check_guardrails.py) | Screen text for toxicity and denied topics |
 

@@ -47,11 +47,12 @@ Skyflow Detect (de-identification / re-identification).
 
 | Sample | Demonstrates |
 |--------|--------------|
-| `deidentify_text.py` | De-identifying text |
-| `reidentify_text.py` | Re-identifying text |
+| `deidentify_string.py` | De-identifying a string |
 | `deidentify_file.py` | De-identifying a file |
-| `deidentify_file_async.py` | Running a file de-identification on a background thread (thread-based concurrency, not asyncio) |
-| `get_detect_run.py` | Polling a file de-identification run by `run_id` |
+| `get_run.py` | Polling a file de-identification run by `run_id` |
+| `reidentify_string.py` | Re-identifying a string |
+| `reidentify_file.py` | Re-identifying a file |
+| `check_guardrails.py` | Screening text for toxicity and denied topics |
 
 ### `service_account/`
 Bearer-token and signed-data-token generation.

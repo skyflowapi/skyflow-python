@@ -1,0 +1,85 @@
+from skyflow.error import SkyflowError
+from skyflow import Env, Skyflow, LogLevel
+from skyflow.vault.detect import DeidentifyStringRequest, DetectConfiguration, Detect, Entity
+from skyflow.utils.enums import EntityType, DeidentificationType
+
+
+def perform_deidentify_string():
+    try:
+        vault_config = {
+            'vault_id': '<YOUR_VAULT_ID>',
+            'cluster_id': '<YOUR_CLUSTER_ID>',
+            'env': Env.PROD,
+            'credentials': {'path': '<PATH_TO_YOUR_CREDENTIALS_JSON>'},
+        }
+
+        skyflow_client = (
+            Skyflow.builder()
+            .add_vault_config(vault_config)
+            .set_log_level(LogLevel.ERROR)
+            .build()
+        )
+
+        request = DeidentifyStringRequest(
+            text='My name is John Doe, and my email is johndoe@acme.com.',
+            configuration_id='<CONFIGURATION_ID>',
+        )
+
+        response = skyflow_client.detect().deidentify_string(request)
+
+        print(response.processed_text)
+        for entity in response.entities:
+            print(entity.entity_type, entity.token, entity.entity_scores)
+
+    except SkyflowError as error:
+        print('Skyflow Specific Error: ', {
+            'code': error.http_code,
+            'message': error.message,
+            'details': error.details,
+        })
+
+
+def perform_deidentify_string_inline():
+    try:
+        vault_config = {
+            'vault_id': '<YOUR_VAULT_ID>',
+            'cluster_id': '<YOUR_CLUSTER_ID>',
+            'env': Env.PROD,
+            'credentials': {'path': '<PATH_TO_YOUR_CREDENTIALS_JSON>'},
+        }
+
+        skyflow_client = (
+            Skyflow.builder()
+            .add_vault_config(vault_config)
+            .set_log_level(LogLevel.ERROR)
+            .build()
+        )
+
+        request = DeidentifyStringRequest(
+            text='My name is John Doe, and my email is johndoe@acme.com.',
+            configuration=DetectConfiguration(
+                detect=Detect(
+                    entities=[
+                        Entity(entity_type=EntityType.NAME, deidentification_type=DeidentificationType.VAULT_TOKEN, destination='persons.name'),
+                        Entity(entity_type=EntityType.ALL, deidentification_type=DeidentificationType.ENTITY_UNIQUE_COUNTER),
+                    ],
+                ),
+            ),
+        )
+
+        response = skyflow_client.detect().deidentify_string(request)
+
+        print(response.processed_text)
+        for entity in response.entities:
+            print(entity.entity_type, entity.token, entity.entity_scores)
+
+    except SkyflowError as error:
+        print('Skyflow Specific Error: ', {
+            'code': error.http_code,
+            'message': error.message,
+            'details': error.details,
+        })
+
+
+if __name__ == '__main__':
+    perform_deidentify_string()

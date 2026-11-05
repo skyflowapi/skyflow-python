@@ -28,9 +28,8 @@ def perform_check_guardrails():
 
         response = skyflow_client.detect().check_guardrails(request)
 
-        print(response.validation, response.toxic, response.denied_topic)
         if response.validation == GuardrailsValidation.FAILED:
-            print('blocked')
+            print('blocked', response.toxic, response.denied_topic)
 
     except SkyflowError as error:
         print('Skyflow Specific Error: ', {
