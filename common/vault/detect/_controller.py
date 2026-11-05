@@ -40,7 +40,7 @@ class DetectController:
         kwargs = self.__omit_none(
             text=request.text,
             configuration_id=request.configuration_id,
-            configuration=self.__configuration(request.configuration),
+            configuration=self.__configuration(request.configuration_id, request.configuration),
         )
         try:
             raw = self._vault_client.get_strings_v2_api().with_raw_response.deidentify_string_v2(
@@ -86,7 +86,7 @@ class DetectController:
         kwargs = self.__omit_none(
             data_format=data_format,
             configuration_id=request.configuration_id,
-            configuration=self.__configuration(request.configuration),
+            configuration=self.__configuration(request.configuration_id, request.configuration),
         )
         try:
             raw = self._vault_client.get_files_v2_api().with_raw_response.deidentify_file_v2(
@@ -179,10 +179,12 @@ class DetectController:
     def __poll_fetcher(self, run_id):
         return self.get_run(GetRunRequest(run_id=run_id))
 
-    def __configuration(self, configuration):
-        if configuration is None:
-            return None
-        return mappers.to_detect_config(configuration, self._vault_client.get_vault_id())
+    def __configuration(self, configuration_id, configuration):
+        if configuration is not None:
+            return mappers.to_detect_config(configuration, self._vault_client.get_vault_id())
+        if configuration_id is None:
+            return mappers.to_vault_default_config(self._vault_client.get_vault_id())
+        return None
 
     def __redaction_levels(self, redaction_level):
         if redaction_level is None:

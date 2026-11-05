@@ -7,6 +7,7 @@ from enum import Enum
 from types import SimpleNamespace
 
 from common.errors import SkyflowError
+from common.utils import SkyflowMessages
 from common.utils.enums.detect import (
     DeidentificationType,
     DetectRunStatus,
@@ -162,6 +163,17 @@ class TestDetectController(unittest.TestCase):
         self.assertEqual(wire["vaultId"], VAULT_ID)
         self.assertEqual(wire["detect"]["entities"][0]["entityType"], "NAME")
         self.assertEqual(wire["detect"]["entities"][0]["deidentificationType"], "VAULT_TOKEN")
+
+    def test_deidentify_string_without_config_sends_vault_id_only(self):
+        raw = _Raw(SimpleNamespace(processed_text="x", entities=None, metrics=None))
+        controller = DetectController(_vault_client(strings=raw))
+
+        controller.deidentify_string(DeidentifyStringRequest(text="hi"))
+
+        _name, _args, kwargs = raw.calls[0]
+        self.assertNotIn("configuration_id", kwargs)
+        wire = kwargs["configuration"].dict(by_alias=True, exclude_none=True)
+        self.assertEqual(wire, {"vaultId": VAULT_ID})
 
     def test_reidentify_string_sends_vault_id(self):
         raw = _Raw(SimpleNamespace(processed_text="My name is John Doe", metrics=None))
@@ -339,6 +351,25 @@ class TestDetectController(unittest.TestCase):
         with self.assertRaises(SkyflowError):
             validations.validate_get_run_request(GetRunRequest(run_id=" "))
         validations.validate_deidentify_file_request(DeidentifyFileRequest(data_source=DeidentifySourceType.BASE64, value="x"))
+
+    def test_deidentify_file_source_rules(self):
+        with self.assertRaises(SkyflowError) as missing:
+            validations.validate_deidentify_file_request(DeidentifyFileRequest())
+        self.assertEqual(missing.exception.message, SkyflowMessages.Error.MISSING_FILE_SOURCE_IN_DEIDENTIFY_FILE.value)
+
+        with self.assertRaises(SkyflowError) as multiple:
+            validations.validate_deidentify_file_request(DeidentifyFileRequest(file=SimpleNamespace(read=lambda: b""), file_path="y"))
+        self.assertEqual(multiple.exception.message, SkyflowMessages.Error.MULTIPLE_FILE_SOURCES_IN_DEIDENTIFY_FILE.value)
+
+        with self.assertRaises(SkyflowError) as no_data_source:
+            validations.validate_deidentify_file_request(DeidentifyFileRequest(value="x"))
+        self.assertEqual(no_data_source.exception.message, SkyflowMessages.Error.INVALID_DATA_SOURCE_IN_DEIDENTIFY_FILE.value)
+
+    def test_file_data_format_is_case_insensitive(self):
+        self.assertEqual(mappers._file_data_format("PDF"), FileDataFormat.PDF)
+        self.assertEqual(mappers._file_data_format("pdf"), FileDataFormat.PDF)
+        self.assertIsNone(mappers._file_data_format("bogus"))
+        self.assertIsNone(mappers._file_data_format(None))
 
 
 if __name__ == "__main__":
