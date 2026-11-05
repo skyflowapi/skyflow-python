@@ -39,11 +39,9 @@ def perform_reidentify_file():
 
         response = skyflow_client.detect().reidentify_file(request)
 
-        print(response.status)
         if response.status == DetectRunStatus.SUCCESS:
             for index, output in enumerate(response.output):
-                extension = output.processed_file_extension.value if output.processed_file_extension else 'txt'
-                with open(f'reidentified-{index}.{extension}', 'wb') as out:
+                with open(f'reidentified-{index}.txt', 'wb') as out:
                     out.write(base64.b64decode(output.processed_file))
 
     except SkyflowError as error:

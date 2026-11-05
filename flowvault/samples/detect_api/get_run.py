@@ -20,12 +20,15 @@ def perform_get_run():
             .build()
         )
 
-        response = skyflow_client.detect().get_run(GetRunRequest(run_id='<RUN_ID>'))
+        run = skyflow_client.detect().get_run(GetRunRequest(run_id='<RUN_ID>'))
 
-        print(response.run_id, response.status)
-        if response.status == DetectRunStatus.SUCCESS:
-            for output in response.output:
+        if run.status == DetectRunStatus.SUCCESS:
+            for output in run.output:
                 print(output.processed_file_type, output.processed_file_extension)
+        elif run.status == DetectRunStatus.FAILED:
+            print(run.message)
+        else:
+            print(run.status)
 
     except SkyflowError as error:
         print('Skyflow Specific Error: ', {

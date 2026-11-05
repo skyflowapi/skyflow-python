@@ -41,7 +41,9 @@ The Skyflow Python SDK is designed to help with integrating Skyflow into a Pytho
         - [Retrieve Existing Tokens: `.tokenize(request)`](#retrieve-existing-tokens-tokenizerequest)
             - [Construct a `.tokenize()` request](#construct-a-tokenize-request)
     - [Detect](#detect)
+        - [Before you start](#before-you-start)
         - [De-identify String: `.deidentify_string(request)`](#de-identify-string-deidentify_stringrequest)
+        - [Detect configuration](#detect-configuration)
         - [De-identify File: `.deidentify_file(request)`](#de-identify-file-deidentify_filerequest)
         - [Get Run: `.get_run(request)`](#get-run-get_runrequest)
         - [Re-identify String: `.reidentify_string(request)`](#re-identify-string-reidentify_stringrequest)
@@ -550,256 +552,314 @@ Tokenization result: TokenizeResponse(tokenized_fields=[{'token': 'a1b2c3d4-...'
 
 ## Detect
 
-De-identify sensitive data in strings and files, re-identify the results, and check text against guardrails using Skyflow Detect. The Detect V2 API is in beta.
+Skyflow Detect finds and de-identifies sensitive data in strings and files, re-identifies tokens on demand, and screens text against guardrails. The SDK exposes the Detect V2 API through `DetectController`, returned by `skyflow_client.detect()` and `skyflow_client.detect('<VAULT_ID>')`. Every request is scoped to that vault, and the controller shares the same credentials, timeouts and retries as `vault()`; the `vault_id` is filled in from the vault config for every method.
 
-Get a Detect controller with `skyflow_client.detect('<VAULT_ID>')`. If you omit the vault ID, the controller uses the first vault configuration you added. Import request classes from `skyflow.vault.detect` and enums from `skyflow.utils.enums`.
+Detect configurations are created in Studio or through the management API — the SDK does not create, update or delete them. Import request/response models from `skyflow.vault.detect` and enums from `skyflow.utils.enums`.
+
+| Method | Request | Response | Description |
+|--------|---------|----------|-------------|
+| `deidentify_string(request)` | `DeidentifyStringRequest` | `DeidentifyStringResponse` | Detect and replace sensitive data in a string |
+| `deidentify_file(request)` | `DeidentifyFileRequest` | `DeidentifyFileResponse` | Submit a file for de-identification, optionally polling the run to completion |
+| `reidentify_string(request)` | `ReidentifyStringRequest` | `ReidentifyStringResponse` | Replace tokens in a string with their original or redacted values |
+| `reidentify_file(request)` | `ReidentifyFileRequest` | `ReidentifyFileResponse` | Replace tokens in a file with their original or redacted values |
+| `get_run(request)` | `GetRunRequest` | `GetRunResponse` | Retrieve the status and outputs of a Detect file run |
+| `check_guardrails(request)` | `CheckGuardrailsRequest` | `CheckGuardrailsResponse` | Screen text for toxicity and denied topics |
+
+```python
+detect = skyflow_client.detect()
+```
 
 > [!NOTE]
-> Detect V2 replaces the `deidentify_text`, `reidentify_text`, and `get_detect_run` methods and their request and response classes. Use `deidentify_string`, `reidentify_string`, and `get_run` instead. `deidentify_file` keeps its name and takes the `DeidentifyFileRequest` fields described in [De-identify File](#de-identify-file-deidentify_filerequest).
+> Detect V2 replaces the `deidentify_text`, `reidentify_text`, and `get_detect_run` methods and their request and response classes. Use `deidentify_string`, `reidentify_string`, and `get_run` instead. To upgrade existing code, see the [Detect V1 to V2 migration guide](../docs/migrate_detect_v1_to_v2.md).
 
-Each Detect method raises a `SkyflowError` when the request fails validation or the API returns an error. See [Error handling](#error-handling).
+### Before you start
+
+- **Role.** The service account needs the Detect Invoker, Detect Manager or Vault Owner role on the vault. Detect Invoker can de-identify data and write vault tokens into the vault; Detect Manager adds the ability to create, update and delete Detect configurations. Re-identifying values stored as `VAULT_TOKEN` is governed like detokenization: the caller also needs a policy granting the Detokenization action on the destination table and columns, unless it is a Vault Owner.
+- **Configuration.** Pass `configuration_id` (the id of a stored Detect configuration) or an inline `configuration` (a `DetectConfiguration`). Both are optional: with neither set the SDK sends only the vault id and the run uses the vault's default Detect settings; sending both is rejected by the API with HTTP 400.
+- **Destination for vault tokens.** An entity de-identified with `VAULT_TOKEN` stores its value in the `table.column` named by `destination` (for example `persons.ssn`). That table and column must already exist in the vault; Detect writes into them but does not create them.
+- **API reference.** Every Detect request, response and configuration class is listed in the [API Reference](../docs/api_reference.md).
 
 ### De-identify String: `.deidentify_string(request)`
 
-De-identify sensitive data in a string using the `deidentify_string` method. Build the request with the [`DeidentifyStringRequest`](../docs/api_reference.md#deidentifystringrequest) class, and specify how Detect finds and de-identifies entities in one of two ways:
-
-- Set `configuration_id` to the ID of an existing Detect configuration.
-- Set `configuration` to an inline [`DetectConfiguration`](../docs/api_reference.md#detectconfiguration).
-
-The SDK has no methods to create or manage Detect configurations.
+Synchronous. Detects and de-identifies sensitive data in a string. Build the request with `DeidentifyStringRequest`, passing the text and, optionally, one configuration source.
 
 ```python
 from skyflow.vault.detect import DeidentifyStringRequest
 
-request = DeidentifyStringRequest(
-    text='My name is John Doe, and my email is johndoe@acme.com.',
-    configuration_id='<CONFIGURATION_ID>'
-)
-
-response = skyflow_client.detect('<VAULT_ID>').deidentify_string(request)
-print('De-identified text:', response.processed_text)
-for entity in response.entities:
-    print(entity.entity_type, entity.token, entity.entity_scores)
-```
-
-To define the configuration inline, list each entity type to detect and its de-identification type. For `VAULT_TOKEN`, set `destination` to the vault column that stores the detected value, in `table.column` format:
-
-```python
-from skyflow.vault.detect import DeidentifyStringRequest, DetectConfiguration, Detect, Entity
-from skyflow.utils.enums import EntityType, DeidentificationType
-
-request = DeidentifyStringRequest(
-    text='My name is John Doe, and my email is johndoe@acme.com.',
-    configuration=DetectConfiguration(
-        detect=Detect(entities=[
-            Entity(
-                entity_type=EntityType.NAME,
-                deidentification_type=DeidentificationType.VAULT_TOKEN,
-                destination='<TABLE_NAME>.<COLUMN_NAME>'
-            ),
-            Entity(
-                entity_type=EntityType.EMAIL_ADDRESS,
-                deidentification_type=DeidentificationType.ENTITY_UNIQUE_COUNTER
-            )
-        ])
+response = skyflow_client.detect().deidentify_string(
+    DeidentifyStringRequest(
+        text='My name is John Doe, and my email is johndoe@acme.com.',
+        configuration_id='<CONFIGURATION_ID>',
     )
 )
 
-response = skyflow_client.detect('<VAULT_ID>').deidentify_string(request)
+print(response.processed_text)
+# My name is [NAME_1], and my email is [EMAIL_ADDRESS_1].
+for entity in response.entities:
+    print(entity.entity_type, entity.token, entity.location.start_index, entity.entity_scores)
+print(response.metrics.word_count)
 ```
 
-Returns a [`DeidentifyStringResponse`](../docs/api_reference.md#deidentifystringresponse) (`processed_text`, `entities`, `metrics`). Each item in `entities` is a [`DetectedEntity`](../docs/api_reference.md#detectedentity) with the entity's `token`, `value`, `location`, `entity_type`, and `entity_scores`.
+An inline configuration is built from `DetectConfiguration` / `Detect` / `Entity` (see [Detect configuration](#detect-configuration)):
+
+```python
+from skyflow.vault.detect import DeidentifyStringRequest, DetectConfiguration, Detect, Entity
+from skyflow.utils.enums import EntityType, DeidentificationType, ReturnEntitiesType
+
+response = skyflow_client.detect().deidentify_string(
+    DeidentifyStringRequest(
+        text='My name is John Doe, and my email is johndoe@acme.com.',
+        configuration=DetectConfiguration(
+            detect=Detect(
+                entities=[
+                    Entity(entity_type=EntityType.NAME, deidentification_type=DeidentificationType.VAULT_TOKEN, destination='persons.name'),
+                    Entity(entity_type=EntityType.ALL, deidentification_type=DeidentificationType.ENTITY_UNIQUE_COUNTER),
+                ],
+                skip=['Skyflow'],
+                return_entities=ReturnEntitiesType.EXCLUDE_SENSITIVE_DATA,
+            ),
+        ),
+    )
+)
+```
+
+Returns a `DeidentifyStringResponse` with `processed_text`, `entities` (each a `DetectedEntity` with `token`, `value`, `location`, `entity_type`, `entity_scores`; never `None`) and `metrics`. `value` is populated only when the configuration sets `return_entities` to `ReturnEntitiesType.ALL`; the default `EXCLUDE_SENSITIVE_DATA` returns an empty `value`, so raw sensitive data does not come back unless you ask for it.
 
 > [!TIP]
 > See the full example in the samples directory: [deidentify_string.py](samples/detect_api/deidentify_string.py)
 
-### De-identify File: `.deidentify_file(request)`
+### Detect configuration
 
-De-identify a file using the `deidentify_file` method. Build the request with the [`DeidentifyFileRequest`](../docs/api_reference.md#deidentifyfilerequest) class. Set `configuration_id` or `configuration` as you would for a string, and supply the file in one of these ways:
+`DetectConfiguration` is the inline form of a stored configuration and accepts the same options. `detect` applies to string and file inputs; `file_mapping` and `media` apply to file inputs only.
 
-- `file_path`: the path to a local file.
-- `file`: a local file opened in binary mode.
-- `data_source` and `value`: base64-encoded content (`DeidentifySourceType.BASE64`), a file stored in the vault (`DeidentifySourceType.SKYFLOW_ID`), or a presigned URL (`DeidentifySourceType.PRESIGNED_URL`).
-
-For a local file, the SDK base64-encodes the content and infers `data_format` from the file extension unless you set it.
-
-Detect processes files asynchronously. By default, `deidentify_file` submits the run and returns a `run_id` with a `status` of `None`. Pass the `run_id` to [`get_run`](#get-run-get_runrequest) to retrieve the result.
+| Class | Fields | Notes |
+|-------|--------|-------|
+| `Detect` | `entities`, `object_entities`, `restrict`, `skip`, `custom_types`, `return_entities` | `restrict` / `skip` are regexes always / never treated as sensitive. `return_entities` is `EXCLUDE_SENSITIVE_DATA` (server default), `ALL` or `NONE`. |
+| `Entity` | `entity_type`, `deidentification_type`, `destination`, `transformation` | `entity_type` defaults to `ALL`. `deidentification_type` is `ENTITY_UNIQUE_COUNTER` (server default), `ENTITY_ONLY`, `MASK` or `VAULT_TOKEN`. `destination` (`table.column`) is used only with `VAULT_TOKEN`. |
+| `Transformation` / `ShiftDates` | `shift_dates`; `min_days`, `max_days` | Shifts detected dates by a random number of days within the range. |
+| `CustomType` | `label`, `match` | A regex-defined entity type; `label` is reported as the entity type of its matches. |
+| `ObjectEntity` | `entity_type`, `deidentification_type` | Visual objects in images: `FACE`, `LICENSE_PLATE`, `LOGO`, `SIGNATURE` or `ALL`, handled with `REDACT` or `UNREDACT`. File inputs only. |
+| `FileMapping` | `source`, `destination`, `output_file_name_suffix`, `entities_destination`, `object_entities_destination` | Where the processed file and entity files are written. File inputs only. |
+| `Media` | `audio`, `document`, `image` | Media-type options. File inputs only. |
+| `Audio` / `Bleep` | `output_processed_audio`, `output_transcription`, `bleep`; `start_padding`, `stop_padding`, `frequency`, `gain` | `output_transcription` is `NONE`, `TRANSCRIPTION`, `MEDICAL_TRANSCRIPTION`, `DIARIZED_TRANSCRIPTION` or `MEDICAL_DIARIZED_TRANSCRIPTION`. `Bleep` paddings are in seconds, frequency in Hz. |
+| `Document` / `Pdf` | `pdf`; `processing_mode`, `density`, `max_resolution` | `processing_mode` is `NONE`, `OCR` or `TEXT_LAYER`. `density` is the rendering DPI. |
+| `Image` | `output_processed_image`, `output_ocr_text`, `masking_method` | `masking_method` is `NONE`, `BLUR` or `BLACKBOX`. |
 
 ```python
-from skyflow.vault.detect import DeidentifyFileRequest
-
-request = DeidentifyFileRequest(
-    file_path='<PATH_TO_FILE>',
-    configuration_id='<CONFIGURATION_ID>'
+from skyflow.vault.detect import (
+    DetectConfiguration, Detect, Entity, Transformation, ShiftDates,
+    CustomType, ObjectEntity, Media, Image, Document, Pdf, Audio, Bleep,
+)
+from skyflow.utils.enums import (
+    EntityType, DeidentificationType, ObjectEntityType, ObjectDeidentificationType,
+    MaskingMethod, PdfProcessingMode, OutputTranscriptionType,
 )
 
-response = skyflow_client.detect('<VAULT_ID>').deidentify_file(request)
-print('Run ID:', response.run_id)
+configuration = DetectConfiguration(
+    detect=Detect(
+        entities=[
+            Entity(
+                entity_type=EntityType.DOB,
+                deidentification_type=DeidentificationType.ENTITY_UNIQUE_COUNTER,
+                transformation=Transformation(shift_dates=ShiftDates(min_days=10, max_days=30)),
+            ),
+            Entity(entity_type=EntityType.ALL),
+        ],
+        object_entities=[
+            ObjectEntity(entity_type=ObjectEntityType.FACE, deidentification_type=ObjectDeidentificationType.REDACT),
+        ],
+        custom_types=[CustomType(label='EMPLOYEE_ID', match=['EMP-[0-9]{6}'])],
+        restrict=['[0-9]{3}-[0-9]{2}-[0-9]{4}'],
+    ),
+    media=Media(
+        image=Image(masking_method=MaskingMethod.BLUR, output_ocr_text=True),
+        document=Document(pdf=Pdf(processing_mode=PdfProcessingMode.OCR)),
+        audio=Audio(output_transcription=OutputTranscriptionType.TRANSCRIPTION, bleep=Bleep(start_padding=0.5, stop_padding=0.5)),
+    ),
+)
 ```
 
-To wait for the result in the same call, set `poll_options` to a [`PollOptions`](../docs/api_reference.md#polloptions) object. The SDK checks the run with exponential backoff, waiting 1, 2, 4, 8, 16, and then 32 seconds between attempts. Polling stops when the first of these happens:
+### De-identify File: `.deidentify_file(request)`
 
-- The run reaches `SUCCESS`, `FAILED`, or `UNKNOWN`.
-- The total wait reaches `wait_time` (default 60 seconds, maximum 300).
-- The number of attempts reaches `max_attempts` (default and maximum 23).
+De-identifies a file. The API is asynchronous: the submit call returns a run id and the result is retrieved from the run. Build the request with `DeidentifyFileRequest`.
 
-If polling stops before the run finishes, the response carries the current status, such as `QUEUED` or `IN_PROGRESS`. Call `get_run` later to retrieve the result.
+Supply the file in exactly one of three ways: `file_path`, `file`, or `value` plus a `DeidentifySourceType` `data_source` (`BASE64`, the `SKYFLOW_ID` of a file record in the vault, or `PRESIGNED_URL`). A local `file` / `file_path` is read when the request is sent, base64-encoded, and its `data_format` inferred from the extension. Passing more than one of them, or none, fails client-side validation before any network call. `configuration_id` / `configuration` follow the same rules as for strings (see [Before you start](#before-you-start)).
 
-When a polled run on a local `file` or `file_path` succeeds, the SDK writes each base64-encoded output to disk with a `processed-` prefix. For example, the processed copy of `notes.pdf` is `processed-notes.pdf`, and its entities output is `processed-entities-notes.json`. Set `output_directory` to choose where the files go; the SDK creates the directory if it doesn't exist. Without `output_directory`, the SDK writes to the current working directory. `output_directory` requires `poll_options`.
+- **Submit only** (default): one call, returns `run_id`. `status` is `None` and nothing is written to disk — retrieve the result later with [`get_run`](#get-run-get_runrequest).
+- **Submit and poll**: pass `poll_options`. The SDK polls with exponential backoff (1, 2, 4, 8, 16, then 32 seconds) until the run is `SUCCESS`, `FAILED` or `UNKNOWN`, or until `wait_time` (default 60 s, max 300) or `max_attempts` (default and max 23) is used up. If the budget runs out the response carries the run id with `IN_PROGRESS` or `QUEUED`, so you can resume with `get_run`. `output_directory` is valid only with `poll_options`; setting it without them fails client-side validation.
 
 ```python
 from skyflow.vault.detect import DeidentifyFileRequest, PollOptions
 from skyflow.utils.enums import DetectRunStatus
 
-request = DeidentifyFileRequest(
-    file_path='<PATH_TO_FILE>',
-    configuration_id='<CONFIGURATION_ID>',
-    poll_options=PollOptions(wait_time=120),
-    output_directory='<OUTPUT_DIRECTORY>'
+# Submit only
+submitted = skyflow_client.detect().deidentify_file(
+    DeidentifyFileRequest(file_path='/data/intake/patient-notes.pdf', configuration_id='<CONFIGURATION_ID>')
 )
+run_id = submitted.run_id        # status is None; nothing written to disk
 
-response = skyflow_client.detect('<VAULT_ID>').deidentify_file(request)
+# Submit and poll
+response = skyflow_client.detect().deidentify_file(
+    DeidentifyFileRequest(
+        file_path='/data/intake/patient-notes.pdf',
+        configuration_id='<CONFIGURATION_ID>',
+        poll_options=PollOptions(wait_time=120),
+        output_directory='/data/processed',
+    )
+)
 
 if response.status == DetectRunStatus.SUCCESS:
     for output in response.output:
         print(output.processed_file_type, output.processed_file_extension)
-elif response.status in (DetectRunStatus.QUEUED, DetectRunStatus.IN_PROGRESS):
-    print('Still running. Call get_run later with run ID:', response.run_id)
-else:
-    print('Run ended with status:', response.status, response.message)
+    print(response.metrics.pages)
+elif response.status == DetectRunStatus.FAILED:
+    print(response.message)
+else:                            # IN_PROGRESS or QUEUED: budget ran out, resume with get_run(run_id)
+    print(response.run_id)
 ```
 
-To de-identify a file that's stored in the vault or available at a presigned URL, set `data_source` and `value`. The SDK doesn't write outputs to disk for these requests.
+**Where the outputs go.** On `SUCCESS`, when the request was built from a local `file` / `file_path` and the run returned base64 outputs, the SDK writes them to disk. With `output_directory='/data/processed'` the example above writes:
+
+- `/data/processed/processed-patient-notes.pdf` — the redacted file
+- `/data/processed/processed-entities-patient-notes.json` — the detected entities
+- `/data/processed/processed-object-entities-patient-notes.json` — object entities, when the run produced them
+
+`output_directory` is created if it does not exist. **If you poll a local file and omit `output_directory`, these files are written to the current working directory** — often your project root or a server's working directory — so set `output_directory` explicitly. A request built from a `SKYFLOW_ID` or `PRESIGNED_URL` value has no local name to derive from, and presigned-URL outputs are not fetched, so in those cases read `response.output` and write the files yourself.
+
+**Supported formats and limits.** `data_format` accepts every `FileDataFormat`: `bmp`, `csv`, `dcm`, `doc`, `docx`, `gif`, `jpeg`, `jpg`, `json`, `jsonl`, `mp3`, `pdf`, `png`, `ppt`, `pptx`, `tif`, `tiff`, `txt`, `wav`, `xls`, `xlsx`, `xml`, `zip`. The `VAULT_TOKEN` de-identification type is supported only for `txt`, `csv`, `json`, `jsonl`, `xml`, `docx`, `xlsx` and `pptx`.
+
+**Polling blocks the calling thread** — each lookup is a synchronous `get_run` followed by a sleep. For concurrency, submit without `poll_options` and poll `get_run` yourself on a scheduler, or run the blocking call on a worker thread you own.
+
+A file at a presigned URL is referenced through `data_source` + `value`:
 
 ```python
 from skyflow.vault.detect import DeidentifyFileRequest
 from skyflow.utils.enums import DeidentifySourceType, FileDataFormat
 
-request = DeidentifyFileRequest(
-    data_source=DeidentifySourceType.PRESIGNED_URL,
-    value='<PRESIGNED_URL>',
-    data_format=FileDataFormat.PDF,
-    configuration_id='<CONFIGURATION_ID>'
+skyflow_client.detect().deidentify_file(
+    DeidentifyFileRequest(
+        data_source=DeidentifySourceType.PRESIGNED_URL,
+        value='<PRESIGNED_URL>',
+        data_format=FileDataFormat.PDF,
+        configuration_id='<CONFIGURATION_ID>',
+    )
 )
-
-response = skyflow_client.detect('<VAULT_ID>').deidentify_file(request)
-print('Run ID:', response.run_id)
 ```
 
-Returns a [`DeidentifyFileResponse`](../docs/api_reference.md#deidentifyfileresponse) (`run_id`, `status`, `output_type`, `output`, `metrics`, `message`). Each item in `output` is a [`FileOutput`](../docs/api_reference.md#fileoutput).
-
-Supported formats are the members of [`FileDataFormat`](../docs/api_reference.md#filedataformat). The `VAULT_TOKEN` de-identification type supports only `txt`, `json`, `csv`, `xml`, `jsonl`, `docx`, `xlsx`, and `pptx` files.
+Returns a `DeidentifyFileResponse` with `run_id`, `status` (a `DetectRunStatus`, `None` when not polled), `output_type`, `output` (a list of `FileOutput` with `processed_file`, `processed_file_type`, `processed_file_extension`), `metrics` and `message`.
 
 > [!TIP]
 > See the full example in the samples directory: [deidentify_file.py](samples/detect_api/deidentify_file.py)
 
 ### Get Run: `.get_run(request)`
 
-Retrieve the status and outputs of a file de-identification run using the `get_run` method. Build the request with the [`GetRunRequest`](../docs/api_reference.md#getrunrequest) class, initialized with the `run_id` that `deidentify_file` returned.
+Retrieves the status and, once complete, the outputs of a Detect file run. Build the request with `GetRunRequest`, initialized with the `run_id` returned from a prior `deidentify_file` call. `output` is empty and `output_type` / `metrics` are `None` until the run completes.
 
 ```python
 from skyflow.vault.detect import GetRunRequest
 from skyflow.utils.enums import DetectRunStatus
 
-request = GetRunRequest(run_id='<RUN_ID>')
+run = skyflow_client.detect().get_run(GetRunRequest(run_id='<RUN_ID>'))
 
-response = skyflow_client.detect('<VAULT_ID>').get_run(request)
-print('Run status:', response.status)
-if response.status == DetectRunStatus.SUCCESS:
-    for output in response.output:
+if run.status == DetectRunStatus.SUCCESS:
+    for output in run.output:
         print(output.processed_file_type, output.processed_file_extension)
+elif run.status == DetectRunStatus.FAILED:
+    print(run.message)
+else:                            # QUEUED, IN_PROGRESS, UNKNOWN: poll again later
+    print(run.status)
 ```
 
-Returns a [`GetRunResponse`](../docs/api_reference.md#getrunresponse) (`run_id`, `status`, `output_type`, `output`, `metrics`, `message`). `get_run` doesn't write outputs to disk. When `output_type` is `BASE64`, decode each `processed_file` yourself.
+Returns a `GetRunResponse` with the same fields as `DeidentifyFileResponse`.
 
 > [!TIP]
 > See the full example in the samples directory: [get_run.py](samples/detect_api/get_run.py)
 
 ### Re-identify String: `.reidentify_string(request)`
 
-Replace the tokens in de-identified text with their original, masked, or redacted values using the `reidentify_string` method. Build the request with the [`ReidentifyStringRequest`](../docs/api_reference.md#reidentifystringrequest) class. To control how each entity type displays, pass a list of [`RedactionLevel`](../docs/api_reference.md#redactionlevel) objects in `redaction_level`. Each one pairs an `entity_name` from `EntityType` with a `redaction_type` from `RedactionType` (see [Redaction Types](#redaction-types)).
+Synchronous. Re-identification looks tokens up in the vault, so it applies only to values de-identified with `VAULT_TOKEN`. Placeholders produced by `ENTITY_UNIQUE_COUNTER`, `ENTITY_ONLY` or `MASK` are not stored and cannot be re-identified.
 
-Re-identification requires the Detect Invoker, Detect Manager, or Vault Owner role. To re-identify vault tokens without the Vault Owner role, you also need a policy that grants the Detokenization action.
+Build the request with `ReidentifyStringRequest`: the tokenized text and an optional list of `RedactionLevel` rules. On skyvault vaults each rule names an `entity_name` and a `redaction_type` — `PLAIN_TEXT` reveals the original value, `MASKED` masks it, `REDACTED` keeps the token, `DEFAULT` applies the vault's default. Without rules every token is replaced by its original value.
 
 ```python
 from skyflow.vault.detect import ReidentifyStringRequest, RedactionLevel
 from skyflow.utils.enums import EntityType, RedactionType
 
-request = ReidentifyStringRequest(
-    text='<DEIDENTIFIED_TEXT>',
-    redaction_level=[
-        RedactionLevel(entity_name=EntityType.NAME, redaction_type=RedactionType.PLAIN_TEXT),
-        RedactionLevel(entity_name=EntityType.EMAIL_ADDRESS, redaction_type=RedactionType.MASKED)
-    ]
+response = skyflow_client.detect().reidentify_string(
+    ReidentifyStringRequest(
+        text='My name is [NAME_1] and my email is [EMAIL_ADDRESS_1].',
+        redaction_level=[
+            RedactionLevel(entity_name=EntityType.NAME, redaction_type=RedactionType.PLAIN_TEXT),
+            RedactionLevel(entity_name=EntityType.EMAIL_ADDRESS, redaction_type=RedactionType.MASKED),
+        ],
+    )
 )
-
-response = skyflow_client.detect('<VAULT_ID>').reidentify_string(request)
-print('Re-identified text:', response.processed_text)
+print(response.processed_text)
+# My name is John Doe and my email is j*******@acme.com.
 ```
 
-Returns a [`ReidentifyStringResponse`](../docs/api_reference.md#reidentifystringresponse) (`processed_text`, `metrics`).
+> The skyvault `RedactionLevel` has only `entity_name` and `redaction_type`; the flowvault SDK's has `token_group_name` and `redaction_pattern` instead.
+
+Returns a `ReidentifyStringResponse` with `processed_text` and `metrics`.
 
 > [!TIP]
 > See the full example in the samples directory: [reidentify_string.py](samples/detect_api/reidentify_string.py)
 
 ### Re-identify File: `.reidentify_file(request)`
 
-Re-identify the tokens in a file using the `reidentify_file` method. Build the request with the [`ReidentifyFileRequest`](../docs/api_reference.md#reidentifyfilerequest) class. Supply the file with `data_source` and `value`, where `data_source` is `ReidentifySourceType.BASE64` or `ReidentifySourceType.PRESIGNED_URL`. Set `data_format`, and set `redaction_level` as you would for a string. The method doesn't accept `file` or `file_path`, so base64-encode a local file yourself. Supported formats are `txt`, `csv`, `json`, `xlsx`, `docx`, `pptx`, `xml`, and `jsonl`.
-
-`reidentify_file` is synchronous: the response contains the re-identified file. It needs the same roles as `reidentify_string`.
+Synchronous — the re-identified file comes back in the response, not through a run id. Build the request with `ReidentifyFileRequest`: a `data_source` (`ReidentifySourceType.BASE64` or `PRESIGNED_URL`; re-identification does not accept a skyflow id as the source), the matching `value`, an optional `data_format`, and the same `RedactionLevel` rules as `reidentify_string`. `data_format` is limited to the formats that support `VAULT_TOKEN`: `txt`, `csv`, `json`, `jsonl`, `xml`, `docx`, `xlsx` and `pptx`.
 
 ```python
 import base64
 from skyflow.vault.detect import ReidentifyFileRequest, RedactionLevel
-from skyflow.utils.enums import ReidentifySourceType, FileDataFormat, DetectRunStatus, EntityType, RedactionType
+from skyflow.utils.enums import ReidentifySourceType, FileDataFormat, EntityType, RedactionType, DetectRunStatus
 
-with open('<PATH_TO_DEIDENTIFIED_FILE>', 'rb') as file_obj:
-    encoded_file = base64.b64encode(file_obj.read()).decode('utf-8')
+with open('/data/redacted/notes.txt', 'rb') as handle:
+    encoded = base64.b64encode(handle.read()).decode('utf-8')
 
-request = ReidentifyFileRequest(
-    data_source=ReidentifySourceType.BASE64,
-    value=encoded_file,
-    data_format=FileDataFormat.TXT,
-    redaction_level=[
-        RedactionLevel(entity_name=EntityType.NAME, redaction_type=RedactionType.PLAIN_TEXT)
-    ]
+response = skyflow_client.detect().reidentify_file(
+    ReidentifyFileRequest(
+        data_source=ReidentifySourceType.BASE64,
+        value=encoded,
+        data_format=FileDataFormat.TXT,
+        redaction_level=[RedactionLevel(entity_name=EntityType.NAME, redaction_type=RedactionType.PLAIN_TEXT)],
+    )
 )
 
-response = skyflow_client.detect('<VAULT_ID>').reidentify_file(request)
-if response.status == DetectRunStatus.SUCCESS and response.output_type == ReidentifySourceType.BASE64:
+if response.status == DetectRunStatus.SUCCESS:
     for index, output in enumerate(response.output):
-        with open(f'reidentified-{index}.txt', 'wb') as out_file:
-            out_file.write(base64.b64decode(output.processed_file))
+        # output.processed_file is base64 or a presigned URL, per response.output_type
+        with open(f'reidentified-{index}.txt', 'wb') as out:
+            out.write(base64.b64decode(output.processed_file))
 ```
 
-Returns a [`ReidentifyFileResponse`](../docs/api_reference.md#reidentifyfileresponse) (`status`, `output_type`, `output`, `metrics`). The SDK doesn't write the output to disk.
+Returns a `ReidentifyFileResponse` with `status`, `output_type`, `output` (a list of `FileOutput`) and `metrics`.
 
 > [!TIP]
 > See the full example in the samples directory: [reidentify_file.py](samples/detect_api/reidentify_file.py)
 
 ### Check Guardrails: `.check_guardrails(request)`
 
-Check text for toxicity and denied topics using the `check_guardrails` method. Build the request with the [`CheckGuardrailsRequest`](../docs/api_reference.md#checkguardrailsrequest) class. Set `check_toxicity=True` to check for toxicity, and list the topics to deny in `deny_topics`.
+Synchronous. Screens text for toxicity and a list of denied topics — a natural pre-LLM check. Build the request with `CheckGuardrailsRequest`. `check_toxicity` and `deny_topics` are optional; the SDK sends each only when set and fills in no default. The response is passed through as the API returns it.
 
 ```python
 from skyflow.vault.detect import CheckGuardrailsRequest
 from skyflow.utils.enums import GuardrailsValidation
 
-request = CheckGuardrailsRequest(
-    text='<TEXT_TO_CHECK>',
-    check_toxicity=True,
-    deny_topics=['politics', 'medical advice']
+response = skyflow_client.detect().check_guardrails(
+    CheckGuardrailsRequest(text='<USER_PROMPT>', check_toxicity=True, deny_topics=['politics', 'medical advice'])
 )
 
-response = skyflow_client.detect('<VAULT_ID>').check_guardrails(request)
 if response.validation == GuardrailsValidation.FAILED:
-    print('Text failed guardrails. Toxic:', response.toxic, 'Denied topic:', response.denied_topic)
+    print('blocked', response.toxic, response.denied_topic)
 ```
 
-Returns a [`CheckGuardrailsResponse`](../docs/api_reference.md#checkguardrailsresponse) (`text`, `validation`, `toxic`, `denied_topic`). `validation` is `PASSED`, `FAILED`, or `UNKNOWN`.
+Returns a `CheckGuardrailsResponse` with `text`, `validation` (`GuardrailsValidation.PASSED` or `FAILED`), `toxic` and `denied_topic`.
 
 > [!TIP]
 > See the full example in the samples directory: [check_guardrails.py](samples/detect_api/check_guardrails.py)
+
+All Detect methods raise `skyflow.error.SkyflowError` on validation failure, credential failure, or an API error — see [Error handling](#error-handling). Client-side validation fails before any network call.
 
 ## Connections
 
