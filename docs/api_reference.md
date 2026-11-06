@@ -430,6 +430,10 @@ Entity types for Detect, used in [`Entity`](#entity) and [`RedactionLevel`](#red
 
 How Detect de-identifies an entity. Values: `VAULT_TOKEN`, `ENTITY_UNIQUE_COUNTER`, `ENTITY_ONLY`, `MASK`, `UNKNOWN`. `VAULT_TOKEN` supports only `txt`, `json`, `csv`, `xml`, `jsonl`, `docx`, `xlsx`, and `pptx` files.
 
+### `IncludePrefix`
+
+Whether a `VAULT_TOKEN` token includes the entity-type prefix. Used by [`Entity`](#entity) and [`CustomType`](#customtype). Values: `YES`, `NO`. When unset, the server default applies.
+
 ### `ReturnEntitiesType`
 
 Which detected entities a de-identify response includes.
@@ -486,6 +490,12 @@ Result of a guardrails check. Values: `PASSED`, `FAILED`, `UNKNOWN`.
 
 Importable from `skyflow.vault.detect`. Every parameter defaults to `None`.
 
+The flowvault SDK (`skyflow-flowvault-python`) uses the same Detect classes and enums, with these differences:
+
+- `RedactionLevel` takes `token_group_name` and `redaction_pattern` instead of `entity_name` and `redaction_type`. See [reidentify_string](../flowvault/README.md#reidentify_string) in the flowvault README.
+- `DeidentifySourceType` has only `BASE64` and `PRESIGNED_URL`. The flowvault SDK doesn't accept a Skyflow ID as a file source.
+- `destination` on `Entity` and `CustomType` is the name of a token group, not a `table.column`.
+
 ### `DetectConfiguration`
 
 An inline Detect configuration, passed as `configuration` to `deidentify_string` or `deidentify_file`. The SDK adds the vault ID from your vault configuration.
@@ -517,6 +527,8 @@ An inline Detect configuration, passed as `configuration` to `deidentify_string`
 | `deidentification_type` | `DeidentificationType` | How to de-identify the entity. See [`DeidentificationType`](#deidentificationtype). |
 | `destination` | `str` | Vault column that stores detected values, in `table.column` format (for example, `persons.name`). |
 | `transformation` | `Transformation` | Transformation to apply. See [`Transformation`](#transformation). |
+| `include_prefix` | `IncludePrefix` | Whether the generated token starts with the entity-type prefix, for example `[NAME_<token>]`. Applies only to `VAULT_TOKEN`. `NO` returns the raw vault token, and the value can't be re-identified later. See [`IncludePrefix`](#includeprefix). |
+| `prefix_override` | `str` | Prefix to use instead of the entity type in the generated token. For example, `NAAM` produces `[NAAM_<token>]`. Can't be combined with `include_prefix=IncludePrefix.NO`. |
 
 ### `Transformation`
 
@@ -544,6 +556,10 @@ An inline Detect configuration, passed as `configuration` to `deidentify_string`
 |-----------|------|-------------|
 | `label` | `str` | Label of the custom type, used as its token prefix. |
 | `match` | `list[str]` | Regular expressions. A detected entity that a pattern matches in full is replaced with `[<label>]`. |
+| `deidentification_type` | `DeidentificationType` | How to de-identify matches. See [`DeidentificationType`](#deidentificationtype). |
+| `destination` | `str` | Vault column that stores matched values, in `table.column` format. Used only with `VAULT_TOKEN`. |
+| `include_prefix` | `IncludePrefix` | Whether the generated token starts with `label` as a prefix. Same rules as on [`Entity`](#entity). |
+| `prefix_override` | `str` | Prefix to use instead of `label` in the generated token. Same rules as on [`Entity`](#entity). |
 
 ### `FileMapping`
 

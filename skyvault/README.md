@@ -635,9 +635,9 @@ Returns a `DeidentifyStringResponse` with `processed_text`, `entities` (each a `
 | Class | Fields | Notes |
 |-------|--------|-------|
 | `Detect` | `entities`, `object_entities`, `restrict`, `skip`, `custom_types`, `return_entities` | `restrict` / `skip` are regexes always / never treated as sensitive. `return_entities` is `EXCLUDE_SENSITIVE_DATA` (server default), `ALL` or `NONE`. |
-| `Entity` | `entity_type`, `deidentification_type`, `destination`, `transformation` | `entity_type` defaults to `ALL`. `deidentification_type` is `ENTITY_UNIQUE_COUNTER` (server default), `ENTITY_ONLY`, `MASK` or `VAULT_TOKEN`. `destination` (`table.column`) is used only with `VAULT_TOKEN`. |
+| `Entity` | `entity_type`, `deidentification_type`, `destination`, `transformation` | `entity_type` defaults to `ALL`. `deidentification_type` is `ENTITY_UNIQUE_COUNTER` (server default), `ENTITY_ONLY`, `MASK` or `VAULT_TOKEN`. `destination` (`table.column`) is used only with `VAULT_TOKEN`. `include_prefix` and `prefix_override` are described below the table. |
 | `Transformation` / `ShiftDates` | `shift_dates`; `min_days`, `max_days` | Shifts detected dates by a random number of days within the range. |
-| `CustomType` | `label`, `match` | A regex-defined entity type; `label` is reported as the entity type of its matches. |
+| `CustomType` | `label`, `match`, `deidentification_type`, `destination`, `include_prefix`, `prefix_override` | A regex-defined entity type; `label` is reported as the entity type of its matches. The other fields work as they do on `Entity`. |
 | `ObjectEntity` | `entity_type`, `deidentification_type` | Visual objects in images: `FACE`, `LICENSE_PLATE`, `LOGO`, `SIGNATURE` or `ALL`, handled with `REDACT` or `UNREDACT`. File inputs only. |
 | `FileMapping` | `source`, `destination`, `output_file_name_suffix`, `entities_destination`, `object_entities_destination` | Where the processed file and entity files are written. File inputs only. |
 | `Media` | `audio`, `document`, `image` | Media-type options. File inputs only. |
@@ -679,6 +679,25 @@ configuration = DetectConfiguration(
 )
 ```
 
+**Token prefixes.** With `VAULT_TOKEN`, a generated token starts by default with the entity type, for example `[NAME_<token>]`. To change this, set `include_prefix` and `prefix_override` on an `Entity` or `CustomType`:
+
+- `prefix_override='NAAM'` produces `[NAAM_<token>]`.
+- `include_prefix=IncludePrefix.NO` returns the raw vault token. A token without its prefix can't be re-identified later, so use it only when you won't need the original value back.
+
+You can't combine `prefix_override` with `include_prefix=IncludePrefix.NO`. When you set neither, the server default applies. Import `IncludePrefix` from `skyflow.utils.enums`.
+
+```python
+from skyflow.vault.detect import Entity
+from skyflow.utils.enums import EntityType, DeidentificationType
+
+Entity(
+    entity_type=EntityType.NAME,
+    deidentification_type=DeidentificationType.VAULT_TOKEN,
+    destination='persons.name',
+    prefix_override='NAAM',
+)
+```
+
 ### De-identify File: `.deidentify_file(request)`
 
 De-identifies a file. The API is asynchronous: the submit call returns a run id and the result is retrieved from the run. Build the request with `DeidentifyFileRequest`.
@@ -686,7 +705,7 @@ De-identifies a file. The API is asynchronous: the submit call returns a run id 
 Supply the file in exactly one of three ways: `file_path`, `file`, or `value` plus a `DeidentifySourceType` `data_source` (`BASE64`, the `SKYFLOW_ID` of a file record in the vault, or `PRESIGNED_URL`). A local `file` / `file_path` is read when the request is sent, base64-encoded, and its `data_format` inferred from the extension. Passing more than one of them, or none, fails client-side validation before any network call. `configuration_id` / `configuration` follow the same rules as for strings (see [Before you start](#before-you-start)).
 
 - **Submit only** (default): one call, returns `run_id`. `status` is `None` and nothing is written to disk — retrieve the result later with [`get_run`](#get-run-get_runrequest).
-- **Submit and poll**: pass `poll_options`. The SDK polls with exponential backoff (1, 2, 4, 8, 16, then 32 seconds) until the run is `SUCCESS`, `FAILED` or `UNKNOWN`, or until `wait_time` (default 60 s, max 300) or `max_attempts` (default and max 23) is used up. If the budget runs out the response carries the run id with `IN_PROGRESS` or `QUEUED`, so you can resume with `get_run`. `output_directory` is valid only with `poll_options`; setting it without them fails client-side validation.
+- **Submit and poll**: pass `poll_options`. The SDK polls with exponential backoff (1, 2, 4, 8, 16, then 32 seconds) until the run is `SUCCESS`, `FAILED` or `UNKNOWN`, or until `wait_time` (default 60 s, max 300) or `max_attempts` (default and max 23) is used up. `wait_time` caps the combined sleep between status checks, not the elapsed time, so polling can run longer than `wait_time`. If the budget runs out the response carries the run id with `IN_PROGRESS` or `QUEUED`, so you can resume with `get_run`. `output_directory` is valid only with `poll_options`; setting it without them fails client-side validation.
 
 ```python
 from skyflow.vault.detect import DeidentifyFileRequest, PollOptions
