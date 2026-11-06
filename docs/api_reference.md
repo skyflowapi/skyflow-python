@@ -604,11 +604,11 @@ An inline Detect configuration, passed as `configuration` to `deidentify_string`
 
 ### `PollOptions`
 
-Polling limits for `deidentify_file`. The SDK waits 1, 2, 4, 8, 16, and then 32 seconds between attempts.
+Polling limits for `deidentify_file`. Polling stops at whichever limit is reached first. Between status checks, the SDK waits 1, 2, 4, 8, 16, and then 32 seconds, and shortens the last wait so the total stays within `wait_time`.
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
-| `wait_time` | `int` | Maximum total wait, in seconds. Default `60`, range 1–300. |
+| `wait_time` | `int` | Maximum combined wait between status checks, in seconds. Time spent on the status requests isn't counted, so polling can take longer than `wait_time`. Default `60`, range 1–300. |
 | `max_attempts` | `int` | Maximum number of status checks. Default `23`, range 1–23. |
 
 ### `RedactionLevel`

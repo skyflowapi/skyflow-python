@@ -44,7 +44,7 @@ def perform_deidentify_file():
             file_path='<PATH_TO_FILE>',  # Local file to de-identify
             configuration_id='<CONFIGURATION_ID>',  # ID of an existing Detect configuration
             poll_options=PollOptions(
-                wait_time=120,  # Maximum total wait in seconds (1-300, default 60)
+                wait_time=120,  # Maximum combined wait between status checks, in seconds (1-300, default 60)
                 max_attempts=10  # Maximum status checks (1-23, default 23)
             ),
             output_directory='<OUTPUT_DIRECTORY>'  # Where processed files are written; requires poll_options
