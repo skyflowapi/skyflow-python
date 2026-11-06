@@ -108,6 +108,8 @@ def to_entity(entity):
         deidentification_type=_enum_value(entity.deidentification_type),
         destination=entity.destination,
         transformation=to_transformation(entity.transformation) if entity.transformation is not None else None,
+        include_prefix=_enum_value(entity.include_prefix),
+        prefix_override=entity.prefix_override,
     ))
 
 
@@ -125,6 +127,10 @@ def to_custom_type(custom_type):
     return WireDetectCustomTypes(**_omit_none(
         label=custom_type.label,
         match=custom_type.match,
+        deidentification_type=_enum_value(custom_type.deidentification_type),
+        destination=custom_type.destination,
+        include_prefix=_enum_value(custom_type.include_prefix),
+        prefix_override=custom_type.prefix_override,
     ))
 
 

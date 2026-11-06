@@ -14,6 +14,7 @@ from common.utils.enums.detect import (
     EntityType,
     FileDataFormat,
     GuardrailsValidation,
+    IncludePrefix,
 )
 
 
@@ -29,6 +30,7 @@ class ReidentifySourceType(Enum):
 from common.utils.enums.redaction_type import RedactionType
 from common.vault.detect import (
     CheckGuardrailsRequest,
+    CustomType,
     DeidentifyFileRequest,
     DeidentifyStringRequest,
     DetectConfiguration,
@@ -370,6 +372,36 @@ class TestDetectController(unittest.TestCase):
         self.assertEqual(mappers._file_data_format("pdf"), FileDataFormat.PDF)
         self.assertIsNone(mappers._file_data_format("bogus"))
         self.assertIsNone(mappers._file_data_format(None))
+
+    def test_entity_prefix_fields_serialize(self):
+        wire = mappers.to_entity(Entity(
+            entity_type=EntityType.NAME,
+            deidentification_type=DeidentificationType.VAULT_TOKEN,
+            destination="persons.name",
+            include_prefix=IncludePrefix.NO,
+            prefix_override="NAAM",
+        )).dict(by_alias=True, exclude_none=True)
+        self.assertEqual(wire["includePrefix"], "NO")
+        self.assertEqual(wire["prefixOverride"], "NAAM")
+
+    def test_custom_type_fields_serialize(self):
+        wire = mappers.to_custom_type(CustomType(
+            label="EMPLOYEE_ID",
+            match=["EMP-[0-9]{6}"],
+            deidentification_type=DeidentificationType.VAULT_TOKEN,
+            destination="persons.product",
+            include_prefix=IncludePrefix.YES,
+            prefix_override="EMP",
+        )).dict(by_alias=True, exclude_none=True)
+        self.assertEqual(wire["deidentificationType"], "VAULT_TOKEN")
+        self.assertEqual(wire["destination"], "persons.product")
+        self.assertEqual(wire["includePrefix"], "YES")
+        self.assertEqual(wire["prefixOverride"], "EMP")
+
+    def test_entity_prefix_fields_omitted_when_unset(self):
+        wire = mappers.to_entity(Entity(entity_type=EntityType.NAME)).dict(by_alias=True, exclude_none=True)
+        self.assertNotIn("includePrefix", wire)
+        self.assertNotIn("prefixOverride", wire)
 
 
 if __name__ == "__main__":

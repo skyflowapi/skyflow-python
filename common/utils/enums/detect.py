@@ -83,6 +83,11 @@ class DeidentificationType(Enum):
     MASK = "MASK"
 
 
+class IncludePrefix(Enum):
+    YES = "YES"
+    NO = "NO"
+
+
 class ReturnEntitiesType(Enum):
     EXCLUDE_SENSITIVE_DATA = "EXCLUDE_SENSITIVE_DATA"
     ALL = "ALL"
