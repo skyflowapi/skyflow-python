@@ -569,6 +569,9 @@ Detect configurations are created in Studio or through the management API — th
 detect = skyflow_client.detect()
 ```
 
+> [!NOTE]
+> Detect V2 replaces the `deidentify_text`, `reidentify_text`, and `get_detect_run` methods and their request and response classes. Use `deidentify_string`, `reidentify_string`, and `get_run` instead. To upgrade existing code, see the [Detect V1 to V2 migration guide](../docs/migrate_detect_v1_to_v2.md).
+
 ### Before you start
 
 - **Role.** The service account needs the Detect Invoker, Detect Manager or Vault Owner role on the vault. Detect Invoker can de-identify data and write vault tokens into the vault; Detect Manager adds the ability to create, update and delete Detect configurations. Re-identifying values stored as `VAULT_TOKEN` is governed like detokenization: the caller also needs a policy granting the Detokenization action on the destination table and columns, unless it is a Vault Owner.
@@ -622,6 +625,9 @@ response = skyflow_client.detect().deidentify_string(
 
 Returns a `DeidentifyStringResponse` with `processed_text`, `entities` (each a `DetectedEntity` with `token`, `value`, `location`, `entity_type`, `entity_scores`; never `None`) and `metrics`. `value` is populated only when the configuration sets `return_entities` to `ReturnEntitiesType.ALL`; the default `EXCLUDE_SENSITIVE_DATA` returns an empty `value`, so raw sensitive data does not come back unless you ask for it.
 
+> [!TIP]
+> See the full example in the samples directory: [deidentify_string.py](samples/detect_api/deidentify_string.py)
+
 ### Detect configuration
 
 `DetectConfiguration` is the inline form of a stored configuration and accepts the same options. `detect` applies to string and file inputs; `file_mapping` and `media` apply to file inputs only.
@@ -629,9 +635,9 @@ Returns a `DeidentifyStringResponse` with `processed_text`, `entities` (each a `
 | Class | Fields | Notes |
 |-------|--------|-------|
 | `Detect` | `entities`, `object_entities`, `restrict`, `skip`, `custom_types`, `return_entities` | `restrict` / `skip` are regexes always / never treated as sensitive. `return_entities` is `EXCLUDE_SENSITIVE_DATA` (server default), `ALL` or `NONE`. |
-| `Entity` | `entity_type`, `deidentification_type`, `destination`, `transformation` | `entity_type` defaults to `ALL`. `deidentification_type` is `ENTITY_UNIQUE_COUNTER` (server default), `ENTITY_ONLY`, `MASK` or `VAULT_TOKEN`. `destination` (`table.column`) is used only with `VAULT_TOKEN`. |
+| `Entity` | `entity_type`, `deidentification_type`, `destination`, `transformation` | `entity_type` defaults to `ALL`. `deidentification_type` is `ENTITY_UNIQUE_COUNTER` (server default), `ENTITY_ONLY`, `MASK` or `VAULT_TOKEN`. `destination` (`table.column`) is used only with `VAULT_TOKEN`. `include_prefix` and `prefix_override` are described below the table. |
 | `Transformation` / `ShiftDates` | `shift_dates`; `min_days`, `max_days` | Shifts detected dates by a random number of days within the range. |
-| `CustomType` | `label`, `match` | A regex-defined entity type; `label` is reported as the entity type of its matches. |
+| `CustomType` | `label`, `match`, `deidentification_type`, `destination`, `include_prefix`, `prefix_override` | A regex-defined entity type; `label` is reported as the entity type of its matches. The other fields work as they do on `Entity`. |
 | `ObjectEntity` | `entity_type`, `deidentification_type` | Visual objects in images: `FACE`, `LICENSE_PLATE`, `LOGO`, `SIGNATURE` or `ALL`, handled with `REDACT` or `UNREDACT`. File inputs only. |
 | `FileMapping` | `source`, `destination`, `output_file_name_suffix`, `entities_destination`, `object_entities_destination` | Where the processed file and entity files are written. File inputs only. |
 | `Media` | `audio`, `document`, `image` | Media-type options. File inputs only. |
@@ -673,6 +679,25 @@ configuration = DetectConfiguration(
 )
 ```
 
+**Token prefixes.** With `VAULT_TOKEN`, a generated token starts by default with the entity type, for example `[NAME_<token>]`. To change this, set `include_prefix` and `prefix_override` on an `Entity` or `CustomType`:
+
+- `prefix_override='NAAM'` produces `[NAAM_<token>]`.
+- `include_prefix=IncludePrefix.NO` returns the raw vault token. A token without its prefix can't be re-identified later, so use it only when you won't need the original value back.
+
+You can't combine `prefix_override` with `include_prefix=IncludePrefix.NO`. When you set neither, the server default applies. Import `IncludePrefix` from `skyflow.utils.enums`.
+
+```python
+from skyflow.vault.detect import Entity
+from skyflow.utils.enums import EntityType, DeidentificationType
+
+Entity(
+    entity_type=EntityType.NAME,
+    deidentification_type=DeidentificationType.VAULT_TOKEN,
+    destination='persons.name',
+    prefix_override='NAAM',
+)
+```
+
 ### De-identify File: `.deidentify_file(request)`
 
 De-identifies a file. The API is asynchronous: the submit call returns a run id and the result is retrieved from the run. Build the request with `DeidentifyFileRequest`.
@@ -680,7 +705,7 @@ De-identifies a file. The API is asynchronous: the submit call returns a run id 
 Supply the file in exactly one of three ways: `file_path`, `file`, or `value` plus a `DeidentifySourceType` `data_source` (`BASE64`, the `SKYFLOW_ID` of a file record in the vault, or `PRESIGNED_URL`). A local `file` / `file_path` is read when the request is sent, base64-encoded, and its `data_format` inferred from the extension. Passing more than one of them, or none, fails client-side validation before any network call. `configuration_id` / `configuration` follow the same rules as for strings (see [Before you start](#before-you-start)).
 
 - **Submit only** (default): one call, returns `run_id`. `status` is `None` and nothing is written to disk — retrieve the result later with [`get_run`](#get-run-get_runrequest).
-- **Submit and poll**: pass `poll_options`. The SDK polls with exponential backoff (1, 2, 4, 8, 16, then 32 seconds) until the run is `SUCCESS`, `FAILED` or `UNKNOWN`, or until `wait_time` (default 60 s, max 300) or `max_attempts` (default and max 23) is used up. If the budget runs out the response carries the run id with `IN_PROGRESS` or `QUEUED`, so you can resume with `get_run`. `output_directory` is valid only with `poll_options`; setting it without them fails client-side validation.
+- **Submit and poll**: pass `poll_options`. The SDK polls with exponential backoff (1, 2, 4, 8, 16, then 32 seconds) until the run is `SUCCESS`, `FAILED` or `UNKNOWN`, or until `wait_time` (default 60 s, max 300) or `max_attempts` (default and max 23) is used up. `wait_time` caps the combined sleep between status checks, not the elapsed time, so polling can run longer than `wait_time`. If the budget runs out the response carries the run id with `IN_PROGRESS` or `QUEUED`, so you can resume with `get_run`. `output_directory` is valid only with `poll_options`; setting it without them fails client-side validation.
 
 ```python
 from skyflow.vault.detect import DeidentifyFileRequest, PollOptions
@@ -742,6 +767,9 @@ skyflow_client.detect().deidentify_file(
 
 Returns a `DeidentifyFileResponse` with `run_id`, `status` (a `DetectRunStatus`, `None` when not polled), `output_type`, `output` (a list of `FileOutput` with `processed_file`, `processed_file_type`, `processed_file_extension`), `metrics` and `message`.
 
+> [!TIP]
+> See the full example in the samples directory: [deidentify_file.py](samples/detect_api/deidentify_file.py)
+
 ### Get Run: `.get_run(request)`
 
 Retrieves the status and, once complete, the outputs of a Detect file run. Build the request with `GetRunRequest`, initialized with the `run_id` returned from a prior `deidentify_file` call. `output` is empty and `output_type` / `metrics` are `None` until the run completes.
@@ -762,6 +790,9 @@ else:                            # QUEUED, IN_PROGRESS, UNKNOWN: poll again late
 ```
 
 Returns a `GetRunResponse` with the same fields as `DeidentifyFileResponse`.
+
+> [!TIP]
+> See the full example in the samples directory: [get_run.py](samples/detect_api/get_run.py)
 
 ### Re-identify String: `.reidentify_string(request)`
 
@@ -789,6 +820,9 @@ print(response.processed_text)
 > The skyvault `RedactionLevel` has only `entity_name` and `redaction_type`; the flowvault SDK's has `token_group_name` and `redaction_pattern` instead.
 
 Returns a `ReidentifyStringResponse` with `processed_text` and `metrics`.
+
+> [!TIP]
+> See the full example in the samples directory: [reidentify_string.py](samples/detect_api/reidentify_string.py)
 
 ### Re-identify File: `.reidentify_file(request)`
 
@@ -820,6 +854,9 @@ if response.status == DetectRunStatus.SUCCESS:
 
 Returns a `ReidentifyFileResponse` with `status`, `output_type`, `output` (a list of `FileOutput`) and `metrics`.
 
+> [!TIP]
+> See the full example in the samples directory: [reidentify_file.py](samples/detect_api/reidentify_file.py)
+
 ### Check Guardrails: `.check_guardrails(request)`
 
 Synchronous. Screens text for toxicity and a list of denied topics — a natural pre-LLM check. Build the request with `CheckGuardrailsRequest`. `check_toxicity` and `deny_topics` are optional; the SDK sends each only when set and fills in no default. The response is passed through as the API returns it.
@@ -837,6 +874,9 @@ if response.validation == GuardrailsValidation.FAILED:
 ```
 
 Returns a `CheckGuardrailsResponse` with `text`, `validation` (`GuardrailsValidation.PASSED` or `FAILED`), `toxic` and `denied_topic`.
+
+> [!TIP]
+> See the full example in the samples directory: [check_guardrails.py](samples/detect_api/check_guardrails.py)
 
 All Detect methods raise `skyflow.error.SkyflowError` on validation failure, credential failure, or an API error — see [Error handling](#error-handling). Client-side validation fails before any network call.
 
