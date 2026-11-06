@@ -53,17 +53,29 @@ class Entity:
     def __init__(self, entity_type: "EntityType" = None,
                  deidentification_type: "DeidentificationType" = None,
                  destination: str = None,
-                 transformation: Transformation = None):
+                 transformation: Transformation = None,
+                 include_prefix: "IncludePrefix" = None,
+                 prefix_override: str = None):
         self.entity_type = entity_type
         self.deidentification_type = deidentification_type
         self.destination = destination
         self.transformation = transformation
+        self.include_prefix = include_prefix
+        self.prefix_override = prefix_override
 
 
 class CustomType:
-    def __init__(self, label: str = None, match: List[str] = None):
+    def __init__(self, label: str = None, match: List[str] = None,
+                 deidentification_type: "DeidentificationType" = None,
+                 destination: str = None,
+                 include_prefix: "IncludePrefix" = None,
+                 prefix_override: str = None):
         self.label = label
         self.match = match
+        self.deidentification_type = deidentification_type
+        self.destination = destination
+        self.include_prefix = include_prefix
+        self.prefix_override = prefix_override
 
 
 class ObjectEntity:

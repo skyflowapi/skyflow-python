@@ -31,17 +31,20 @@ def validate_deidentify_string_request(request):
 def validate_deidentify_file_request(request):
     if request is None:
         raise _invalid(SkyflowMessages.Error.DEIDENTIFY_FILE_REQUEST_NULL.value)
-    has_local_file = request.file is not None or request.file_path is not None
-    if has_local_file:
-        if not _is_blank(request.value):
-            raise _invalid(SkyflowMessages.Error.MULTIPLE_FILE_SOURCES_IN_DEIDENTIFY_FILE.value)
-        if request.file_path is not None and not os.path.isfile(request.file_path):
-            raise _invalid(SkyflowMessages.Error.FILE_NOT_FOUND_TO_DEIDENTIFY.value)
-    else:
+    sources = sum(
+        1 for source in (request.file_path, request.file, request.value) if source is not None
+    )
+    if sources == 0:
+        raise _invalid(SkyflowMessages.Error.MISSING_FILE_SOURCE_IN_DEIDENTIFY_FILE.value)
+    if sources > 1:
+        raise _invalid(SkyflowMessages.Error.MULTIPLE_FILE_SOURCES_IN_DEIDENTIFY_FILE.value)
+    if request.value is not None:
         if request.data_source is None:
             raise _invalid(SkyflowMessages.Error.INVALID_DATA_SOURCE_IN_DEIDENTIFY_FILE.value)
         if _is_blank(request.value):
             raise _invalid(SkyflowMessages.Error.INVALID_VALUE_IN_DEIDENTIFY_FILE.value)
+    elif request.file_path is not None and not os.path.isfile(request.file_path):
+        raise _invalid(SkyflowMessages.Error.FILE_NOT_FOUND_TO_DEIDENTIFY.value)
     validate_poll_options(request.poll_options)
     if request.poll_options is None and not _is_blank(request.output_directory):
         raise _invalid(SkyflowMessages.Error.OUTPUT_DIRECTORY_WITHOUT_POLL_OPTIONS.value)

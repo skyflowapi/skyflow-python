@@ -53,6 +53,15 @@ def _enum_or_default(enum_cls, value, fallback):
         return fallback
 
 
+def _file_data_format(value):
+    if value is None:
+        return None
+    try:
+        return FileDataFormat(str(value).lower())
+    except ValueError:
+        return None
+
+
 def infer_format(file_name):
     if not file_name:
         return None
@@ -63,6 +72,10 @@ def infer_format(file_name):
         return FileDataFormat[file_name[index + 1:].upper()]
     except KeyError:
         return None
+
+
+def to_vault_default_config(vault_id):
+    return WireDetectConfigV2(vault_id=vault_id)
 
 
 def to_detect_config(configuration, vault_id):
@@ -95,6 +108,8 @@ def to_entity(entity):
         deidentification_type=_enum_value(entity.deidentification_type),
         destination=entity.destination,
         transformation=to_transformation(entity.transformation) if entity.transformation is not None else None,
+        include_prefix=_enum_value(entity.include_prefix),
+        prefix_override=entity.prefix_override,
     ))
 
 
@@ -112,6 +127,10 @@ def to_custom_type(custom_type):
     return WireDetectCustomTypes(**_omit_none(
         label=custom_type.label,
         match=custom_type.match,
+        deidentification_type=_enum_value(custom_type.deidentification_type),
+        destination=custom_type.destination,
+        include_prefix=_enum_value(custom_type.include_prefix),
+        prefix_override=custom_type.prefix_override,
     ))
 
 
@@ -207,7 +226,7 @@ def to_file_output(api_output):
     return FileOutput(
         processed_file=api_output.processed_file,
         processed_file_type=api_output.processed_file_type,
-        processed_file_extension=_enum_or_default(FileDataFormat, api_output.processed_file_extension, None),
+        processed_file_extension=_file_data_format(api_output.processed_file_extension),
     )
 
 
