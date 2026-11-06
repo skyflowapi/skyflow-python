@@ -2,202 +2,112 @@
 
 # isort: skip_file
 
-from .audit_event_audit_resource_type import AuditEventAuditResourceType
-from .audit_event_context import AuditEventContext
-from .audit_event_data import AuditEventData
-from .audit_event_http_info import AuditEventHttpInfo
-from .batch_record_method import BatchRecordMethod
-from .context_access_type import ContextAccessType
-from .context_auth_mode import ContextAuthMode
-from .deidentified_file_output import DeidentifiedFileOutput
-from .deidentified_file_output_processed_file_extension import DeidentifiedFileOutputProcessedFileExtension
-from .deidentified_file_output_processed_file_type import DeidentifiedFileOutputProcessedFileType
-from .deidentify_file_response import DeidentifyFileResponse
-from .deidentify_string_response import DeidentifyStringResponse
-from .detect_guardrails_response import DetectGuardrailsResponse
-from .detect_guardrails_response_validation import DetectGuardrailsResponseValidation
-from .detect_runs_response import DetectRunsResponse
-from .detect_runs_response_output_type import DetectRunsResponseOutputType
-from .detect_runs_response_status import DetectRunsResponseStatus
-from .detokenize_record_response_value_type import DetokenizeRecordResponseValueType
-from .error_response import ErrorResponse
-from .error_response_error import ErrorResponseError
-from .file_data import FileData
-from .file_data_data_format import FileDataDataFormat
-from .file_data_deidentify_audio import FileDataDeidentifyAudio
-from .file_data_deidentify_audio_data_format import FileDataDeidentifyAudioDataFormat
-from .file_data_deidentify_document import FileDataDeidentifyDocument
-from .file_data_deidentify_document_data_format import FileDataDeidentifyDocumentDataFormat
-from .file_data_deidentify_image import FileDataDeidentifyImage
-from .file_data_deidentify_image_data_format import FileDataDeidentifyImageDataFormat
-from .file_data_deidentify_pdf import FileDataDeidentifyPdf
-from .file_data_deidentify_presentation import FileDataDeidentifyPresentation
-from .file_data_deidentify_presentation_data_format import FileDataDeidentifyPresentationDataFormat
-from .file_data_deidentify_spreadsheet import FileDataDeidentifySpreadsheet
-from .file_data_deidentify_spreadsheet_data_format import FileDataDeidentifySpreadsheetDataFormat
-from .file_data_deidentify_structured_text import FileDataDeidentifyStructuredText
-from .file_data_deidentify_structured_text_data_format import FileDataDeidentifyStructuredTextDataFormat
-from .file_data_deidentify_text import FileDataDeidentifyText
-from .file_data_reidentify_file import FileDataReidentifyFile
-from .file_data_reidentify_file_data_format import FileDataReidentifyFileDataFormat
-from .format import Format
-from .format_masked_item import FormatMaskedItem
-from .format_plaintext_item import FormatPlaintextItem
-from .format_redacted_item import FormatRedactedItem
-from .googlerpc_status import GooglerpcStatus
-from .http_code import HttpCode
-from .identify_response import IdentifyResponse
-from .locations import Locations
-from .protobuf_any import ProtobufAny
-from .redaction_enum_redaction import RedactionEnumRedaction
-from .reidentified_file_output import ReidentifiedFileOutput
-from .reidentified_file_output_processed_file_extension import ReidentifiedFileOutputProcessedFileExtension
-from .reidentify_file_response import ReidentifyFileResponse
-from .reidentify_file_response_output_type import ReidentifyFileResponseOutputType
-from .reidentify_file_response_status import ReidentifyFileResponseStatus
-from .request_action_type import RequestActionType
-from .resource_id import ResourceId
-from .shift_dates import ShiftDates
-from .shift_dates_entity_types_item import ShiftDatesEntityTypesItem
-from .string_response_entities import StringResponseEntities
-from .token_type_mapping import TokenTypeMapping
-from .token_type_mapping_default import TokenTypeMappingDefault
-from .token_type_mapping_entity_only_item import TokenTypeMappingEntityOnlyItem
-from .token_type_mapping_entity_unq_counter_item import TokenTypeMappingEntityUnqCounterItem
-from .token_type_mapping_vault_token_item import TokenTypeMappingVaultTokenItem
-from .transformations import Transformations
-from .upload_file_v_2_response import UploadFileV2Response
-from .uuid_ import Uuid
-from .v_1_audit_after_options import V1AuditAfterOptions
-from .v_1_audit_event_response import V1AuditEventResponse
-from .v_1_audit_response import V1AuditResponse
-from .v_1_audit_response_event import V1AuditResponseEvent
-from .v_1_audit_response_event_request import V1AuditResponseEventRequest
-from .v_1_batch_operation_response import V1BatchOperationResponse
-from .v_1_batch_record import V1BatchRecord
-from .v_1_bin_list_response import V1BinListResponse
-from .v_1_bulk_delete_record_response import V1BulkDeleteRecordResponse
-from .v_1_bulk_get_record_response import V1BulkGetRecordResponse
-from .v_1_byot import V1Byot
-from .v_1_card import V1Card
-from .v_1_delete_file_response import V1DeleteFileResponse
-from .v_1_delete_record_response import V1DeleteRecordResponse
-from .v_1_detokenize_record_request import V1DetokenizeRecordRequest
-from .v_1_detokenize_record_response import V1DetokenizeRecordResponse
-from .v_1_detokenize_response import V1DetokenizeResponse
-from .v_1_field_records import V1FieldRecords
-from .v_1_file_av_scan_status import V1FileAvScanStatus
-from .v_1_get_auth_token_response import V1GetAuthTokenResponse
-from .v_1_get_file_scan_status_response import V1GetFileScanStatusResponse
-from .v_1_get_query_response import V1GetQueryResponse
-from .v_1_insert_record_response import V1InsertRecordResponse
-from .v_1_member_type import V1MemberType
-from .v_1_record_meta_properties import V1RecordMetaProperties
-from .v_1_tokenize_record_request import V1TokenizeRecordRequest
-from .v_1_tokenize_record_response import V1TokenizeRecordResponse
-from .v_1_tokenize_response import V1TokenizeResponse
-from .v_1_update_record_response import V1UpdateRecordResponse
-from .v_1_vault_field_mapping import V1VaultFieldMapping
-from .v_1_vault_schema_config import V1VaultSchemaConfig
-from .word_character_count import WordCharacterCount
+import typing
+from importlib import import_module
+
+if typing.TYPE_CHECKING:
+    from .batch_operation_response import BatchOperationResponse
+    from .batch_record import BatchRecord
+    from .batch_record_method import BatchRecordMethod
+    from .batch_record_redaction import BatchRecordRedaction
+    from .bulk_delete_record_response import BulkDeleteRecordResponse
+    from .bulk_get_record_response import BulkGetRecordResponse
+    from .delete_record_response import DeleteRecordResponse
+    from .detokenize_record_request import DetokenizeRecordRequest
+    from .detokenize_record_request_redaction import DetokenizeRecordRequestRedaction
+    from .detokenize_record_response import DetokenizeRecordResponse
+    from .detokenize_record_response_value_type import DetokenizeRecordResponseValueType
+    from .detokenize_response import DetokenizeResponse
+    from .error_response import ErrorResponse
+    from .error_response_error import ErrorResponseError
+    from .field_records import FieldRecords
+    from .file_metadata import FileMetadata
+    from .get_field_records import GetFieldRecords
+    from .get_query_response import GetQueryResponse
+    from .http_code import HttpCode
+    from .insert_record_response import InsertRecordResponse
+    from .record_meta_properties import RecordMetaProperties
+    from .tokenize_record_request import TokenizeRecordRequest
+    from .tokenize_record_response import TokenizeRecordResponse
+    from .tokenize_response import TokenizeResponse
+    from .update_record_response import UpdateRecordResponse
+    from .upload_file_response_v2 import UploadFileResponseV2
+_dynamic_imports: typing.Dict[str, str] = {
+    "BatchOperationResponse": ".batch_operation_response",
+    "BatchRecord": ".batch_record",
+    "BatchRecordMethod": ".batch_record_method",
+    "BatchRecordRedaction": ".batch_record_redaction",
+    "BulkDeleteRecordResponse": ".bulk_delete_record_response",
+    "BulkGetRecordResponse": ".bulk_get_record_response",
+    "DeleteRecordResponse": ".delete_record_response",
+    "DetokenizeRecordRequest": ".detokenize_record_request",
+    "DetokenizeRecordRequestRedaction": ".detokenize_record_request_redaction",
+    "DetokenizeRecordResponse": ".detokenize_record_response",
+    "DetokenizeRecordResponseValueType": ".detokenize_record_response_value_type",
+    "DetokenizeResponse": ".detokenize_response",
+    "ErrorResponse": ".error_response",
+    "ErrorResponseError": ".error_response_error",
+    "FieldRecords": ".field_records",
+    "FileMetadata": ".file_metadata",
+    "GetFieldRecords": ".get_field_records",
+    "GetQueryResponse": ".get_query_response",
+    "HttpCode": ".http_code",
+    "InsertRecordResponse": ".insert_record_response",
+    "RecordMetaProperties": ".record_meta_properties",
+    "TokenizeRecordRequest": ".tokenize_record_request",
+    "TokenizeRecordResponse": ".tokenize_record_response",
+    "TokenizeResponse": ".tokenize_response",
+    "UpdateRecordResponse": ".update_record_response",
+    "UploadFileResponseV2": ".upload_file_response_v2",
+}
+
+
+def __getattr__(attr_name: str) -> typing.Any:
+    module_name = _dynamic_imports.get(attr_name)
+    if module_name is None:
+        raise AttributeError(f"No {attr_name} found in _dynamic_imports for module name -> {__name__}")
+    try:
+        module = import_module(module_name, __package__)
+        if module_name == f".{attr_name}":
+            return module
+        else:
+            return getattr(module, attr_name)
+    except ImportError as e:
+        raise ImportError(f"Failed to import {attr_name} from {module_name}: {e}") from e
+    except AttributeError as e:
+        raise AttributeError(f"Failed to get {attr_name} from {module_name}: {e}") from e
+
+
+def __dir__():
+    lazy_attrs = list(_dynamic_imports.keys())
+    return sorted(lazy_attrs)
+
 
 __all__ = [
-    "AuditEventAuditResourceType",
-    "AuditEventContext",
-    "AuditEventData",
-    "AuditEventHttpInfo",
+    "BatchOperationResponse",
+    "BatchRecord",
     "BatchRecordMethod",
-    "ContextAccessType",
-    "ContextAuthMode",
-    "DeidentifiedFileOutput",
-    "DeidentifiedFileOutputProcessedFileExtension",
-    "DeidentifiedFileOutputProcessedFileType",
-    "DeidentifyFileResponse",
-    "DeidentifyStringResponse",
-    "DetectGuardrailsResponse",
-    "DetectGuardrailsResponseValidation",
-    "DetectRunsResponse",
-    "DetectRunsResponseOutputType",
-    "DetectRunsResponseStatus",
+    "BatchRecordRedaction",
+    "BulkDeleteRecordResponse",
+    "BulkGetRecordResponse",
+    "DeleteRecordResponse",
+    "DetokenizeRecordRequest",
+    "DetokenizeRecordRequestRedaction",
+    "DetokenizeRecordResponse",
     "DetokenizeRecordResponseValueType",
+    "DetokenizeResponse",
     "ErrorResponse",
     "ErrorResponseError",
-    "FileData",
-    "FileDataDataFormat",
-    "FileDataDeidentifyAudio",
-    "FileDataDeidentifyAudioDataFormat",
-    "FileDataDeidentifyDocument",
-    "FileDataDeidentifyDocumentDataFormat",
-    "FileDataDeidentifyImage",
-    "FileDataDeidentifyImageDataFormat",
-    "FileDataDeidentifyPdf",
-    "FileDataDeidentifyPresentation",
-    "FileDataDeidentifyPresentationDataFormat",
-    "FileDataDeidentifySpreadsheet",
-    "FileDataDeidentifySpreadsheetDataFormat",
-    "FileDataDeidentifyStructuredText",
-    "FileDataDeidentifyStructuredTextDataFormat",
-    "FileDataDeidentifyText",
-    "FileDataReidentifyFile",
-    "FileDataReidentifyFileDataFormat",
-    "Format",
-    "FormatMaskedItem",
-    "FormatPlaintextItem",
-    "FormatRedactedItem",
-    "GooglerpcStatus",
+    "FieldRecords",
+    "FileMetadata",
+    "GetFieldRecords",
+    "GetQueryResponse",
     "HttpCode",
-    "IdentifyResponse",
-    "Locations",
-    "ProtobufAny",
-    "RedactionEnumRedaction",
-    "ReidentifiedFileOutput",
-    "ReidentifiedFileOutputProcessedFileExtension",
-    "ReidentifyFileResponse",
-    "ReidentifyFileResponseOutputType",
-    "ReidentifyFileResponseStatus",
-    "RequestActionType",
-    "ResourceId",
-    "ShiftDates",
-    "ShiftDatesEntityTypesItem",
-    "StringResponseEntities",
-    "TokenTypeMapping",
-    "TokenTypeMappingDefault",
-    "TokenTypeMappingEntityOnlyItem",
-    "TokenTypeMappingEntityUnqCounterItem",
-    "TokenTypeMappingVaultTokenItem",
-    "Transformations",
-    "UploadFileV2Response",
-    "Uuid",
-    "V1AuditAfterOptions",
-    "V1AuditEventResponse",
-    "V1AuditResponse",
-    "V1AuditResponseEvent",
-    "V1AuditResponseEventRequest",
-    "V1BatchOperationResponse",
-    "V1BatchRecord",
-    "V1BinListResponse",
-    "V1BulkDeleteRecordResponse",
-    "V1BulkGetRecordResponse",
-    "V1Byot",
-    "V1Card",
-    "V1DeleteFileResponse",
-    "V1DeleteRecordResponse",
-    "V1DetokenizeRecordRequest",
-    "V1DetokenizeRecordResponse",
-    "V1DetokenizeResponse",
-    "V1FieldRecords",
-    "V1FileAvScanStatus",
-    "V1GetAuthTokenResponse",
-    "V1GetFileScanStatusResponse",
-    "V1GetQueryResponse",
-    "V1InsertRecordResponse",
-    "V1MemberType",
-    "V1RecordMetaProperties",
-    "V1TokenizeRecordRequest",
-    "V1TokenizeRecordResponse",
-    "V1TokenizeResponse",
-    "V1UpdateRecordResponse",
-    "V1VaultFieldMapping",
-    "V1VaultSchemaConfig",
-    "WordCharacterCount",
+    "InsertRecordResponse",
+    "RecordMetaProperties",
+    "TokenizeRecordRequest",
+    "TokenizeRecordResponse",
+    "TokenizeResponse",
+    "UpdateRecordResponse",
+    "UploadFileResponseV2",
 ]

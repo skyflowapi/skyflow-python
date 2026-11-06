@@ -6,12 +6,16 @@ from json.decoder import JSONDecodeError
 from ..core.api_error import ApiError
 from ..core.client_wrapper import AsyncClientWrapper, SyncClientWrapper
 from ..core.http_response import AsyncHttpResponse, HttpResponse
+from ..core.parse_error import ParsingError
 from ..core.pydantic_utilities import parse_obj_as
 from ..core.request_options import RequestOptions
 from ..errors.bad_request_error import BadRequestError
+from ..errors.internal_server_error import InternalServerError
 from ..errors.not_found_error import NotFoundError
 from ..errors.unauthorized_error import UnauthorizedError
-from ..types.v_1_get_auth_token_response import V1GetAuthTokenResponse
+from ..types.error_response import ErrorResponse
+from ..types.get_auth_token_response import GetAuthTokenResponse
+from pydantic import ValidationError
 
 # this is used as the default value for optional parameters
 OMIT = typing.cast(typing.Any, ...)
@@ -21,7 +25,7 @@ class RawAuthenticationClient:
     def __init__(self, *, client_wrapper: SyncClientWrapper):
         self._client_wrapper = client_wrapper
 
-    def authentication_service_get_auth_token(
+    def get_bearer_token(
         self,
         *,
         grant_type: str,
@@ -31,9 +35,9 @@ class RawAuthenticationClient:
         requested_token_use: typing.Optional[str] = OMIT,
         scope: typing.Optional[str] = OMIT,
         request_options: typing.Optional[RequestOptions] = None,
-    ) -> HttpResponse[V1GetAuthTokenResponse]:
+    ) -> HttpResponse[GetAuthTokenResponse]:
         """
-        <p>Generates a Bearer Token to authenticate with Skyflow. This method doesn't require the <code>Authorization</code> header.</p><p><b>Note:</b> For recommended ways to authenticate, see <a href='/api-authentication/'>API authentication</a>.</p>
+        Generates a Bearer Token to authenticate with Skyflow.
 
         Parameters
         ----------
@@ -41,7 +45,7 @@ class RawAuthenticationClient:
             Grant type of the request. Set this to `urn:ietf:params:oauth:grant-type:jwt-bearer`.
 
         assertion : str
-            User-signed JWT token that contains the following fields: <br/> <ul><li><code>iss</code>: Issuer of the JWT.</li><li><code>key</code>: Unique identifier for the key.</li><li><code>aud</code>: Recipient the JWT is intended for.</li><li><code>exp</code>: Time the JWT expires.</li><li><code>sub</code>: Subject of the JWT.</li><li><code>ctx</code>: (Optional) Value for <a href='/context-aware-overview/'>Context-aware authorization</a>.</li></ul>
+            User-signed JWT token that contains the following fields: iss (Issuer), key (Unique identifier), aud (Recipient), exp (Expiry), sub (Subject), ctx (Optional context for context-aware authorization).
 
         subject_token : typing.Optional[str]
             Subject token.
@@ -53,15 +57,15 @@ class RawAuthenticationClient:
             Token use type. Either `delegation` or `impersonation`.
 
         scope : typing.Optional[str]
-            Subset of available <a href='#Roles'>roles</a> to associate with the requested token. Uses the format "role:\<roleID1\> role:\<roleID2\>".
+            Subset of available roles to associate with the requested token. Uses the format "role:<roleID1> role:<roleID2>".
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
 
         Returns
         -------
-        HttpResponse[V1GetAuthTokenResponse]
-            A successful response.
+        HttpResponse[GetAuthTokenResponse]
+            OK
         """
         _response = self._client_wrapper.httpx_client.request(
             "v1/auth/sa/oauth/token",
@@ -83,9 +87,9 @@ class RawAuthenticationClient:
         try:
             if 200 <= _response.status_code < 300:
                 _data = typing.cast(
-                    V1GetAuthTokenResponse,
+                    GetAuthTokenResponse,
                     parse_obj_as(
-                        type_=V1GetAuthTokenResponse,  # type: ignore
+                        type_=GetAuthTokenResponse,  # type: ignore
                         object_=_response.json(),
                     ),
                 )
@@ -94,9 +98,9 @@ class RawAuthenticationClient:
                 raise BadRequestError(
                     headers=dict(_response.headers),
                     body=typing.cast(
-                        typing.Dict[str, typing.Optional[typing.Any]],
+                        ErrorResponse,
                         parse_obj_as(
-                            type_=typing.Dict[str, typing.Optional[typing.Any]],  # type: ignore
+                            type_=ErrorResponse,  # type: ignore
                             object_=_response.json(),
                         ),
                     ),
@@ -105,9 +109,9 @@ class RawAuthenticationClient:
                 raise UnauthorizedError(
                     headers=dict(_response.headers),
                     body=typing.cast(
-                        typing.Dict[str, typing.Optional[typing.Any]],
+                        ErrorResponse,
                         parse_obj_as(
-                            type_=typing.Dict[str, typing.Optional[typing.Any]],  # type: ignore
+                            type_=ErrorResponse,  # type: ignore
                             object_=_response.json(),
                         ),
                     ),
@@ -116,9 +120,20 @@ class RawAuthenticationClient:
                 raise NotFoundError(
                     headers=dict(_response.headers),
                     body=typing.cast(
-                        typing.Dict[str, typing.Optional[typing.Any]],
+                        ErrorResponse,
                         parse_obj_as(
-                            type_=typing.Dict[str, typing.Optional[typing.Any]],  # type: ignore
+                            type_=ErrorResponse,  # type: ignore
+                            object_=_response.json(),
+                        ),
+                    ),
+                )
+            if _response.status_code == 500:
+                raise InternalServerError(
+                    headers=dict(_response.headers),
+                    body=typing.cast(
+                        ErrorResponse,
+                        parse_obj_as(
+                            type_=ErrorResponse,  # type: ignore
                             object_=_response.json(),
                         ),
                     ),
@@ -126,6 +141,10 @@ class RawAuthenticationClient:
             _response_json = _response.json()
         except JSONDecodeError:
             raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)
+        except ValidationError as e:
+            raise ParsingError(
+                status_code=_response.status_code, headers=dict(_response.headers), body=_response.json(), cause=e
+            )
         raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
 
 
@@ -133,7 +152,7 @@ class AsyncRawAuthenticationClient:
     def __init__(self, *, client_wrapper: AsyncClientWrapper):
         self._client_wrapper = client_wrapper
 
-    async def authentication_service_get_auth_token(
+    async def get_bearer_token(
         self,
         *,
         grant_type: str,
@@ -143,9 +162,9 @@ class AsyncRawAuthenticationClient:
         requested_token_use: typing.Optional[str] = OMIT,
         scope: typing.Optional[str] = OMIT,
         request_options: typing.Optional[RequestOptions] = None,
-    ) -> AsyncHttpResponse[V1GetAuthTokenResponse]:
+    ) -> AsyncHttpResponse[GetAuthTokenResponse]:
         """
-        <p>Generates a Bearer Token to authenticate with Skyflow. This method doesn't require the <code>Authorization</code> header.</p><p><b>Note:</b> For recommended ways to authenticate, see <a href='/api-authentication/'>API authentication</a>.</p>
+        Generates a Bearer Token to authenticate with Skyflow.
 
         Parameters
         ----------
@@ -153,7 +172,7 @@ class AsyncRawAuthenticationClient:
             Grant type of the request. Set this to `urn:ietf:params:oauth:grant-type:jwt-bearer`.
 
         assertion : str
-            User-signed JWT token that contains the following fields: <br/> <ul><li><code>iss</code>: Issuer of the JWT.</li><li><code>key</code>: Unique identifier for the key.</li><li><code>aud</code>: Recipient the JWT is intended for.</li><li><code>exp</code>: Time the JWT expires.</li><li><code>sub</code>: Subject of the JWT.</li><li><code>ctx</code>: (Optional) Value for <a href='/context-aware-overview/'>Context-aware authorization</a>.</li></ul>
+            User-signed JWT token that contains the following fields: iss (Issuer), key (Unique identifier), aud (Recipient), exp (Expiry), sub (Subject), ctx (Optional context for context-aware authorization).
 
         subject_token : typing.Optional[str]
             Subject token.
@@ -165,15 +184,15 @@ class AsyncRawAuthenticationClient:
             Token use type. Either `delegation` or `impersonation`.
 
         scope : typing.Optional[str]
-            Subset of available <a href='#Roles'>roles</a> to associate with the requested token. Uses the format "role:\<roleID1\> role:\<roleID2\>".
+            Subset of available roles to associate with the requested token. Uses the format "role:<roleID1> role:<roleID2>".
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
 
         Returns
         -------
-        AsyncHttpResponse[V1GetAuthTokenResponse]
-            A successful response.
+        AsyncHttpResponse[GetAuthTokenResponse]
+            OK
         """
         _response = await self._client_wrapper.httpx_client.request(
             "v1/auth/sa/oauth/token",
@@ -195,9 +214,9 @@ class AsyncRawAuthenticationClient:
         try:
             if 200 <= _response.status_code < 300:
                 _data = typing.cast(
-                    V1GetAuthTokenResponse,
+                    GetAuthTokenResponse,
                     parse_obj_as(
-                        type_=V1GetAuthTokenResponse,  # type: ignore
+                        type_=GetAuthTokenResponse,  # type: ignore
                         object_=_response.json(),
                     ),
                 )
@@ -206,9 +225,9 @@ class AsyncRawAuthenticationClient:
                 raise BadRequestError(
                     headers=dict(_response.headers),
                     body=typing.cast(
-                        typing.Dict[str, typing.Optional[typing.Any]],
+                        ErrorResponse,
                         parse_obj_as(
-                            type_=typing.Dict[str, typing.Optional[typing.Any]],  # type: ignore
+                            type_=ErrorResponse,  # type: ignore
                             object_=_response.json(),
                         ),
                     ),
@@ -217,9 +236,9 @@ class AsyncRawAuthenticationClient:
                 raise UnauthorizedError(
                     headers=dict(_response.headers),
                     body=typing.cast(
-                        typing.Dict[str, typing.Optional[typing.Any]],
+                        ErrorResponse,
                         parse_obj_as(
-                            type_=typing.Dict[str, typing.Optional[typing.Any]],  # type: ignore
+                            type_=ErrorResponse,  # type: ignore
                             object_=_response.json(),
                         ),
                     ),
@@ -228,9 +247,20 @@ class AsyncRawAuthenticationClient:
                 raise NotFoundError(
                     headers=dict(_response.headers),
                     body=typing.cast(
-                        typing.Dict[str, typing.Optional[typing.Any]],
+                        ErrorResponse,
                         parse_obj_as(
-                            type_=typing.Dict[str, typing.Optional[typing.Any]],  # type: ignore
+                            type_=ErrorResponse,  # type: ignore
+                            object_=_response.json(),
+                        ),
+                    ),
+                )
+            if _response.status_code == 500:
+                raise InternalServerError(
+                    headers=dict(_response.headers),
+                    body=typing.cast(
+                        ErrorResponse,
+                        parse_obj_as(
+                            type_=ErrorResponse,  # type: ignore
                             object_=_response.json(),
                         ),
                     ),
@@ -238,4 +268,8 @@ class AsyncRawAuthenticationClient:
             _response_json = _response.json()
         except JSONDecodeError:
             raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)
+        except ValidationError as e:
+            raise ParsingError(
+                status_code=_response.status_code, headers=dict(_response.headers), body=_response.json(), cause=e
+            )
         raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)

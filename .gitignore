@@ -133,3 +133,6 @@ dmypy.json
 test.py
 credentials.json
 example.py
+
+# Local-only detect sample runs (credentials + recorded outputs, never committed)
+flowvault/samples/detect_api_local/

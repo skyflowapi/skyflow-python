@@ -3,13 +3,14 @@ from skyflow.utils import SkyflowMessages
 from skyflow.utils.logger import set_active_log_level
 from skyflow.utils.validations import validate_connection_config, validate_update_connection_config
 from skyflow.vault.client.client import VaultClient
-from skyflow.vault.controller import VaultController, Connection, Detect
+from skyflow.vault.controller import VaultController, Connection
+from skyflow.vault.detect import DetectController
 
 Skyflow = make_skyflow_class(
     vault_client_cls=VaultClient,
     vault_controller_cls=VaultController,
     connection_cls=Connection,
-    detect_cls=Detect,
+    detect_cls=DetectController,
     skyflow_messages=SkyflowMessages,
     validate_connection_config=validate_connection_config,
     validate_update_connection_config=validate_update_connection_config,

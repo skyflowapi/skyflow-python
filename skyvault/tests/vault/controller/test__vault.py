@@ -1,6 +1,6 @@
 import unittest
 from unittest.mock import Mock, patch, mock_open as mock_open_func, mock_open
-from skyflow.generated.rest import V1BatchRecord, V1FieldRecords, V1DetokenizeRecordRequest, V1TokenizeRecordRequest
+from skyflow.generated.rest import BatchRecord, FieldRecords, DetokenizeRecordRequest, TokenizeRecordRequest
 from skyflow.utils._skyflow_messages import SkyflowMessages
 from skyflow.utils.enums import RedactionType, TokenMode
 from skyflow.vault.controller import Vault
@@ -40,7 +40,7 @@ class TestVault(unittest.TestCase):
         )
 
         expected_body = [
-            V1BatchRecord(
+            BatchRecord(
                 fields={"field": "value"},
                 table_name=TABLE_NAME,
                 method="POST",
@@ -70,7 +70,7 @@ class TestVault(unittest.TestCase):
         # Set the return value for the parse response
         mock_parse_response.return_value = expected_response
         records_api = self.vault_client.get_records_api.return_value
-        records_api.with_raw_response.record_service_batch_operation.return_value = mock_api_response
+        records_api.with_raw_response.batch_operation.return_value = mock_api_response
 
         # Call the insert function
         result = self.vault.insert(request)
@@ -82,11 +82,10 @@ class TestVault(unittest.TestCase):
         # Assert the request built for the API matches the expected batch body
         assert_request(
             self,
-            records_api.with_raw_response.record_service_batch_operation,
+            records_api.with_raw_response.batch_operation,
             {
                 "records": expected_body,
-                "continue_on_error": True,
-                "byot": request.token_mode.value
+                "continue_on_error": True
             },
             expected_args=(VAULT_ID,)
         )
@@ -113,7 +112,7 @@ class TestVault(unittest.TestCase):
 
         # Expected API request body based on InsertRequest parameters
         expected_body = [
-            V1FieldRecords(fields={"field": "value"})
+            FieldRecords(fields={"field": "value"})
         ]
 
         # Mock API response for a successful insert
@@ -127,7 +126,7 @@ class TestVault(unittest.TestCase):
         # Set the return value for the parse response
         mock_parse_response.return_value = expected_response
         records_api = self.vault_client.get_records_api.return_value
-        records_api.with_raw_response.record_service_insert_record.return_value = mock_api_response
+        records_api.with_raw_response.insert_records.return_value = mock_api_response
 
         # Call the insert function
         result = self.vault.insert(request)
@@ -139,7 +138,7 @@ class TestVault(unittest.TestCase):
         # Assert the request built for the API matches the expected bulk body
         assert_request(
             self,
-            records_api.with_raw_response.record_service_insert_record,
+            records_api.with_raw_response.insert_records,
             {
                 "records": expected_body,
                 "tokenization": request.return_tokens,
@@ -160,12 +159,12 @@ class TestVault(unittest.TestCase):
                                 upsert=False,
                                 homogeneous=False, continue_on_error=False, token_mode=Mock())
         records_api = self.vault_client.get_records_api.return_value
-        records_api.record_service_insert_record.side_effect = Exception("Generic Exception")
+        records_api.insert_records.side_effect = Exception("Generic Exception")
 
         with self.assertRaises(Exception):
             self.vault.insert(request)
 
-        records_api.with_raw_response.record_service_insert_record.assert_called_once()
+        records_api.with_raw_response.insert_records.assert_called_once()
 
     @patch("skyflow.vault.controller._vault.validate_insert_request")
     def test_insert_raises_on_empty_key(self, mock_validate):
@@ -176,7 +175,7 @@ class TestVault(unittest.TestCase):
         with self.assertRaises(SkyflowError):
             self.vault.insert(request)
 
-        self.vault_client.get_records_api.return_value.with_raw_response.record_service_insert_record.assert_not_called()
+        self.vault_client.get_records_api.return_value.with_raw_response.insert_records.assert_not_called()
 
     @patch("skyflow.vault.controller._vault.validate_insert_request")
     @patch("skyflow.vault.controller._vault.parse_insert_response")
@@ -186,11 +185,11 @@ class TestVault(unittest.TestCase):
         mock_api_response = Mock()
         mock_parse_response.return_value = InsertResponse(inserted_fields=[{"skyflow_id": "id1"}])
         records_api = self.vault_client.get_records_api.return_value
-        records_api.with_raw_response.record_service_insert_record.return_value = mock_api_response
+        records_api.with_raw_response.insert_records.return_value = mock_api_response
 
         self.vault.insert(request)
 
-        records_api.with_raw_response.record_service_insert_record.assert_called_once()
+        records_api.with_raw_response.insert_records.assert_called_once()
 
     @patch("skyflow.vault.controller._vault.validate_insert_request")
     @patch("skyflow.vault.controller._vault.parse_insert_response")
@@ -210,7 +209,7 @@ class TestVault(unittest.TestCase):
 
         # Expected API request body based on InsertRequest parameters
         expected_body = [
-            V1FieldRecords(fields={"field": "value"}, tokens={"token_field": "token_val1"})
+            FieldRecords(fields={"field": "value"}, tokens={"token_field": "token_val1"})
         ]
 
         # Mock API response for a successful insert
@@ -224,7 +223,7 @@ class TestVault(unittest.TestCase):
         # Set the return value for the parse response
         mock_parse_response.return_value = expected_response
         records_api = self.vault_client.get_records_api.return_value
-        records_api.with_raw_response.record_service_insert_record.return_value = mock_api_response
+        records_api.with_raw_response.insert_records.return_value = mock_api_response
 
         # Call the insert function
         result = self.vault.insert(request)
@@ -236,7 +235,7 @@ class TestVault(unittest.TestCase):
         # Assert the request built for the API matches the expected bulk body
         assert_request(
             self,
-            records_api.with_raw_response.record_service_insert_record,
+            records_api.with_raw_response.insert_records,
             {
                 "records": expected_body,
                 "tokenization": request.return_tokens,
@@ -266,7 +265,7 @@ class TestVault(unittest.TestCase):
         )
 
         # Expected payload
-        expected_record = V1FieldRecords(fields={"field": "new_value"}, tokens=None)
+        expected_record = FieldRecords(fields={"field": "new_value"}, tokens=None)
 
         # Mock API response
         mock_api_response = Mock()
@@ -280,7 +279,7 @@ class TestVault(unittest.TestCase):
         # Set the return value for the parse response
         mock_parse_response.return_value = expected_response
         records_api = self.vault_client.get_records_api.return_value
-        records_api.record_service_update_record.return_value = mock_api_response
+        records_api.update_record.return_value = mock_api_response
 
         # Call the update function
         result = self.vault.update(request)
@@ -292,7 +291,7 @@ class TestVault(unittest.TestCase):
         # Assert the request built for the API strips skyflow_id out of the record fields
         assert_request(
             self,
-            records_api.record_service_update_record,
+            records_api.update_record,
             {
                 "id": "12345",
                 "record": expected_record,
@@ -311,12 +310,12 @@ class TestVault(unittest.TestCase):
         request = UpdateRequest(table="test_table", data={"skyflow_id": "123", "field": "value"},
                                 return_tokens=False)
         records_api = self.vault_client.get_records_api.return_value
-        records_api.record_service_update_record.side_effect = Exception("Generic Exception")
+        records_api.update_record.side_effect = Exception("Generic Exception")
 
         with self.assertRaises(Exception):
             self.vault.update(request)
 
-        records_api.record_service_update_record.assert_called_once()
+        records_api.update_record.assert_called_once()
 
     @patch("skyflow.vault.controller._vault.validate_delete_request")
     @patch("skyflow.vault.controller._vault.parse_delete_response")
@@ -343,7 +342,7 @@ class TestVault(unittest.TestCase):
         # Set the return value for the parse response
         mock_parse_response.return_value = expected_response
         records_api = self.vault_client.get_records_api.return_value
-        records_api.record_service_bulk_delete_record.return_value = mock_api_response
+        records_api.delete_records.return_value = mock_api_response
 
         # Call the delete function
         result = self.vault.delete(request)
@@ -355,7 +354,7 @@ class TestVault(unittest.TestCase):
         # Assert the request built for the API carries the ids to delete
         assert_request(
             self,
-            records_api.record_service_bulk_delete_record,
+            records_api.delete_records,
             {"skyflow_ids": expected_payload},
             expected_args=(VAULT_ID, TABLE_NAME)
         )
@@ -368,12 +367,12 @@ class TestVault(unittest.TestCase):
     def test_delete_handles_generic_exception(self, mock_validate):
         request = DeleteRequest(table="test_table", ids=["id1", "id2"])
         records_api = self.vault_client.get_records_api.return_value
-        records_api.record_service_bulk_delete_record.side_effect = Exception("Generic Error")
+        records_api.delete_records.side_effect = Exception("Generic Error")
 
         with self.assertRaises(Exception):
             self.vault.delete(request)
 
-        records_api.record_service_bulk_delete_record.assert_called_once()
+        records_api.delete_records.assert_called_once()
 
     @patch("skyflow.vault.controller._vault.validate_get_request")
     @patch("skyflow.vault.controller._vault.parse_get_response")
@@ -424,7 +423,7 @@ class TestVault(unittest.TestCase):
         # Set the return value for parse_get_response
         mock_parse_response.return_value = expected_response
         records_api = self.vault_client.get_records_api.return_value
-        records_api.record_service_bulk_get_record.return_value = mock_api_response
+        records_api.get_records.return_value = mock_api_response
 
         # Call the get function
         result = self.vault.get(request)
@@ -436,7 +435,7 @@ class TestVault(unittest.TestCase):
         # Assert the request built for the API carries every get parameter
         assert_request(
             self,
-            records_api.record_service_bulk_get_record,
+            records_api.get_records,
             expected_payload,
             expected_args=(VAULT_ID,)
         )
@@ -489,7 +488,7 @@ class TestVault(unittest.TestCase):
         # Set the return value for parse_get_response
         mock_parse_response.return_value = expected_response
         records_api = self.vault_client.get_records_api.return_value
-        records_api.record_service_bulk_get_record.return_value = mock_api_response
+        records_api.get_records.return_value = mock_api_response
 
         # Call the get function
         result = self.vault.get(request)
@@ -499,7 +498,7 @@ class TestVault(unittest.TestCase):
         # Assert the request built for the API looks the record up by column, not by id
         assert_request(
             self,
-            records_api.record_service_bulk_get_record,
+            records_api.get_records,
             expected_payload,
             expected_args=(VAULT_ID,)
         )
@@ -512,12 +511,12 @@ class TestVault(unittest.TestCase):
     def test_get_handles_generic_error(self, mock_validate):
         request = GetRequest(table="test_table", ids=["id1", "id2"])
         records_api = self.vault_client.get_records_api.return_value
-        records_api.record_service_bulk_get_record.side_effect = Exception("Generic Exception")
+        records_api.get_records.side_effect = Exception("Generic Exception")
 
         with self.assertRaises(Exception):
             self.vault.get(request)
 
-        records_api.record_service_bulk_get_record.assert_called_once()
+        records_api.get_records.assert_called_once()
 
     @patch("skyflow.vault.controller._vault.validate_query_request")
     @patch("skyflow.vault.controller._vault.parse_query_response")
@@ -545,7 +544,7 @@ class TestVault(unittest.TestCase):
         # Set the return value for parse_query_response
         mock_parse_response.return_value = expected_response
         query_api = self.vault_client.get_query_api.return_value
-        query_api.query_service_execute_query.return_value = mock_api_response
+        query_api.execute_query.return_value = mock_api_response
 
         # Call the query function
         result = self.vault.query(request)
@@ -556,7 +555,7 @@ class TestVault(unittest.TestCase):
         # Assert the query string reaches the API unaltered
         assert_request(
             self,
-            query_api.query_service_execute_query,
+            query_api.execute_query,
             {"query": "SELECT * FROM test_table"},
             expected_args=(VAULT_ID,)
         )
@@ -570,22 +569,22 @@ class TestVault(unittest.TestCase):
     def test_request_carries_sky_metadata_header(self, mock_parse_response, mock_validate):
         """Every controller call attaches the sky-metadata header naming this SDK version."""
         query_api = self.vault_client.get_query_api.return_value
-        query_api.query_service_execute_query.return_value = Mock()
+        query_api.execute_query.return_value = Mock()
 
         self.vault.query(QueryRequest(query="SELECT * FROM test_table"))
 
-        assert_sky_metadata(self, request_options_headers(query_api.query_service_execute_query))
+        assert_sky_metadata(self, request_options_headers(query_api.execute_query))
 
     @patch("skyflow.vault.controller._vault.validate_query_request")
     def test_query_handles_generic_error(self, mock_validate):
         request = QueryRequest(query="SELECT * from table_name")
         query_api = self.vault_client.get_query_api.return_value
-        query_api.query_service_execute_query.side_effect = Exception("Generic Exception")
+        query_api.execute_query.side_effect = Exception("Generic Exception")
 
         with self.assertRaises(Exception):
             self.vault.query(request)
 
-        query_api.query_service_execute_query.assert_called_once()
+        query_api.execute_query.assert_called_once()
 
     @patch("skyflow.vault.controller._vault.validate_detokenize_request")
     @patch("skyflow.vault.controller._vault.parse_detokenize_response")
@@ -605,8 +604,8 @@ class TestVault(unittest.TestCase):
         )
 
         expected_tokens_list = [
-            V1DetokenizeRecordRequest(token="token1", redaction="PLAIN_TEXT"),
-            V1DetokenizeRecordRequest(token="token2", redaction="PLAIN_TEXT")
+            DetokenizeRecordRequest(token="token1", redaction="PLAIN_TEXT"),
+            DetokenizeRecordRequest(token="token2", redaction="PLAIN_TEXT")
         ]
 
         # Mock API response
@@ -628,7 +627,7 @@ class TestVault(unittest.TestCase):
         # Set the return value for parse_detokenize_response
         mock_parse_response.return_value = expected_response
         tokens_api = self.vault_client.get_tokens_api.return_value
-        tokens_api.with_raw_response.record_service_detokenize.return_value = mock_api_response
+        tokens_api.with_raw_response.detokenize.return_value = mock_api_response
 
         # Call the detokenize function
         result = self.vault.detokenize(request)
@@ -640,7 +639,7 @@ class TestVault(unittest.TestCase):
         # Assert every token and its redaction reach the API
         assert_request(
             self,
-            tokens_api.with_raw_response.record_service_detokenize,
+            tokens_api.with_raw_response.detokenize,
             {
                 "detokenization_parameters": expected_tokens_list,
                 "continue_on_error": False
@@ -668,12 +667,12 @@ class TestVault(unittest.TestCase):
             continue_on_error=False
         )
         tokens_api = self.vault_client.get_tokens_api.return_value
-        tokens_api.record_service_detokenize.side_effect = Exception("Generic Error")
+        tokens_api.detokenize.side_effect = Exception("Generic Error")
 
         with self.assertRaises(Exception):
             self.vault.detokenize(request)
 
-        tokens_api.with_raw_response.record_service_detokenize.assert_called_once()
+        tokens_api.with_raw_response.detokenize.assert_called_once()
 
     @patch("skyflow.vault.controller._vault.validate_tokenize_request")
     @patch("skyflow.vault.controller._vault.parse_tokenize_response")
@@ -689,8 +688,8 @@ class TestVault(unittest.TestCase):
         )
 
         expected_records_list = [
-            V1TokenizeRecordRequest(value="value1", column_group="group1"),
-            V1TokenizeRecordRequest(value="value2", column_group="group2")
+            TokenizeRecordRequest(value="value1", column_group="group1"),
+            TokenizeRecordRequest(value="value2", column_group="group2")
         ]
 
         # Mock API response
@@ -710,7 +709,7 @@ class TestVault(unittest.TestCase):
         # Set the return value for parse_tokenize_response
         mock_parse_response.return_value = expected_response
         tokens_api = self.vault_client.get_tokens_api.return_value
-        tokens_api.record_service_tokenize.return_value = mock_api_response
+        tokens_api.tokenize.return_value = mock_api_response
 
         # Call the tokenize function
         result = self.vault.tokenize(request)
@@ -722,7 +721,7 @@ class TestVault(unittest.TestCase):
         # Assert every value and its column group reach the API
         assert_request(
             self,
-            tokens_api.record_service_tokenize,
+            tokens_api.tokenize,
             {"tokenization_parameters": expected_records_list},
             expected_args=(VAULT_ID,)
         )
@@ -739,12 +738,12 @@ class TestVault(unittest.TestCase):
             ]
         )
         tokens_api = self.vault_client.get_tokens_api.return_value
-        tokens_api.record_service_tokenize.side_effect = Exception("Generic Error")
+        tokens_api.tokenize.side_effect = Exception("Generic Error")
 
         with self.assertRaises(Exception):
             self.vault.tokenize(request)
 
-        tokens_api.record_service_tokenize.assert_called_once()
+        tokens_api.tokenize.assert_called_once()
 
     @patch("skyflow.vault.controller._vault.validate_file_upload_request") 
     def test_upload_file_with_file_path_successful(self, mock_validate):
@@ -764,8 +763,8 @@ class TestVault(unittest.TestCase):
         mock_api_response = Mock()
         mock_api_response.data = Mock(skyflow_id="123")
 
-        records_api = self.vault_client.get_records_api.return_value
-        records_api.with_raw_response.upload_file_v_2.return_value = mock_api_response
+        records_api = self.vault_client.get_files_api.return_value
+        records_api.with_raw_response.upload_file_v2.return_value = mock_api_response
 
         with patch('builtins.open', mocked_open):
             result = self.vault.upload_file(request)
@@ -774,7 +773,7 @@ class TestVault(unittest.TestCase):
             # The file name is derived from the path and the bytes are read off disk
             assert_request(
                 self,
-                records_api.with_raw_response.upload_file_v_2,
+                records_api.with_raw_response.upload_file_v2,
                 {
                     "table_name": "test_table",
                     "column_name": "file_column",
@@ -803,8 +802,8 @@ class TestVault(unittest.TestCase):
         mock_api_response = Mock()
         mock_api_response.data = Mock(skyflow_id="123")
 
-        records_api = self.vault_client.get_records_api.return_value
-        records_api.with_raw_response.upload_file_v_2.return_value = mock_api_response
+        records_api = self.vault_client.get_files_api.return_value
+        records_api.with_raw_response.upload_file_v2.return_value = mock_api_response
 
         # Call upload_file
         result = self.vault.upload_file(request)
@@ -812,7 +811,7 @@ class TestVault(unittest.TestCase):
         # base64 is decoded to bytes and the caller-supplied file name is used
         assert_request(
             self,
-            records_api.with_raw_response.upload_file_v_2,
+            records_api.with_raw_response.upload_file_v2,
             {
                 "table_name": "test_table",
                 "column_name": "file_column",
@@ -844,8 +843,8 @@ class TestVault(unittest.TestCase):
         mock_api_response = Mock()
         mock_api_response.data = Mock(skyflow_id="123")
 
-        records_api = self.vault_client.get_records_api.return_value
-        records_api.with_raw_response.upload_file_v_2.return_value = mock_api_response
+        records_api = self.vault_client.get_files_api.return_value
+        records_api.with_raw_response.upload_file_v2.return_value = mock_api_response
 
         # Call upload_file
         result = self.vault.upload_file(request)
@@ -853,7 +852,7 @@ class TestVault(unittest.TestCase):
         # The file object is forwarded as-is, named from its own .name attribute
         assert_request(
             self,
-            records_api.with_raw_response.upload_file_v_2,
+            records_api.with_raw_response.upload_file_v2,
             {
                 "table_name": "test_table",
                 "column_name": "file_column",
@@ -878,8 +877,8 @@ class TestVault(unittest.TestCase):
         )
 
         # Mock API error
-        records_api = self.vault_client.get_records_api.return_value
-        records_api.with_raw_response.upload_file_v_2.side_effect = Exception("Upload failed")
+        records_api = self.vault_client.get_files_api.return_value
+        records_api.with_raw_response.upload_file_v2.side_effect = Exception("Upload failed")
 
         # Assert that the exception is propagated
         with patch('builtins.open', mock_open(read_data=b"test content")):
@@ -917,8 +916,8 @@ class TestVault(unittest.TestCase):
         mocked_open = mock_open_func(read_data=b"test file content")
         mock_api_response = Mock()
         mock_api_response.data = Mock(skyflow_id="generated-id-123")
-        records_api = self.vault_client.get_records_api.return_value
-        records_api.with_raw_response.upload_file_v_2.return_value = mock_api_response
+        records_api = self.vault_client.get_files_api.return_value
+        records_api.with_raw_response.upload_file_v2.return_value = mock_api_response
         with patch('builtins.open', mocked_open):
             result = self.vault.upload_file(request)
         mock_validate.assert_called_once_with(self.vault_client.get_logger(), request)
@@ -926,7 +925,7 @@ class TestVault(unittest.TestCase):
         # skyflow_id is still sent, explicitly as None, so the vault generates one
         assert_request(
             self,
-            records_api.with_raw_response.upload_file_v_2,
+            records_api.with_raw_response.upload_file_v2,
             {
                 "table_name": "test_table",
                 "column_name": "file_column",
@@ -949,13 +948,13 @@ class TestVault(unittest.TestCase):
             file_path="/path/to/file.txt",
             file_name="already_set.txt"
         )
-        mock_api = self.vault_client.get_records_api.return_value.with_raw_response
+        mock_api = self.vault_client.get_files_api.return_value.with_raw_response
         mock_response = Mock()
         mock_response.data.skyflow_id = "sky123"
-        mock_api.upload_file_v_2.return_value = mock_response
+        mock_api.upload_file_v2.return_value = mock_response
 
         self.vault.upload_file(request)
-        mock_api.upload_file_v_2.assert_called_once()
+        mock_api.upload_file_v2.assert_called_once()
 
     @patch("skyflow.vault.controller._vault.validate_file_upload_request")
     def test_upload_file_file_object_without_name_attr(self, mock_validate):
@@ -966,13 +965,13 @@ class TestVault(unittest.TestCase):
             column_name="file_col",
             file_object=file_obj
         )
-        mock_api = self.vault_client.get_records_api.return_value.with_raw_response
+        mock_api = self.vault_client.get_files_api.return_value.with_raw_response
         mock_response = Mock()
         mock_response.data.skyflow_id = "sky123"
-        mock_api.upload_file_v_2.return_value = mock_response
+        mock_api.upload_file_v2.return_value = mock_response
 
         self.vault.upload_file(request)
-        mock_api.upload_file_v_2.assert_called_once()
+        mock_api.upload_file_v2.assert_called_once()
 
     @patch("skyflow.vault.controller._vault.validate_file_upload_request")
     def test_upload_file_no_file_source_returns_none_file(self, mock_validate):
@@ -981,13 +980,13 @@ class TestVault(unittest.TestCase):
             table=TABLE_NAME,
             column_name="file_col"
         )
-        mock_api = self.vault_client.get_records_api.return_value.with_raw_response
+        mock_api = self.vault_client.get_files_api.return_value.with_raw_response
         mock_response = Mock()
         mock_response.data.skyflow_id = "sky123"
-        mock_api.upload_file_v_2.return_value = mock_response
+        mock_api.upload_file_v2.return_value = mock_response
 
         self.vault.upload_file(request)
-        mock_api.upload_file_v_2.assert_called_once()
+        mock_api.upload_file_v2.assert_called_once()
 
 class TestFileUploadValidation(unittest.TestCase):
     def setUp(self):

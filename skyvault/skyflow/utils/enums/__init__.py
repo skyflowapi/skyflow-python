@@ -6,7 +6,20 @@ from .token_mode import TokenMode
 from .token_type import TokenType
 from .request_method import RequestMethod
 from .redaction_type import RedactionType
-from .detect_entities import DetectEntities
 from .detect_output_transcriptions import DetectOutputTranscriptions
-from .masking_method import MaskingMethod
-from .token_type import TokenType
+from ._deidentify_source_type import DeidentifySourceType
+from ._reidentify_source_type import ReidentifySourceType
+from common.utils.enums.detect import (
+    DeidentificationType,
+    DetectRunStatus,
+    EntityType,
+    FileDataFormat,
+    GuardrailsValidation,
+    IncludePrefix,
+    MaskingMethod,
+    ObjectDeidentificationType,
+    ObjectEntityType,
+    OutputTranscriptionType,
+    PdfProcessingMode,
+    ReturnEntitiesType,
+)
