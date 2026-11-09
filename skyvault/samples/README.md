@@ -43,7 +43,7 @@ Core vault data operations.
 | `invoke_connection.py` | Invoking a Skyflow Connection |
 
 ### `detect_api/`
-Skyflow Detect V2 de-identification, re-identification, and guardrail checks.
+Skyflow Detect de-identification, re-identification, and guardrail checks.
 
 | Sample | Demonstrates |
 |--------|--------------|

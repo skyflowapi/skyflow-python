@@ -570,7 +570,7 @@ detect = skyflow_client.detect()
 ```
 
 > [!NOTE]
-> Detect V2 replaces the `deidentify_text`, `reidentify_text`, and `get_detect_run` methods and their request and response classes. Use `deidentify_string`, `reidentify_string`, and `get_run` instead. To upgrade existing code, see the [Detect V1 to V2 migration guide](../docs/migrate_detect_v1_to_v2.md).
+> skyflow 3.0.0 replaces the `deidentify_text`, `reidentify_text`, and `get_detect_run` methods and their request and response classes with `deidentify_string`, `reidentify_string`, and `get_run`. `deidentify_file` keeps its name but takes a new request. To upgrade existing code, see the [Detect migration guide](../docs/migrate_detect.md).
 
 ### Before you start
 
