@@ -44,7 +44,7 @@ python flowvault/samples/vault_api/insert_records.py
 | [upload_files.py](vault_api/upload_files.py) | Upload files to file columns (`file_path` / `base64` / `file_object`) |
 | [delete_files.py](vault_api/delete_files.py) | Delete files from file columns (by `skyflow_id` or `unique_values`) |
 
-## Detect V2
+## Detect
 
 | Sample | Demonstrates |
 |---|---|

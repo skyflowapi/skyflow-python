@@ -34,6 +34,7 @@ def perform_deidentify_file_submit_only():
             'code': error.http_code,
             'message': error.message,
             'details': error.details,
+            'request_id': error.request_id,
         })
 
 
@@ -75,6 +76,7 @@ def perform_deidentify_file_poll():
             'code': error.http_code,
             'message': error.message,
             'details': error.details,
+            'request_id': error.request_id,
         })
 
 
@@ -110,6 +112,7 @@ def perform_deidentify_file_presigned():
             'code': error.http_code,
             'message': error.message,
             'details': error.details,
+            'request_id': error.request_id,
         })
 
 

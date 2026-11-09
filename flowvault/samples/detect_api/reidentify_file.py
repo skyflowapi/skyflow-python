@@ -49,6 +49,7 @@ def perform_reidentify_file():
             'code': error.http_code,
             'message': error.message,
             'details': error.details,
+            'request_id': error.request_id,
         })
 
 
