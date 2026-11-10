@@ -18,7 +18,16 @@ class Metrics:
 class FileOutput:
     def __init__(self, processed_file: str = None,
                  processed_file_type: str = None,
-                 processed_file_extension: "FileDataFormat" = None):
+                 processed_file_extension: "DeidentifyFileDataFormat" = None):
+        self.processed_file = processed_file
+        self.processed_file_type = processed_file_type
+        self.processed_file_extension = processed_file_extension
+
+
+class ReidentifyFileOutput:
+    def __init__(self, processed_file: str = None,
+                 processed_file_type: str = None,
+                 processed_file_extension: "ReidentifyFileDataFormat" = None):
         self.processed_file = processed_file
         self.processed_file_type = processed_file_type
         self.processed_file_extension = processed_file_extension
@@ -220,7 +229,7 @@ class DeidentifyStringResponse:
 class DeidentifyFileRequest:
     def __init__(self, data_source: "DeidentifySourceType" = None,
                  value: str = None,
-                 data_format: "FileDataFormat" = None,
+                 data_format: "DeidentifyFileDataFormat" = None,
                  configuration_id: str = None,
                  configuration: DetectConfiguration = None,
                  file: BinaryIO = None, file_path: str = None,
@@ -288,7 +297,7 @@ class ReidentifyStringResponse:
 class ReidentifyFileRequest:
     def __init__(self, data_source: "ReidentifySourceType" = None,
                  value: str = None,
-                 data_format: "FileDataFormat" = None,
+                 data_format: "ReidentifyFileDataFormat" = None,
                  redaction_level: List[RedactionRule] = None):
         self.data_source = data_source
         self.value = value
@@ -299,7 +308,7 @@ class ReidentifyFileRequest:
 class ReidentifyFileResponse:
     def __init__(self, status: "DetectRunStatus" = None,
                  output_type: "ReidentifySourceType" = None,
-                 output: List[FileOutput] = None,
+                 output: List[ReidentifyFileOutput] = None,
                  metrics: Metrics = None):
         self.status = status
         self.output_type = output_type

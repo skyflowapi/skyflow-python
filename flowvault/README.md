@@ -1151,7 +1151,7 @@ else:                            # IN_PROGRESS or QUEUED: budget ran out, resume
 
 `output_directory` is created if it does not exist. **If you poll a local file and omit `output_directory`, these files are written to the current working directory** — often your project root or a server's working directory — so set `output_directory` explicitly. A request built from a `PRESIGNED_URL` value has no local name to derive from, and presigned-URL outputs are not fetched, so in that case read `response.output` and write the files yourself.
 
-**Supported formats and limits.** `data_format` accepts every `FileDataFormat`: `bmp`, `csv`, `dcm`, `doc`, `docx`, `gif`, `jpeg`, `jpg`, `json`, `jsonl`, `mp3`, `pdf`, `png`, `ppt`, `pptx`, `tif`, `tiff`, `txt`, `wav`, `xls`, `xlsx`, `xml`, `zip`. The `VAULT_TOKEN` de-identification type is supported only for `txt`, `csv`, `json`, `jsonl`, `xml`, `docx`, `xlsx` and `pptx`.
+**Supported formats and limits.** `data_format` accepts every `DeidentifyFileDataFormat`: `bmp`, `csv`, `dcm`, `doc`, `docx`, `gif`, `jpeg`, `jpg`, `json`, `jsonl`, `mp3`, `pdf`, `png`, `ppt`, `pptx`, `tif`, `tiff`, `txt`, `wav`, `xls`, `xlsx`, `xml`, `zip`. The `VAULT_TOKEN` de-identification type is supported only for `txt`, `csv`, `json`, `jsonl`, `xml`, `docx`, `xlsx` and `pptx`.
 
 **Polling blocks the calling thread** — each lookup is a synchronous `get_run` followed by a sleep. For concurrency, submit without `poll_options` and poll `get_run` yourself on a scheduler, or run the blocking call on a worker thread you own.
 
@@ -1159,13 +1159,13 @@ A file at a presigned URL is referenced through `data_source` + `value`:
 
 ```python
 from skyflow.vault.detect import DeidentifyFileRequest
-from skyflow.utils.enums import DeidentifySourceType, FileDataFormat
+from skyflow.utils.enums import DeidentifySourceType, DeidentifyFileDataFormat
 
 skyflow_client.detect().deidentify_file(
     DeidentifyFileRequest(
         data_source=DeidentifySourceType.PRESIGNED_URL,
         value='<PRESIGNED_URL>',
-        data_format=FileDataFormat.PDF,
+        data_format=DeidentifyFileDataFormat.PDF,
         configuration_id='<CONFIGURATION_ID>',
     )
 )
@@ -1239,14 +1239,14 @@ Returns a `ReidentifyStringResponse` with `processed_text` and `metrics`.
 
 ## reidentify_file
 
-Synchronous — the re-identified file comes back in the response, not through a run id. Build the request with `ReidentifyFileRequest`: a `data_source` (`ReidentifySourceType.BASE64` or `PRESIGNED_URL`; re-identification does not accept a skyflow id as the source), the matching `value`, an optional `data_format`, and the same `RedactionLevel` rules as `reidentify_string`. `data_format` is limited to the formats that support `VAULT_TOKEN`: `txt`, `csv`, `json`, `jsonl`, `xml`, `docx`, `xlsx` and `pptx`.
+Synchronous — the re-identified file comes back in the response, not through a run id. Build the request with `ReidentifyFileRequest`: a `data_source` (`ReidentifySourceType.BASE64` or `PRESIGNED_URL`; re-identification does not accept a skyflow id as the source), the matching `value`, an optional `data_format` (a `ReidentifyFileDataFormat`), and the same `RedactionLevel` rules as `reidentify_string`. `data_format` is limited to the formats that support `VAULT_TOKEN`: `txt`, `csv`, `json`, `jsonl`, `xml`, `docx`, `xlsx` and `pptx`.
 
 ```python
 import base64
 from skyflow.vault.detect import ReidentifyFileRequest, RedactionLevel
-from skyflow.utils.enums import ReidentifySourceType, FileDataFormat, DetectRunStatus
+from skyflow.utils.enums import ReidentifySourceType, ReidentifyFileDataFormat, DetectRunStatus
 
-data_format = FileDataFormat.TXT
+data_format = ReidentifyFileDataFormat.TXT
 with open('/data/redacted/notes.txt', 'rb') as handle:
     encoded = base64.b64encode(handle.read()).decode('utf-8')
 
@@ -1269,7 +1269,7 @@ if response.status == DetectRunStatus.SUCCESS:
             print('download re-identified file from', output.processed_file)
 ```
 
-Returns a `ReidentifyFileResponse` with `status`, `output_type` (a `ReidentifySourceType`), `output` (a list of `FileOutput`) and `metrics`.
+Returns a `ReidentifyFileResponse` with `status`, `output_type` (a `ReidentifySourceType`), `output` (a list of `ReidentifyFileOutput`) and `metrics`.
 
 ## check_guardrails
 

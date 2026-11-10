@@ -3,7 +3,7 @@ import base64
 from skyflow.error import SkyflowError
 from skyflow import Env, Skyflow, LogLevel
 from skyflow.vault.detect import ReidentifyFileRequest, RedactionLevel
-from skyflow.utils.enums import ReidentifySourceType, FileDataFormat, EntityType, RedactionType, DetectRunStatus
+from skyflow.utils.enums import ReidentifySourceType, ReidentifyFileDataFormat, EntityType, RedactionType, DetectRunStatus
 
 
 def perform_reidentify_file():
@@ -28,7 +28,7 @@ def perform_reidentify_file():
         request = ReidentifyFileRequest(
             data_source=ReidentifySourceType.BASE64,
             value=encoded,
-            data_format=FileDataFormat.TXT,
+            data_format=ReidentifyFileDataFormat.TXT,
             redaction_level=[
                 RedactionLevel(entity_name=EntityType.NAME, redaction_type=RedactionType.PLAIN_TEXT),
             ],

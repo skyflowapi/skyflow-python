@@ -29,7 +29,8 @@ class TestDetectReexports(unittest.TestCase):
             RedactionType,
             DeidentifySourceType,
             ReidentifySourceType,
-            FileDataFormat,
+            DeidentifyFileDataFormat,
+            ReidentifyFileDataFormat,
             DetectRunStatus,
             ObjectEntityType,
             ObjectDeidentificationType,
@@ -40,7 +41,8 @@ class TestDetectReexports(unittest.TestCase):
         )
 
         self.assertEqual(EntityType.NAME.value, "NAME")
-        self.assertEqual(FileDataFormat.PDF.value, "pdf")
+        self.assertEqual(DeidentifyFileDataFormat.PDF.value, "pdf")
+        self.assertEqual(ReidentifyFileDataFormat.TXT.value, "txt")
         self.assertEqual(DetectRunStatus.SUCCESS.value, "SUCCESS")
 
 

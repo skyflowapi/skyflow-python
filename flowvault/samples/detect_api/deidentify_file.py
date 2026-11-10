@@ -1,7 +1,7 @@
 from skyflow.error import SkyflowError
 from skyflow import Env, Skyflow, LogLevel
 from skyflow.vault.detect import DeidentifyFileRequest, PollOptions
-from skyflow.utils.enums import DetectRunStatus, DeidentifySourceType, FileDataFormat
+from skyflow.utils.enums import DetectRunStatus, DeidentifySourceType, DeidentifyFileDataFormat
 
 
 def perform_deidentify_file_submit_only():
@@ -99,7 +99,7 @@ def perform_deidentify_file_presigned():
         request = DeidentifyFileRequest(
             data_source=DeidentifySourceType.PRESIGNED_URL,
             value='<PRESIGNED_URL>',
-            data_format=FileDataFormat.PDF,
+            data_format=DeidentifyFileDataFormat.PDF,
             configuration_id='<CONFIGURATION_ID>',
         )
 

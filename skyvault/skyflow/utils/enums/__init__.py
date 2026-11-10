@@ -11,10 +11,11 @@ from ._deidentify_source_type import DeidentifySourceType
 from ._reidentify_source_type import ReidentifySourceType
 from common.utils.enums.detect import (
     DeidentificationType,
+    DeidentifyFileDataFormat,
     DetectRunStatus,
     EntityType,
-    FileDataFormat,
     GuardrailsValidation,
+    ReidentifyFileDataFormat,
     IncludePrefix,
     MaskingMethod,
     ObjectDeidentificationType,

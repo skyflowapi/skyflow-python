@@ -25,6 +25,7 @@ from common.vault.detect import (
     ObjectEntity,
     Pdf,
     PollOptions,
+    ReidentifyFileOutput,
     ReidentifyFileRequest,
     ReidentifyFileResponse,
     ReidentifyStringRequest,
