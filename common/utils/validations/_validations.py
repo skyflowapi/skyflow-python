@@ -232,7 +232,7 @@ def validate_vault_config(logger, config, messages=None, allowed_keys=None):
     if ConfigField.CREDENTIALS in config and config.get(ConfigField.CREDENTIALS):
         validate_credentials(logger, config.get(ConfigField.CREDENTIALS), "vault", vault_id, messages=messages)
 
-    if ConfigField.ENV in config and config.get(ConfigField.ENV) not in Env:
+    if ConfigField.ENV in config and not isinstance(config.get(ConfigField.ENV), Env):
         log_error_log(messages.ErrorLogs.ENV_IS_REQUIRED.value, logger)
         raise SkyflowError(messages.Error.INVALID_ENV.value.format(vault_id), invalid_input_error_code)
 
@@ -256,7 +256,7 @@ def validate_update_vault_config(logger, config, messages=None, allowed_keys=Non
     if ConfigField.CLUSTER_ID in config and not config.get(ConfigField.CLUSTER_ID):
         raise SkyflowError(messages.Error.INVALID_CLUSTER_ID.value.format(vault_id), invalid_input_error_code)
 
-    if ConfigField.ENV in config and config.get(ConfigField.ENV) not in Env:
+    if ConfigField.ENV in config and not isinstance(config.get(ConfigField.ENV), Env):
         raise SkyflowError(messages.Error.INVALID_ENV.value.format(vault_id), invalid_input_error_code)
 
     if ConfigField.CREDENTIALS not in config:

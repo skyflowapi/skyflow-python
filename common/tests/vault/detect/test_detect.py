@@ -10,11 +10,12 @@ from common.errors import SkyflowError
 from common.utils import SkyflowMessages
 from common.utils.enums.detect import (
     DeidentificationType,
+    DeidentifyFileDataFormat,
     DetectRunStatus,
     EntityType,
-    FileDataFormat,
     GuardrailsValidation,
     IncludePrefix,
+    ReidentifyFileDataFormat,
 )
 
 
@@ -274,7 +275,7 @@ class TestDetectController(unittest.TestCase):
         controller = DetectController(_vault_client(files=files))
 
         response = controller.reidentify_file(ReidentifyFileRequest(
-            data_source=ReidentifySourceType.BASE64, value="b64", data_format=FileDataFormat.TXT,
+            data_source=ReidentifySourceType.BASE64, value="b64", data_format=ReidentifyFileDataFormat.TXT,
         ))
 
         _name, _args, kwargs = files.calls[0]
@@ -328,7 +329,7 @@ class TestDetectController(unittest.TestCase):
         tmp = tempfile.mkdtemp()
         self.addCleanup(shutil.rmtree, tmp, ignore_errors=True)
         outputs = [
-            mappers.FileOutput(processed_file=base64.b64encode(b"a").decode(), processed_file_type="REDACTED_FILE", processed_file_extension=FileDataFormat.PDF),
+            mappers.FileOutput(processed_file=base64.b64encode(b"a").decode(), processed_file_type="REDACTED_FILE", processed_file_extension=DeidentifyFileDataFormat.PDF),
             mappers.FileOutput(processed_file=base64.b64encode(b"b").decode(), processed_file_type="ENTITIES", processed_file_extension=None),
         ]
         written = writer.write_outputs(outputs, DeidentifySourceType.BASE64, "invoice.pdf", tmp)
@@ -336,7 +337,7 @@ class TestDetectController(unittest.TestCase):
         self.assertEqual(names, ["processed-entities-invoice.json", "processed-invoice.pdf"])
 
     def test_file_output_writer_skips_presigned(self):
-        outputs = [mappers.FileOutput(processed_file="http://x", processed_file_type="REDACTED_FILE", processed_file_extension=FileDataFormat.PDF)]
+        outputs = [mappers.FileOutput(processed_file="http://x", processed_file_type="REDACTED_FILE", processed_file_extension=DeidentifyFileDataFormat.PDF)]
         self.assertEqual(writer.write_outputs(outputs, DeidentifySourceType.PRESIGNED_URL, "a.pdf", None), [])
 
     def test_validations(self):
@@ -368,10 +369,16 @@ class TestDetectController(unittest.TestCase):
         self.assertEqual(no_data_source.exception.message, SkyflowMessages.Error.INVALID_DATA_SOURCE_IN_DEIDENTIFY_FILE.value)
 
     def test_file_data_format_is_case_insensitive(self):
-        self.assertEqual(mappers._file_data_format("PDF"), FileDataFormat.PDF)
-        self.assertEqual(mappers._file_data_format("pdf"), FileDataFormat.PDF)
-        self.assertIsNone(mappers._file_data_format("bogus"))
-        self.assertIsNone(mappers._file_data_format(None))
+        self.assertEqual(mappers._deidentify_file_data_format("PDF"), DeidentifyFileDataFormat.PDF)
+        self.assertEqual(mappers._deidentify_file_data_format("pdf"), DeidentifyFileDataFormat.PDF)
+        self.assertIsNone(mappers._deidentify_file_data_format("bogus"))
+        self.assertIsNone(mappers._deidentify_file_data_format(None))
+
+    def test_reidentify_file_data_format_narrower_set(self):
+        self.assertEqual(mappers._reidentify_file_data_format("TXT"), ReidentifyFileDataFormat.TXT)
+        self.assertEqual(mappers._reidentify_file_data_format("txt"), ReidentifyFileDataFormat.TXT)
+        self.assertIsNone(mappers._reidentify_file_data_format("pdf"))
+        self.assertIsNone(mappers._reidentify_file_data_format(None))
 
     def test_entity_prefix_fields_serialize(self):
         wire = mappers.to_entity(Entity(

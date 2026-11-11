@@ -36,6 +36,7 @@ def perform_deidentify_string():
             'code': error.http_code,
             'message': error.message,
             'details': error.details,
+            'request_id': error.request_id,
         })
 
 
@@ -78,6 +79,7 @@ def perform_deidentify_string_inline():
             'code': error.http_code,
             'message': error.message,
             'details': error.details,
+            'request_id': error.request_id,
         })
 
 

@@ -51,6 +51,7 @@ def perform_deidentify_file():
             'code': error.http_code,
             'message': error.message,
             'details': error.details,
+            'request_id': error.request_id,
         })
 
 

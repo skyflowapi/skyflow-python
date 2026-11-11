@@ -94,7 +94,7 @@ class ReturnEntitiesType(Enum):
     NONE = "NONE"
 
 
-class FileDataFormat(Enum):
+class DeidentifyFileDataFormat(Enum):
     BMP = "bmp"
     CSV = "csv"
     DCM = "dcm"
@@ -118,6 +118,17 @@ class FileDataFormat(Enum):
     XLSX = "xlsx"
     XML = "xml"
     ZIP = "zip"
+
+
+class ReidentifyFileDataFormat(Enum):
+    CSV = "csv"
+    DOCX = "docx"
+    JSON = "json"
+    JSONL = "jsonl"
+    PPTX = "pptx"
+    TXT = "txt"
+    XLSX = "xlsx"
+    XML = "xml"
 
 
 class DetectRunStatus(Enum):

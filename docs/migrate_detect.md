@@ -1,14 +1,22 @@
-# Migrate Detect from V1 to V2 (skyvault Python SDK)
+# Migrate to the new Detect methods (skyflow 3.0.0)
 
-The skyvault Python SDK replaces the Detect V1 methods with the V2 methods, using the
-same method and class names as the flowvault Detect SDK. There is no `V2` suffix
-anywhere. `deidentify_file` keeps its name and takes the V2 `DeidentifyFileRequest`,
-returning the V2 `DeidentifyFileResponse`. Because the V1 methods and classes are
-removed, there is no name conflict. All V2 classes live in `skyflow.vault.detect` and
-the enums in `skyflow.utils.enums`.
+The skyvault Python SDK replaces the previous Detect methods with the new Detect methods,
+using the same method and class names as the flowvault Detect SDK — there is no version
+suffix on any of them. `deidentify_file` keeps its name and now takes the new
+`DeidentifyFileRequest`, returning the new `DeidentifyFileResponse`. Because the previous
+methods and classes are removed, there is no name conflict. All Detect classes live in
+`skyflow.vault.detect` and the enums in `skyflow.utils.enums`.
 
-V1 callers must migrate when they upgrade, so this ships as a major release. Client
-creation and the `skyflow_client.detect()` accessor do not change.
+Callers of the previous Detect methods must migrate when they upgrade, so this ships in the
+next major release, **skyflow 3.0.0** — pin or upgrade accordingly (`pip install "skyflow==3.0.0"`).
+Client creation and the `skyflow_client.detect()` accessor do not change.
+
+> **⚠️ Biggest behaviour change:** `deidentify_file` **no longer waits for the result by
+> default.** It used to always poll; now, without `poll_options`, it submits and returns
+> immediately — `status` is `None`, `output` is empty, and nothing is written to disk. Pass
+> `poll_options` to block until the run finishes, or retrieve the result later with `get_run`.
+> Code ported unchanged runs without error but produces no outputs, so the failure surfaces
+> downstream rather than at the call site.
 
 ## What changes
 
@@ -355,7 +363,7 @@ fields as the V2 `DeidentifyFileResponse` (`run_id`, `status`, `output_type`, `o
 
 ## Timeline
 
-| Release | V1 methods | V2 methods |
+| Release | Previous Detect methods | New Detect methods |
 | --- | --- | --- |
-| skyvault 2.1.x | available | not available |
-| next major | removed | available under the flowvault names |
+| skyflow 2.1.x | available | not available |
+| skyflow 3.0.0 | removed | available under the flowvault names |

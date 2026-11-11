@@ -37,6 +37,7 @@ def perform_get_run():
             'code': error.http_code,
             'message': error.message,
             'details': error.details,
+            'request_id': error.request_id,
         })
 
 
