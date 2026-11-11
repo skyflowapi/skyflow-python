@@ -28,6 +28,7 @@ CONTRACTS = {
             "skyflow.client",
             "skyflow.vault.data",
             "skyflow.vault.controller",
+            "skyflow.vault.detect",
             "skyflow.service_account",
             "skyflow.error",
             "skyflow.utils.enums",

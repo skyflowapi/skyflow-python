@@ -6,11 +6,16 @@ from json.decoder import JSONDecodeError
 from ..core.api_error import ApiError
 from ..core.client_wrapper import AsyncClientWrapper, SyncClientWrapper
 from ..core.http_response import AsyncHttpResponse, HttpResponse
-from ..core.jsonable_encoder import jsonable_encoder
+from ..core.jsonable_encoder import encode_path_param
+from ..core.parse_error import ParsingError
 from ..core.pydantic_utilities import parse_obj_as
 from ..core.request_options import RequestOptions
-from ..errors.not_found_error import NotFoundError
-from ..types.v_1_get_query_response import V1GetQueryResponse
+from ..errors.bad_request_error import BadRequestError
+from ..errors.internal_server_error import InternalServerError
+from ..errors.unauthorized_error import UnauthorizedError
+from ..types.error_response import ErrorResponse
+from ..types.get_query_response import GetQueryResponse
+from pydantic import ValidationError
 
 # this is used as the default value for optional parameters
 OMIT = typing.cast(typing.Any, ...)
@@ -20,13 +25,9 @@ class RawQueryClient:
     def __init__(self, *, client_wrapper: SyncClientWrapper):
         self._client_wrapper = client_wrapper
 
-    def query_service_execute_query(
-        self,
-        vault_id: str,
-        *,
-        query: typing.Optional[str] = OMIT,
-        request_options: typing.Optional[RequestOptions] = None,
-    ) -> HttpResponse[V1GetQueryResponse]:
+    def execute_query(
+        self, vault_id: str, *, query: str, request_options: typing.Optional[RequestOptions] = None
+    ) -> HttpResponse[GetQueryResponse]:
         """
         Returns records for a valid SQL query. This endpoint <ul><li>Can return redacted record values.</li><li>Supports only the <code>SELECT</code> command.</li><li>Returns a maximum of 25 records. To return additional records, perform another query using the <code>OFFSET</code> keyword.</li><li>Can't modify the vault or perform transactions.</li><li>Can't return tokens.</li><li>Can't return file download or render URLs.</li><li>Doesn't support the <code>WHERE</code> keyword with columns using transient tokenization.</li><li>Doesn't support `?` conditional for columns with column-level encryption disabled.</li><ul>
 
@@ -35,7 +36,7 @@ class RawQueryClient:
         vault_id : str
             ID of the vault.
 
-        query : typing.Optional[str]
+        query : str
             The SQL query to execute.<br><br><b>Supported commands:</b> <ul> <li><code>SELECT</code></li> </ul> <b>Supported operators:</b> <ul> <li><code>&gt;</code></li> <li><code>&lt;</code></li> <li><code>=</code></li> <li><code>AND</code></li> <li><code>OR</code></li> <li><code>NOT</code></li> <li><code>LIKE</code></li> <li><code>ILIKE</code></li> <li><code>NULL</code></li> <li><code>NOT NULL</code></li> </ul> <b>Supported keywords:</b> <ul> <li><code>FROM</code></li> <li><code>JOIN</code></li> <li><code>INNER JOIN</code></li> <li><code>LEFT OUTER JOIN</code></li> <li><code>LEFT JOIN</code></li> <li><code>RIGHT OUTER JOIN</code></li> <li><code>RIGHT JOIN</code></li> <li><code>FULL OUTER JOIN</code></li> <li><code>FULL JOIN</code></li> <li><code>OFFSET</code></li> <li><code>LIMIT</code></li> <li><code>WHERE</code></li> </ul> <b>Supported functions:</b> <ul> <li><code>AVG()</code></li> <li><code>SUM()</code></li> <li><code>COUNT()</code></li> <li><code>MIN()</code></li> <li><code>MAX()</code></li> <li><code>REDACTION()</code></li> </ul>
 
         request_options : typing.Optional[RequestOptions]
@@ -43,11 +44,11 @@ class RawQueryClient:
 
         Returns
         -------
-        HttpResponse[V1GetQueryResponse]
-            A successful response.
+        HttpResponse[GetQueryResponse]
+            OK
         """
         _response = self._client_wrapper.httpx_client.request(
-            f"v1/vaults/{jsonable_encoder(vault_id)}/query",
+            f"v1/vaults/{encode_path_param(vault_id)}/query",
             method="POST",
             json={
                 "query": query,
@@ -61,20 +62,42 @@ class RawQueryClient:
         try:
             if 200 <= _response.status_code < 300:
                 _data = typing.cast(
-                    V1GetQueryResponse,
+                    GetQueryResponse,
                     parse_obj_as(
-                        type_=V1GetQueryResponse,  # type: ignore
+                        type_=GetQueryResponse,  # type: ignore
                         object_=_response.json(),
                     ),
                 )
                 return HttpResponse(response=_response, data=_data)
-            if _response.status_code == 404:
-                raise NotFoundError(
+            if _response.status_code == 400:
+                raise BadRequestError(
                     headers=dict(_response.headers),
                     body=typing.cast(
-                        typing.Optional[typing.Any],
+                        ErrorResponse,
                         parse_obj_as(
-                            type_=typing.Optional[typing.Any],  # type: ignore
+                            type_=ErrorResponse,  # type: ignore
+                            object_=_response.json(),
+                        ),
+                    ),
+                )
+            if _response.status_code == 401:
+                raise UnauthorizedError(
+                    headers=dict(_response.headers),
+                    body=typing.cast(
+                        ErrorResponse,
+                        parse_obj_as(
+                            type_=ErrorResponse,  # type: ignore
+                            object_=_response.json(),
+                        ),
+                    ),
+                )
+            if _response.status_code == 500:
+                raise InternalServerError(
+                    headers=dict(_response.headers),
+                    body=typing.cast(
+                        ErrorResponse,
+                        parse_obj_as(
+                            type_=ErrorResponse,  # type: ignore
                             object_=_response.json(),
                         ),
                     ),
@@ -82,6 +105,10 @@ class RawQueryClient:
             _response_json = _response.json()
         except JSONDecodeError:
             raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)
+        except ValidationError as e:
+            raise ParsingError(
+                status_code=_response.status_code, headers=dict(_response.headers), body=_response.json(), cause=e
+            )
         raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
 
 
@@ -89,13 +116,9 @@ class AsyncRawQueryClient:
     def __init__(self, *, client_wrapper: AsyncClientWrapper):
         self._client_wrapper = client_wrapper
 
-    async def query_service_execute_query(
-        self,
-        vault_id: str,
-        *,
-        query: typing.Optional[str] = OMIT,
-        request_options: typing.Optional[RequestOptions] = None,
-    ) -> AsyncHttpResponse[V1GetQueryResponse]:
+    async def execute_query(
+        self, vault_id: str, *, query: str, request_options: typing.Optional[RequestOptions] = None
+    ) -> AsyncHttpResponse[GetQueryResponse]:
         """
         Returns records for a valid SQL query. This endpoint <ul><li>Can return redacted record values.</li><li>Supports only the <code>SELECT</code> command.</li><li>Returns a maximum of 25 records. To return additional records, perform another query using the <code>OFFSET</code> keyword.</li><li>Can't modify the vault or perform transactions.</li><li>Can't return tokens.</li><li>Can't return file download or render URLs.</li><li>Doesn't support the <code>WHERE</code> keyword with columns using transient tokenization.</li><li>Doesn't support `?` conditional for columns with column-level encryption disabled.</li><ul>
 
@@ -104,7 +127,7 @@ class AsyncRawQueryClient:
         vault_id : str
             ID of the vault.
 
-        query : typing.Optional[str]
+        query : str
             The SQL query to execute.<br><br><b>Supported commands:</b> <ul> <li><code>SELECT</code></li> </ul> <b>Supported operators:</b> <ul> <li><code>&gt;</code></li> <li><code>&lt;</code></li> <li><code>=</code></li> <li><code>AND</code></li> <li><code>OR</code></li> <li><code>NOT</code></li> <li><code>LIKE</code></li> <li><code>ILIKE</code></li> <li><code>NULL</code></li> <li><code>NOT NULL</code></li> </ul> <b>Supported keywords:</b> <ul> <li><code>FROM</code></li> <li><code>JOIN</code></li> <li><code>INNER JOIN</code></li> <li><code>LEFT OUTER JOIN</code></li> <li><code>LEFT JOIN</code></li> <li><code>RIGHT OUTER JOIN</code></li> <li><code>RIGHT JOIN</code></li> <li><code>FULL OUTER JOIN</code></li> <li><code>FULL JOIN</code></li> <li><code>OFFSET</code></li> <li><code>LIMIT</code></li> <li><code>WHERE</code></li> </ul> <b>Supported functions:</b> <ul> <li><code>AVG()</code></li> <li><code>SUM()</code></li> <li><code>COUNT()</code></li> <li><code>MIN()</code></li> <li><code>MAX()</code></li> <li><code>REDACTION()</code></li> </ul>
 
         request_options : typing.Optional[RequestOptions]
@@ -112,11 +135,11 @@ class AsyncRawQueryClient:
 
         Returns
         -------
-        AsyncHttpResponse[V1GetQueryResponse]
-            A successful response.
+        AsyncHttpResponse[GetQueryResponse]
+            OK
         """
         _response = await self._client_wrapper.httpx_client.request(
-            f"v1/vaults/{jsonable_encoder(vault_id)}/query",
+            f"v1/vaults/{encode_path_param(vault_id)}/query",
             method="POST",
             json={
                 "query": query,
@@ -130,20 +153,42 @@ class AsyncRawQueryClient:
         try:
             if 200 <= _response.status_code < 300:
                 _data = typing.cast(
-                    V1GetQueryResponse,
+                    GetQueryResponse,
                     parse_obj_as(
-                        type_=V1GetQueryResponse,  # type: ignore
+                        type_=GetQueryResponse,  # type: ignore
                         object_=_response.json(),
                     ),
                 )
                 return AsyncHttpResponse(response=_response, data=_data)
-            if _response.status_code == 404:
-                raise NotFoundError(
+            if _response.status_code == 400:
+                raise BadRequestError(
                     headers=dict(_response.headers),
                     body=typing.cast(
-                        typing.Optional[typing.Any],
+                        ErrorResponse,
                         parse_obj_as(
-                            type_=typing.Optional[typing.Any],  # type: ignore
+                            type_=ErrorResponse,  # type: ignore
+                            object_=_response.json(),
+                        ),
+                    ),
+                )
+            if _response.status_code == 401:
+                raise UnauthorizedError(
+                    headers=dict(_response.headers),
+                    body=typing.cast(
+                        ErrorResponse,
+                        parse_obj_as(
+                            type_=ErrorResponse,  # type: ignore
+                            object_=_response.json(),
+                        ),
+                    ),
+                )
+            if _response.status_code == 500:
+                raise InternalServerError(
+                    headers=dict(_response.headers),
+                    body=typing.cast(
+                        ErrorResponse,
+                        parse_obj_as(
+                            type_=ErrorResponse,  # type: ignore
                             object_=_response.json(),
                         ),
                     ),
@@ -151,4 +196,8 @@ class AsyncRawQueryClient:
             _response_json = _response.json()
         except JSONDecodeError:
             raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)
+        except ValidationError as e:
+            raise ParsingError(
+                status_code=_response.status_code, headers=dict(_response.headers), body=_response.json(), cause=e
+            )
         raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)

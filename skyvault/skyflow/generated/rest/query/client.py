@@ -4,7 +4,7 @@ import typing
 
 from ..core.client_wrapper import AsyncClientWrapper, SyncClientWrapper
 from ..core.request_options import RequestOptions
-from ..types.v_1_get_query_response import V1GetQueryResponse
+from ..types.get_query_response import GetQueryResponse
 from .raw_client import AsyncRawQueryClient, RawQueryClient
 
 # this is used as the default value for optional parameters
@@ -26,13 +26,9 @@ class QueryClient:
         """
         return self._raw_client
 
-    def query_service_execute_query(
-        self,
-        vault_id: str,
-        *,
-        query: typing.Optional[str] = OMIT,
-        request_options: typing.Optional[RequestOptions] = None,
-    ) -> V1GetQueryResponse:
+    def execute_query(
+        self, vault_id: str, *, query: str, request_options: typing.Optional[RequestOptions] = None
+    ) -> GetQueryResponse:
         """
         Returns records for a valid SQL query. This endpoint <ul><li>Can return redacted record values.</li><li>Supports only the <code>SELECT</code> command.</li><li>Returns a maximum of 25 records. To return additional records, perform another query using the <code>OFFSET</code> keyword.</li><li>Can't modify the vault or perform transactions.</li><li>Can't return tokens.</li><li>Can't return file download or render URLs.</li><li>Doesn't support the <code>WHERE</code> keyword with columns using transient tokenization.</li><li>Doesn't support `?` conditional for columns with column-level encryption disabled.</li><ul>
 
@@ -41,7 +37,7 @@ class QueryClient:
         vault_id : str
             ID of the vault.
 
-        query : typing.Optional[str]
+        query : str
             The SQL query to execute.<br><br><b>Supported commands:</b> <ul> <li><code>SELECT</code></li> </ul> <b>Supported operators:</b> <ul> <li><code>&gt;</code></li> <li><code>&lt;</code></li> <li><code>=</code></li> <li><code>AND</code></li> <li><code>OR</code></li> <li><code>NOT</code></li> <li><code>LIKE</code></li> <li><code>ILIKE</code></li> <li><code>NULL</code></li> <li><code>NOT NULL</code></li> </ul> <b>Supported keywords:</b> <ul> <li><code>FROM</code></li> <li><code>JOIN</code></li> <li><code>INNER JOIN</code></li> <li><code>LEFT OUTER JOIN</code></li> <li><code>LEFT JOIN</code></li> <li><code>RIGHT OUTER JOIN</code></li> <li><code>RIGHT JOIN</code></li> <li><code>FULL OUTER JOIN</code></li> <li><code>FULL JOIN</code></li> <li><code>OFFSET</code></li> <li><code>LIMIT</code></li> <li><code>WHERE</code></li> </ul> <b>Supported functions:</b> <ul> <li><code>AVG()</code></li> <li><code>SUM()</code></li> <li><code>COUNT()</code></li> <li><code>MIN()</code></li> <li><code>MAX()</code></li> <li><code>REDACTION()</code></li> </ul>
 
         request_options : typing.Optional[RequestOptions]
@@ -49,22 +45,22 @@ class QueryClient:
 
         Returns
         -------
-        V1GetQueryResponse
-            A successful response.
+        GetQueryResponse
+            OK
 
         Examples
         --------
-        from skyflow import Skyflow
+        from skyflow import SkyflowAuth
 
-        client = Skyflow(
+        client = SkyflowAuth(
             token="YOUR_TOKEN",
         )
-        client.query.query_service_execute_query(
+        client.query.execute_query(
             vault_id="vaultID",
             query='select * from opportunities where id="01010000ade21cded569d43944544ec6"',
         )
         """
-        _response = self._raw_client.query_service_execute_query(vault_id, query=query, request_options=request_options)
+        _response = self._raw_client.execute_query(vault_id, query=query, request_options=request_options)
         return _response.data
 
 
@@ -83,13 +79,9 @@ class AsyncQueryClient:
         """
         return self._raw_client
 
-    async def query_service_execute_query(
-        self,
-        vault_id: str,
-        *,
-        query: typing.Optional[str] = OMIT,
-        request_options: typing.Optional[RequestOptions] = None,
-    ) -> V1GetQueryResponse:
+    async def execute_query(
+        self, vault_id: str, *, query: str, request_options: typing.Optional[RequestOptions] = None
+    ) -> GetQueryResponse:
         """
         Returns records for a valid SQL query. This endpoint <ul><li>Can return redacted record values.</li><li>Supports only the <code>SELECT</code> command.</li><li>Returns a maximum of 25 records. To return additional records, perform another query using the <code>OFFSET</code> keyword.</li><li>Can't modify the vault or perform transactions.</li><li>Can't return tokens.</li><li>Can't return file download or render URLs.</li><li>Doesn't support the <code>WHERE</code> keyword with columns using transient tokenization.</li><li>Doesn't support `?` conditional for columns with column-level encryption disabled.</li><ul>
 
@@ -98,7 +90,7 @@ class AsyncQueryClient:
         vault_id : str
             ID of the vault.
 
-        query : typing.Optional[str]
+        query : str
             The SQL query to execute.<br><br><b>Supported commands:</b> <ul> <li><code>SELECT</code></li> </ul> <b>Supported operators:</b> <ul> <li><code>&gt;</code></li> <li><code>&lt;</code></li> <li><code>=</code></li> <li><code>AND</code></li> <li><code>OR</code></li> <li><code>NOT</code></li> <li><code>LIKE</code></li> <li><code>ILIKE</code></li> <li><code>NULL</code></li> <li><code>NOT NULL</code></li> </ul> <b>Supported keywords:</b> <ul> <li><code>FROM</code></li> <li><code>JOIN</code></li> <li><code>INNER JOIN</code></li> <li><code>LEFT OUTER JOIN</code></li> <li><code>LEFT JOIN</code></li> <li><code>RIGHT OUTER JOIN</code></li> <li><code>RIGHT JOIN</code></li> <li><code>FULL OUTER JOIN</code></li> <li><code>FULL JOIN</code></li> <li><code>OFFSET</code></li> <li><code>LIMIT</code></li> <li><code>WHERE</code></li> </ul> <b>Supported functions:</b> <ul> <li><code>AVG()</code></li> <li><code>SUM()</code></li> <li><code>COUNT()</code></li> <li><code>MIN()</code></li> <li><code>MAX()</code></li> <li><code>REDACTION()</code></li> </ul>
 
         request_options : typing.Optional[RequestOptions]
@@ -106,22 +98,22 @@ class AsyncQueryClient:
 
         Returns
         -------
-        V1GetQueryResponse
-            A successful response.
+        GetQueryResponse
+            OK
 
         Examples
         --------
         import asyncio
 
-        from skyflow import AsyncSkyflow
+        from skyflow import AsyncSkyflowAuth
 
-        client = AsyncSkyflow(
+        client = AsyncSkyflowAuth(
             token="YOUR_TOKEN",
         )
 
 
         async def main() -> None:
-            await client.query.query_service_execute_query(
+            await client.query.execute_query(
                 vault_id="vaultID",
                 query='select * from opportunities where id="01010000ade21cded569d43944544ec6"',
             )
@@ -129,7 +121,5 @@ class AsyncQueryClient:
 
         asyncio.run(main())
         """
-        _response = await self._raw_client.query_service_execute_query(
-            vault_id, query=query, request_options=request_options
-        )
+        _response = await self._raw_client.execute_query(vault_id, query=query, request_options=request_options)
         return _response.data

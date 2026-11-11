@@ -4,7 +4,7 @@ import typing
 
 from ..core.client_wrapper import AsyncClientWrapper, SyncClientWrapper
 from ..core.request_options import RequestOptions
-from ..types.v_1_get_auth_token_response import V1GetAuthTokenResponse
+from ..types.get_auth_token_response import GetAuthTokenResponse
 from .raw_client import AsyncRawAuthenticationClient, RawAuthenticationClient
 
 # this is used as the default value for optional parameters
@@ -26,7 +26,7 @@ class AuthenticationClient:
         """
         return self._raw_client
 
-    def authentication_service_get_auth_token(
+    def get_bearer_token(
         self,
         *,
         grant_type: str,
@@ -36,9 +36,9 @@ class AuthenticationClient:
         requested_token_use: typing.Optional[str] = OMIT,
         scope: typing.Optional[str] = OMIT,
         request_options: typing.Optional[RequestOptions] = None,
-    ) -> V1GetAuthTokenResponse:
+    ) -> GetAuthTokenResponse:
         """
-        <p>Generates a Bearer Token to authenticate with Skyflow. This method doesn't require the <code>Authorization</code> header.</p><p><b>Note:</b> For recommended ways to authenticate, see <a href='/api-authentication/'>API authentication</a>.</p>
+        Generates a Bearer Token to authenticate with Skyflow.
 
         Parameters
         ----------
@@ -46,7 +46,7 @@ class AuthenticationClient:
             Grant type of the request. Set this to `urn:ietf:params:oauth:grant-type:jwt-bearer`.
 
         assertion : str
-            User-signed JWT token that contains the following fields: <br/> <ul><li><code>iss</code>: Issuer of the JWT.</li><li><code>key</code>: Unique identifier for the key.</li><li><code>aud</code>: Recipient the JWT is intended for.</li><li><code>exp</code>: Time the JWT expires.</li><li><code>sub</code>: Subject of the JWT.</li><li><code>ctx</code>: (Optional) Value for <a href='/context-aware-overview/'>Context-aware authorization</a>.</li></ul>
+            User-signed JWT token that contains the following fields: iss (Issuer), key (Unique identifier), aud (Recipient), exp (Expiry), sub (Subject), ctx (Optional context for context-aware authorization).
 
         subject_token : typing.Optional[str]
             Subject token.
@@ -58,15 +58,15 @@ class AuthenticationClient:
             Token use type. Either `delegation` or `impersonation`.
 
         scope : typing.Optional[str]
-            Subset of available <a href='#Roles'>roles</a> to associate with the requested token. Uses the format "role:\<roleID1\> role:\<roleID2\>".
+            Subset of available roles to associate with the requested token. Uses the format "role:<roleID1> role:<roleID2>".
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
 
         Returns
         -------
-        V1GetAuthTokenResponse
-            A successful response.
+        GetAuthTokenResponse
+            OK
 
         Examples
         --------
@@ -75,12 +75,12 @@ class AuthenticationClient:
         client = SkyflowAuth(
             token="YOUR_TOKEN",
         )
-        client.authentication.authentication_service_get_auth_token(
-            grant_type="urn:ietf:params:oauth:grant-type:jwt-bearer",
-            assertion="<REDACTED_JWT>",
+        client.authentication.get_bearer_token(
+            grant_type="grant_type",
+            assertion="assertion",
         )
         """
-        _response = self._raw_client.authentication_service_get_auth_token(
+        _response = self._raw_client.get_bearer_token(
             grant_type=grant_type,
             assertion=assertion,
             subject_token=subject_token,
@@ -107,7 +107,7 @@ class AsyncAuthenticationClient:
         """
         return self._raw_client
 
-    async def authentication_service_get_auth_token(
+    async def get_bearer_token(
         self,
         *,
         grant_type: str,
@@ -117,9 +117,9 @@ class AsyncAuthenticationClient:
         requested_token_use: typing.Optional[str] = OMIT,
         scope: typing.Optional[str] = OMIT,
         request_options: typing.Optional[RequestOptions] = None,
-    ) -> V1GetAuthTokenResponse:
+    ) -> GetAuthTokenResponse:
         """
-        <p>Generates a Bearer Token to authenticate with Skyflow. This method doesn't require the <code>Authorization</code> header.</p><p><b>Note:</b> For recommended ways to authenticate, see <a href='/api-authentication/'>API authentication</a>.</p>
+        Generates a Bearer Token to authenticate with Skyflow.
 
         Parameters
         ----------
@@ -127,7 +127,7 @@ class AsyncAuthenticationClient:
             Grant type of the request. Set this to `urn:ietf:params:oauth:grant-type:jwt-bearer`.
 
         assertion : str
-            User-signed JWT token that contains the following fields: <br/> <ul><li><code>iss</code>: Issuer of the JWT.</li><li><code>key</code>: Unique identifier for the key.</li><li><code>aud</code>: Recipient the JWT is intended for.</li><li><code>exp</code>: Time the JWT expires.</li><li><code>sub</code>: Subject of the JWT.</li><li><code>ctx</code>: (Optional) Value for <a href='/context-aware-overview/'>Context-aware authorization</a>.</li></ul>
+            User-signed JWT token that contains the following fields: iss (Issuer), key (Unique identifier), aud (Recipient), exp (Expiry), sub (Subject), ctx (Optional context for context-aware authorization).
 
         subject_token : typing.Optional[str]
             Subject token.
@@ -139,15 +139,15 @@ class AsyncAuthenticationClient:
             Token use type. Either `delegation` or `impersonation`.
 
         scope : typing.Optional[str]
-            Subset of available <a href='#Roles'>roles</a> to associate with the requested token. Uses the format "role:\<roleID1\> role:\<roleID2\>".
+            Subset of available roles to associate with the requested token. Uses the format "role:<roleID1> role:<roleID2>".
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
 
         Returns
         -------
-        V1GetAuthTokenResponse
-            A successful response.
+        GetAuthTokenResponse
+            OK
 
         Examples
         --------
@@ -161,15 +161,15 @@ class AsyncAuthenticationClient:
 
 
         async def main() -> None:
-            await client.authentication.authentication_service_get_auth_token(
-                grant_type="urn:ietf:params:oauth:grant-type:jwt-bearer",
-                assertion="<REDACTED_JWT>",
+            await client.authentication.get_bearer_token(
+                grant_type="grant_type",
+                assertion="assertion",
             )
 
 
         asyncio.run(main())
         """
-        _response = await self._raw_client.authentication_service_get_auth_token(
+        _response = await self._raw_client.get_bearer_token(
             grant_type=grant_type,
             assertion=assertion,
             subject_token=subject_token,
