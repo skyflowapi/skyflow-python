@@ -99,7 +99,7 @@ credentials = {'api_key': '<API_KEY>'}  # or 'token' / 'path' / 'credentials_str
 vault_config = {
     'vault_id': '<VAULT_ID>',
     'cluster_id': '<CLUSTER_ID>',   # part of the vault URL: https://{cluster_id}.vault.skyflowapis.com
-    'env': Env.PROD,                # DEV, STAGE, SANDBOX, or PROD (default)
+    'env': Env.PROD,                # DEV, STAGE, SANDBOX, or PROD
     'credentials': credentials,
 }
 
@@ -127,7 +127,7 @@ Requests are authorized with Skyflow credentials that you attach to the vault co
 
 ## Credential types
 
-Set **exactly one** of the following keys on the `credentials` dict. If you set more than one, the resolution is undefined — pick one.
+Set **exactly one** of the following keys on the `credentials` dict. If you set more than one, the SDK raises a `SkyflowError` — pick one.
 
 | Key | What it is |
 |---|---|
@@ -280,7 +280,7 @@ credentials = {'path': '<PATH_TO_CREDENTIALS_JSON>'}
 vault_config = {
     'vault_id': '<VAULT_ID>',
     'cluster_id': '<CLUSTER_ID>',
-    'env': Env.PROD,            # DEV, STAGE, SANDBOX, or PROD (default)
+    'env': Env.PROD,            # DEV, STAGE, SANDBOX, or PROD
     'credentials': credentials,
     # Optional: vault-level HTTP overrides
     'timeout': 120,             # overall call timeout, in seconds
@@ -307,7 +307,7 @@ The vault config is a plain dict:
 |---|---|---|
 | `vault_id` | required | The vault's ID. |
 | `cluster_id` | required | The cluster portion of the vault URL — `https://{cluster_id}.vault.skyflowapis.com`. |
-| `env` | optional | `Env.DEV`, `Env.STAGE`, `Env.SANDBOX`, or `Env.PROD`. Defaults to `PROD`. |
+| `env` | required | `Env.DEV`, `Env.STAGE`, `Env.SANDBOX`, or `Env.PROD`. |
 | `credentials` | optional | Credentials for this vault. Falls back to client-wide credentials, then `SKYFLOW_CREDENTIALS`. |
 | `vault_url` | optional | Full vault URL, when it cannot be derived from `cluster_id` and `env`. |
 | `timeout` | optional | Overall call timeout in seconds, including retries. |
