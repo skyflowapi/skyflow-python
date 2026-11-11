@@ -1,8 +1,11 @@
+import threading
+
 import httpx
 
 from common.vault.base_vault_client import BaseVaultClient
+from common.generated.rest.client import SkyflowAuth as DetectSkyflowAuth
 from skyflow.generated.rest.client import SkyflowAuth
-from skyflow.utils import get_vault_url
+from skyflow.utils import get_vault_url, get_metrics
 from skyflow.utils._http_config import (
     TIMEOUT_KEY,
     CONNECT_TIMEOUT_KEY,
@@ -26,12 +29,18 @@ from skyflow.utils._http_config import (
 )
 from skyflow.utils._retry import RetryTransport
 
+CONTENT_TYPE_HEADER = "content-type"
+GENERATED_CLIENT_MAX_RETRIES = 0
+
 
 class VaultClient(BaseVaultClient):
     def __init__(self, config):
         super().__init__(config)
         self._common_http_config = {}
         self._sync_httpx_client = None
+        self._sync_upload_client = None
+        self._detect_api_client = None
+        self._client_lock = threading.Lock()
 
     def set_common_http_config(self, common_http_config):
         self._common_http_config = common_http_config or {}
@@ -70,33 +79,85 @@ class VaultClient(BaseVaultClient):
         )
 
     def initialize_api_client(self, vault_url, bearer_token):
-        self.__close_httpx_clients()
-        timeout = self._build_timeout()
-        limits = self._build_limits()
-        max_retries, initial_millis, max_millis, call_timeout = self._retry_params()
-        sync_client = httpx.Client(
-            timeout=timeout,
-            follow_redirects=True,
-            transport=RetryTransport(httpx.HTTPTransport(limits=limits), max_retries, initial_millis, max_millis, call_timeout),
-        )
-        self._sync_httpx_client = sync_client
-        self._api_client = SkyflowAuth(base_url=vault_url, token=bearer_token or "", httpx_client=sync_client)
+        with self._client_lock:
+            self.__close_httpx_clients()
+            timeout = self._build_timeout()
+            limits = self._build_limits()
+            max_retries, initial_millis, max_millis, call_timeout = self._retry_params()
+            sync_client = httpx.Client(
+                timeout=timeout,
+                follow_redirects=True,
+                transport=RetryTransport(httpx.HTTPTransport(limits=limits), max_retries, initial_millis, max_millis, call_timeout),
+            )
+            self._sync_httpx_client = sync_client
+            self._sync_upload_client = httpx.Client(
+                timeout=timeout,
+                follow_redirects=True,
+                transport=httpx.HTTPTransport(limits=limits),
+            )
+            self._api_client = SkyflowAuth(
+                base_url=vault_url,
+                token=bearer_token or None,
+                httpx_client=sync_client,
+                max_retries=GENERATED_CLIENT_MAX_RETRIES,
+            )
+            self._detect_api_client = DetectSkyflowAuth(
+                base_url=vault_url,
+                token=bearer_token or None,
+                httpx_client=sync_client,
+                max_retries=GENERATED_CLIENT_MAX_RETRIES,
+            )
 
     def close(self):
-        self.__close_httpx_clients()
-        self._api_client = None
+        with self._client_lock:
+            self.__close_httpx_clients()
+            self._api_client = None
 
     def __close_httpx_clients(self):
-        sync_client = self._sync_httpx_client
-        if sync_client is not None:
-            try:
-                sync_client.close()
-            except Exception:
-                pass
-        self._sync_httpx_client = None
+        for attribute in ("_sync_httpx_client", "_sync_upload_client"):
+            client = getattr(self, attribute)
+            if client is not None:
+                try:
+                    client.close()
+                except Exception:
+                    pass
+            setattr(self, attribute, None)
+        self._detect_api_client = None
 
     def get_records_api(self):
         return self._api_client.records
 
     def get_tokens_api(self):
         return self._api_client.tokens
+
+    def get_query_api(self):
+        return self._api_client.query
+
+    def get_files_api(self):
+        return self._api_client.files
+
+    def get_strings_v2_api(self):
+        return self._detect_api_client.strings_v2
+
+    def get_files_v2_api(self):
+        return self._detect_api_client.files_v2
+
+    def get_guardrails_v2_api(self):
+        return self._detect_api_client.guardrails_v2
+
+    def get_deidentify_source_type(self):
+        from skyflow.utils.enums import DeidentifySourceType
+        return DeidentifySourceType
+
+    def get_reidentify_source_type(self):
+        from skyflow.utils.enums import ReidentifySourceType
+        return ReidentifySourceType
+
+    def get_sdk_metrics(self):
+        return get_metrics()
+
+    def put_signed_url(self, signed_url, content, content_type=None):
+        headers = {}
+        if content_type:
+            headers[CONTENT_TYPE_HEADER] = content_type
+        return self._sync_upload_client.put(signed_url, content=content, headers=headers)

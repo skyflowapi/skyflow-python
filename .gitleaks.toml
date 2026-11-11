@@ -4,7 +4,11 @@ title = "skyflow-python gitleaks config"
 useDefault = true
 
 [allowlist]
-description = "Dummy, non-secret fixture values used only by tests"
+description = "Non-secret values: test fixtures and example tokens in Fern-generated code"
 paths = [
   '''(^|/)dummy-non-secret/.*''',
+  # Fern-generated REST clients (common/generated, flowvault/skyflow/generated,
+  # skyvault/skyflow/generated) embed spec-derived example token values in
+  # docstrings; these are samples, not real secrets.
+  '''(^|/)generated/.*''',
 ]

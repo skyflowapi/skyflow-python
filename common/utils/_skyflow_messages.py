@@ -1,11 +1,27 @@
 import sys
 from enum import Enum
 
-# `common` has no SDK_VERSION of its own -- picks up whichever variant is installed. Reads
-# sys.modules (never forces a fresh import) to avoid triggering a circular import back into
-# common.* mid-init.
-_version_module = sys.modules.get("skyflow.utils._version")
-SDK_VERSION = getattr(_version_module, "SDK_VERSION", "0.0.0")
+from importlib import metadata
+
+UNKNOWN_SDK_VERSION = "0.0.0"
+HOST_SDK_VERSION_MODULE = "skyflow.utils._version"
+HOST_SDK_DISTRIBUTIONS = ("skyflow", "skyflow-flowvault-python")
+
+
+def _resolve_sdk_version():
+    version_module = sys.modules.get(HOST_SDK_VERSION_MODULE)
+    version = getattr(version_module, "SDK_VERSION", None)
+    if version:
+        return version
+    for distribution in HOST_SDK_DISTRIBUTIONS:
+        try:
+            return metadata.version(distribution)
+        except metadata.PackageNotFoundError:
+            continue
+    return UNKNOWN_SDK_VERSION
+
+
+SDK_VERSION = _resolve_sdk_version()
 
 error_prefix = f"Skyflow Python SDK {SDK_VERSION}"
 INFO = "INFO"
@@ -234,6 +250,29 @@ class SkyflowMessages:
         GET_DETECT_RUN_FAILED = f"{error_prefix} Get detect run operation failed."
         BASE_SKYFLOW_INSTANTIATION_NOT_ALLOWED = f"{error_prefix} BaseSkyflow cannot be instantiated directly. Build a concrete Skyflow class via make_skyflow_class() instead."
 
+        DEIDENTIFY_STRING_REQUEST_NULL = f"{error_prefix} Validation error. DeidentifyString request cannot be null."
+        INVALID_TEXT_IN_DEIDENTIFY_STRING = f"{error_prefix} Validation error. Invalid text in deidentify string request. Specify a non-empty text."
+        DEIDENTIFY_FILE_REQUEST_NULL = f"{error_prefix} Validation error. DeidentifyFile request cannot be null."
+        MISSING_FILE_SOURCE_IN_DEIDENTIFY_FILE = f"{error_prefix} Validation error. Specify one of filePath, file or value in deidentify file request."
+        MULTIPLE_FILE_SOURCES_IN_DEIDENTIFY_FILE = f"{error_prefix} Validation error. Specify only one of filePath, file or value in deidentify file request."
+        FILE_NOT_FOUND_TO_DEIDENTIFY = f"{error_prefix} Validation error. The file to deidentify was not found at the specified path. Verify the file path and try again."
+        INVALID_DATA_SOURCE_IN_DEIDENTIFY_FILE = f"{error_prefix} Validation error. Invalid dataSource in deidentify file request. Specify a DeidentifySourceType."
+        INVALID_VALUE_IN_DEIDENTIFY_FILE = f"{error_prefix} Validation error. Invalid value in deidentify file request. Specify the non-empty content or reference that dataSource describes."
+        OUTPUT_DIRECTORY_WITHOUT_POLL_OPTIONS = f"{error_prefix} Validation error. output_directory in deidentify file request requires poll_options."
+        INVALID_WAIT_TIME_IN_POLL_OPTIONS = f"{error_prefix} Validation error. wait_time in poll_options must be between 1 and 300 seconds."
+        INVALID_MAX_ATTEMPTS_IN_POLL_OPTIONS = f"{error_prefix} Validation error. max_attempts in poll_options must be between 1 and 23."
+        REIDENTIFY_STRING_REQUEST_NULL = f"{error_prefix} Validation error. ReidentifyString request cannot be null."
+        INVALID_TEXT_IN_REIDENTIFY_STRING = f"{error_prefix} Validation error. Invalid text in reidentify string request. Specify a non-empty text."
+        GET_RUN_REQUEST_NULL = f"{error_prefix} Validation error. GetRun request cannot be null."
+        INVALID_RUN_ID_IN_GET_RUN = f"{error_prefix} Validation error. Invalid runId in get run request. Specify a non-empty run id."
+        CHECK_GUARDRAILS_REQUEST_NULL = f"{error_prefix} Validation error. CheckGuardrails request cannot be null."
+        INVALID_TEXT_IN_CHECK_GUARDRAILS = f"{error_prefix} Validation error. Invalid text in check guardrails request. Specify a non-empty text."
+        REIDENTIFY_FILE_REQUEST_NULL = f"{error_prefix} Validation error. ReidentifyFile request cannot be null."
+        INVALID_DATA_SOURCE_IN_REIDENTIFY_FILE = f"{error_prefix} Validation error. Invalid dataSource in reidentify file request. Specify a ReidentifySourceType."
+        INVALID_VALUE_IN_REIDENTIFY_FILE = f"{error_prefix} Validation error. Invalid value in reidentify file request. Specify the non-empty base64 content or presigned URL of the file."
+        FAILED_TO_ENCODE_FILE = f"{error_prefix} Validation error. Failed to encode the file. Ensure the file is in a supported format and try again."
+        FAILED_TO_WRITE_OUTPUT_FILE = f"{error_prefix} Failed to write the processed output to {{}}."
+
     class Info(Enum):
         CLIENT_INITIALIZED = f"{INFO}: [{error_prefix}] Initialized skyflow client."
         VALIDATING_VAULT_CONFIG = f"{INFO}: [{error_prefix}] Validating vault config."
@@ -329,6 +368,33 @@ class SkyflowMessages:
         
         DETECT_REQUEST_RESOLVED = f"{INFO}: [{error_prefix}] Detect request is resolved."
 
+        DEIDENTIFY_STRING_TRIGGERED = f"{INFO}: [{error_prefix}] Deidentify string method triggered."
+        VALIDATE_DEIDENTIFY_STRING_REQUEST = f"{INFO}: [{error_prefix}] Validating deidentify string request."
+        DEIDENTIFY_STRING_REQUEST_RESOLVED = f"{INFO}: [{error_prefix}] Deidentify string request resolved."
+        DEIDENTIFY_STRING_SUCCESS = f"{INFO}: [{error_prefix}] String deidentified."
+        REIDENTIFY_STRING_TRIGGERED = f"{INFO}: [{error_prefix}] Reidentify string method triggered."
+        VALIDATE_REIDENTIFY_STRING_REQUEST = f"{INFO}: [{error_prefix}] Validating reidentify string request."
+        REIDENTIFY_STRING_REQUEST_RESOLVED = f"{INFO}: [{error_prefix}] Reidentify string request resolved."
+        REIDENTIFY_STRING_SUCCESS = f"{INFO}: [{error_prefix}] String reidentified."
+        DEIDENTIFY_FILE_V2_TRIGGERED = f"{INFO}: [{error_prefix}] Deidentify file method triggered."
+        DEIDENTIFY_FILE_V2_REQUEST_RESOLVED = f"{INFO}: [{error_prefix}] Deidentify file request resolved."
+        DEIDENTIFY_FILE_V2_SUCCESS = f"{INFO}: [{error_prefix}] File deidentified."
+        REIDENTIFY_FILE_TRIGGERED = f"{INFO}: [{error_prefix}] Reidentify file method triggered."
+        VALIDATE_REIDENTIFY_FILE_REQUEST = f"{INFO}: [{error_prefix}] Validating reidentify file request."
+        REIDENTIFY_FILE_REQUEST_RESOLVED = f"{INFO}: [{error_prefix}] Reidentify file request resolved."
+        REIDENTIFY_FILE_SUCCESS = f"{INFO}: [{error_prefix}] File reidentified."
+        GET_RUN_TRIGGERED = f"{INFO}: [{error_prefix}] Get run method triggered."
+        VALIDATE_GET_RUN_REQUEST = f"{INFO}: [{error_prefix}] Validating get run request."
+        GET_RUN_REQUEST_RESOLVED = f"{INFO}: [{error_prefix}] Get run request resolved."
+        GET_RUN_SUCCESS = f"{INFO}: [{error_prefix}] Get run success."
+        CHECK_GUARDRAILS_TRIGGERED = f"{INFO}: [{error_prefix}] Check guardrails method triggered."
+        VALIDATE_CHECK_GUARDRAILS_REQUEST = f"{INFO}: [{error_prefix}] Validating check guardrails request."
+        CHECK_GUARDRAILS_REQUEST_RESOLVED = f"{INFO}: [{error_prefix}] Check guardrails request resolved."
+        CHECK_GUARDRAILS_SUCCESS = f"{INFO}: [{error_prefix}] Guardrails checked."
+        POLL_RUN_STARTED = f"{INFO}: [{error_prefix}] Polling detect run {{}} with wait time {{}} seconds and max attempts {{}}."
+        POLL_RUN_TERMINAL = f"{INFO}: [{error_prefix}] Detect run reached a terminal status."
+        POLL_RUN_BUDGET_EXHAUSTED = f"{INFO}: [{error_prefix}] Detect run polling budget exhausted."
+
     class ErrorLogs(Enum):
         INVALID_LOG_LEVEL = f"{ERROR}: [{error_prefix}] Invalid log level. Specify a valid log level."
         INVALID_KEY = f"{ERROR}: [{error_prefix}] Invalid key {{}} in config."
@@ -414,6 +480,15 @@ class SkyflowMessages:
         REIDENTIFY_TEXT_REQUEST_REJECTED = f"{ERROR}: [{error_prefix}] Reidentify text resulted in failure."
         DETECT_FILE_REQUEST_REJECTED = f"{ERROR}: [{error_prefix}] Deidentify file resulted in failure."
         EMPTY_FILE_COLUMN_NAME = f"{ERROR}: [{error_prefix}] Empty column name in FILE_UPLOAD"
+
+        DEIDENTIFY_STRING_REQUEST_REJECTED = f"{ERROR}: [{error_prefix}] Deidentify string resulted in failure."
+        REIDENTIFY_STRING_REQUEST_REJECTED = f"{ERROR}: [{error_prefix}] Reidentify string resulted in failure."
+        DEIDENTIFY_FILE_V2_REQUEST_REJECTED = f"{ERROR}: [{error_prefix}] Deidentify file resulted in failure."
+        REIDENTIFY_FILE_REQUEST_REJECTED = f"{ERROR}: [{error_prefix}] Reidentify file resulted in failure."
+        GET_RUN_REQUEST_REJECTED = f"{ERROR}: [{error_prefix}] Get run resulted in failure."
+        CHECK_GUARDRAILS_REQUEST_REJECTED = f"{ERROR}: [{error_prefix}] Check guardrails resulted in failure."
+        FAILED_TO_ENCODE_FILE_IN_DEIDENTIFY_FILE = f"{ERROR}: [{error_prefix}] Failed to encode the file in deidentify file."
+        FAILED_TO_WRITE_OUTPUT_FILE = f"{ERROR}: [{error_prefix}] Failed to write the processed output to disk."
 
     class Interface(Enum):
         INSERT = "INSERT"

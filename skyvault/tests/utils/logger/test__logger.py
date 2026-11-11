@@ -11,6 +11,7 @@ class TestLogger(unittest.TestCase):
     def test_logger_initialization_with_default_level(self, mock_get_logger):
         mock_logger_instance = Mock()
         mock_get_logger.return_value = mock_logger_instance
+        mock_logger_instance.handlers = []
 
         logger = Logger()
 
@@ -21,6 +22,7 @@ class TestLogger(unittest.TestCase):
     def test_logger_initialization_with_custom_level(self, mock_get_logger):
         mock_logger_instance = Mock()
         mock_get_logger.return_value = mock_logger_instance
+        mock_logger_instance.handlers = []
 
         logger = Logger(LogLevel.INFO)
 
@@ -31,6 +33,7 @@ class TestLogger(unittest.TestCase):
     def test_set_log_level(self, mock_get_logger):
         mock_logger_instance = Mock()
         mock_get_logger.return_value = mock_logger_instance
+        mock_logger_instance.handlers = []
 
         logger = Logger()
         logger.set_log_level(LogLevel.DEBUG)
@@ -42,6 +45,7 @@ class TestLogger(unittest.TestCase):
     def test_debug_logging(self, mock_get_logger):
         mock_logger_instance = Mock()
         mock_get_logger.return_value = mock_logger_instance
+        mock_logger_instance.handlers = []
 
         logger = Logger(LogLevel.DEBUG)
         logger.debug("Debug message")
@@ -52,6 +56,7 @@ class TestLogger(unittest.TestCase):
     def test_info_logging(self, mock_get_logger):
         mock_logger_instance = Mock()
         mock_get_logger.return_value = mock_logger_instance
+        mock_logger_instance.handlers = []
 
         logger = Logger(LogLevel.INFO)
         logger.info("Info message")
@@ -63,6 +68,7 @@ class TestLogger(unittest.TestCase):
     def test_warn_logging(self, mock_get_logger):
         mock_logger_instance = Mock()
         mock_get_logger.return_value = mock_logger_instance
+        mock_logger_instance.handlers = []
 
         logger = Logger(LogLevel.WARN)
         logger.warn("Warn message")
@@ -75,6 +81,7 @@ class TestLogger(unittest.TestCase):
     def test_error_logging(self, mock_get_logger):
         mock_logger_instance = Mock()
         mock_get_logger.return_value = mock_logger_instance
+        mock_logger_instance.handlers = []
 
         logger = Logger(LogLevel.ERROR)
         logger.error("Error message")
@@ -88,6 +95,7 @@ class TestLogger(unittest.TestCase):
     def test_logging_with_level_off(self, mock_get_logger):
         mock_logger_instance = Mock()
         mock_get_logger.return_value = mock_logger_instance
+        mock_logger_instance.handlers = []
 
         logger = Logger(LogLevel.OFF)
         logger.debug("Debug message")

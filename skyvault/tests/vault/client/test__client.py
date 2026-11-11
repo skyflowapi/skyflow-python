@@ -71,7 +71,7 @@ class TestVaultClient(unittest.TestCase):
     # the one hook v2 actually overrides)
     # ------------------------------------------------------------------ #
 
-    @patch("skyflow.vault.client.client.Skyflow")
+    @patch("skyflow.vault.client.client.SkyflowAuth")
     def test_initialize_api_client_passes_callable_token(self, mock_skyflow):
         """initialize_api_client must pass a callable (lambda) as token, not a string."""
         self.vault_client.initialize_api_client("https://test-vault-url.com", "initial_token")
@@ -80,7 +80,7 @@ class TestVaultClient(unittest.TestCase):
         self.assertEqual(kwargs["base_url"], "https://test-vault-url.com")
         self.assertTrue(callable(kwargs["token"]), "token must be a callable (lambda)")
 
-    @patch("skyflow.vault.client.client.Skyflow")
+    @patch("skyflow.vault.client.client.SkyflowAuth")
     def test_initialize_api_client_lambda_returns_cached_bearer_token(self, mock_skyflow):
         """Lambda returns _bearer_token when it is set (interceptor behaviour)."""
         self.vault_client._bearer_token = "refreshed_token"
@@ -89,7 +89,7 @@ class TestVaultClient(unittest.TestCase):
         _, kwargs = mock_skyflow.call_args
         self.assertEqual(kwargs["token"](), "refreshed_token")
 
-    @patch("skyflow.vault.client.client.Skyflow")
+    @patch("skyflow.vault.client.client.SkyflowAuth")
     def test_initialize_api_client_lambda_falls_back_to_initial_token(self, mock_skyflow):
         """Lambda falls back to the initial token when _bearer_token is None."""
         self.vault_client._bearer_token = None
@@ -114,13 +114,17 @@ class TestVaultClient(unittest.TestCase):
         self.vault_client._api_client = MagicMock()
         self.assertIsNotNone(self.vault_client.get_query_api())
 
-    def test_get_detect_text_api(self):
-        self.vault_client._api_client = MagicMock()
-        self.assertIsNotNone(self.vault_client.get_detect_text_api())
+    def test_get_strings_v2_api(self):
+        self.vault_client._detect_api_client = MagicMock()
+        self.assertIsNotNone(self.vault_client.get_strings_v2_api())
 
-    def test_get_detect_file_api(self):
-        self.vault_client._api_client = MagicMock()
-        self.assertIsNotNone(self.vault_client.get_detect_file_api())
+    def test_get_files_v2_api(self):
+        self.vault_client._detect_api_client = MagicMock()
+        self.assertIsNotNone(self.vault_client.get_files_v2_api())
+
+    def test_get_guardrails_v2_api(self):
+        self.vault_client._detect_api_client = MagicMock()
+        self.assertIsNotNone(self.vault_client.get_guardrails_v2_api())
 
 
 if __name__ == "__main__":

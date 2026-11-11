@@ -2,8 +2,187 @@
 
 # isort: skip_file
 
-from .googlerpc_status import GooglerpcStatus
-from .protobuf_any import ProtobufAny
-from .v_1_get_auth_token_response import V1GetAuthTokenResponse
+import typing
+from importlib import import_module
 
-__all__ = ["GooglerpcStatus", "ProtobufAny", "V1GetAuthTokenResponse"]
+if typing.TYPE_CHECKING:
+    from .audio_v2 import AudioV2
+    from .audio_v2bleep import AudioV2Bleep
+    from .audio_v2output_transcription import AudioV2OutputTranscription
+    from .deidentify_file_response_v2 import DeidentifyFileResponseV2
+    from .deidentify_string_response_v2 import DeidentifyStringResponseV2
+    from .deidentify_string_response_v2detected_entity import DeidentifyStringResponseV2DetectedEntity
+    from .deidentify_string_response_v2entity_location import DeidentifyStringResponseV2EntityLocation
+    from .detect import Detect
+    from .detect_config_v2 import DetectConfigV2
+    from .detect_config_v2vault_type import DetectConfigV2VaultType
+    from .detect_custom_types import DetectCustomTypes
+    from .detect_custom_types_deidentification_type import DetectCustomTypesDeidentificationType
+    from .detect_custom_types_include_prefix import DetectCustomTypesIncludePrefix
+    from .detect_entity import DetectEntity
+    from .detect_entity_deidentification_type import DetectEntityDeidentificationType
+    from .detect_entity_entity_type import DetectEntityEntityType
+    from .detect_entity_include_prefix import DetectEntityIncludePrefix
+    from .detect_guardrails_response_v2 import DetectGuardrailsResponseV2
+    from .detect_guardrails_response_v2validation import DetectGuardrailsResponseV2Validation
+    from .detect_object_entity import DetectObjectEntity
+    from .detect_object_entity_deidentification_type import DetectObjectEntityDeidentificationType
+    from .detect_object_entity_entity_type import DetectObjectEntityEntityType
+    from .detect_return_entities import DetectReturnEntities
+    from .detect_runs_response_v2 import DetectRunsResponseV2
+    from .detect_runs_response_v2output_type import DetectRunsResponseV2OutputType
+    from .detect_runs_response_v2status import DetectRunsResponseV2Status
+    from .document_v2 import DocumentV2
+    from .document_v2pdf import DocumentV2Pdf
+    from .document_v2pdf_processing_mode import DocumentV2PdfProcessingMode
+    from .entity_transformation import EntityTransformation
+    from .error_response import ErrorResponse
+    from .error_response_error import ErrorResponseError
+    from .file_mapping import FileMapping
+    from .file_output import FileOutput
+    from .file_output_processed_file_extension import FileOutputProcessedFileExtension
+    from .file_output_processed_file_type import FileOutputProcessedFileType
+    from .get_auth_token_response import GetAuthTokenResponse
+    from .get_sts_token_response import GetStsTokenResponse
+    from .http_code import HttpCode
+    from .image_v2 import ImageV2
+    from .image_v2masking_method import ImageV2MaskingMethod
+    from .media import Media
+    from .metrics import Metrics
+    from .redaction_level import RedactionLevel
+    from .redaction_level_entity_name import RedactionLevelEntityName
+    from .redaction_level_redaction_type import RedactionLevelRedactionType
+    from .reidentify_file_response_v2 import ReidentifyFileResponseV2
+    from .reidentify_file_response_v2output_type import ReidentifyFileResponseV2OutputType
+    from .reidentify_file_response_v2status import ReidentifyFileResponseV2Status
+    from .reidentify_string_response_v2 import ReidentifyStringResponseV2
+    from .transformation_shift_dates import TransformationShiftDates
+_dynamic_imports: typing.Dict[str, str] = {
+    "AudioV2": ".audio_v2",
+    "AudioV2Bleep": ".audio_v2bleep",
+    "AudioV2OutputTranscription": ".audio_v2output_transcription",
+    "DeidentifyFileResponseV2": ".deidentify_file_response_v2",
+    "DeidentifyStringResponseV2": ".deidentify_string_response_v2",
+    "DeidentifyStringResponseV2DetectedEntity": ".deidentify_string_response_v2detected_entity",
+    "DeidentifyStringResponseV2EntityLocation": ".deidentify_string_response_v2entity_location",
+    "Detect": ".detect",
+    "DetectConfigV2": ".detect_config_v2",
+    "DetectConfigV2VaultType": ".detect_config_v2vault_type",
+    "DetectCustomTypes": ".detect_custom_types",
+    "DetectCustomTypesDeidentificationType": ".detect_custom_types_deidentification_type",
+    "DetectCustomTypesIncludePrefix": ".detect_custom_types_include_prefix",
+    "DetectEntity": ".detect_entity",
+    "DetectEntityDeidentificationType": ".detect_entity_deidentification_type",
+    "DetectEntityEntityType": ".detect_entity_entity_type",
+    "DetectEntityIncludePrefix": ".detect_entity_include_prefix",
+    "DetectGuardrailsResponseV2": ".detect_guardrails_response_v2",
+    "DetectGuardrailsResponseV2Validation": ".detect_guardrails_response_v2validation",
+    "DetectObjectEntity": ".detect_object_entity",
+    "DetectObjectEntityDeidentificationType": ".detect_object_entity_deidentification_type",
+    "DetectObjectEntityEntityType": ".detect_object_entity_entity_type",
+    "DetectReturnEntities": ".detect_return_entities",
+    "DetectRunsResponseV2": ".detect_runs_response_v2",
+    "DetectRunsResponseV2OutputType": ".detect_runs_response_v2output_type",
+    "DetectRunsResponseV2Status": ".detect_runs_response_v2status",
+    "DocumentV2": ".document_v2",
+    "DocumentV2Pdf": ".document_v2pdf",
+    "DocumentV2PdfProcessingMode": ".document_v2pdf_processing_mode",
+    "EntityTransformation": ".entity_transformation",
+    "ErrorResponse": ".error_response",
+    "ErrorResponseError": ".error_response_error",
+    "FileMapping": ".file_mapping",
+    "FileOutput": ".file_output",
+    "FileOutputProcessedFileExtension": ".file_output_processed_file_extension",
+    "FileOutputProcessedFileType": ".file_output_processed_file_type",
+    "GetAuthTokenResponse": ".get_auth_token_response",
+    "GetStsTokenResponse": ".get_sts_token_response",
+    "HttpCode": ".http_code",
+    "ImageV2": ".image_v2",
+    "ImageV2MaskingMethod": ".image_v2masking_method",
+    "Media": ".media",
+    "Metrics": ".metrics",
+    "RedactionLevel": ".redaction_level",
+    "RedactionLevelEntityName": ".redaction_level_entity_name",
+    "RedactionLevelRedactionType": ".redaction_level_redaction_type",
+    "ReidentifyFileResponseV2": ".reidentify_file_response_v2",
+    "ReidentifyFileResponseV2OutputType": ".reidentify_file_response_v2output_type",
+    "ReidentifyFileResponseV2Status": ".reidentify_file_response_v2status",
+    "ReidentifyStringResponseV2": ".reidentify_string_response_v2",
+    "TransformationShiftDates": ".transformation_shift_dates",
+}
+
+
+def __getattr__(attr_name: str) -> typing.Any:
+    module_name = _dynamic_imports.get(attr_name)
+    if module_name is None:
+        raise AttributeError(f"No {attr_name} found in _dynamic_imports for module name -> {__name__}")
+    try:
+        module = import_module(module_name, __package__)
+        if module_name == f".{attr_name}":
+            return module
+        else:
+            return getattr(module, attr_name)
+    except ImportError as e:
+        raise ImportError(f"Failed to import {attr_name} from {module_name}: {e}") from e
+    except AttributeError as e:
+        raise AttributeError(f"Failed to get {attr_name} from {module_name}: {e}") from e
+
+
+def __dir__():
+    lazy_attrs = list(_dynamic_imports.keys())
+    return sorted(lazy_attrs)
+
+
+__all__ = [
+    "AudioV2",
+    "AudioV2Bleep",
+    "AudioV2OutputTranscription",
+    "DeidentifyFileResponseV2",
+    "DeidentifyStringResponseV2",
+    "DeidentifyStringResponseV2DetectedEntity",
+    "DeidentifyStringResponseV2EntityLocation",
+    "Detect",
+    "DetectConfigV2",
+    "DetectConfigV2VaultType",
+    "DetectCustomTypes",
+    "DetectCustomTypesDeidentificationType",
+    "DetectCustomTypesIncludePrefix",
+    "DetectEntity",
+    "DetectEntityDeidentificationType",
+    "DetectEntityEntityType",
+    "DetectEntityIncludePrefix",
+    "DetectGuardrailsResponseV2",
+    "DetectGuardrailsResponseV2Validation",
+    "DetectObjectEntity",
+    "DetectObjectEntityDeidentificationType",
+    "DetectObjectEntityEntityType",
+    "DetectReturnEntities",
+    "DetectRunsResponseV2",
+    "DetectRunsResponseV2OutputType",
+    "DetectRunsResponseV2Status",
+    "DocumentV2",
+    "DocumentV2Pdf",
+    "DocumentV2PdfProcessingMode",
+    "EntityTransformation",
+    "ErrorResponse",
+    "ErrorResponseError",
+    "FileMapping",
+    "FileOutput",
+    "FileOutputProcessedFileExtension",
+    "FileOutputProcessedFileType",
+    "GetAuthTokenResponse",
+    "GetStsTokenResponse",
+    "HttpCode",
+    "ImageV2",
+    "ImageV2MaskingMethod",
+    "Media",
+    "Metrics",
+    "RedactionLevel",
+    "RedactionLevelEntityName",
+    "RedactionLevelRedactionType",
+    "ReidentifyFileResponseV2",
+    "ReidentifyFileResponseV2OutputType",
+    "ReidentifyFileResponseV2Status",
+    "ReidentifyStringResponseV2",
+    "TransformationShiftDates",
+]

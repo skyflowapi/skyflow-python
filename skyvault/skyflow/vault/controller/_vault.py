@@ -3,8 +3,8 @@ import json
 import os
 from typing import Optional
 from common.vault.base_vault_controller import BaseVaultController
-from skyflow.generated.rest import V1FieldRecords, V1BatchRecord, V1TokenizeRecordRequest, \
-    V1DetokenizeRecordRequest
+from skyflow.generated.rest import FieldRecords, BatchRecord, TokenizeRecordRequest, \
+    DetokenizeRecordRequest
 from skyflow.generated.rest.core.file import File
 from skyflow.utils import SkyflowMessages, parse_insert_response, \
     handle_exception, parse_update_record_response, parse_delete_response, parse_detokenize_response, \
@@ -29,12 +29,12 @@ class VaultController(BaseVaultController):
 
     def __build_bulk_field_records(self, values, tokens=None):
         if tokens is None:
-            return [V1FieldRecords(fields=record) for record in values]
+            return [FieldRecords(fields=record) for record in values]
         else:
             bulk_record_list = []
             for i, value in enumerate(values):
                 token = tokens[i] if tokens is not None and i < len(tokens) else None
-                bulk_record = V1FieldRecords(
+                bulk_record = FieldRecords(
                     fields=value,
                     tokens=token
                 )
@@ -45,7 +45,7 @@ class VaultController(BaseVaultController):
         batch_record_list = []
         for i, value in enumerate(values):
             token = tokens[i] if tokens is not None and i < len(tokens) else None
-            batch_record = V1BatchRecord(
+            batch_record = BatchRecord(
                 fields=value,
                 table_name=table_name,
                 method=RequestMethod.POST.value,
@@ -107,11 +107,11 @@ class VaultController(BaseVaultController):
         try:
             log_info(SkyflowMessages.Info.INSERT_TRIGGERED.value, self.__vault_client.get_logger())
             if request.continue_on_error:
-                api_response = records_api.record_service_batch_operation(self.__vault_client.get_vault_id(),
-                                                                          records=insert_body, continue_on_error=request.continue_on_error, byot=request.token_mode.value, request_options={'additional_headers': self.__get_headers()})
+                api_response = records_api.batch_operation(self.__vault_client.get_vault_id(),
+                                                                          records=insert_body, continue_on_error=request.continue_on_error, request_options={'additional_headers': self.__get_headers()})
 
             else:
-                api_response = records_api.record_service_insert_record(self.__vault_client.get_vault_id(),
+                api_response = records_api.insert_records(self.__vault_client.get_vault_id(),
                                                                         request.table, records=insert_body,tokenization= request.return_tokens, upsert=request.upsert, homogeneous=request.homogeneous, byot=request.token_mode.value, request_options={'additional_headers': self.__get_headers()})
 
             insert_response = parse_insert_response(api_response, request.continue_on_error)
@@ -128,12 +128,12 @@ class VaultController(BaseVaultController):
         log_info(SkyflowMessages.Info.UPDATE_REQUEST_RESOLVED.value, self.__vault_client.get_logger())
         self.__initialize()
         field = {key: value for key, value in request.data.items() if key != ResponseField.SKYFLOW_ID}
-        record = V1FieldRecords(fields=field, tokens = request.tokens)
+        record = FieldRecords(fields=field, tokens = request.tokens)
 
         records_api = self.__vault_client.get_records_api()
         try:
             log_info(SkyflowMessages.Info.UPDATE_TRIGGERED.value, self.__vault_client.get_logger())
-            api_response = records_api.record_service_update_record(
+            api_response = records_api.update_record(
                 self.__vault_client.get_vault_id(),
                 request.table,
                 id=request.data.get(ResponseField.SKYFLOW_ID),
@@ -157,7 +157,7 @@ class VaultController(BaseVaultController):
         records_api = self.__vault_client.get_records_api()
         try:
             log_info(SkyflowMessages.Info.DELETE_TRIGGERED.value, self.__vault_client.get_logger())
-            api_response = records_api.record_service_bulk_delete_record(
+            api_response = records_api.delete_records(
                 self.__vault_client.get_vault_id(),
                 request.table,
                 skyflow_ids=request.ids,
@@ -179,7 +179,7 @@ class VaultController(BaseVaultController):
 
         try:
             log_info(SkyflowMessages.Info.GET_TRIGGERED.value, self.__vault_client.get_logger())
-            api_response = records_api.record_service_bulk_get_record(
+            api_response = records_api.get_records(
                 self.__vault_client.get_vault_id(),
                 object_name=request.table,
                 skyflow_ids=request.ids,
@@ -208,7 +208,7 @@ class VaultController(BaseVaultController):
         query_api = self.__vault_client.get_query_api()
         try:
             log_info(SkyflowMessages.Info.QUERY_TRIGGERED.value, self.__vault_client.get_logger())
-            api_response = query_api.query_service_execute_query(
+            api_response = query_api.execute_query(
                 self.__vault_client.get_vault_id(),
                 query=request.query,
                 request_options={'additional_headers': self.__get_headers()}
@@ -226,7 +226,7 @@ class VaultController(BaseVaultController):
         log_info(SkyflowMessages.Info.DETOKENIZE_REQUEST_RESOLVED.value, self.__vault_client.get_logger())
         self.__initialize()
         tokens_list = [
-            V1DetokenizeRecordRequest(
+            DetokenizeRecordRequest(
                 token=item.get(ResponseField.TOKEN),
                 redaction=item.get(RequestParameter.REDACTION_TYPE) or item.get(RequestParameter.REDACTION, RedactionType.DEFAULT)
             )
@@ -235,7 +235,7 @@ class VaultController(BaseVaultController):
         tokens_api = self.__vault_client.get_tokens_api().with_raw_response
         try:
             log_info(SkyflowMessages.Info.DETOKENIZE_TRIGGERED.value, self.__vault_client.get_logger())
-            api_response = tokens_api.record_service_detokenize(
+            api_response = tokens_api.detokenize(
                 self.__vault_client.get_vault_id(),
                 detokenization_parameters=tokens_list,
                 continue_on_error = request.continue_on_error,
@@ -255,13 +255,13 @@ class VaultController(BaseVaultController):
         self.__initialize()
 
         records_list = [
-            V1TokenizeRecordRequest(value=item[RequestParameter.VALUE], column_group=item[RequestParameter.COLUMN_GROUP])
+            TokenizeRecordRequest(value=item[RequestParameter.VALUE], column_group=item[RequestParameter.COLUMN_GROUP])
             for item in request.values
         ]
         tokens_api = self.__vault_client.get_tokens_api()
         try:
             log_info(SkyflowMessages.Info.TOKENIZE_TRIGGERED.value, self.__vault_client.get_logger())
-            api_response = tokens_api.record_service_tokenize(
+            api_response = tokens_api.tokenize(
                 self.__vault_client.get_vault_id(),
                 tokenization_parameters=records_list,
                 request_options={'additional_headers': self.__get_headers()}
@@ -278,9 +278,9 @@ class VaultController(BaseVaultController):
         log_info(SkyflowMessages.Info.VALIDATING_FILE_UPLOAD_REQUEST.value, self.__vault_client.get_logger())
         validate_file_upload_request(self.__vault_client.get_logger(), request)
         self.__initialize()
-        file_upload_api = self.__vault_client.get_records_api().with_raw_response
+        file_upload_api = self.__vault_client.get_files_api().with_raw_response
         try:
-            api_response = file_upload_api.upload_file_v_2(
+            api_response = file_upload_api.upload_file_v2(
                 self.__vault_client.get_vault_id(),
                 table_name=request.table,
                 column_name=request.column_name,

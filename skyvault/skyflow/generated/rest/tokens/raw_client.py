@@ -6,15 +6,21 @@ from json.decoder import JSONDecodeError
 from ..core.api_error import ApiError
 from ..core.client_wrapper import AsyncClientWrapper, SyncClientWrapper
 from ..core.http_response import AsyncHttpResponse, HttpResponse
-from ..core.jsonable_encoder import jsonable_encoder
+from ..core.jsonable_encoder import encode_path_param
+from ..core.parse_error import ParsingError
 from ..core.pydantic_utilities import parse_obj_as
 from ..core.request_options import RequestOptions
 from ..core.serialization import convert_and_respect_annotation_metadata
+from ..errors.bad_request_error import BadRequestError
+from ..errors.internal_server_error import InternalServerError
 from ..errors.not_found_error import NotFoundError
-from ..types.v_1_detokenize_record_request import V1DetokenizeRecordRequest
-from ..types.v_1_detokenize_response import V1DetokenizeResponse
-from ..types.v_1_tokenize_record_request import V1TokenizeRecordRequest
-from ..types.v_1_tokenize_response import V1TokenizeResponse
+from ..errors.unauthorized_error import UnauthorizedError
+from ..types.detokenize_record_request import DetokenizeRecordRequest
+from ..types.detokenize_response import DetokenizeResponse
+from ..types.error_response import ErrorResponse
+from ..types.tokenize_record_request import TokenizeRecordRequest
+from ..types.tokenize_response import TokenizeResponse
+from pydantic import ValidationError
 
 # this is used as the default value for optional parameters
 OMIT = typing.cast(typing.Any, ...)
@@ -24,24 +30,23 @@ class RawTokensClient:
     def __init__(self, *, client_wrapper: SyncClientWrapper):
         self._client_wrapper = client_wrapper
 
-    def record_service_detokenize(
+    def detokenize(
         self,
         vault_id: str,
         *,
-        detokenization_parameters: typing.Optional[typing.Sequence[V1DetokenizeRecordRequest]] = OMIT,
+        detokenization_parameters: typing.Sequence[DetokenizeRecordRequest],
         download_url: typing.Optional[bool] = OMIT,
         continue_on_error: typing.Optional[bool] = OMIT,
         request_options: typing.Optional[RequestOptions] = None,
-    ) -> HttpResponse[V1DetokenizeResponse]:
+    ) -> HttpResponse[DetokenizeResponse]:
         """
         Returns records that correspond to the specified tokens.
 
         Parameters
         ----------
         vault_id : str
-            ID of the vault.
 
-        detokenization_parameters : typing.Optional[typing.Sequence[V1DetokenizeRecordRequest]]
+        detokenization_parameters : typing.Sequence[DetokenizeRecordRequest]
             Detokenization details.
 
         download_url : typing.Optional[bool]
@@ -55,16 +60,16 @@ class RawTokensClient:
 
         Returns
         -------
-        HttpResponse[V1DetokenizeResponse]
-            A successful response.
+        HttpResponse[DetokenizeResponse]
+            OK
         """
         _response = self._client_wrapper.httpx_client.request(
-            f"v1/vaults/{jsonable_encoder(vault_id)}/detokenize",
+            f"v1/vaults/{encode_path_param(vault_id)}/detokenize",
             method="POST",
             json={
                 "detokenizationParameters": convert_and_respect_annotation_metadata(
                     object_=detokenization_parameters,
-                    annotation=typing.Sequence[V1DetokenizeRecordRequest],
+                    annotation=typing.Sequence[DetokenizeRecordRequest],
                     direction="write",
                 ),
                 "downloadURL": download_url,
@@ -79,20 +84,53 @@ class RawTokensClient:
         try:
             if 200 <= _response.status_code < 300:
                 _data = typing.cast(
-                    V1DetokenizeResponse,
+                    DetokenizeResponse,
                     parse_obj_as(
-                        type_=V1DetokenizeResponse,  # type: ignore
+                        type_=DetokenizeResponse,  # type: ignore
                         object_=_response.json(),
                     ),
                 )
                 return HttpResponse(response=_response, data=_data)
+            if _response.status_code == 400:
+                raise BadRequestError(
+                    headers=dict(_response.headers),
+                    body=typing.cast(
+                        ErrorResponse,
+                        parse_obj_as(
+                            type_=ErrorResponse,  # type: ignore
+                            object_=_response.json(),
+                        ),
+                    ),
+                )
+            if _response.status_code == 401:
+                raise UnauthorizedError(
+                    headers=dict(_response.headers),
+                    body=typing.cast(
+                        ErrorResponse,
+                        parse_obj_as(
+                            type_=ErrorResponse,  # type: ignore
+                            object_=_response.json(),
+                        ),
+                    ),
+                )
             if _response.status_code == 404:
                 raise NotFoundError(
                     headers=dict(_response.headers),
                     body=typing.cast(
-                        typing.Optional[typing.Any],
+                        ErrorResponse,
                         parse_obj_as(
-                            type_=typing.Optional[typing.Any],  # type: ignore
+                            type_=ErrorResponse,  # type: ignore
+                            object_=_response.json(),
+                        ),
+                    ),
+                )
+            if _response.status_code == 500:
+                raise InternalServerError(
+                    headers=dict(_response.headers),
+                    body=typing.cast(
+                        ErrorResponse,
+                        parse_obj_as(
+                            type_=ErrorResponse,  # type: ignore
                             object_=_response.json(),
                         ),
                     ),
@@ -100,24 +138,28 @@ class RawTokensClient:
             _response_json = _response.json()
         except JSONDecodeError:
             raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)
+        except ValidationError as e:
+            raise ParsingError(
+                status_code=_response.status_code, headers=dict(_response.headers), body=_response.json(), cause=e
+            )
         raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
 
-    def record_service_tokenize(
+    def tokenize(
         self,
         vault_id: str,
         *,
-        tokenization_parameters: typing.Optional[typing.Sequence[V1TokenizeRecordRequest]] = OMIT,
+        tokenization_parameters: typing.Sequence[TokenizeRecordRequest],
         request_options: typing.Optional[RequestOptions] = None,
-    ) -> HttpResponse[V1TokenizeResponse]:
+    ) -> HttpResponse[TokenizeResponse]:
         """
-        Returns tokens that correspond to the specified records. Only applicable for fields with deterministic tokenization.<br /><br /><b>Note:</b> This endpoint doesn't insert records—it returns tokens for existing values. To insert records and tokenize that new record's values, see <a href='#RecordService_InsertRecord'>Insert Record</a> and the tokenization parameter.
+        Returns tokens that correspond to the specified records. Only applicable for fields with deterministic tokenization.<br /><br /><b>Note:</b> This endpoint doesn't insert records—it returns tokens for existing values. To insert records and return tokens for that new record's values, see Insert Records' `tokenization` parameter.
 
         Parameters
         ----------
         vault_id : str
             ID of the vault.
 
-        tokenization_parameters : typing.Optional[typing.Sequence[V1TokenizeRecordRequest]]
+        tokenization_parameters : typing.Sequence[TokenizeRecordRequest]
             Tokenization details.
 
         request_options : typing.Optional[RequestOptions]
@@ -125,16 +167,16 @@ class RawTokensClient:
 
         Returns
         -------
-        HttpResponse[V1TokenizeResponse]
-            A successful response.
+        HttpResponse[TokenizeResponse]
+            OK
         """
         _response = self._client_wrapper.httpx_client.request(
-            f"v1/vaults/{jsonable_encoder(vault_id)}/tokenize",
+            f"v1/vaults/{encode_path_param(vault_id)}/tokenize",
             method="POST",
             json={
                 "tokenizationParameters": convert_and_respect_annotation_metadata(
                     object_=tokenization_parameters,
-                    annotation=typing.Sequence[V1TokenizeRecordRequest],
+                    annotation=typing.Sequence[TokenizeRecordRequest],
                     direction="write",
                 ),
             },
@@ -147,20 +189,53 @@ class RawTokensClient:
         try:
             if 200 <= _response.status_code < 300:
                 _data = typing.cast(
-                    V1TokenizeResponse,
+                    TokenizeResponse,
                     parse_obj_as(
-                        type_=V1TokenizeResponse,  # type: ignore
+                        type_=TokenizeResponse,  # type: ignore
                         object_=_response.json(),
                     ),
                 )
                 return HttpResponse(response=_response, data=_data)
+            if _response.status_code == 400:
+                raise BadRequestError(
+                    headers=dict(_response.headers),
+                    body=typing.cast(
+                        ErrorResponse,
+                        parse_obj_as(
+                            type_=ErrorResponse,  # type: ignore
+                            object_=_response.json(),
+                        ),
+                    ),
+                )
+            if _response.status_code == 401:
+                raise UnauthorizedError(
+                    headers=dict(_response.headers),
+                    body=typing.cast(
+                        ErrorResponse,
+                        parse_obj_as(
+                            type_=ErrorResponse,  # type: ignore
+                            object_=_response.json(),
+                        ),
+                    ),
+                )
             if _response.status_code == 404:
                 raise NotFoundError(
                     headers=dict(_response.headers),
                     body=typing.cast(
-                        typing.Optional[typing.Any],
+                        ErrorResponse,
                         parse_obj_as(
-                            type_=typing.Optional[typing.Any],  # type: ignore
+                            type_=ErrorResponse,  # type: ignore
+                            object_=_response.json(),
+                        ),
+                    ),
+                )
+            if _response.status_code == 500:
+                raise InternalServerError(
+                    headers=dict(_response.headers),
+                    body=typing.cast(
+                        ErrorResponse,
+                        parse_obj_as(
+                            type_=ErrorResponse,  # type: ignore
                             object_=_response.json(),
                         ),
                     ),
@@ -168,6 +243,10 @@ class RawTokensClient:
             _response_json = _response.json()
         except JSONDecodeError:
             raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)
+        except ValidationError as e:
+            raise ParsingError(
+                status_code=_response.status_code, headers=dict(_response.headers), body=_response.json(), cause=e
+            )
         raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
 
 
@@ -175,24 +254,23 @@ class AsyncRawTokensClient:
     def __init__(self, *, client_wrapper: AsyncClientWrapper):
         self._client_wrapper = client_wrapper
 
-    async def record_service_detokenize(
+    async def detokenize(
         self,
         vault_id: str,
         *,
-        detokenization_parameters: typing.Optional[typing.Sequence[V1DetokenizeRecordRequest]] = OMIT,
+        detokenization_parameters: typing.Sequence[DetokenizeRecordRequest],
         download_url: typing.Optional[bool] = OMIT,
         continue_on_error: typing.Optional[bool] = OMIT,
         request_options: typing.Optional[RequestOptions] = None,
-    ) -> AsyncHttpResponse[V1DetokenizeResponse]:
+    ) -> AsyncHttpResponse[DetokenizeResponse]:
         """
         Returns records that correspond to the specified tokens.
 
         Parameters
         ----------
         vault_id : str
-            ID of the vault.
 
-        detokenization_parameters : typing.Optional[typing.Sequence[V1DetokenizeRecordRequest]]
+        detokenization_parameters : typing.Sequence[DetokenizeRecordRequest]
             Detokenization details.
 
         download_url : typing.Optional[bool]
@@ -206,16 +284,16 @@ class AsyncRawTokensClient:
 
         Returns
         -------
-        AsyncHttpResponse[V1DetokenizeResponse]
-            A successful response.
+        AsyncHttpResponse[DetokenizeResponse]
+            OK
         """
         _response = await self._client_wrapper.httpx_client.request(
-            f"v1/vaults/{jsonable_encoder(vault_id)}/detokenize",
+            f"v1/vaults/{encode_path_param(vault_id)}/detokenize",
             method="POST",
             json={
                 "detokenizationParameters": convert_and_respect_annotation_metadata(
                     object_=detokenization_parameters,
-                    annotation=typing.Sequence[V1DetokenizeRecordRequest],
+                    annotation=typing.Sequence[DetokenizeRecordRequest],
                     direction="write",
                 ),
                 "downloadURL": download_url,
@@ -230,20 +308,53 @@ class AsyncRawTokensClient:
         try:
             if 200 <= _response.status_code < 300:
                 _data = typing.cast(
-                    V1DetokenizeResponse,
+                    DetokenizeResponse,
                     parse_obj_as(
-                        type_=V1DetokenizeResponse,  # type: ignore
+                        type_=DetokenizeResponse,  # type: ignore
                         object_=_response.json(),
                     ),
                 )
                 return AsyncHttpResponse(response=_response, data=_data)
+            if _response.status_code == 400:
+                raise BadRequestError(
+                    headers=dict(_response.headers),
+                    body=typing.cast(
+                        ErrorResponse,
+                        parse_obj_as(
+                            type_=ErrorResponse,  # type: ignore
+                            object_=_response.json(),
+                        ),
+                    ),
+                )
+            if _response.status_code == 401:
+                raise UnauthorizedError(
+                    headers=dict(_response.headers),
+                    body=typing.cast(
+                        ErrorResponse,
+                        parse_obj_as(
+                            type_=ErrorResponse,  # type: ignore
+                            object_=_response.json(),
+                        ),
+                    ),
+                )
             if _response.status_code == 404:
                 raise NotFoundError(
                     headers=dict(_response.headers),
                     body=typing.cast(
-                        typing.Optional[typing.Any],
+                        ErrorResponse,
                         parse_obj_as(
-                            type_=typing.Optional[typing.Any],  # type: ignore
+                            type_=ErrorResponse,  # type: ignore
+                            object_=_response.json(),
+                        ),
+                    ),
+                )
+            if _response.status_code == 500:
+                raise InternalServerError(
+                    headers=dict(_response.headers),
+                    body=typing.cast(
+                        ErrorResponse,
+                        parse_obj_as(
+                            type_=ErrorResponse,  # type: ignore
                             object_=_response.json(),
                         ),
                     ),
@@ -251,24 +362,28 @@ class AsyncRawTokensClient:
             _response_json = _response.json()
         except JSONDecodeError:
             raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)
+        except ValidationError as e:
+            raise ParsingError(
+                status_code=_response.status_code, headers=dict(_response.headers), body=_response.json(), cause=e
+            )
         raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
 
-    async def record_service_tokenize(
+    async def tokenize(
         self,
         vault_id: str,
         *,
-        tokenization_parameters: typing.Optional[typing.Sequence[V1TokenizeRecordRequest]] = OMIT,
+        tokenization_parameters: typing.Sequence[TokenizeRecordRequest],
         request_options: typing.Optional[RequestOptions] = None,
-    ) -> AsyncHttpResponse[V1TokenizeResponse]:
+    ) -> AsyncHttpResponse[TokenizeResponse]:
         """
-        Returns tokens that correspond to the specified records. Only applicable for fields with deterministic tokenization.<br /><br /><b>Note:</b> This endpoint doesn't insert records—it returns tokens for existing values. To insert records and tokenize that new record's values, see <a href='#RecordService_InsertRecord'>Insert Record</a> and the tokenization parameter.
+        Returns tokens that correspond to the specified records. Only applicable for fields with deterministic tokenization.<br /><br /><b>Note:</b> This endpoint doesn't insert records—it returns tokens for existing values. To insert records and return tokens for that new record's values, see Insert Records' `tokenization` parameter.
 
         Parameters
         ----------
         vault_id : str
             ID of the vault.
 
-        tokenization_parameters : typing.Optional[typing.Sequence[V1TokenizeRecordRequest]]
+        tokenization_parameters : typing.Sequence[TokenizeRecordRequest]
             Tokenization details.
 
         request_options : typing.Optional[RequestOptions]
@@ -276,16 +391,16 @@ class AsyncRawTokensClient:
 
         Returns
         -------
-        AsyncHttpResponse[V1TokenizeResponse]
-            A successful response.
+        AsyncHttpResponse[TokenizeResponse]
+            OK
         """
         _response = await self._client_wrapper.httpx_client.request(
-            f"v1/vaults/{jsonable_encoder(vault_id)}/tokenize",
+            f"v1/vaults/{encode_path_param(vault_id)}/tokenize",
             method="POST",
             json={
                 "tokenizationParameters": convert_and_respect_annotation_metadata(
                     object_=tokenization_parameters,
-                    annotation=typing.Sequence[V1TokenizeRecordRequest],
+                    annotation=typing.Sequence[TokenizeRecordRequest],
                     direction="write",
                 ),
             },
@@ -298,20 +413,53 @@ class AsyncRawTokensClient:
         try:
             if 200 <= _response.status_code < 300:
                 _data = typing.cast(
-                    V1TokenizeResponse,
+                    TokenizeResponse,
                     parse_obj_as(
-                        type_=V1TokenizeResponse,  # type: ignore
+                        type_=TokenizeResponse,  # type: ignore
                         object_=_response.json(),
                     ),
                 )
                 return AsyncHttpResponse(response=_response, data=_data)
+            if _response.status_code == 400:
+                raise BadRequestError(
+                    headers=dict(_response.headers),
+                    body=typing.cast(
+                        ErrorResponse,
+                        parse_obj_as(
+                            type_=ErrorResponse,  # type: ignore
+                            object_=_response.json(),
+                        ),
+                    ),
+                )
+            if _response.status_code == 401:
+                raise UnauthorizedError(
+                    headers=dict(_response.headers),
+                    body=typing.cast(
+                        ErrorResponse,
+                        parse_obj_as(
+                            type_=ErrorResponse,  # type: ignore
+                            object_=_response.json(),
+                        ),
+                    ),
+                )
             if _response.status_code == 404:
                 raise NotFoundError(
                     headers=dict(_response.headers),
                     body=typing.cast(
-                        typing.Optional[typing.Any],
+                        ErrorResponse,
                         parse_obj_as(
-                            type_=typing.Optional[typing.Any],  # type: ignore
+                            type_=ErrorResponse,  # type: ignore
+                            object_=_response.json(),
+                        ),
+                    ),
+                )
+            if _response.status_code == 500:
+                raise InternalServerError(
+                    headers=dict(_response.headers),
+                    body=typing.cast(
+                        ErrorResponse,
+                        parse_obj_as(
+                            type_=ErrorResponse,  # type: ignore
                             object_=_response.json(),
                         ),
                     ),
@@ -319,4 +467,8 @@ class AsyncRawTokensClient:
             _response_json = _response.json()
         except JSONDecodeError:
             raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)
+        except ValidationError as e:
+            raise ParsingError(
+                status_code=_response.status_code, headers=dict(_response.headers), body=_response.json(), cause=e
+            )
         raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)

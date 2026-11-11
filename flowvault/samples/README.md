@@ -39,6 +39,21 @@ python flowvault/samples/vault_api/insert_records.py
 | [update_record.py](vault_api/update_record.py) | Update a record |
 | [delete_records.py](vault_api/delete_records.py) | Delete records |
 | [detokenize_records.py](vault_api/detokenize_records.py) | Detokenize tokens |
+| [query_records.py](vault_api/query_records.py) | Run a read-only SQL `SELECT` query |
+| [get_tokens.py](vault_api/get_tokens.py) | Look up existing tokens for values (deterministic token groups) |
+| [upload_files.py](vault_api/upload_files.py) | Upload files to file columns (`file_path` / `base64` / `file_object`) |
+| [delete_files.py](vault_api/delete_files.py) | Delete files from file columns (by `skyflow_id` or `unique_values`) |
+
+## Detect
+
+| Sample | Demonstrates |
+|---|---|
+| [deidentify_string.py](detect_api/deidentify_string.py) | De-identify sensitive data in a string with a `configuration_id` or an inline `DetectConfiguration` |
+| [deidentify_file.py](detect_api/deidentify_file.py) | De-identify a file; submit-only, submit-and-poll with `PollOptions`, and presigned URL source |
+| [get_run.py](detect_api/get_run.py) | Retrieve the status and outputs of a detect file run, branching on `DetectRunStatus` |
+| [reidentify_string.py](detect_api/reidentify_string.py) | De-identify to a vault token group, then re-identify the tokens in the string |
+| [reidentify_file.py](detect_api/reidentify_file.py) | Re-identify tokens in a file (synchronous) |
+| [check_guardrails.py](detect_api/check_guardrails.py) | Screen text for toxicity and denied topics |
 
 ## Custom headers & HTTP config
 

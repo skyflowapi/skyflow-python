@@ -1,4 +1,8 @@
+import base64
 import json
+import mimetypes
+import os
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from common.errors import SkyflowError
 from common.utils import SkyflowMessages as CommonMessages
@@ -7,7 +11,11 @@ from common.utils.logger import log_info, log_error_log
 from common.vault.base_vault_controller import BaseVaultController
 from skyflow.generated.rest import (
     ColumnRedactions,
+    FileDeleteRecord,
+    FileUploadColumn,
+    FileUploadRecord,
     GetRequestData,
+    GetTokensFromValuesRequestObject,
     InsertRecordData,
     TokenGroupRedactions as WireTokenGroupRedactions,
     UniqueValue,
@@ -16,7 +24,7 @@ from skyflow.generated.rest import (
 )
 from skyflow.generated.rest.core import ApiError, ParsingError
 from skyflow.utils import SkyflowMessages, get_metrics
-from skyflow.utils.enums import UpsertType
+from skyflow.utils.enums import UpsertType, FileUploadStatus
 from skyflow.utils._response_parsing import parse_tokens, parse_hashed_data, parse_metadata
 from skyflow.utils.validations import (
     validate_insert_request,
@@ -24,6 +32,10 @@ from skyflow.utils.validations import (
     validate_update_request,
     validate_delete_request,
     validate_detokenize_request,
+    validate_query_request,
+    validate_get_tokens_request,
+    validate_upload_files_request,
+    validate_delete_files_request,
 )
 from skyflow.vault.data import (
     InsertRequest,
@@ -41,11 +53,30 @@ from skyflow.vault.data import (
     DetokenizeRequest,
     DetokenizeResponse,
     DetokenizeResponseRecord,
+    QueryRequest,
+    QueryResponse,
+    QueryResponseRecord,
+    QueryResponseMetadata,
+    GetTokensRequest,
+    GetTokensResponse,
+    GetTokensResponseRecord,
+    UploadFilesRequest,
+    UploadFilesResponse,
+    UploadFilesResponseRecord,
+    UploadFilesColumnResult,
+    DeleteFilesRequest,
+    DeleteFilesResponse,
+    DeleteFilesResponseRecord,
+    DeleteFilesColumnResult,
     InsertOptions,
     GetOptions,
     UpdateOptions,
     DeleteOptions,
     DetokenizeOptions,
+    QueryOptions,
+    GetTokensOptions,
+    UploadFilesOptions,
+    DeleteFilesOptions,
     RequestContext,
 )
 
@@ -57,6 +88,19 @@ OPERATION_GET = "GET"
 OPERATION_UPDATE = "UPDATE"
 OPERATION_DELETE = "DELETE"
 OPERATION_DETOKENIZE = "DETOKENIZE"
+OPERATION_QUERY = "QUERY"
+OPERATION_GET_TOKENS = "GET_TOKENS"
+OPERATION_UPLOAD_FILES = "UPLOAD_FILES"
+OPERATION_DELETE_FILES = "DELETE_FILES"
+FILE_PUT_FAILED_MESSAGE = "PUT failed: {}"
+STATUS_KEY = "status"
+DEFAULT_UPLOAD_CONCURRENCY = 5
+SOURCE_KIND_PATH = "path"
+SOURCE_KIND_BYTES = "bytes"
+SOURCE_KIND_FILE_OBJECT = "file_object"
+INVALID_INPUT_ERROR_CODE = CommonMessages.ErrorCodes.INVALID_INPUT.value
+HTTP_STATUS_OK = 200
+HTTP_STATUS_MULTIPLE_CHOICES = 300
 
 
 class VaultController(BaseVaultController):
@@ -80,13 +124,12 @@ class VaultController(BaseVaultController):
         needs_per_record_table = any(r.table_name is not None for r in request.records)
         needs_per_record_upsert = any(r.upsert is not None for r in request.records)
 
-        wire_records = [
-            self.__build_wire_record(record, request, needs_per_record_table, needs_per_record_upsert)
-            for record in request.records
-        ]
-
         try:
             log_info(SkyflowMessages.Info.INSERT_TRIGGERED.value, self._vault_client.get_logger())
+            wire_records = [
+                self.__build_wire_record(record, request, needs_per_record_table, needs_per_record_upsert)
+                for record in request.records
+            ]
             upsert_kwargs = self.__omit_none(
                 upsert=None if needs_per_record_upsert else self.__to_upsert(request.upsert),
             )
@@ -124,23 +167,20 @@ class VaultController(BaseVaultController):
 
         records_api = self._vault_client.get_records_api()
 
-        if request.records is not None:
-            call_kwargs = {'records': self.__to_get_request_data(request.records)}
-            error_count = len(request.records)
-        else:
-            call_kwargs = {
-                'table_name': request.table_name,
-                'skyflow_i_ds': request.skyflow_ids,
-                'unique_values': self.__to_unique_values(request.unique_values),
-                'columns': request.columns,
-                'column_redactions': self.__to_column_redactions(request.column_redactions),
-                'limit': request.limit,
-                'offset': request.offset,
-            }
-            error_count = len(request.skyflow_ids or request.unique_values or [])
-
         try:
             log_info(SkyflowMessages.Info.GET_TRIGGERED.value, self._vault_client.get_logger())
+            if request.records is not None:
+                call_kwargs = {'records': self.__to_get_request_data(request.records)}
+            else:
+                call_kwargs = {
+                    'table_name': request.table_name,
+                    'skyflow_i_ds': request.skyflow_ids,
+                    'unique_values': self.__to_unique_values(request.unique_values),
+                    'columns': request.columns,
+                    'column_redactions': self.__to_column_redactions(request.column_redactions),
+                    'limit': request.limit,
+                    'offset': request.offset,
+                }
             raw_response = records_api.with_raw_response.get_records(
                 vault_id=self._vault_client.get_vault_id(),
                 request_options=self.__unary_request_options(OPERATION_GET, options),
@@ -270,6 +310,124 @@ class VaultController(BaseVaultController):
 
         log_info(SkyflowMessages.Info.DETOKENIZE_SUCCESS.value, self._vault_client.get_logger())
         return DetokenizeResponse(records=records)
+
+    def query(self, request: QueryRequest, options: QueryOptions = None) -> QueryResponse:
+        log_info(SkyflowMessages.Info.VALIDATE_QUERY_REQUEST.value, self._vault_client.get_logger())
+        validate_query_request(self._vault_client.get_logger(), request)
+        log_info(SkyflowMessages.Info.QUERY_REQUEST_RESOLVED.value, self._vault_client.get_logger())
+        self._vault_client.initialize_client_configuration()
+
+        query_api = self._vault_client.get_query_api()
+
+        try:
+            log_info(SkyflowMessages.Info.QUERY_TRIGGERED.value, self._vault_client.get_logger())
+            raw_response = query_api.with_raw_response.execute_query(
+                vault_id=self._vault_client.get_vault_id(),
+                query=request.query,
+                request_options=self.__unary_request_options(OPERATION_QUERY, options),
+            )
+        except Exception as e:
+            log_error_log(SkyflowMessages.ErrorLogs.QUERY_RECORDS_REJECTED.value, self._vault_client.get_logger())
+            raise self.__to_skyflow_error(e)
+
+        request_id = self.__extract_request_id(raw_response.headers)
+        records = [
+            QueryResponseRecord(data=self.__wire_record_value(record, 'data', 'data'))
+            for record in (raw_response.data.records or [])
+        ]
+        metadata = self.__to_query_metadata(raw_response.data.metadata)
+        log_info(SkyflowMessages.Info.QUERY_SUCCESS.value, self._vault_client.get_logger())
+        return QueryResponse(records=records, metadata=metadata, request_id=request_id)
+
+    def get_tokens(self, request: GetTokensRequest, options: GetTokensOptions = None) -> GetTokensResponse:
+        log_info(SkyflowMessages.Info.VALIDATE_GET_TOKENS_REQUEST.value, self._vault_client.get_logger())
+        validate_get_tokens_request(self._vault_client.get_logger(), request)
+        log_info(SkyflowMessages.Info.GET_TOKENS_REQUEST_RESOLVED.value, self._vault_client.get_logger())
+        self._vault_client.initialize_client_configuration()
+
+        tokens_api = self._vault_client.get_tokens_api()
+
+        try:
+            log_info(SkyflowMessages.Info.GET_TOKENS_TRIGGERED.value, self._vault_client.get_logger())
+            raw_response = tokens_api.with_raw_response.get_tokens(
+                vault_id=self._vault_client.get_vault_id(),
+                records=self.__to_get_tokens_request_data(request.records),
+                request_options=self.__unary_request_options(OPERATION_GET_TOKENS, options),
+            )
+            request_id = self.__extract_request_id(raw_response.headers)
+            records = [self.__get_tokens_row(record, request_id) for record in (raw_response.data.records or [])]
+        except Exception as e:
+            log_error_log(SkyflowMessages.ErrorLogs.GET_TOKENS_RECORDS_REJECTED.value, self._vault_client.get_logger())
+            error_records, request_id = self.__unary_error_records(e)
+            if error_records is None:
+                raise self.__to_skyflow_error(e)
+            records = [self.__get_tokens_row(record, request_id) for record in error_records]
+
+        log_info(SkyflowMessages.Info.GET_TOKENS_SUCCESS.value, self._vault_client.get_logger())
+        return GetTokensResponse(records=records)
+
+    def upload_files(self, request: UploadFilesRequest, options: UploadFilesOptions = None) -> UploadFilesResponse:
+        log_info(SkyflowMessages.Info.VALIDATE_UPLOAD_FILES_REQUEST.value, self._vault_client.get_logger())
+        validate_upload_files_request(self._vault_client.get_logger(), request)
+        for record in request.records:
+            self._validate_table_name_if_present(record.table_name)
+        resolved_records = [self.__resolve_upload_record(record) for record in request.records]
+        log_info(SkyflowMessages.Info.UPLOAD_FILES_REQUEST_RESOLVED.value, self._vault_client.get_logger())
+        self._vault_client.initialize_client_configuration()
+
+        files_api = self._vault_client.get_files_api()
+
+        try:
+            log_info(SkyflowMessages.Info.UPLOAD_FILES_TRIGGERED.value, self._vault_client.get_logger())
+            raw_response = files_api.with_raw_response.upload_files(
+                vault_id=self._vault_client.get_vault_id(),
+                records=self.__to_upload_files_request_data(request.records, resolved_records),
+                request_options=self.__unary_request_options(OPERATION_UPLOAD_FILES, options),
+            )
+        except Exception as e:
+            log_error_log(SkyflowMessages.ErrorLogs.UPLOAD_FILES_RECORDS_REJECTED.value, self._vault_client.get_logger())
+            raise self.__to_skyflow_error(e)
+
+        request_id = self.__extract_request_id(raw_response.headers)
+        response_records = raw_response.data.records or []
+        put_results = self.__upload_column_results(request.records, resolved_records, response_records)
+        records = []
+        for index, response_record in enumerate(response_records):
+            request_record = request.records[index] if index < len(request.records) else None
+            resolved = resolved_records[index] if index < len(resolved_records) else {}
+            records.append(self.__upload_files_row(request_record, resolved, response_record, request_id, put_results, index))
+
+        log_info(SkyflowMessages.Info.UPLOAD_FILES_SUCCESS.value, self._vault_client.get_logger())
+        return UploadFilesResponse(records=records)
+
+    def delete_files(self, request: DeleteFilesRequest, options: DeleteFilesOptions = None) -> DeleteFilesResponse:
+        log_info(SkyflowMessages.Info.VALIDATE_DELETE_FILES_REQUEST.value, self._vault_client.get_logger())
+        validate_delete_files_request(self._vault_client.get_logger(), request)
+        for record in request.records:
+            self._validate_table_name_if_present(record.table_name)
+        log_info(SkyflowMessages.Info.DELETE_FILES_REQUEST_RESOLVED.value, self._vault_client.get_logger())
+        self._vault_client.initialize_client_configuration()
+
+        files_api = self._vault_client.get_files_api()
+
+        try:
+            log_info(SkyflowMessages.Info.DELETE_FILES_TRIGGERED.value, self._vault_client.get_logger())
+            raw_response = files_api.with_raw_response.delete_files(
+                vault_id=self._vault_client.get_vault_id(),
+                records=self.__to_delete_files_request_data(request.records),
+                request_options=self.__unary_request_options(OPERATION_DELETE_FILES, options),
+            )
+            request_id = self.__extract_request_id(raw_response.headers)
+            records = [self.__delete_files_row(record, request_id) for record in (raw_response.data.records or [])]
+        except Exception as e:
+            log_error_log(SkyflowMessages.ErrorLogs.DELETE_FILES_RECORDS_REJECTED.value, self._vault_client.get_logger())
+            error_records, request_id = self.__unary_error_records(e)
+            if error_records is None:
+                raise self.__to_skyflow_error(e)
+            records = [self.__delete_files_row(record, request_id) for record in error_records]
+
+        log_info(SkyflowMessages.Info.DELETE_FILES_SUCCESS.value, self._vault_client.get_logger())
+        return DeleteFilesResponse(records=records)
 
     def __error_body_records(self, e):
         body = getattr(e, 'body', None)
@@ -470,6 +628,212 @@ class VaultController(BaseVaultController):
             error=error,
             request_id=request_id if error is not None else None,
         )
+
+    def __to_query_metadata(self, metadata):
+        if metadata is None:
+            return None
+        return QueryResponseMetadata(columns=self.__wire_record_value(metadata, 'columns', 'columns'))
+
+    def __to_get_tokens_request_data(self, records):
+        return [
+            GetTokensFromValuesRequestObject(value=record.value, token_group_name=record.token_group_name)
+            for record in records
+        ]
+
+    def __get_tokens_row(self, resp, request_id=None):
+        error = self.__wire_record_value(resp, 'error', 'error')
+        return GetTokensResponseRecord(
+            value=self.__wire_record_value(resp, 'value', 'value'),
+            token_group_name=self.__wire_record_value(resp, 'tokenGroupName', 'token_group_name'),
+            token=self.__wire_record_value(resp, 'token', 'token'),
+            http_code=self.__wire_record_value(resp, 'httpCode', 'http_code'),
+            error=error,
+            request_id=request_id if error is not None else None,
+        )
+
+    def __resolve_upload_record(self, record):
+        return {column.column: self.__resolve_upload_file(column) for column in record.columns}
+
+    def __resolve_upload_file(self, column):
+        file_name = column.file_name
+        if column.file_path is not None:
+            try:
+                with open(column.file_path, 'rb'):
+                    pass
+            except OSError:
+                raise SkyflowError(
+                    SkyflowMessages.Error.FILE_NOT_FOUND_IN_UPLOAD_FILES.value.format(column.file_path),
+                    INVALID_INPUT_ERROR_CODE,
+                )
+            if not file_name:
+                file_name = os.path.basename(column.file_path)
+            source = (SOURCE_KIND_PATH, column.file_path)
+        elif column.base64 is not None:
+            try:
+                source = (SOURCE_KIND_BYTES, base64.b64decode(column.base64, validate=True))
+            except (ValueError, TypeError):
+                raise SkyflowError(
+                    SkyflowMessages.Error.INVALID_BASE64_IN_UPLOAD_FILES.value.format(column.column),
+                    INVALID_INPUT_ERROR_CODE,
+                )
+        else:
+            source = (SOURCE_KIND_FILE_OBJECT, column.file_object)
+            if not file_name:
+                object_name = getattr(column.file_object, 'name', None)
+                if object_name:
+                    file_name = os.path.basename(object_name)
+        content_type = mimetypes.guess_type(file_name)[0] if file_name else None
+        return file_name, content_type, source
+
+    def __to_upload_files_request_data(self, records, resolved_records):
+        wire_records = []
+        for index, record in enumerate(records):
+            resolved = resolved_records[index]
+            columns = [
+                FileUploadColumn(column=column.column, **self.__omit_none(file_name=resolved[column.column][0]))
+                for column in record.columns
+            ]
+            wire_records.append(FileUploadRecord(
+                table_name=record.table_name,
+                columns=columns,
+                **self.__omit_none(skyflow_id=record.skyflow_id),
+            ))
+        return wire_records
+
+    def __upload_column_results(self, records, resolved_records, response_records):
+        tasks = []
+        for index, response_record in enumerate(response_records):
+            request_record = records[index] if index < len(records) else None
+            if request_record is None:
+                continue
+            if self.__wire_record_value(response_record, 'error', 'error') is not None:
+                continue
+            resolved = resolved_records[index] if index < len(resolved_records) else {}
+            signed_urls = self.__wire_record_value(response_record, 'data', 'data')
+            for column in request_record.columns:
+                signed_url = signed_urls.get(column.column) if isinstance(signed_urls, dict) else None
+                tasks.append((index, column.column, resolved.get(column.column), signed_url))
+        results = {}
+        if not tasks:
+            return results
+        with ThreadPoolExecutor(max_workers=min(len(tasks), DEFAULT_UPLOAD_CONCURRENCY)) as executor:
+            future_map = {
+                executor.submit(self.__upload_column, column_name, resolved_file, signed_url): (index, column_name)
+                for index, column_name, resolved_file, signed_url in tasks
+            }
+            for future in as_completed(future_map):
+                results[future_map[future]] = future.result()
+        return results
+
+    def __upload_files_row(self, request_record, resolved, response_record, request_id, put_results, record_index):
+        error = self.__wire_record_value(response_record, 'error', 'error')
+        columns = []
+        for column in (request_record.columns if request_record is not None else []):
+            if error is not None:
+                resolved_file = resolved.get(column.column)
+                columns.append(UploadFilesColumnResult(
+                    column=column.column,
+                    file_name=resolved_file[0] if resolved_file else None,
+                    upload_status=FileUploadStatus.SKIPPED.value,
+                    error=error,
+                ))
+                continue
+            columns.append(put_results[(record_index, column.column)])
+        return UploadFilesResponseRecord(
+            skyflow_id=self.__wire_record_value(response_record, 'skyflowID', 'skyflow_id'),
+            table_name=self.__wire_record_value(response_record, 'tableName', 'table_name'),
+            columns=columns,
+            http_code=self.__wire_record_value(response_record, 'httpCode', 'http_code'),
+            error=error,
+            request_id=request_id if error is not None else None,
+        )
+
+    def __upload_column(self, column_name, resolved_file, signed_url):
+        file_name, content_type, source = resolved_file if resolved_file else (None, None, None)
+        if not signed_url:
+            return UploadFilesColumnResult(
+                column=column_name,
+                file_name=file_name,
+                upload_status=FileUploadStatus.SKIPPED.value,
+            )
+        try:
+            status_code = self.__put_file_source(signed_url, source, content_type)
+        except Exception as e:
+            return UploadFilesColumnResult(
+                column=column_name,
+                file_name=file_name,
+                upload_status=FileUploadStatus.FAILED.value,
+                error=str(e),
+            )
+        if HTTP_STATUS_OK <= status_code < HTTP_STATUS_MULTIPLE_CHOICES:
+            return UploadFilesColumnResult(
+                column=column_name,
+                file_name=file_name,
+                upload_status=FileUploadStatus.UPLOADED.value,
+            )
+        return UploadFilesColumnResult(
+            column=column_name,
+            file_name=file_name,
+            upload_status=FileUploadStatus.FAILED.value,
+            error=FILE_PUT_FAILED_MESSAGE.format(status_code),
+        )
+
+    def __put_file_source(self, signed_url, source, content_type):
+        kind, payload = source if source else (None, None)
+        if kind == SOURCE_KIND_PATH:
+            with open(payload, 'rb') as handle:
+                return self._vault_client.put_signed_url(signed_url, handle, content_type).status_code
+        if kind == SOURCE_KIND_FILE_OBJECT and payload is not None:
+            self.__rewind_file_object(payload)
+        return self._vault_client.put_signed_url(signed_url, payload, content_type).status_code
+
+    def __rewind_file_object(self, file_object):
+        seek = getattr(file_object, 'seek', None)
+        if not callable(seek):
+            return
+        seekable = getattr(file_object, 'seekable', None)
+        if callable(seekable) and not seekable():
+            return
+        try:
+            seek(0)
+        except (OSError, ValueError):
+            pass
+
+    def __to_delete_files_request_data(self, records):
+        return [
+            FileDeleteRecord(
+                table_name=record.table_name,
+                columns=record.columns,
+                **self.__omit_none(
+                    skyflow_id=record.skyflow_id,
+                    unique_values=self.__to_unique_values(record.unique_values),
+                ),
+            )
+            for record in records
+        ]
+
+    def __delete_files_row(self, resp, request_id=None):
+        error = self.__wire_record_value(resp, 'error', 'error')
+        data = self.__wire_record_value(resp, 'data', 'data')
+        columns = None
+        if isinstance(data, dict):
+            columns = [
+                DeleteFilesColumnResult(column=name, status=self.__file_column_status(value))
+                for name, value in data.items()
+            ]
+        return DeleteFilesResponseRecord(
+            skyflow_id=self.__wire_record_value(resp, 'skyflowID', 'skyflow_id'),
+            table_name=self.__wire_record_value(resp, 'tableName', 'table_name'),
+            columns=columns,
+            http_code=self.__wire_record_value(resp, 'httpCode', 'http_code'),
+            error=error,
+            request_id=request_id if error is not None else None,
+        )
+
+    def __file_column_status(self, value):
+        if isinstance(value, dict):
+            return value.get(STATUS_KEY)
+        return value
 
 
 
