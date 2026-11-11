@@ -837,7 +837,7 @@ Upload one or more files to file columns. The SDK **orchestrates** this in two s
 
 **Note:**
 
-- `records` is required and must be a non-empty list of `UploadFilesRequestRecord`; each needs a `table_name` and a non-empty `columns` list.
+- `records` is required and must be a non-empty list of `UploadFilesRequestRecord`; each needs a `table_name` and a non-empty `columns` list. A column can appear only once in a record; a repeated column name fails validation.
 - Each `UploadFilesRequestColumn` needs a `column` name and **exactly one** file source — `file_path`, `base64`, or `file_object`. `base64` additionally requires `file_name`. The upload's content type is inferred from the file name.
 - Omit `skyflow_id` to create a new record (CREATE permission); set it to upload into an existing record (UPDATE permission).
 - `file_name` is derived from `file_path`/`file_object` when omitted; if still unset, the server generates one.
@@ -893,7 +893,7 @@ Delete files from file columns of existing records — and remove the stored obj
 
 **Note:**
 
-- `records` is required and must be a non-empty list of `DeleteFilesRequestRecord`; each needs a `table_name` and a non-empty `columns` list of file-column names.
+- `records` is required and must be a non-empty list of `DeleteFilesRequestRecord`; each needs a `table_name` and a non-empty `columns` list of file-column names. A column name can appear only once in a record; a repeated name fails validation.
 - Each record sets **exactly one** of `skyflow_id` or `unique_values` — both, or neither, fails validation.
 - `unique_values` takes the same shape as in [Get](#get): a list of dicts, each holding the unique column-name/value pairs that identify a record; each may resolve to more than one record.
 
