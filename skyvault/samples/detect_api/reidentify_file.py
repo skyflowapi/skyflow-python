@@ -2,19 +2,36 @@ import base64
 
 from skyflow.error import SkyflowError
 from skyflow import Env, Skyflow, LogLevel
+from skyflow.utils.enums import ReidentifySourceType, DetectRunStatus, EntityType, ReidentifyFileDataFormat, RedactionType
 from skyflow.vault.detect import ReidentifyFileRequest, RedactionLevel
-from skyflow.utils.enums import ReidentifySourceType, ReidentifyFileDataFormat, EntityType, RedactionType, DetectRunStatus
 
+"""
+ * Skyflow Re-identify File Example
+ *
+ * This example demonstrates how to:
+ * 1. Configure Skyflow client credentials
+ * 2. Set up vault configuration
+ * 3. Base64-encode a de-identified file and re-identify it
+ * 4. Decode and save the re-identified file
+ * 5. Handle response and errors
+"""
 
 def perform_reidentify_file():
     try:
-        vault_config = {
-            'vault_id': '<YOUR_VAULT_ID>',
-            'cluster_id': '<YOUR_CLUSTER_ID>',
-            'env': Env.PROD,
-            'credentials': {'path': '<PATH_TO_YOUR_CREDENTIALS_JSON>'},
+        # Step 1: Configure Credentials
+        credentials = {
+            'path': '<PATH_TO_CREDENTIALS_JSON>'  # Path to your service account credentials file
         }
 
+        # Step 2: Configure Vault
+        vault_config = {
+            'vault_id': '<YOUR_VAULT_ID>',  # Replace with your vault ID
+            'cluster_id': '<YOUR_CLUSTER_ID>',  # Replace with your cluster ID
+            'env': Env.PROD,  # Deployment environment
+            'credentials': credentials
+        }
+
+        # Step 3: Configure & Initialize Skyflow Client
         skyflow_client = (
             Skyflow.builder()
             .add_vault_config(vault_config)
@@ -22,33 +39,41 @@ def perform_reidentify_file():
             .build()
         )
 
-        with open('<PATH_TO_TOKENIZED_FILE>', 'rb') as handle:
-            encoded = base64.b64encode(handle.read()).decode('utf-8')
+        # Step 4: Encode the file; reidentify_file doesn't accept file or file_path
+        with open('<PATH_TO_DEIDENTIFIED_FILE>', 'rb') as file_obj:
+            encoded_file = base64.b64encode(file_obj.read()).decode('utf-8')
 
         request = ReidentifyFileRequest(
             data_source=ReidentifySourceType.BASE64,
-            value=encoded,
-            data_format=ReidentifyFileDataFormat.TXT,
+            value=encoded_file,
+            data_format=ReidentifyFileDataFormat.TXT,  # txt, csv, json, xlsx, docx, pptx, xml, or jsonl
             redaction_level=[
-                RedactionLevel(entity_name=EntityType.NAME, redaction_type=RedactionType.PLAIN_TEXT),
-            ],
+                RedactionLevel(entity_name=EntityType.NAME, redaction_type=RedactionType.PLAIN_TEXT)
+            ]
         )
 
-        response = skyflow_client.detect().reidentify_file(request)
+        # Step 5: Re-identify the file; the response contains the result
+        response = skyflow_client.detect(vault_config.get('vault_id')).reidentify_file(request)
 
-        if response.status == DetectRunStatus.SUCCESS:
+        print('Status:', response.status)
+        if response.status == DetectRunStatus.SUCCESS and response.output_type == ReidentifySourceType.BASE64:
+            # The SDK doesn't write the output, so decode and save it here
             for index, output in enumerate(response.output):
-                with open(f'reidentified-{index}.txt', 'wb') as out:
-                    out.write(base64.b64decode(output.processed_file))
+                extension = output.processed_file_extension.value if output.processed_file_extension else 'txt'
+                with open(f'reidentified-{index}.{extension}', 'wb') as out_file:
+                    out_file.write(base64.b64decode(output.processed_file))
 
     except SkyflowError as error:
+        # Handle Skyflow-specific errors
         print('Skyflow Specific Error: ', {
             'code': error.http_code,
             'message': error.message,
             'details': error.details,
             'request_id': error.request_id,
         })
+    except Exception as error:
+        # Handle unexpected errors
+        print('Unexpected Error:', error)
 
-
-if __name__ == '__main__':
-    perform_reidentify_file()
+# Invoke the re-identify file function
+perform_reidentify_file()
