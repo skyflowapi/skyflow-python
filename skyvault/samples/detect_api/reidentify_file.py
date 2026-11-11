@@ -2,7 +2,7 @@ import base64
 
 from skyflow.error import SkyflowError
 from skyflow import Env, Skyflow, LogLevel
-from skyflow.utils.enums import ReidentifySourceType, DetectRunStatus, EntityType, FileDataFormat, RedactionType
+from skyflow.utils.enums import ReidentifySourceType, DetectRunStatus, EntityType, ReidentifyFileDataFormat, RedactionType
 from skyflow.vault.detect import ReidentifyFileRequest, RedactionLevel
 
 """
@@ -46,7 +46,7 @@ def perform_reidentify_file():
         request = ReidentifyFileRequest(
             data_source=ReidentifySourceType.BASE64,
             value=encoded_file,
-            data_format=FileDataFormat.TXT,  # txt, csv, json, xlsx, docx, pptx, xml, or jsonl
+            data_format=ReidentifyFileDataFormat.TXT,  # txt, csv, json, xlsx, docx, pptx, xml, or jsonl
             redaction_level=[
                 RedactionLevel(entity_name=EntityType.NAME, redaction_type=RedactionType.PLAIN_TEXT)
             ]
@@ -68,7 +68,8 @@ def perform_reidentify_file():
         print('Skyflow Specific Error: ', {
             'code': error.http_code,
             'message': error.message,
-            'details': error.details
+            'details': error.details,
+            'request_id': error.request_id,
         })
     except Exception as error:
         # Handle unexpected errors

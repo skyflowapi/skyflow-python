@@ -16,9 +16,10 @@ from common.generated.rest.types import (
     RedactionLevel as WireRedactionLevel,
 )
 from common.utils.enums.detect import (
+    DeidentifyFileDataFormat,
     DetectRunStatus,
-    FileDataFormat,
     GuardrailsValidation,
+    ReidentifyFileDataFormat,
 )
 
 from ._constants import EXTENSION_SEPARATOR
@@ -31,6 +32,7 @@ from ._models import (
     FileOutput,
     GetRunResponse,
     Metrics,
+    ReidentifyFileOutput,
     ReidentifyFileResponse,
     ReidentifyStringResponse,
 )
@@ -53,11 +55,20 @@ def _enum_or_default(enum_cls, value, fallback):
         return fallback
 
 
-def _file_data_format(value):
+def _deidentify_file_data_format(value):
     if value is None:
         return None
     try:
-        return FileDataFormat(str(value).lower())
+        return DeidentifyFileDataFormat(str(value).lower())
+    except ValueError:
+        return None
+
+
+def _reidentify_file_data_format(value):
+    if value is None:
+        return None
+    try:
+        return ReidentifyFileDataFormat(str(value).lower())
     except ValueError:
         return None
 
@@ -69,7 +80,7 @@ def infer_format(file_name):
     if index < 0 or index == len(file_name) - 1:
         return None
     try:
-        return FileDataFormat[file_name[index + 1:].upper()]
+        return DeidentifyFileDataFormat[file_name[index + 1:].upper()]
     except KeyError:
         return None
 
@@ -226,7 +237,15 @@ def to_file_output(api_output):
     return FileOutput(
         processed_file=api_output.processed_file,
         processed_file_type=api_output.processed_file_type,
-        processed_file_extension=_file_data_format(api_output.processed_file_extension),
+        processed_file_extension=_deidentify_file_data_format(api_output.processed_file_extension),
+    )
+
+
+def to_reidentify_file_output(api_output):
+    return ReidentifyFileOutput(
+        processed_file=api_output.processed_file,
+        processed_file_type=api_output.processed_file_type,
+        processed_file_extension=_reidentify_file_data_format(api_output.processed_file_extension),
     )
 
 
@@ -303,7 +322,7 @@ def to_deidentify_file_response(run_id, run):
 
 
 def to_reidentify_file_response(response, source_type_cls):
-    outputs = [to_file_output(output) for output in (response.output or []) if output is not None]
+    outputs = [to_reidentify_file_output(output) for output in (response.output or []) if output is not None]
     return ReidentifyFileResponse(
         status=_enum_or_default(DetectRunStatus, response.status, DetectRunStatus.UNKNOWN),
         output_type=_enum_or_default(source_type_cls, response.output_type, None),

@@ -983,7 +983,7 @@ The same pattern applies to every operation, via its corresponding options class
 
 # Detect
 
-Skyflow Detect finds and de-identifies sensitive data in strings and files, re-identifies tokens on demand, and screens text against guardrails. The flowvault SDK exposes the Detect V2 API through `DetectController`, returned by `skyflow_client.detect()` and `skyflow_client.detect('<VAULT_ID>')`. Every request is scoped to that vault, and the controller shares the same credentials, timeouts and retries as `vault()`; the `vault_id` is filled in from the vault config for every method.
+Skyflow Detect finds and de-identifies sensitive data in strings and files, re-identifies tokens on demand, and screens text against guardrails. The flowvault SDK exposes the Detect API through `DetectController`, returned by `skyflow_client.detect()` and `skyflow_client.detect('<VAULT_ID>')`. Every request is scoped to that vault, and the controller shares the same credentials, timeouts and retries as `vault()`; the `vault_id` is filled in from the vault config for every method.
 
 Detect configurations are created in Studio or through the management API — the SDK does not create, update or delete them. Import request/response models from `skyflow.vault.detect` and enums from `skyflow.utils.enums`.
 
@@ -1003,8 +1003,8 @@ detect = skyflow_client.detect()
 ## Before you start
 
 - **Role.** The service account needs the Detect Invoker, Detect Manager or Vault Owner role on the vault. Detect Invoker can de-identify data and write vault tokens into the vault; Detect Manager adds the ability to create, update and delete Detect configurations. Re-identifying values stored as `VAULT_TOKEN` is governed like detokenization: the caller also needs a policy granting the Detokenization action on the destination, unless it is a Vault Owner.
-- **Configuration.** Pass `configuration_id` (the id of a stored Detect configuration) or an inline `configuration` (a `DetectConfiguration`). Both are optional: with neither set the SDK sends only the vault id and the run uses the vault's default Detect settings; sending both is rejected by the API with HTTP 400.
-- **Destination for vault tokens.** An entity de-identified with `VAULT_TOKEN` stores its value in the token group named by `destination`. That token group must already exist in the vault; Detect writes into it but does not create it.
+- **Configuration.** Pass `configuration_id` (the id of a stored Detect configuration) or an inline `configuration` (a `DetectConfiguration`). Both are optional: with neither set the SDK sends only the vault id and the run uses the vault's default Detect settings; sending both is rejected by the API with HTTP 400. Create and manage stored configurations — and copy their ids — in Studio (vault → **Detect**) or through the management API; the SDK does not create them.
+- **Destination for vault tokens.** An entity de-identified with `VAULT_TOKEN` stores its value in the token group named by `destination`. That token group must already exist in the vault; Detect writes into it but does not create it. Create token groups, and the named redaction patterns that re-identification applies, in the vault schema in Studio.
 - **API reference.** Every Detect request, response and configuration class is listed in the [API Reference](../docs/api_reference.md). That reference is written for skyvault; its [Detect helper classes](../docs/api_reference.md#detect-helper-classes) section lists where flowvault differs.
 
 ## deidentify_string
@@ -1060,7 +1060,7 @@ Returns a `DeidentifyStringResponse` with `processed_text`, `entities` (each a `
 | Class | Fields | Notes |
 |-------|--------|-------|
 | `Detect` | `entities`, `object_entities`, `restrict`, `skip`, `custom_types`, `return_entities` | `restrict` / `skip` are regexes always / never treated as sensitive. `return_entities` is `EXCLUDE_SENSITIVE_DATA` (server default), `ALL` or `NONE`. |
-| `Entity` | `entity_type`, `deidentification_type`, `destination`, `transformation` | `entity_type` defaults to `ALL`. `deidentification_type` is `ENTITY_UNIQUE_COUNTER` (server default), `ENTITY_ONLY`, `MASK` or `VAULT_TOKEN`. `destination` (a token group name) is used only with `VAULT_TOKEN`. `include_prefix` and `prefix_override` are described below the table. |
+| `Entity` | `entity_type`, `deidentification_type`, `destination`, `transformation`, `include_prefix`, `prefix_override` | `entity_type` defaults to `ALL`. `deidentification_type` is `ENTITY_UNIQUE_COUNTER` (server default), `ENTITY_ONLY`, `MASK` or `VAULT_TOKEN`. `destination` (a token group name) is used only with `VAULT_TOKEN`. `include_prefix` and `prefix_override` are described below the table. |
 | `Transformation` / `ShiftDates` | `shift_dates`; `min_days`, `max_days` | Shifts detected dates by a random number of days within the range. |
 | `CustomType` | `label`, `match`, `deidentification_type`, `destination`, `include_prefix`, `prefix_override` | A regex-defined entity type; `label` is reported as the entity type of its matches. The other fields work as they do on `Entity`. |
 | `ObjectEntity` | `entity_type`, `deidentification_type` | Visual objects in images: `FACE`, `LICENSE_PLATE`, `LOGO`, `SIGNATURE` or `ALL`, handled with `REDACT` or `UNREDACT`. File inputs only. |
@@ -1170,7 +1170,7 @@ else:                            # IN_PROGRESS or QUEUED: budget ran out, resume
 
 `output_directory` is created if it does not exist. **If you poll a local file and omit `output_directory`, these files are written to the current working directory** — often your project root or a server's working directory — so set `output_directory` explicitly. A request built from `data_source` and `value` has no local file name to derive from, and the SDK doesn't fetch presigned-URL outputs. In those cases, read `response.output` and write the files yourself.
 
-**Supported formats and limits.** `data_format` accepts every `FileDataFormat`: `bmp`, `csv`, `dcm`, `doc`, `docx`, `gif`, `jpeg`, `jpg`, `json`, `jsonl`, `mp3`, `pdf`, `png`, `ppt`, `pptx`, `tif`, `tiff`, `txt`, `wav`, `xls`, `xlsx`, `xml`, `zip`. The `VAULT_TOKEN` de-identification type is supported only for `txt`, `csv`, `json`, `jsonl`, `xml`, `docx`, `xlsx` and `pptx`.
+**Supported formats and limits.** `data_format` accepts every `DeidentifyFileDataFormat`: `bmp`, `csv`, `dcm`, `doc`, `docx`, `gif`, `jpeg`, `jpg`, `json`, `jsonl`, `mp3`, `pdf`, `png`, `ppt`, `pptx`, `tif`, `tiff`, `txt`, `wav`, `xls`, `xlsx`, `xml`, `zip`. The `VAULT_TOKEN` de-identification type is supported only for `txt`, `csv`, `json`, `jsonl`, `xml`, `docx`, `xlsx` and `pptx`.
 
 **Polling blocks the calling thread** — each lookup is a synchronous `get_run` followed by a sleep. For concurrency, submit without `poll_options` and poll `get_run` yourself on a scheduler, or run the blocking call on a worker thread you own.
 
@@ -1178,13 +1178,13 @@ A file at a presigned URL is referenced through `data_source` + `value`:
 
 ```python
 from skyflow.vault.detect import DeidentifyFileRequest
-from skyflow.utils.enums import DeidentifySourceType, FileDataFormat
+from skyflow.utils.enums import DeidentifySourceType, DeidentifyFileDataFormat
 
 skyflow_client.detect().deidentify_file(
     DeidentifyFileRequest(
         data_source=DeidentifySourceType.PRESIGNED_URL,
         value='<PRESIGNED_URL>',
-        data_format=FileDataFormat.PDF,
+        data_format=DeidentifyFileDataFormat.PDF,
         configuration_id='<CONFIGURATION_ID>',
     )
 )
@@ -1219,18 +1219,37 @@ Synchronous. Re-identification looks tokens up in the vault, so it applies only 
 
 Build the request with `ReidentifyStringRequest`: the tokenized text and an optional list of `RedactionLevel` rules. On flowvault vaults each rule targets a `token_group_name` and applies a named `redaction_pattern` configured in the vault. Without rules every token is replaced by its original value.
 
-```python
-from skyflow.vault.detect import ReidentifyStringRequest, RedactionLevel
+Only text that actually contains vault tokens can be re-identified, so the example below is a round trip: first de-identify with `VAULT_TOKEN` to mint tokens, then re-identify the `processed_text` that comes back. A vault token is an opaque value like `a1b2c3d4-...` (optionally prefixed, e.g. `[NAME_a1b2c3d4-...]`), not the `[NAME_1]` counter placeholder produced by `ENTITY_UNIQUE_COUNTER`.
 
+```python
+from skyflow.vault.detect import (
+    DeidentifyStringRequest, DetectConfiguration, Detect, Entity,
+    ReidentifyStringRequest, RedactionLevel,
+)
+from skyflow.utils.enums import EntityType, DeidentificationType
+
+# 1. De-identify with VAULT_TOKEN so the value is stored and can be re-identified later.
+deidentified = skyflow_client.detect().deidentify_string(
+    DeidentifyStringRequest(
+        text='My name is John Doe.',
+        configuration=DetectConfiguration(detect=Detect(entities=[
+            Entity(entity_type=EntityType.NAME, deidentification_type=DeidentificationType.VAULT_TOKEN, destination='<TOKEN_GROUP_NAME>'),
+        ])),
+    )
+)
+# deidentified.processed_text now holds a vault token, e.g. 'My name is a1b2c3d4-...'
+
+# 2. Re-identify those tokens.
 response = skyflow_client.detect().reidentify_string(
     ReidentifyStringRequest(
-        text='My name is [NAME_1].',
+        text=deidentified.processed_text,
         redaction_level=[
             RedactionLevel(token_group_name='<TOKEN_GROUP_NAME>', redaction_pattern='<REDACTION_PATTERN>'),
         ],
     )
 )
 print(response.processed_text)
+# My name is John Doe.
 ```
 
 > The flowvault `RedactionLevel` has only `token_group_name` and `redaction_pattern`; the skyvault SDK's has `entity_name` and `redaction_type` instead. Token groups and redaction patterns are configured in the vault.
@@ -1239,13 +1258,14 @@ Returns a `ReidentifyStringResponse` with `processed_text` and `metrics`.
 
 ## reidentify_file
 
-Synchronous — the re-identified file comes back in the response, not through a run id. Build the request with `ReidentifyFileRequest`: a `data_source` (`ReidentifySourceType.BASE64` or `PRESIGNED_URL`; re-identification does not accept a skyflow id as the source), the matching `value`, an optional `data_format`, and the same `RedactionLevel` rules as `reidentify_string`. `data_format` is limited to the formats that support `VAULT_TOKEN`: `txt`, `csv`, `json`, `jsonl`, `xml`, `docx`, `xlsx` and `pptx`.
+Synchronous — the re-identified file comes back in the response, not through a run id. Build the request with `ReidentifyFileRequest`: a `data_source` (`ReidentifySourceType.BASE64` or `PRESIGNED_URL`; re-identification does not accept a skyflow id as the source), the matching `value`, an optional `data_format` (a `ReidentifyFileDataFormat`), and the same `RedactionLevel` rules as `reidentify_string`. `data_format` is limited to the formats that support `VAULT_TOKEN`: `txt`, `csv`, `json`, `jsonl`, `xml`, `docx`, `xlsx` and `pptx`.
 
 ```python
 import base64
 from skyflow.vault.detect import ReidentifyFileRequest, RedactionLevel
-from skyflow.utils.enums import ReidentifySourceType, FileDataFormat, DetectRunStatus
+from skyflow.utils.enums import ReidentifySourceType, ReidentifyFileDataFormat, DetectRunStatus
 
+data_format = ReidentifyFileDataFormat.TXT
 with open('/data/redacted/notes.txt', 'rb') as handle:
     encoded = base64.b64encode(handle.read()).decode('utf-8')
 
@@ -1253,23 +1273,26 @@ response = skyflow_client.detect().reidentify_file(
     ReidentifyFileRequest(
         data_source=ReidentifySourceType.BASE64,
         value=encoded,
-        data_format=FileDataFormat.TXT,
+        data_format=data_format,
         redaction_level=[RedactionLevel(token_group_name='<TOKEN_GROUP_NAME>', redaction_pattern='<REDACTION_PATTERN>')],
     )
 )
 
 if response.status == DetectRunStatus.SUCCESS:
     for index, output in enumerate(response.output):
-        # output.processed_file is base64 or a presigned URL, per response.output_type
-        with open(f'reidentified-{index}.txt', 'wb') as out:
-            out.write(base64.b64decode(output.processed_file))
+        # Branch on output_type: base64 bytes are decoded, a presigned URL is downloaded.
+        if response.output_type == ReidentifySourceType.BASE64:
+            with open(f'reidentified-{index}.{data_format.value}', 'wb') as out:
+                out.write(base64.b64decode(output.processed_file))
+        else:  # ReidentifySourceType.PRESIGNED_URL — processed_file is a URL to fetch
+            print('download re-identified file from', output.processed_file)
 ```
 
-Returns a `ReidentifyFileResponse` with `status`, `output_type`, `output` (a list of `FileOutput`) and `metrics`.
+Returns a `ReidentifyFileResponse` with `status`, `output_type` (a `ReidentifySourceType`), `output` (a list of `ReidentifyFileOutput`) and `metrics`.
 
 ## check_guardrails
 
-Synchronous. Screens text for toxicity and a list of denied topics — a natural pre-LLM check. Build the request with `CheckGuardrailsRequest`. `check_toxicity` and `deny_topics` are optional; the SDK sends each only when set and fills in no default. The response is passed through as the API returns it.
+Synchronous. Screens text for toxicity and a list of denied topics — a natural pre-LLM check. Build the request with `CheckGuardrailsRequest`. `check_toxicity` and `deny_topics` are optional; the SDK sends each only when set and fills in no default. **When `check_toxicity` is omitted, the server still checks toxicity by default.** The response is passed through as the API returns it.
 
 ```python
 from skyflow.vault.detect import CheckGuardrailsRequest
@@ -1286,6 +1309,53 @@ if response.validation == GuardrailsValidation.FAILED:
 Returns a `CheckGuardrailsResponse` with `text`, `validation` (`GuardrailsValidation.PASSED` or `FAILED`), `toxic` and `denied_topic`.
 
 All Detect methods raise `skyflow.error.SkyflowError` on validation failure, credential failure, or an API error — see [Error Handling](#error-handling). Client-side validation fails before any network call.
+
+## Response examples and common errors
+
+Enum-typed fields (`status`, `output_type`, `validation`, …) are shown below by their string values.
+
+`deidentify_string`:
+
+```json
+{
+  "processed_text": "My name is [NAME_1], and my email is [EMAIL_ADDRESS_1].",
+  "entities": [
+    { "token": "[NAME_1]", "value": "", "location": { "start_index": 11, "end_index": 19, "start_index_processed": 11, "end_index_processed": 19 }, "entity_type": "NAME", "entity_scores": { "NAME": 0.99 } }
+  ],
+  "metrics": { "word_count": 10, "character_count": 54 }
+}
+```
+
+`deidentify_file` (polled) / `get_run`:
+
+```json
+{
+  "run_id": "run_a1b2c3d4",
+  "status": "SUCCESS",
+  "output_type": "BASE64",
+  "output": [ { "processed_file": "<base64>", "processed_file_type": "application/pdf", "processed_file_extension": "pdf" } ],
+  "metrics": { "pages": 3 },
+  "message": null
+}
+```
+
+`reidentify_string`:
+
+```json
+{ "processed_text": "My name is John Doe.", "metrics": { "word_count": 5 } }
+```
+
+`check_guardrails`:
+
+```json
+{ "text": "<input text>", "validation": "FAILED", "toxic": true, "denied_topic": false }
+```
+
+Common Detect errors (all raised as `SkyflowError`):
+
+- **HTTP 400 — both configuration sources set.** Passing `configuration_id` and `configuration` in the same request is rejected; pass at most one.
+- **Missing token group.** A `VAULT_TOKEN` entity whose `destination` token group does not exist in the vault fails — create the token group first.
+- **Unsupported format with `VAULT_TOKEN`.** `VAULT_TOKEN` is only valid for `txt`, `csv`, `json`, `jsonl`, `xml`, `docx`, `xlsx` and `pptx`; other `data_format` values are rejected.
 
 # Error Handling
 

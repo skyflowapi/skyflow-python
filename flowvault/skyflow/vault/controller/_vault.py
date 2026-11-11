@@ -124,13 +124,12 @@ class VaultController(BaseVaultController):
         needs_per_record_table = any(r.table_name is not None for r in request.records)
         needs_per_record_upsert = any(r.upsert is not None for r in request.records)
 
-        wire_records = [
-            self.__build_wire_record(record, request, needs_per_record_table, needs_per_record_upsert)
-            for record in request.records
-        ]
-
         try:
             log_info(SkyflowMessages.Info.INSERT_TRIGGERED.value, self._vault_client.get_logger())
+            wire_records = [
+                self.__build_wire_record(record, request, needs_per_record_table, needs_per_record_upsert)
+                for record in request.records
+            ]
             upsert_kwargs = self.__omit_none(
                 upsert=None if needs_per_record_upsert else self.__to_upsert(request.upsert),
             )
@@ -168,21 +167,20 @@ class VaultController(BaseVaultController):
 
         records_api = self._vault_client.get_records_api()
 
-        if request.records is not None:
-            call_kwargs = {'records': self.__to_get_request_data(request.records)}
-        else:
-            call_kwargs = {
-                'table_name': request.table_name,
-                'skyflow_i_ds': request.skyflow_ids,
-                'unique_values': self.__to_unique_values(request.unique_values),
-                'columns': request.columns,
-                'column_redactions': self.__to_column_redactions(request.column_redactions),
-                'limit': request.limit,
-                'offset': request.offset,
-            }
-
         try:
             log_info(SkyflowMessages.Info.GET_TRIGGERED.value, self._vault_client.get_logger())
+            if request.records is not None:
+                call_kwargs = {'records': self.__to_get_request_data(request.records)}
+            else:
+                call_kwargs = {
+                    'table_name': request.table_name,
+                    'skyflow_i_ds': request.skyflow_ids,
+                    'unique_values': self.__to_unique_values(request.unique_values),
+                    'columns': request.columns,
+                    'column_redactions': self.__to_column_redactions(request.column_redactions),
+                    'limit': request.limit,
+                    'offset': request.offset,
+                }
             raw_response = records_api.with_raw_response.get_records(
                 vault_id=self._vault_client.get_vault_id(),
                 request_options=self.__unary_request_options(OPERATION_GET, options),
@@ -785,7 +783,21 @@ class VaultController(BaseVaultController):
         if kind == SOURCE_KIND_PATH:
             with open(payload, 'rb') as handle:
                 return self._vault_client.put_signed_url(signed_url, handle, content_type).status_code
+        if kind == SOURCE_KIND_FILE_OBJECT and payload is not None:
+            self.__rewind_file_object(payload)
         return self._vault_client.put_signed_url(signed_url, payload, content_type).status_code
+
+    def __rewind_file_object(self, file_object):
+        seek = getattr(file_object, 'seek', None)
+        if not callable(seek):
+            return
+        seekable = getattr(file_object, 'seekable', None)
+        if callable(seekable) and not seekable():
+            return
+        try:
+            seek(0)
+        except (OSError, ValueError):
+            pass
 
     def __to_delete_files_request_data(self, records):
         return [

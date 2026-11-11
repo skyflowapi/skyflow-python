@@ -55,7 +55,8 @@ def perform_check_guardrails():
         print('Skyflow Specific Error: ', {
             'code': error.http_code,
             'message': error.message,
-            'details': error.details
+            'details': error.details,
+            'request_id': error.request_id,
         })
     except Exception as error:
         # Handle unexpected errors

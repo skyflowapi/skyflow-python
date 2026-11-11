@@ -163,7 +163,7 @@ Parameters are listed with their defaults as defined in the constructors.
 | `file` | `None` | A local file opened in binary mode. The SDK base64-encodes it. If you also set `file_path`, the SDK reads `file_path`. |
 | `data_source` | `None` | Source of `value`. See [`DeidentifySourceType`](#deidentifysourcetype). Required when you don't pass `file` or `file_path`. |
 | `value` | `None` | Base64 content, Skyflow ID, or presigned URL, matching `data_source`. |
-| `data_format` | `None` | Format of the input file. See [`FileDataFormat`](#filedataformat). Inferred from the file extension for a local file when not set. |
+| `data_format` | `None` | Format of the input file. See [`DeidentifyFileDataFormat`](#deidentifyfiledataformat). Inferred from the file extension for a local file when not set. |
 | `configuration_id` | `None` | ID of an existing Detect configuration. |
 | `configuration` | `None` | Inline configuration. See [`DetectConfiguration`](#detectconfiguration). |
 | `poll_options` | `None` | Poll the run until it finishes or the polling limits are reached. See [`PollOptions`](#polloptions). Without it, the call returns after submitting the run. |
@@ -194,7 +194,7 @@ Parameters are listed with their defaults as defined in the constructors.
 |-----------|---------|-------------|
 | `data_source` | `None` | Source of `value`. See [`ReidentifySourceType`](#reidentifysourcetype). Required. |
 | `value` | `None` | Base64 content or presigned URL, matching `data_source`. Required. |
-| `data_format` | `None` | Format of the input file: `txt`, `csv`, `json`, `xlsx`, `docx`, `pptx`, `xml`, or `jsonl`. See [`FileDataFormat`](#filedataformat). |
+| `data_format` | `None` | Format of the input file: `txt`, `csv`, `json`, `xlsx`, `docx`, `pptx`, `xml`, or `jsonl`. See [`ReidentifyFileDataFormat`](#reidentifyfiledataformat). |
 | `redaction_level` | `None` | List of [`RedactionLevel`](#redactionlevel) objects that set how each entity type displays. |
 
 ### `CheckGuardrailsRequest`
@@ -359,7 +359,7 @@ print(response.errors)           # None unless there was a partial failure
 |-----------|------|-------------|
 | `status` | `DetectRunStatus` | Status of the operation. See [`DetectRunStatus`](#detectrunstatus). |
 | `output_type` | `ReidentifySourceType \| None` | Form of the outputs. See [`ReidentifySourceType`](#reidentifysourcetype). |
-| `output` | `list[FileOutput]` | Re-identified outputs. See [`FileOutput`](#fileoutput). |
+| `output` | `list[ReidentifyFileOutput]` | Re-identified outputs. See [`ReidentifyFileOutput`](#reidentifyfileoutput). |
 | `metrics` | `Metrics \| None` | Processing metrics. See [`Metrics`](#metrics). |
 
 ### `CheckGuardrailsResponse`
@@ -452,9 +452,13 @@ Source of a file `value` in `DeidentifyFileRequest`, and form of the outputs in 
 
 Source of a file `value` in `ReidentifyFileRequest`, and form of the outputs in `ReidentifyFileResponse`. Values: `BASE64`, `PRESIGNED_URL`.
 
-### `FileDataFormat`
+### `DeidentifyFileDataFormat`
 
-File formats for Detect. Values: `BMP`, `CSV`, `DCM`, `DOC`, `DOCX`, `GIF`, `JPEG`, `JPG`, `JSON`, `JSONL`, `MP3`, `PDF`, `PNG`, `PPT`, `PPTX`, `TIF`, `TIFF`, `TXT`, `WAV`, `XLS`, `XLSX`, `XML`, `ZIP`. Each value is the lowercase extension, for example `FileDataFormat.PDF.value` is `pdf`.
+File formats for `DeidentifyFileRequest`. Values: `BMP`, `CSV`, `DCM`, `DOC`, `DOCX`, `GIF`, `JPEG`, `JPG`, `JSON`, `JSONL`, `MP3`, `PDF`, `PNG`, `PPT`, `PPTX`, `TIF`, `TIFF`, `TXT`, `WAV`, `XLS`, `XLSX`, `XML`, `ZIP`. Each value is the lowercase extension, for example `DeidentifyFileDataFormat.PDF.value` is `pdf`.
+
+### `ReidentifyFileDataFormat`
+
+File formats for `ReidentifyFileRequest`, limited to the formats that support `VAULT_TOKEN`. Values: `CSV`, `DOCX`, `JSON`, `JSONL`, `PPTX`, `TXT`, `XLSX`, `XML`. Each value is the lowercase extension, for example `ReidentifyFileDataFormat.TXT.value` is `txt`.
 
 ### `DetectRunStatus`
 
@@ -659,13 +663,23 @@ A detected entity, returned in `DeidentifyStringResponse.entities`.
 
 ### `FileOutput`
 
-A processed output, returned in the `output` list of file responses.
+A processed output, returned in the `output` list of `DeidentifyFileResponse`.
 
 | Attribute | Type | Description |
 |-----------|------|-------------|
 | `processed_file` | `str` | The processed content. Base64-encoded when the response's `output_type` is `BASE64`. |
 | `processed_file_type` | `str` | Kind of output, for example `REDACTED_FILE` or `ENTITIES`. |
-| `processed_file_extension` | `FileDataFormat \| None` | Extension of the output. See [`FileDataFormat`](#filedataformat). |
+| `processed_file_extension` | `DeidentifyFileDataFormat \| None` | Extension of the output. See [`DeidentifyFileDataFormat`](#deidentifyfiledataformat). |
+
+### `ReidentifyFileOutput`
+
+A re-identified output, returned in the `output` list of `ReidentifyFileResponse`.
+
+| Attribute | Type | Description |
+|-----------|------|-------------|
+| `processed_file` | `str` | The re-identified content. Base64-encoded when the response's `output_type` is `BASE64`. |
+| `processed_file_type` | `str` | Kind of output. |
+| `processed_file_extension` | `ReidentifyFileDataFormat \| None` | Extension of the output. See [`ReidentifyFileDataFormat`](#reidentifyfiledataformat). `None` when the server returns a format outside `ReidentifyFileDataFormat`. |
 
 ### `Metrics`
 
