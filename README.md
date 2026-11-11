@@ -3,7 +3,8 @@
 This repository hosts Skyflow's Python SDKs for integrating Skyflow into a Python backend. It's a multi-package workspace with more than one published artifact — pick the package that matches what you need below.
 
 [![CI](https://img.shields.io/static/v1?label=CI&message=passing&color=green?style=plastic&logo=github)](https://github.com/skyflowapi/skyflow-python/actions)
-[![GitHub release](https://img.shields.io/github/v/release/skyflowapi/skyflow-python.svg)](https://github.com/skyflowapi/skyflow-python/releases)
+[![skyvault release](https://img.shields.io/github/v/release/skyflowapi/skyflow-python?filter=2.*&sort=semver&label=skyvault)](https://github.com/skyflowapi/skyflow-python/releases?q=tag%3A2&expanded=false)
+[![flowvault release](https://img.shields.io/github/v/release/skyflowapi/skyflow-python?filter=flowvault/*&sort=semver&label=flowvault)](https://github.com/skyflowapi/skyflow-python/releases?q=flowvault&expanded=false)
 [![License](https://img.shields.io/github/license/skyflowapi/skyflow-python)](https://github.com/skyflowapi/skyflow-python/blob/main/LICENSE)
 
 ## Which package do I want?
@@ -19,7 +20,7 @@ This repository hosts Skyflow's Python SDKs for integrating Skyflow into a Pytho
 
 > **Install one per environment.** Both artifacts install under the same top-level `skyflow` import, so they cannot coexist in the same Python environment.
 
-> :warning: **skyflow-python v1 reached End of Life on October 31, 2026 and is no longer supported.** It will not receive any further security patches, bug fixes, or updates. Please upgrade to the latest skyflow-python v2 ([2.1.3](https://github.com/skyflowapi/skyflow-python/releases/tag/2.1.3)) using the **[Migration Guide](docs/migrate_to_v2.md)**.
+> :warning: **skyflow-python v1 reached End of Life on October 31, 2026 and is no longer supported.** It will not receive any further security patches, bug fixes, or updates. Please upgrade to the latest skyflow-python v2 [![Latest skyvault 2.x release](https://img.shields.io/github/v/release/skyflowapi/skyflow-python?filter=2.*&sort=semver&label=latest)](https://github.com/skyflowapi/skyflow-python/releases?q=tag%3A2&expanded=false) using the **[Migration Guide](docs/migrate_to_v2.md)**.
 
 ## Repository layout
 
